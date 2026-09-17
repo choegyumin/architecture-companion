@@ -10,7 +10,6 @@ const baseUrl = "http://architecture-companion.test";
 
 function artifact(title: string) {
   return {
-    version: 1,
     processes: [
       {
         title: "Workflow",

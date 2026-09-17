@@ -11,7 +11,6 @@ import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/se
 
 function artifact(title: string): Artifact {
   return {
-    version: 1,
     processes: [
       {
         id: "checkout",
@@ -48,7 +47,6 @@ async function writeAnnotations(
 
 function annotations(body: string): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: "review-note",
@@ -210,7 +208,7 @@ describe("review updates", () => {
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(1);
 
-      await writeArtifact(scopePath, { ...artifact("Unsupported"), version: 2 });
+      await writeArtifact(scopePath, { ...artifact("Unsupported"), unexpected: true });
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 2, status: "invalid" }));
       expect(await readArtifact(scopePath)).toMatchObject({
         status: "invalid",

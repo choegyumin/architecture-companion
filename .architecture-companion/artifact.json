@@ -1,5 +1,4 @@
 {
-  "version": 1,
   "processes": [
     {
       "id": "architecture-review-annotation-recording",

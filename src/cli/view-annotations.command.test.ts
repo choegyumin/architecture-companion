@@ -7,8 +7,8 @@ import type { AnnotationDocument } from "@/features/annotation/annotation-docume
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 
-const emptyArtifact = { version: 1 as const, processes: [], designs: [] };
-const emptyDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyArtifact = { processes: [], designs: [] };
+const emptyDocument: AnnotationDocument = { annotations: [] };
 
 async function writeArtifact(scopePath: string, artifact: unknown): Promise<void> {
   const artifactDirectory = join(scopePath, ".architecture-companion");
@@ -68,7 +68,6 @@ describe("Active revision Annotation query command", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-annotations-query-"));
     const outputs: string[] = [];
     const document: AnnotationDocument = {
-      version: 1,
       annotations: [
         {
           id: "annotation-1",
@@ -111,7 +110,7 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { version: 1, processes: "invalid", designs: [] });
+      await writeArtifact(scopePath, { processes: "invalid", designs: [] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {

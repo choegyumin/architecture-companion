@@ -87,7 +87,6 @@ const catalogDiagram = {
   },
 };
 const designArtifact = {
-  version: 1,
   processes: [
     {
       title: "Workflow",
@@ -108,7 +107,6 @@ const designArtifact = {
 };
 
 const processArtifact = {
-  version: 1,
   processes: [
     {
       id: "invite-member",

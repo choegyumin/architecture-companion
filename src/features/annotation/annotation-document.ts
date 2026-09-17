@@ -51,7 +51,6 @@ export type Annotation = Readonly<z.infer<typeof annotationSchema>>;
 
 export const annotationDocumentSchema = z
   .object({
-    version: z.literal(1),
     annotations: z.array(annotationSchema),
   })
   .strict();

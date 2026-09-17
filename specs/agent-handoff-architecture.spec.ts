@@ -56,7 +56,6 @@ async function writeGenerator(
 
 function reviewArtifact(generatorId: string) {
   return {
-    version: 1,
     processes: [
       {
         id: "checkout",

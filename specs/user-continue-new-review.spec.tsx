@@ -19,7 +19,6 @@ import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates
 
 function artifact(nodeTitle: string): Artifact {
   return {
-    version: 1,
     processes: [
       {
         id: "checkout",
@@ -41,7 +40,6 @@ const initialArtifact = artifact("Checkout submitted");
 const revisedArtifact = artifact("Checkout started");
 
 const initialComments: AnnotationDocument = {
-  version: 1,
   annotations: [
     {
       id: "annotation-initial",

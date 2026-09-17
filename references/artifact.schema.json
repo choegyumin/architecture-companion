@@ -3,10 +3,6 @@
   "$id": "./artifact.schema.json",
   "type": "object",
   "properties": {
-    "version": {
-      "type": "number",
-      "const": 1
-    },
     "processes": {
       "type": "array",
       "items": {
@@ -21,7 +17,6 @@
     }
   },
   "required": [
-    "version",
     "processes",
     "designs"
   ],

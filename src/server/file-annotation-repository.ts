@@ -14,7 +14,7 @@ const GITIGNORE_RULE = "/annotations/";
 const LOCK_RETRY_INTERVAL_MS = 10;
 const LOCK_STALE_MS = 30_000;
 const LOCK_TIMEOUT_MS = 5_000;
-const emptyDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyDocument: AnnotationDocument = { annotations: [] };
 const saveQueues = new Map<string, Promise<void>>();
 
 type SaveAnnotationsInput = Readonly<{

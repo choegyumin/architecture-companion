@@ -17,7 +17,6 @@ import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { createReviewUpdates } from "@/server/review-updates";
 
 const artifact = {
-  version: 1,
   processes: [
     {
       id: "checkout",
@@ -36,7 +35,6 @@ const artifact = {
 
 function annotations(body: string): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: "external-annotation",

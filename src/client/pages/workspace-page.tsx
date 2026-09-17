@@ -120,7 +120,7 @@ function hasConflictingModifier(event: KeyboardEvent, holdKey: string): boolean 
   return modifiers.some((modifierKey) => modifierKey !== holdKey && event.getModifierState(modifierKey));
 }
 
-const emptyAnnotationDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyAnnotationDocument: AnnotationDocument = { annotations: [] };
 const emptyRevisionAnnotations: RevisionAnnotationsRead = {
   artifactRevisionId: null,
   document: null,

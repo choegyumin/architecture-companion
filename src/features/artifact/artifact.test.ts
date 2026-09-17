@@ -22,18 +22,17 @@ const validProcess = {
 } as const;
 
 const validArtifact = {
-  version: 1,
   processes: [validProcess],
   designs: [],
 } as const;
 
 describe("artifact parsing", () => {
-  it("preserves a valid versioned diagram artifact", () => {
+  it("preserves a valid diagram artifact", () => {
     expect(parseArtifact(validArtifact)).toEqual(validArtifact);
   });
 
   it("allows an artifact with no processes", () => {
-    const artifact = { version: 1, processes: [], designs: [] } as const;
+    const artifact = { processes: [], designs: [] } as const;
 
     expect(parseArtifact(artifact)).toEqual(artifact);
   });
@@ -45,8 +44,7 @@ describe("artifact parsing", () => {
     expect(parseArtifact(artifact)).toEqual(artifact);
   });
 
-  it("rejects unsupported versions and unknown fields", () => {
-    expect(() => parseArtifact({ ...validArtifact, version: 2 })).toThrow("Invalid artifact");
+  it("rejects unknown fields", () => {
     expect(() => parseArtifact({ ...validArtifact, unexpected: true })).toThrow("Invalid artifact");
   });
 

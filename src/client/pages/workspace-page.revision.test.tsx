@@ -18,7 +18,6 @@ import { createReviewUpdates } from "@/server/review-updates";
 
 function artifact(label: string): Artifact {
   return {
-    version: 1,
     processes: [
       {
         title: "Workflow",
@@ -63,7 +62,6 @@ async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
 
 function annotationsFor(body = "Review the initial workflow."): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: "process-feedback",
@@ -82,7 +80,7 @@ function annotationsFor(body = "Review the initial workflow."): AnnotationDocume
   };
 }
 
-const emptyAnnotationDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyAnnotationDocument: AnnotationDocument = { annotations: [] };
 
 async function writeAnnotations(
   scopePath: string,
@@ -337,7 +335,7 @@ describe("external artifact review", () => {
       currentReview = { scope, artifact: changedArtifact, artifactRevisionId: changedRevisionId };
       currentAnnotations = {
         artifactRevisionId: changedRevisionId,
-        document: { version: 1, annotations: [] },
+        document: { annotations: [] },
       };
       act(() => publishUpdate());
 

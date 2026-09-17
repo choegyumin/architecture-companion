@@ -5,7 +5,6 @@ import type { DefaultDiagramEdge, DefaultDiagramNode } from "@/features/diagram/
 
 export const artifactSchema = z
   .object({
-    version: z.literal(1),
     processes: z.array(diagramSchema),
     designs: z.array(diagramSchema),
   })
@@ -51,7 +50,6 @@ export type Artifact = Omit<ParsedArtifact, "processes" | "designs"> & {
 };
 
 export function parseArtifact(input: unknown): Artifact {
-  // TODO: Add version migrations at this parsing boundary when a released spec needs compatibility.
   const result = artifactSchema.safeParse(input);
 
   if (!result.success) {

@@ -15,11 +15,10 @@ import {
 
 const revisionA = parseArtifactRevisionId("a".repeat(64));
 const revisionB = parseArtifactRevisionId("b".repeat(64));
-const emptyDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyDocument: AnnotationDocument = { annotations: [] };
 
 function document(body: string): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: `annotation-${body}`,
@@ -70,9 +69,8 @@ async function main() {
 const [scopePath, readyPath, startPath, revisionSource, body] = process.argv.slice(2);
 if (!scopePath || !readyPath || !startPath || !revisionSource || !body) throw new Error("Missing worker input.");
 const artifactRevisionId = parseArtifactRevisionId(revisionSource);
-const emptyDocument = { version: 1, annotations: [] };
+const emptyDocument = {annotations: [] };
 const document = {
-  version: 1,
   annotations: [{
     id: \`annotation-\${body}\`,
     anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },

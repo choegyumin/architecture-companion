@@ -23,10 +23,7 @@ describe("Artifact schema validation command", () => {
 
     try {
       await mkdir(artifactDirectory);
-      await writeFile(
-        join(artifactDirectory, "artifact.json"),
-        JSON.stringify({ version: 1, processes: [], designs: [] }),
-      );
+      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ processes: [], designs: [] }));
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -48,10 +45,7 @@ describe("Artifact schema validation command", () => {
       await mkdir(artifactDirectory);
       await writeFile(nonDirectoryPath, "file");
       await symlink(join(nonDirectoryPath, "child"), join(scopePath, ".git"));
-      await writeFile(
-        join(artifactDirectory, "artifact.json"),
-        JSON.stringify({ version: 1, processes: [], designs: [] }),
-      );
+      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ processes: [], designs: [] }));
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -119,7 +113,7 @@ describe("Artifact schema validation command", () => {
       await mkdir(artifactDirectory);
       await writeFile(
         join(artifactDirectory, "artifact.json"),
-        JSON.stringify({ version: 1, processes: [process, process], designs: [] }),
+        JSON.stringify({ processes: [process, process], designs: [] }),
       );
 
       await expect(

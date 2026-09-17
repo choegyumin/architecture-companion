@@ -13,7 +13,6 @@ import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates
 
 function artifact(title: string): Artifact {
   return {
-    version: 1,
     processes: [
       {
         title: "Workflow",
@@ -43,7 +42,6 @@ async function writeAnnotations(scopePath: string, activeArtifact: Artifact, bod
   await writeFile(
     join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(activeArtifact))),
     JSON.stringify({
-      version: 1,
       annotations: [
         {
           id: "review-note",

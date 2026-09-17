@@ -50,10 +50,9 @@ describe("DataClient", () => {
   it("cannot read comments when the response has no ETag", async () => {
     const fetcher: typeof fetch = vi.fn(
       async () =>
-        new Response(
-          JSON.stringify({ artifactRevisionId: "a".repeat(64), document: { version: 1, annotations: [] } }),
-          { status: 200 },
-        ),
+        new Response(JSON.stringify({ artifactRevisionId: "a".repeat(64), document: { annotations: [] } }), {
+          status: 200,
+        }),
     );
     const client = createDataClient(baseUrl, fetcher);
 
@@ -62,9 +61,8 @@ describe("DataClient", () => {
 
   it("sends the read Artifact revision and ETag with the Annotation save request", async () => {
     const artifactRevisionId = "a".repeat(64);
-    const initialDocument = { version: 1 as const, annotations: [] };
+    const initialDocument = { annotations: [] };
     const savedDocument = {
-      version: 1 as const,
       annotations: [
         {
           id: "annotation-1",
@@ -129,7 +127,6 @@ describe("DataClient", () => {
           JSON.stringify({
             scope: { isGitRepository: false, path: "/consumer" },
             artifact: {
-              version: 1,
               processes: [diagram("invite", "Invite member"), diagram("checkout", "Checkout workflow")],
               designs: [diagram("structure", "Structure"), diagram("catalog", "Catalog")],
             },

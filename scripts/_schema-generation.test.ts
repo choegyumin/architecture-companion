@@ -76,7 +76,7 @@ describe("generateSchemaSources", () => {
         processes: { type: "array", items: { $ref: "./diagram.schema.json" } },
         designs: { type: "array", items: { $ref: "./diagram.schema.json" } },
       },
-      required: ["version", "processes", "designs"],
+      required: ["processes", "designs"],
       additionalProperties: false,
     });
     expect(artifactSchema).not.toHaveProperty("$defs");

@@ -14,7 +14,6 @@ describe("annotation document", () => {
       { type: "node", id: "checkout-page" },
       { type: "edge", id: "submits-checkout" },
     ].map((target) => ({
-      version: 1,
       annotations: [
         {
           id: "thread-1",

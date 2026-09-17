@@ -15,11 +15,10 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const baseUrl = "http://architecture-companion.test";
-const emptyDocument: AnnotationDocument = { version: 1, annotations: [] };
+const emptyDocument: AnnotationDocument = { annotations: [] };
 
 function artifact(title: string): Artifact {
   return {
-    version: 1,
     processes: [
       {
         id: "checkout",
@@ -43,7 +42,6 @@ const firstRevisionId = createArtifactRevisionId(firstArtifact);
 
 function document(body: string): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: `annotation-${body}`,
@@ -134,7 +132,7 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, { version: 1, processes: "invalid", designs: [] });
+      await writeArtifact(scopePath, { processes: "invalid", designs: [] });
       const app = createApp(await resolveConsumerScope(scopePath));
 
       expect((await app.request(`${baseUrl}/api/annotations`)).status).toBe(422);

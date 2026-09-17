@@ -9,7 +9,7 @@ const anchor: AnnotationAnchor = {
 
 describe("comment draft", () => {
   test("publishes a single comment on an annotation and restores the serialized document", async () => {
-    let document: AnnotationDocument = { version: 1, annotations: [] };
+    let document: AnnotationDocument = { annotations: [] };
     const ids = ["thread-1", "comment-1"];
     const annotations = createAnnotationDraft({
       repository: {
@@ -31,7 +31,6 @@ describe("comment draft", () => {
     expect(result).toEqual({
       status: "published",
       document: {
-        version: 1,
         annotations: [
           {
             id: "thread-1",
@@ -54,7 +53,7 @@ describe("comment draft", () => {
     let saved: AnnotationDocument | undefined;
     const annotations = createAnnotationDraft({
       repository: {
-        load: async () => ({ version: 1, annotations: [] }),
+        load: async () => ({ annotations: [] }),
         save: async (document) => {
           saved = document;
         },
@@ -82,7 +81,7 @@ describe("comment draft", () => {
   test("keeps the draft when saving fails", async () => {
     const annotations = createAnnotationDraft({
       repository: {
-        load: async () => ({ version: 1, annotations: [] }),
+        load: async () => ({ annotations: [] }),
         save: async () => {
           throw new Error("disk full");
         },

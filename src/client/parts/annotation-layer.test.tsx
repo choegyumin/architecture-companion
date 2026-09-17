@@ -11,7 +11,6 @@ const controller: AnnotationCanvasController = {
   changeEdit: vi.fn(),
   closeEdit: vi.fn(),
   document: {
-    version: 1,
     annotations: [
       {
         id: "thread-1",

@@ -7,7 +7,6 @@ const anchor: AnnotationAnchor = {
 };
 
 const publishedDocument: AnnotationDocument = {
-  version: 1,
   annotations: [
     {
       id: "thread-1",
@@ -43,7 +42,6 @@ describe("annotation management", () => {
     expect(result).toEqual({
       status: "updated",
       document: {
-        version: 1,
         annotations: [
           {
             ...publishedDocument.annotations.at(0),
@@ -71,8 +69,8 @@ describe("annotation management", () => {
 
     const result = await annotations.remove("thread-1");
 
-    expect(result).toEqual({ status: "deleted", document: { version: 1, annotations: [] } });
-    expect(document).toEqual({ version: 1, annotations: [] });
+    expect(result).toEqual({ status: "deleted", document: { annotations: [] } });
+    expect(document).toEqual({ annotations: [] });
   });
 
   test("moves a published annotation without changing its identity or content", async () => {
@@ -91,7 +89,6 @@ describe("annotation management", () => {
     expect(result).toEqual({
       status: "moved",
       document: {
-        version: 1,
         annotations: [
           {
             ...publishedDocument.annotations.at(0),

@@ -11,7 +11,6 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact: Artifact = {
-  version: 1,
   processes: [
     {
       id: "checkout",
@@ -42,7 +41,6 @@ const artifact: Artifact = {
 
 function reviewedComments(): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: "annotation-workflow",
@@ -85,7 +83,7 @@ describe("coding agent retrieves reviewer comments", () => {
       await createFileAnnotationRepository(scope.path).save({
         artifactRevisionId: createArtifactRevisionId(artifact),
         document,
-        expectedDocument: { version: 1, annotations: [] },
+        expectedDocument: { annotations: [] },
       });
 
       await executeViewAnnotationsCommand([scopePath], {

@@ -12,7 +12,6 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact = {
-  version: 1,
   processes: [
     {
       id: "checkout",

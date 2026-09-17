@@ -17,7 +17,6 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact: Artifact = {
-  version: 1,
   processes: [
     {
       id: "checkout",
@@ -59,7 +58,6 @@ const artifact: Artifact = {
 
 function savedFeedbackDocument(body: string): AnnotationDocument {
   return {
-    version: 1,
     annotations: [
       {
         id: "annotation-1",
