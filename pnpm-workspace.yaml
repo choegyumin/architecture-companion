@@ -1,0 +1,6 @@
+minimumReleaseAge: 2880
+strictDepBuilds: true
+# trustPolicy: no-downgrade
+
+allowBuilds:
+  esbuild: true

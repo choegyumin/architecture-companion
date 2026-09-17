@@ -1,0 +1,36 @@
+node_modules
+.env
+.env.*
+package-lock.json
+.yarn
+yarn.lock
+pnpm-lock*.yaml
+.serena
+schema.json
+*.schema.json
+build
+build/Release
+dist
+dist-ssr
+.output
+out
+coverage
+patches
+.turbo
+.wxt
+.wrangler
+.langgraph_api
+**/*.gen.[jt]s
+**/*.gen.[cm][jt]s
+**/*.gen.*.[jt]s
+**/*.gen.*.[cm][jt]s
+electron.vite.config.*.mjs
+**/worker-configuration.d.ts
+
+# Skills
+skills-lock.json
+.agents/skills
+.claude/skills
+
+# Symlink
+CLAUDE.md

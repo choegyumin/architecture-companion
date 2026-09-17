@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "strict": true,
+    "noEmit": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "incremental": true,
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "types": ["node", "vite/client", "vitest/globals"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "scripts",
+    "src",
+    "specs",
+    "tests",
+    "vite.config.ts",
+    "vitest.config.mts",
+    "vitest.setup.ts",
+    "tsup.config.ts",
+    "oxlint.config.ts"
+  ],
+  "exclude": ["node_modules"]
+}

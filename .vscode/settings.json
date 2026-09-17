@@ -1,0 +1,29 @@
+{
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "never",
+    "source.sortImports": "never",
+    "source.organizeLinkDefinitions": "never"
+  },
+  "editor.formatOnSave": true,
+  "files.readonlyInclude": {
+    "**/schema.json": true,
+    "**/*.schema.json": true
+  },
+  "files.watcherExclude": {
+    "**/schema.json": true,
+    "**/*.schema.json": true
+  },
+  "tailwindCSS.classFunctions": ["classnames", "clsx", "cn", "cva", "cx", "twMerge", "cns"],
+  "files.associations": {
+    ".env": "properties",
+    ".env.*": "properties",
+    ".dev.vars": "properties",
+    ".dev.vars.*": "properties",
+    "*.css": "tailwindcss",
+    "*ignore": "ignore"
+  }
+}

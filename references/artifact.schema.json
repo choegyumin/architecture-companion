@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./artifact.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "processes": {
+      "type": "array",
+      "items": {
+        "$ref": "./diagram.schema.json"
+      }
+    },
+    "designs": {
+      "type": "array",
+      "items": {
+        "$ref": "./diagram.schema.json"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "processes",
+    "designs"
+  ],
+  "additionalProperties": false
+}

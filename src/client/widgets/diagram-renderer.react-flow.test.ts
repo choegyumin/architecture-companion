@@ -1,0 +1,286 @@
+import { MarkerType } from "@xyflow/react";
+
+import {
+  buildDiagramMeasurementNodes,
+  buildDiagramReactFlowRenderModel,
+  resolveDiagramNodeSizes,
+} from "@/client/widgets/diagram-renderer.react-flow";
+import type { Diagram } from "@/features/diagram/diagram";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+
+const sequenceDiagram = {
+  id: "sequence",
+  title: "Sequence",
+  generatorId: "freeform",
+  layout: { id: "sequence" },
+  graph: {
+    groups: [],
+    nodes: [
+      {
+        id: "participant",
+        type: "lifeline",
+        kind: "participant",
+        title: "Participant",
+        links: [{ href: "source:///src/participant.ts" }],
+        activations: [],
+      },
+    ],
+    edges: [],
+  },
+} satisfies Diagram;
+
+describe("diagram renderer React Flow adapter", () => {
+  it("converts default artifact elements to the generic React Flow contract", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        ...sequenceDiagram.graph,
+        groups: [{ id: "group", title: "Group", description: "Boundary" }],
+        nodes: [
+          {
+            id: "step",
+            type: "default",
+            kind: "action",
+            title: "Review",
+            description: "Inspect the change",
+            details: ["Read the diff"],
+            groupId: "group",
+            links: [{ href: "source:///src/review.ts", text: "Review source" }],
+          },
+        ],
+        edges: [
+          {
+            id: "next",
+            type: "default",
+            source: "step",
+            target: "step",
+            kind: "result",
+            label: "Continue",
+            href: "https://example.com/review",
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [
+        {
+          id: "group",
+          position: { x: 0, y: 0 },
+          size: { width: 400, height: 300 },
+        },
+      ],
+      nodes: [
+        {
+          id: "step",
+          parentId: "group",
+          position: { x: 40, y: 60 },
+          size: { width: 288, height: 144 },
+        },
+      ],
+      edges: [
+        {
+          id: "next",
+          points: [
+            { x: 100, y: 100 },
+            { x: 200, y: 160 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
+    const { nodes, edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(measurementNode).toMatchObject({
+      type: "card",
+      data: {
+        label: "Review",
+        eyebrow: "action",
+        description: "Inspect the change",
+        details: ["Read the diff"],
+        links: [{ href: "source:///src/review.ts" }],
+      },
+    });
+    expect(nodes.at(0)).toMatchObject({
+      id: "group",
+      type: "labeled-group",
+      position: { x: 0, y: 0 },
+      data: { label: "Group", description: "Boundary" },
+    });
+    expect(edges.at(0)).toMatchObject({
+      id: "next",
+      source: "step",
+      target: "step",
+      type: "polyline",
+      label: "Continue",
+      data: {
+        points: layout.edges.at(0)?.points,
+        eyebrow: "result",
+        href: "https://example.com/review",
+      },
+    });
+  });
+
+  it("lets lifeline content determine the measured height", () => {
+    const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
+
+    expect(lifeline?.style?.width).toEqual(expect.any(Number));
+    expect(lifeline?.style).not.toHaveProperty("height");
+  });
+
+  it("uses measured React Flow node sizes when available", () => {
+    const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
+    if (!lifeline) throw new Error("Expected a measurement node.");
+
+    expect(resolveDiagramNodeSizes(sequenceDiagram, [{ ...lifeline, measured: { height: 320, width: 240 } }])).toEqual({
+      participant: { height: 320, width: 240 },
+    });
+  });
+
+  it("uses renderer sizes for node types that are not measured", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        ...sequenceDiagram.graph,
+        nodes: [
+          { id: "default", type: "default", kind: "step", title: "Default" },
+          { id: "lifeline", type: "lifeline", kind: "participant", title: "Lifeline", activations: [] },
+          {
+            id: "fragment",
+            type: "fragment",
+            kind: "phase",
+            title: "Fragment",
+            operator: "opt",
+            branches: [],
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const nodes = buildDiagramMeasurementNodes(diagram, vi.fn());
+
+    expect(resolveDiagramNodeSizes(diagram, nodes)).toEqual({
+      default: { height: 144, width: 288 },
+      lifeline: { height: 160, width: 224 },
+      fragment: { height: 160, width: 448 },
+    });
+  });
+
+  it("rejects a diagram node without a React Flow measurement node", () => {
+    expect(() => resolveDiagramNodeSizes(sequenceDiagram, [])).toThrow(
+      "React Flow did not measure diagram node: participant",
+    );
+  });
+
+  it("renders sequence message direction and type with UML edge notation", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        ...sequenceDiagram.graph,
+        nodes: [
+          {
+            id: "client",
+            type: "lifeline",
+            kind: "participant",
+            title: "Client",
+            links: [],
+            activations: [],
+          },
+          {
+            id: "server",
+            type: "lifeline",
+            kind: "participant",
+            title: "Server",
+            links: [],
+            activations: [],
+          },
+        ],
+        edges: [
+          { id: "sync", type: "message", source: "client", target: "server", messageType: "sync" },
+          { id: "async", type: "message", source: "client", target: "server", messageType: "async" },
+          { id: "return", type: "message", source: "server", target: "client", messageType: "return" },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      nodes: diagram.graph.nodes.map(({ id }, index) => ({
+        id,
+        position: { x: index * 300, y: 0 },
+        size: { width: 224, height: 400 },
+      })),
+      groups: [],
+      edges: diagram.graph.edges.map(({ id }, index) => ({
+        id,
+        points: [
+          { x: 112, y: 200 + index * 72 },
+          { x: 412, y: 200 + index * 72 },
+        ],
+      })),
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(edges.map(({ markerEnd }) => markerEnd)).toEqual([
+      expect.objectContaining({ type: MarkerType.ArrowClosed }),
+      expect.objectContaining({ type: MarkerType.Arrow }),
+      expect.objectContaining({ type: MarkerType.Arrow }),
+    ]);
+    expect(edges.map(({ style }) => style?.strokeDasharray)).toEqual([undefined, undefined, "6 4"]);
+    expect(edges.map(({ type, sourceHandle, targetHandle }) => ({ type, sourceHandle, targetHandle }))).toEqual([
+      { type: "message", sourceHandle: "sync:source", targetHandle: "sync:target" },
+      { type: "message", sourceHandle: "async:source", targetHandle: "async:target" },
+      { type: "message", sourceHandle: "return:source", targetHandle: "return:target" },
+    ]);
+    edges.forEach(({ data }) => {
+      expect(data).toHaveProperty("onLinkActivate", expect.any(Function));
+    });
+  });
+
+  it("rejects a group missing from the layout result", () => {
+    const layout = {
+      groups: [{ id: "missing-group", position: { x: 0, y: 0 }, size: { width: 100, height: 100 } }],
+      nodes: [],
+      edges: [],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+      "Layout result references an unknown diagram group: missing-group",
+    );
+  });
+
+  it("rejects a node missing from the layout result", () => {
+    const layout = {
+      groups: [],
+      nodes: [{ id: "missing-node", position: { x: 0, y: 0 }, size: { width: 100, height: 100 } }],
+      edges: [],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+      "Layout result references an unknown diagram node: missing-node",
+    );
+  });
+
+  it("rejects an edge missing from the layout result", () => {
+    const layout = {
+      groups: [],
+      nodes: [],
+      edges: [
+        {
+          id: "missing-edge",
+          points: [
+            { x: 0, y: 0 },
+            { x: 100, y: 100 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+      "Layout result references an unknown diagram edge: missing-edge",
+    );
+  });
+});
