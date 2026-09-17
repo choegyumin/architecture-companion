@@ -1,0 +1,41 @@
+name: Deploy dist
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-dist
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.18.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+      - name: Push dist branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/dist-index"
+          rm -f "$GIT_INDEX_FILE"
+          cd dist
+          git add -A .
+          cd ..
+          TREE=$(git write-tree)
+          COMMIT=$(git commit-tree "$TREE" -m "Deploy dist from main@${GITHUB_SHA::7}")
+          git push --force origin "$COMMIT:refs/heads/dist"
