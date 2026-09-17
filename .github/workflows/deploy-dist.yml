@@ -3,8 +3,6 @@ name: Deploy dist
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -30,7 +28,6 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - name: Push dist branch
-        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
