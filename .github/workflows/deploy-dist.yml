@@ -33,9 +33,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           export GIT_INDEX_FILE="$RUNNER_TEMP/dist-index"
           rm -f "$GIT_INDEX_FILE"
-          cd dist
-          git add -A .
-          cd ..
+          git --work-tree=dist add -A :/
           TREE=$(git write-tree)
           COMMIT=$(git commit-tree "$TREE" -m "Deploy dist from main@${GITHUB_SHA::7}")
           git push --force origin "$COMMIT:refs/heads/dist"
