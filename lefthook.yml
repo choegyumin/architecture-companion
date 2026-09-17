@@ -1,0 +1,15 @@
+# Install them to the this project: `pnpm lefthook install`
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: pnpm prettier --write {staged_files} --no-error-on-unmatched-pattern && git add {staged_files}
+      glob: "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,md,mdx,html,css,sass,scss,less,json,yml,yaml}"
+      exclude:
+        - "node_modules/**/*"

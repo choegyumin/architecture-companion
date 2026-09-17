@@ -11,6 +11,7 @@
     "pnpm": ">=11.7.0"
   },
   "scripts": {
+    "postinstall": "lefthook install --reset-hooks-path",
     "dev": "concurrently --no-color --kill-others --success first --names server,client \"pnpm dev.server\" \"pnpm dev.client\"",
     "dev.server": "tsx watch --clear-screen=false --exclude \"src/client/**\" --exclude \"src/**/*.tsx\" scripts/start-dev-server.ts",
     "dev.client": "wait-on tcp:127.0.0.1:4318 && vite --open",
@@ -45,6 +46,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -65,6 +68,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-turbo": "^2.8.14",
     "happy-dom": "^20.8.3",
+    "lefthook": "^2.1.14",
     "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.8.1",

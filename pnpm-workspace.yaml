@@ -4,3 +4,4 @@ strictDepBuilds: true
 
 allowBuilds:
   esbuild: true
+  lefthook: true
