@@ -1,5 +1,5 @@
 {
-  "processes": [
+  "behaviors": [
     {
       "id": "architecture-review-annotation-recording",
       "title": "Architecture review journey",

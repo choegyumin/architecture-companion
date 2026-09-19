@@ -7,7 +7,7 @@ import type { AnnotationDocument } from "@/features/annotation/annotation-docume
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 
-const emptyArtifact = { processes: [], designs: [] };
+const emptyArtifact = { behaviors: [], designs: [] };
 const emptyDocument: AnnotationDocument = { annotations: [] };
 
 async function writeArtifact(scopePath: string, artifact: unknown): Promise<void> {
@@ -71,7 +71,7 @@ describe("Active revision Annotation query command", () => {
       annotations: [
         {
           id: "annotation-1",
-          anchor: { canvasId: "process:checkout", point: { x: 10, y: 20 } },
+          anchor: { canvasId: "behavior:checkout", point: { x: 10, y: 20 } },
           comment: {
             id: "comment-1",
             author: { id: "reviewer-1", name: "Reviewer" },
@@ -110,7 +110,7 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { processes: "invalid", designs: [] });
+      await writeArtifact(scopePath, { behaviors: "invalid", designs: [] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {

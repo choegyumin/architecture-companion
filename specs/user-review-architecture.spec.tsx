@@ -12,7 +12,7 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact = {
-  processes: [
+  behaviors: [
     {
       id: "checkout",
       title: "Checkout workflow",
@@ -103,7 +103,7 @@ describe("reviewer understands the architecture from diagrams and source evidenc
       await userEvent.click(screen.getByRole("button", { name: "Checkout workflow" }));
       expect(await screen.findByText("Checkout requested")).toBeInTheDocument();
 
-      await userEvent.click(screen.getByRole("tab", { name: "Design" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
       expect(await screen.findByText("Browse products")).toBeInTheDocument();
       const sourceLink = await findSourceLink("catalog-page.ts");
       await act(async () => {

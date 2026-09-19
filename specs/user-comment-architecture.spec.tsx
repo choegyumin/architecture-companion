@@ -13,7 +13,7 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact = {
-  processes: [
+  behaviors: [
     {
       id: "checkout",
       title: "Checkout workflow",
@@ -63,7 +63,7 @@ describe("reviewer leaves feedback as diagram comments", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      fireEvent.click(await getCanvas("Checkout workflow process diagram"), { clientX: 120, clientY: 90 });
+      fireEvent.click(await getCanvas("Checkout workflow product behavior diagram"), { clientX: 120, clientY: 90 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       await userEvent.type(within(composer).getByLabelText("Comment text"), "Please add a payment failure path.");
       await userEvent.click(within(composer).getByRole("button", { name: "Post" }));

@@ -11,7 +11,7 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact: Artifact = {
-  processes: [
+  behaviors: [
     {
       id: "checkout",
       title: "Checkout workflow",
@@ -44,7 +44,7 @@ function reviewedComments(): AnnotationDocument {
     annotations: [
       {
         id: "annotation-workflow",
-        anchor: { canvasId: "process:checkout", point: { x: 120, y: 90 } },
+        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 90 } },
         comment: {
           id: "comment-workflow",
           author: { id: "reviewer-1", name: "Reviewer" },

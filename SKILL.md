@@ -1,6 +1,6 @@
 ---
 name: architecture-companion
-description: Generates and revises Architecture Companion artifacts that capture product Processes and software Designs from source evidence, serves the local Review UI, and handles follow-up requests from stored Annotations. Use this skill whenever the user wants to visualize product flows or code structure in order to review them, asks to start the review UI or provide a review URL, needs an existing artifact fixed, or requests changes, explanations, or another review after an Architecture Companion review.
+description: Generates and revises Architecture Companion artifacts that capture product Behaviors and code Designs from source evidence, serves the local Review UI, and handles follow-up requests from stored Annotations. Use this skill whenever the user wants to visualize product flows or code structure in order to review them, asks to start the review UI or provide a review URL, needs an existing artifact fixed, or requests changes, explanations, or another review after an Architecture Companion review.
 ---
 
 # Architecture Companion

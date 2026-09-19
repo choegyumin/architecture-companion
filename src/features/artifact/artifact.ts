@@ -5,21 +5,21 @@ import type { DefaultDiagramEdge, DefaultDiagramNode } from "@/features/diagram/
 
 export const artifactSchema = z
   .object({
-    processes: z.array(diagramSchema),
+    behaviors: z.array(diagramSchema),
     designs: z.array(diagramSchema),
   })
   .strict()
   .superRefine((artifact, context) => {
-    const processIds = new Set<string>();
-    artifact.processes.forEach((diagram, index) => {
-      if (processIds.has(diagram.id)) {
+    const behaviorIds = new Set<string>();
+    artifact.behaviors.forEach((diagram, index) => {
+      if (behaviorIds.has(diagram.id)) {
         context.addIssue({
           code: "custom",
-          path: ["processes", index, "id"],
-          message: `Duplicate process ID: ${diagram.id}`,
+          path: ["behaviors", index, "id"],
+          message: `Duplicate behavior ID: ${diagram.id}`,
         });
       }
-      processIds.add(diagram.id);
+      behaviorIds.add(diagram.id);
     });
 
     const designIds = new Set<string>();
@@ -35,7 +35,7 @@ export const artifactSchema = z
     });
   });
 
-type ProcessRepresentation = Omit<Diagram, "graph"> & {
+type BehaviorRepresentation = Omit<Diagram, "graph"> & {
   graph: Omit<Diagram["graph"], "nodes" | "edges"> & {
     nodes: readonly DefaultDiagramNode[];
     edges: readonly DefaultDiagramEdge[];
@@ -44,8 +44,8 @@ type ProcessRepresentation = Omit<Diagram, "graph"> & {
 type DesignRepresentation = Diagram;
 
 type ParsedArtifact = z.infer<typeof artifactSchema>;
-export type Artifact = Omit<ParsedArtifact, "processes" | "designs"> & {
-  processes: readonly ProcessRepresentation[];
+export type Artifact = Omit<ParsedArtifact, "behaviors" | "designs"> & {
+  behaviors: readonly BehaviorRepresentation[];
   designs: readonly DesignRepresentation[];
 };
 

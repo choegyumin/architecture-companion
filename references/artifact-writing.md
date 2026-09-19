@@ -4,7 +4,7 @@ Common semantics and layout rules to apply when creating or modifying diagrams. 
 
 ## Artifact composition and changes
 
-- Put user-visible behavior and actor journeys in `processes`.
+- Put user-visible behavior and actor journeys in `behaviors`.
 - Put code structure, architecture, runtime interactions, data flow, and system boundaries in `designs`.
 - The artifact is a complete snapshot of the current state. Preserve unrelated diagrams, and never write merge instructions or partial patches.
 - Reuse existing diagrams and graph element IDs for the same concepts. Do not repurpose an existing ID for a concept whose meaning changed.
@@ -37,7 +37,7 @@ Architecture Companion computes coordinates and sizes, so the artifact never rec
 
 ### `elk-layered`
 
-Use for structural diagrams and general processes. Express structure and flow mostly with groups, default nodes, and default edges. `options.direction` is one of `UP`, `DOWN`, `LEFT`, or `RIGHT`, and defaults to `DOWN` when omitted. Set a direction only when it reads better than the default.
+Use for structural diagrams and general flows. Express structure and flow mostly with groups, default nodes, and default edges. `options.direction` is one of `UP`, `DOWN`, `LEFT`, or `RIGHT`, and defaults to `DOWN` when omitted. Set a direction only when it reads better than the default.
 
 ### `sequence`
 

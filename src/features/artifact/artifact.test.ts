@@ -1,6 +1,6 @@
 import { parseArtifact } from "@/features/artifact/artifact";
 
-const validProcess = {
+const validBehavior = {
   id: "checkout",
   title: "Checkout workflow",
   generatorId: "freeform",
@@ -22,7 +22,7 @@ const validProcess = {
 } as const;
 
 const validArtifact = {
-  processes: [validProcess],
+  behaviors: [validBehavior],
   designs: [],
 } as const;
 
@@ -31,15 +31,15 @@ describe("artifact parsing", () => {
     expect(parseArtifact(validArtifact)).toEqual(validArtifact);
   });
 
-  it("allows an artifact with no processes", () => {
-    const artifact = { processes: [], designs: [] } as const;
+  it("allows an artifact with no behaviors", () => {
+    const artifact = { behaviors: [], designs: [] } as const;
 
     expect(parseArtifact(artifact)).toEqual(artifact);
   });
 
   it("preserves custom generator IDs regardless of installation", () => {
-    const process = { ...validProcess, generatorId: "dependency-graph" } as const;
-    const artifact = { ...validArtifact, processes: [process] } as const;
+    const behavior = { ...validBehavior, generatorId: "dependency-graph" } as const;
+    const artifact = { ...validArtifact, behaviors: [behavior] } as const;
 
     expect(parseArtifact(artifact)).toEqual(artifact);
   });
@@ -51,12 +51,12 @@ describe("artifact parsing", () => {
   it("rejects unknown node and edge types", () => {
     const unknownNodeType = {
       ...validArtifact,
-      processes: [
+      behaviors: [
         {
-          ...validProcess,
+          ...validBehavior,
           graph: {
-            ...validProcess.graph,
-            nodes: [{ ...validProcess.graph.nodes.at(0), type: "screen" }],
+            ...validBehavior.graph,
+            nodes: [{ ...validBehavior.graph.nodes.at(0), type: "screen" }],
             edges: [],
           },
         },
@@ -64,12 +64,12 @@ describe("artifact parsing", () => {
     };
     const unknownEdgeType = {
       ...validArtifact,
-      processes: [
+      behaviors: [
         {
-          ...validProcess,
+          ...validBehavior,
           graph: {
-            ...validProcess.graph,
-            edges: [{ ...validProcess.graph.edges.at(0), type: "transition" }],
+            ...validBehavior.graph,
+            edges: [{ ...validBehavior.graph.edges.at(0), type: "transition" }],
           },
         },
       ],
@@ -82,12 +82,12 @@ describe("artifact parsing", () => {
   it("rejects duplicate element IDs and dangling edges", () => {
     const duplicateNode = {
       ...validArtifact,
-      processes: [
+      behaviors: [
         {
-          ...validProcess,
+          ...validBehavior,
           graph: {
-            ...validProcess.graph,
-            nodes: [validProcess.graph.nodes.at(0), validProcess.graph.nodes.at(0)],
+            ...validBehavior.graph,
+            nodes: [validBehavior.graph.nodes.at(0), validBehavior.graph.nodes.at(0)],
             edges: [],
           },
         },
@@ -95,11 +95,11 @@ describe("artifact parsing", () => {
     };
     const danglingEdge = {
       ...validArtifact,
-      processes: [
+      behaviors: [
         {
-          ...validProcess,
+          ...validBehavior,
           graph: {
-            ...validProcess.graph,
+            ...validBehavior.graph,
             edges: [{ id: "missing", type: "default", source: "submit", target: "missing-node" }],
           },
         },
@@ -110,9 +110,9 @@ describe("artifact parsing", () => {
     expect(() => parseArtifact(danglingEdge)).toThrow("Diagram edge missing targets unknown node missing-node");
   });
 
-  it("rejects duplicate process IDs", () => {
-    expect(() => parseArtifact({ ...validArtifact, processes: [validProcess, validProcess] })).toThrow(
-      "Duplicate process ID: checkout",
+  it("rejects duplicate behavior IDs", () => {
+    expect(() => parseArtifact({ ...validArtifact, behaviors: [validBehavior, validBehavior] })).toThrow(
+      "Duplicate behavior ID: checkout",
     );
   });
 

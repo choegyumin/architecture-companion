@@ -17,7 +17,7 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact: Artifact = {
-  processes: [
+  behaviors: [
     {
       id: "checkout",
       title: "Workflow",
@@ -62,7 +62,7 @@ function savedFeedbackDocument(body: string): AnnotationDocument {
       {
         id: "annotation-1",
         anchor: {
-          canvasId: "process:checkout",
+          canvasId: "behavior:checkout",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -143,7 +143,7 @@ describe("WorkspacePage comment management", () => {
       await userEvent.click(screen.getByRole("button", { name: "Fit View" }));
       expect(screen.queryByRole("form", { name: "Add comment" })).not.toBeInTheDocument();
 
-      fireEvent.click(await getCanvas("Workflow process diagram"), { clientX: 80, clientY: 60 });
+      fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 80, clientY: 60 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       await userEvent.type(within(composer).getByLabelText("Comment text"), "Discard this draft");
       await userEvent.click(within(composer).getByRole("button", { name: "Cancel" }));
@@ -164,7 +164,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      fireEvent.click(await getCanvas("Workflow process diagram"), { clientX: 80, clientY: 60 });
+      fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 80, clientY: 60 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       const textarea = within(composer).getByLabelText("Comment text");
       await userEvent.type(textarea, "Keep this draft");
@@ -192,7 +192,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      await placeComment(await getCanvas("Workflow process diagram"), "Saved comment", { x: 120, y: 90 });
+      await placeComment(await getCanvas("Workflow product behavior diagram"), "Saved comment", { x: 120, y: 90 });
 
       await userEvent.click(screen.getByRole("button", { name: "Comment: Saved comment" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
@@ -221,7 +221,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      const canvas = await getCanvas("Workflow process diagram");
+      const canvas = await getCanvas("Workflow product behavior diagram");
       fireEvent.click(canvas, { clientX: 80, clientY: 60 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       const textarea = within(composer).getByLabelText("Comment text");
@@ -247,7 +247,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      await userEvent.click(screen.getByRole("tab", { name: "Design" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
       await userEvent.click(await screen.findByRole("button", { name: "Checkout structure" }));
       await placeComment(await screen.findByLabelText("component: Checkout page"), "Review checkout structure", {
         x: 180,
@@ -261,7 +261,7 @@ describe("WorkspacePage comment management", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Catalog structure" }));
       expect(screen.queryByLabelText("Comment: Review checkout structure")).not.toBeInTheDocument();
-      await placeComment(await getCanvas("Catalog structure design diagram"), "Review catalog structure", {
+      await placeComment(await getCanvas("Catalog structure code design diagram"), "Review catalog structure", {
         x: 220,
         y: 160,
       });
@@ -282,7 +282,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      await placeComment(await getCanvas("Workflow process diagram"), "Review workflow trigger", {
+      await placeComment(await getCanvas("Workflow product behavior diagram"), "Review workflow trigger", {
         x: 120,
         y: 90,
       });
@@ -316,7 +316,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      await placeComment(await getCanvas("Workflow process diagram"), "Review workflow trigger", {
+      await placeComment(await getCanvas("Workflow product behavior diagram"), "Review workflow trigger", {
         x: 120,
         y: 90,
       });
@@ -351,7 +351,7 @@ describe("WorkspacePage comment management", () => {
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
-      await placeComment(await getCanvas("Workflow process diagram"), "Review workflow trigger", {
+      await placeComment(await getCanvas("Workflow product behavior diagram"), "Review workflow trigger", {
         x: 120,
         y: 90,
       });
@@ -384,7 +384,7 @@ describe("WorkspacePage comment save failures", () => {
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
       await blockCommentWrites(scopePath);
-      fireEvent.click(await getCanvas("Workflow process diagram"), { clientX: 120, clientY: 90 });
+      fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 120, clientY: 90 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       const textarea = within(composer).getByLabelText("Comment text");
       await userEvent.type(textarea, "Keep this text");

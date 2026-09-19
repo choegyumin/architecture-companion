@@ -87,7 +87,7 @@ const catalogDiagram = {
   },
 };
 const designArtifact = {
-  processes: [
+  behaviors: [
     {
       title: "Workflow",
       generatorId: "freeform",
@@ -107,7 +107,7 @@ const designArtifact = {
 };
 
 const processArtifact = {
-  processes: [
+  behaviors: [
     {
       id: "invite-member",
       title: "Invite member",
@@ -165,16 +165,16 @@ async function renderArtifact(artifactSource: unknown) {
 }
 
 describe("design (architecture·implementation) review", () => {
-  it("shows the design view by default when there are no processes", async () => {
-    const cleanupScope = await renderArtifact({ ...designArtifact, processes: [] });
+  it("shows the design view by default when there are no behaviors", async () => {
+    const cleanupScope = await renderArtifact({ ...designArtifact, behaviors: [] });
 
     try {
-      const processView = await screen.findByRole("tab", { name: "Process" });
-      const designView = screen.getByRole("tab", { name: "Design" });
+      const processView = await screen.findByRole("tab", { name: "Product Behavior" });
+      const designView = screen.getByRole("tab", { name: "Code Design" });
 
       expect(processView).toHaveAttribute("aria-disabled", "true");
       expect(designView).toHaveAttribute("aria-selected", "true");
-      expect(screen.getByRole("heading", { name: "Designs" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Code Designs" })).toBeInTheDocument();
     } finally {
       await cleanupScope();
     }
@@ -217,7 +217,7 @@ describe("design (architecture·implementation) review", () => {
     const cleanupScope = await renderArtifact(designArtifact);
 
     try {
-      await userEvent.click(await screen.findByRole("tab", { name: "Design" }));
+      await userEvent.click(await screen.findByRole("tab", { name: "Code Design" }));
       expect(screen.getByRole("button", { name: "Catalog structure" })).toHaveAttribute("aria-current", "page");
       expect(await screen.findByText("Browse products")).toBeInTheDocument();
 
@@ -254,7 +254,7 @@ describe("process (product workflow) review", () => {
     const cleanup = await renderArtifact(processArtifact);
 
     try {
-      expect(await screen.findByRole("region", { name: "Invite member process diagram" })).toBeInTheDocument();
+      expect(await screen.findByRole("region", { name: "Invite member product behavior diagram" })).toBeInTheDocument();
       expect(screen.getByText("Invitation submitted")).toBeInTheDocument();
       expect(screen.getByText("Eligible member?")).toBeInTheDocument();
       expect(screen.getByText("Send invitation")).toBeInTheDocument();
@@ -275,11 +275,11 @@ describe("process (product workflow) review", () => {
     const cleanup = await renderArtifact(processArtifact);
 
     try {
-      await screen.findByRole("heading", { name: "Processes" });
-      const workflowView = screen.getByRole("tab", { name: "Process" });
+      await screen.findByRole("heading", { name: "Product Behaviors" });
+      const workflowView = screen.getByRole("tab", { name: "Product Behavior" });
       const theme = screen.getByRole("button", { name: "Toggle theme" });
       const comment = screen.getByRole("button", { name: "Comment" });
-      const workflowPanel = screen.getByRole("tabpanel", { name: "Process" });
+      const workflowPanel = screen.getByRole("tabpanel", { name: "Product Behavior" });
       const inviteMember = screen.getByRole("button", { name: "Invite member" });
       const removeMember = screen.getByRole("button", { name: "Remove member" });
       const zoomIn = screen.getByRole("button", { name: "Zoom In" });

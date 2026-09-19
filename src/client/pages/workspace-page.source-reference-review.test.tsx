@@ -11,7 +11,7 @@ import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 
 const artifact = {
-  processes: [
+  behaviors: [
     {
       id: "checkout",
       title: "Checkout workflow",
@@ -144,7 +144,7 @@ describe("source links in a review", () => {
       await waitFor(() => expect(openedPaths).toEqual(expectedPaths.slice(0, 2)));
       expect(screen.queryByRole("form", { name: "Add comment" })).not.toBeInTheDocument();
 
-      fireEvent.click(screen.getByRole("tab", { name: "Design" }));
+      fireEvent.click(screen.getByRole("tab", { name: "Code Design" }));
       const componentTestLink = await findSourceLink("checkout-page.test.ts");
       await act(async () => {
         fireEvent.click(componentTestLink);

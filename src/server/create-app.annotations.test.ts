@@ -19,7 +19,7 @@ const emptyDocument: AnnotationDocument = { annotations: [] };
 
 function artifact(title: string): Artifact {
   return {
-    processes: [
+    behaviors: [
       {
         id: "checkout",
         title,
@@ -45,7 +45,7 @@ function document(body: string): AnnotationDocument {
     annotations: [
       {
         id: `annotation-${body}`,
-        anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },
+        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
         comment: {
           id: `comment-${body}`,
           author: { id: "local-reviewer", name: "Local reviewer" },
@@ -132,7 +132,7 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, { processes: "invalid", designs: [] });
+      await writeArtifact(scopePath, { behaviors: "invalid", designs: [] });
       const app = createApp(await resolveConsumerScope(scopePath));
 
       expect((await app.request(`${baseUrl}/api/annotations`)).status).toBe(422);

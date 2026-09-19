@@ -10,7 +10,7 @@ const baseUrl = "http://architecture-companion.test";
 
 function artifact(title: string) {
   return {
-    processes: [
+    behaviors: [
       {
         title: "Workflow",
         generatorId: "freeform",

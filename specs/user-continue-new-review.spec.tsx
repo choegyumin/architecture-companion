@@ -19,7 +19,7 @@ import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates
 
 function artifact(nodeTitle: string): Artifact {
   return {
-    processes: [
+    behaviors: [
       {
         id: "checkout",
         title: "Checkout workflow",
@@ -43,7 +43,7 @@ const initialComments: AnnotationDocument = {
   annotations: [
     {
       id: "annotation-initial",
-      anchor: { canvasId: "process:checkout", point: { x: 120, y: 90 } },
+      anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 90 } },
       comment: {
         id: "comment-initial",
         author: { id: "reviewer-1", name: "Reviewer" },
@@ -92,7 +92,7 @@ describe("reviewer continues a review after the artifact is revised", () => {
         ).not.toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", { name: "Comment" }));
-        const region = await screen.findByRole("region", { name: "Checkout workflow process diagram" });
+        const region = await screen.findByRole("region", { name: "Checkout workflow product behavior diagram" });
         fireEvent.click(within(region).getByRole("group", { name: "Diagram canvas" }), {
           clientX: 140,
           clientY: 100,

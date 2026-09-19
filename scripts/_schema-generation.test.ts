@@ -73,10 +73,10 @@ describe("generateSchemaSources", () => {
       $id: "./artifact.schema.json",
       type: "object",
       properties: {
-        processes: { type: "array", items: { $ref: "./diagram.schema.json" } },
+        behaviors: { type: "array", items: { $ref: "./diagram.schema.json" } },
         designs: { type: "array", items: { $ref: "./diagram.schema.json" } },
       },
-      required: ["processes", "designs"],
+      required: ["behaviors", "designs"],
       additionalProperties: false,
     });
     expect(artifactSchema).not.toHaveProperty("$defs");

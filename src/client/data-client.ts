@@ -163,8 +163,8 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
         ...review,
         artifact: {
           ...review.artifact,
+          behaviors: sortDiagramsByTitle(review.artifact.behaviors),
           designs: sortDiagramsByTitle(review.artifact.designs),
-          processes: sortDiagramsByTitle(review.artifact.processes),
         },
       };
     },
