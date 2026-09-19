@@ -38,7 +38,8 @@ The referenced file contains only a `Diagram.graph` candidate with `groups`, `no
 3. Preserve, revise, or replace the existing graph according to the review request. Preserve unrelated diagrams and stable IDs for unchanged concepts.
 4. Keep source files as nodes. Directory groups and nested package boundaries organize the normalized local hierarchy. When that hierarchy has one top-level local group, the generator omits it and promotes its direct files and child groups. When it has multiple top-level local roots, the generator preserves each group. External packages remain in their own independent group and never affect this local-root decision; never expand their internals.
 5. Unmarked dependency edges are runtime dependencies. Edges with kind `type-only` exist only before TypeScript compilation.
-6. When adopting the candidate, set the diagram's `generatorId` to `file-dependency-graph` and preserve or choose the surrounding diagram `id`, `title`, and `layout` separately.
-7. Validate the complete Architecture Companion artifact through the standard validation command before review.
+6. When adopting the candidate, set the diagram's `generatorId` to `file-dependency-graph`. Record free-form `generatorInstructions` that state the invocation runs from the consumer scope root and include the complete command. Replace the session-specific absolute generator directory with `<generator-directory>`, use `--scope "."`, and keep every option and selected source path unchanged.
+7. Preserve or choose the surrounding diagram `id`, `title`, and `layout` separately.
+8. Validate the complete Architecture Companion artifact through the standard validation command before review.
 
 The analyzer emits only dependencies confirmed by dependency-cruiser resolution. Missing or ambiguous references are omitted without routine warnings.

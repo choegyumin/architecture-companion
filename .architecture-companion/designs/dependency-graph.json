@@ -2,6 +2,7 @@
   "id": "dependency-graph",
   "title": "File dependency graph",
   "generatorId": "file-dependency-graph",
+  "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/generate.js\" \\\n  --scope \".\" \\\n  --ts-config \"tsconfig.json\" \\\n  \"src\"",
   "layout": {
     "id": "elk-layered",
     "options": {
