@@ -37,7 +37,7 @@ describe("fitting the view to the layout", () => {
 
     await fitViewFraming(instance, { mode: "fit" }, viewportElement);
 
-    expect(fitView).toHaveBeenCalledWith({ maxZoom: 1, padding: "24px" });
+    expect(fitView).toHaveBeenCalledWith({ maxZoom: 1, minZoom: 0.01, padding: "24px" });
     expect(setViewport).not.toHaveBeenCalled();
   });
 
