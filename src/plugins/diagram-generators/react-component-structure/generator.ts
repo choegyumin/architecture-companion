@@ -452,6 +452,13 @@ function externalPackageName(moduleSpecifier: string): string | undefined {
   return moduleSpecifier.split("/").at(0);
 }
 
+function hasExternalDeclaration(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): boolean {
+  const canonical = canonicalSymbol(symbol, checker);
+  return (canonical?.declarations ?? symbol?.declarations ?? []).some((declaration) =>
+    toPosixPath(declaration.getSourceFile().fileName).includes("/node_modules/"),
+  );
+}
+
 function jsxTagText(tagName: ts.JsxTagNameExpression): string {
   return tagName.getText();
 }
@@ -470,11 +477,12 @@ function targetForReference(
   if (definition) return { id: definition.id, title: definition.name, definition };
 
   const importIdentifier = leftmostIdentifier(expression);
-  const moduleSpecifier = getImportModuleSpecifier(
-    importIdentifier ? checker.getSymbolAtLocation(importIdentifier) : symbol,
-  );
+  const importSymbol = importIdentifier ? checker.getSymbolAtLocation(importIdentifier) : symbol;
+  const moduleSpecifier = getImportModuleSpecifier(importSymbol);
   const packageName = moduleSpecifier ? externalPackageName(moduleSpecifier) : undefined;
-  if (!packageName) return undefined;
+  if (!packageName || (!hasExternalDeclaration(symbol, checker) && !hasExternalDeclaration(importSymbol, checker))) {
+    return undefined;
+  }
 
   const title = ts.isJsxTagNameExpression(expression) ? jsxTagText(expression) : expression.getText();
   if (packageName === "react" && /(?:^|\.)Fragment$/.test(title)) return undefined;
