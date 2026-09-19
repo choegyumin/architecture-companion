@@ -126,6 +126,39 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("keeps a local render-prop invoker inside an external wrapper", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalPanel(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Body, Frame } from "./frame";
+          export function App() { return <Frame>{() => <Body />}</Frame>; }
+        `,
+        "src/frame.tsx": `
+          import { ExternalPanel } from "ui-kit";
+          export function Body() { return <main />; }
+          export function Frame({ children }: { children: () => unknown }) {
+            return <ExternalPanel>{children()}</ExternalPanel>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Frame", kind: "direct-render", label: undefined },
+          { source: "Frame", target: "Body", kind: "render-prop", label: "Render prop · children" },
+          { source: "Frame", target: "ExternalPanel", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
   it("follows named and rest-prop forwarding to the final renderer", async () => {
     await withFixture(
       {
@@ -167,18 +200,21 @@ describe("React component structure generator", () => {
   it("shows confirmed external components and omits unresolved relationships", async () => {
     await withFixture(
       {
-        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFrame(props: unknown): unknown;`,
+        "node_modules/ui-kit/index.d.ts": `
+          export declare function ExternalFrame(props: unknown): unknown;
+          export declare function ExternalLeaf(props: unknown): unknown;
+        `,
         "node_modules/ui-kit/package.json": JSON.stringify({
           name: "ui-kit",
           type: "module",
           exports: { ".": { types: "./index.d.ts" } },
         }),
         "src/app.tsx": `
-          import { ExternalFrame } from "ui-kit";
+          import { ExternalFrame, ExternalLeaf } from "ui-kit";
           import { Local } from "./local";
 
           export function App() {
-            return <ExternalFrame><Local /><Unresolved /></ExternalFrame>;
+            return <ExternalFrame><ExternalLeaf /><Local /><Unresolved /></ExternalFrame>;
           }
         `,
         "src/local.tsx": `export function Local() { return <div />; }`,

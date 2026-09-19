@@ -690,16 +690,29 @@ function analyzeConsumerRules(
     addExactRule(rules, propName, { type: "terminal", kind, rendererId: definition.id, propName });
   }
 
+  function analyzeRenderPropInvocations(expression: ts.Expression): void {
+    function visit(node: ts.Node): void {
+      if (ts.isFunctionLike(node)) return;
+      if (ts.isCallExpression(node)) {
+        const propName = getIncomingProp(node.expression, bindings, context.checker);
+        if (propName) terminal(propName, "render-prop");
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(expression);
+  }
+
   function analyzeJsxAttributes(
     attributes: ts.JsxAttributes,
     target: ComponentTarget | undefined,
     children: readonly ts.JsxChild[],
   ): void {
-    if (!target?.definition) return;
     for (const property of attributes.properties) {
       if (ts.isJsxAttribute(property)) {
         const expression = jsxAttributeExpression(property);
         if (!expression) continue;
+        analyzeRenderPropInvocations(expression);
+        if (!target?.definition) continue;
         for (const propName of collectIncomingProps(expression, bindings, context.checker)) {
           addExactRule(rules, propName, {
             type: "forward",
@@ -707,14 +720,15 @@ function analyzeConsumerRules(
             targetPropName: property.name.getText(),
           });
         }
-      } else {
+      } else if (target?.definition) {
         const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
         if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
       }
     }
 
     for (const child of children) {
-      if (!ts.isJsxExpression(child) || !child.expression) continue;
+      if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
+      if (!target?.definition || !ts.isJsxExpression(child) || !child.expression) continue;
       for (const propName of collectIncomingProps(child.expression, bindings, context.checker)) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
@@ -807,10 +821,11 @@ function analyzeConsumerRules(
       return;
     }
     const target = targetForReference(tagExpression, context);
-    if (!target?.definition) return;
     if (propsExpression && ts.isObjectLiteralExpression(propsExpression)) {
       for (const property of propsExpression.properties) {
         if (ts.isPropertyAssignment(property)) {
+          analyzeRenderPropInvocations(property.initializer);
+          if (!target?.definition) continue;
           for (const propName of collectIncomingProps(property.initializer, bindings, context.checker)) {
             addExactRule(rules, propName, {
               type: "forward",
@@ -818,13 +833,15 @@ function analyzeConsumerRules(
               targetPropName: property.name.getText(),
             });
           }
-        } else if (ts.isSpreadAssignment(property)) {
+        } else if (target?.definition && ts.isSpreadAssignment(property)) {
           const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
           if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
         }
       }
     }
     for (const child of children) {
+      analyzeRenderPropInvocations(child);
+      if (!target?.definition) continue;
       for (const propName of collectIncomingProps(child, bindings, context.checker)) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
@@ -954,12 +971,22 @@ function analyzeJsxComponentUsage(
   }
 
   if (ts.isJsxElement(element)) {
-    const childExpressions = element.children.flatMap((child): ts.Expression[] => {
-      if (ts.isJsxExpression(child)) return child.expression ? [child.expression] : [];
-      if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) return [child];
-      return [];
-    });
-    suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(childExpressions, context), context);
+    const nodeChildren: ts.Expression[] = [];
+    for (const child of element.children) {
+      const expression = ts.isJsxExpression(child)
+        ? child.expression
+        : ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)
+          ? child
+          : undefined;
+      if (!expression) continue;
+      const unwrapped = unwrapExpression(expression);
+      if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
+        suppliedRelationship(receiver, "children", "render-prop", returnedTargets(unwrapped, context), context);
+      } else {
+        nodeChildren.push(unwrapped);
+      }
+    }
+    suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(nodeChildren, context), context);
   }
 }
 
@@ -982,7 +1009,16 @@ function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentT
       suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets([value], context), context);
     }
   }
-  suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(children, context), context);
+  const nodeChildren: ts.Expression[] = [];
+  for (const child of children) {
+    const value = unwrapExpression(child);
+    if (ts.isArrowFunction(value) || ts.isFunctionExpression(value)) {
+      suppliedRelationship(receiver, "children", "render-prop", returnedTargets(value, context), context);
+    } else {
+      nodeChildren.push(value);
+    }
+  }
+  suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(nodeChildren, context), context);
 }
 
 function analyzeDefinitionUsages(definition: ComponentDefinition, context: AnalysisContext): void {
@@ -1113,30 +1149,30 @@ function createGraph(
   relationships: readonly Relationship[],
   excludeComponentPatterns: readonly string[],
 ): DiagramGraph {
-  const nodes: DefaultDiagramNode[] = [
-    ...definitions.map((definition): DefaultDiagramNode => ({
+  const localNodes = definitions
+    .map((definition): DefaultDiagramNode => ({
       type: "default",
       id: definition.id,
       kind: "React component",
       title: definition.name,
       description: definition.relativePath,
       links: [{ href: sourceHref(definition.relativePath) }],
-    })),
-    ...[...externalTargets.values()].map((target): DefaultDiagramNode => ({
+    }))
+    .filter((node) => !matchesAny(node.title, excludeComponentPatterns));
+  if (localNodes.length === 0) throw new Error("No React component definitions remain after filtering.");
+
+  const externalNodes = [...externalTargets.values()]
+    .map((target): DefaultDiagramNode => ({
       type: "default",
       id: target.id,
       kind: "External React component",
       title: target.title,
       description: `${target.externalPackage} boundary`,
-    })),
-  ]
-    .filter((node) => !matchesAny(node.title, excludeComponentPatterns))
-    .toSorted((left, right) => left.id.localeCompare(right.id));
-  const nodeIds = new Set(nodes.map(({ id }) => id));
-  if (nodes.length === 0) throw new Error("No React component definitions remain after filtering.");
-
+    }))
+    .filter((node) => !matchesAny(node.title, excludeComponentPatterns));
+  const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
   const edges: DefaultDiagramEdge[] = relationships
-    .filter(({ source, target }) => nodeIds.has(source) && nodeIds.has(target))
+    .filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target))
     .map((relationship): DefaultDiagramEdge => ({
       type: "default",
       id: edgeId(relationship),
@@ -1146,6 +1182,10 @@ function createGraph(
       ...(relationshipLabel(relationship) ? { label: relationshipLabel(relationship) } : {}),
     }))
     .toSorted((left, right) => left.id.localeCompare(right.id));
+  const connectedNodeIds = new Set(edges.flatMap(({ source, target }) => [source, target]));
+  const nodes = [...localNodes, ...externalNodes.filter(({ id }) => connectedNodeIds.has(id))].toSorted((left, right) =>
+    left.id.localeCompare(right.id),
+  );
 
   return { groups: [], nodes, edges };
 }
