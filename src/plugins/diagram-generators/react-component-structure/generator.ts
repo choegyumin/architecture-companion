@@ -774,15 +774,134 @@ function propertyNameText(name: ts.PropertyName): string | undefined {
   return undefined;
 }
 
-function collectIncomingProps(
+type StaticObjectPropertyValue = Readonly<{
+  propName: string;
+  value: ts.Expression;
+  valueSymbol?: ts.Symbol;
+}>;
+
+function localVariableReference(
   expression: ts.Expression,
-  bindings: PropBindings,
-  checker: ts.TypeChecker,
-): readonly string[] {
-  const props = new Set<string>();
-  const direct = getIncomingProp(expression, bindings, checker);
-  if (direct) props.add(direct);
-  return [...props];
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol>,
+  symbolOverride?: ts.Symbol,
+): Readonly<{ initializers: readonly ts.Expression[]; visitedSymbols: ReadonlySet<ts.Symbol> }> | undefined {
+  const unwrapped = unwrapExpression(expression);
+  if (!symbolOverride && !ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return undefined;
+  const symbol = canonicalSymbol(symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped), context.checker);
+  if (!symbol || visitedSymbols.has(symbol)) return undefined;
+  if (resolveDefinition(symbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)) {
+    return undefined;
+  }
+  const initializers = (symbol.declarations ?? []).flatMap((declaration) => {
+    if (
+      !ts.isVariableDeclaration(declaration) ||
+      !declaration.initializer ||
+      !ts.isVariableDeclarationList(declaration.parent) ||
+      (declaration.parent.flags & ts.NodeFlags.Const) === 0 ||
+      toPosixPath(declaration.getSourceFile().fileName).includes("/node_modules/")
+    ) {
+      return [];
+    }
+    return [declaration.initializer];
+  });
+  if (initializers.length === 0) return undefined;
+  return { initializers, visitedSymbols: new Set(visitedSymbols).add(symbol) };
+}
+
+function resolveAliasedValues(
+  expression: ts.Expression,
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+  symbolOverride?: ts.Symbol,
+): readonly ts.Expression[] {
+  const unwrapped = unwrapExpression(expression);
+  const property = symbolOverride ? undefined : staticObjectPropertyValue(unwrapped, context, visitedSymbols);
+  if (property) {
+    return resolveAliasedValues(property.value, context, visitedSymbols, property.valueSymbol);
+  }
+  const reference = localVariableReference(unwrapped, context, visitedSymbols, symbolOverride);
+  if (!reference) return [unwrapped];
+  return reference.initializers.flatMap((initializer) =>
+    resolveAliasedValues(initializer, context, reference.visitedSymbols),
+  );
+}
+
+function staticObjectPropertyValues(
+  expression: ts.Expression,
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+): readonly StaticObjectPropertyValue[] {
+  type CollectedValues = Readonly<{
+    hasUnknownSpread: boolean;
+    values: ReadonlyMap<string, StaticObjectPropertyValue>;
+  }>;
+
+  function collect(candidate: ts.Expression, visited: ReadonlySet<ts.Symbol>): CollectedValues {
+    const unwrapped = unwrapExpression(candidate);
+    if (ts.isObjectLiteralExpression(unwrapped)) {
+      const values = new Map<string, StaticObjectPropertyValue>();
+      let hasUnknownSpread = false;
+      for (const property of unwrapped.properties) {
+        if (ts.isPropertyAssignment(property)) {
+          const propName = propertyNameText(property.name);
+          if (propName) values.set(propName, { propName, value: property.initializer });
+        } else if (ts.isShorthandPropertyAssignment(property)) {
+          const propName = propertyNameText(property.name);
+          if (propName) {
+            values.set(propName, {
+              propName,
+              value: property.name,
+              valueSymbol: context.checker.getShorthandAssignmentValueSymbol(property),
+            });
+          }
+        } else if (ts.isSpreadAssignment(property)) {
+          const spread = collect(property.expression, visited);
+          if (spread.hasUnknownSpread) {
+            values.clear();
+            hasUnknownSpread = true;
+          }
+          for (const [propName, value] of spread.values) values.set(propName, value);
+        }
+      }
+      return { hasUnknownSpread, values };
+    }
+    const reference = localVariableReference(unwrapped, context, visited);
+    if (!reference) return { hasUnknownSpread: true, values: new Map() };
+
+    const values = new Map<string, StaticObjectPropertyValue>();
+    let hasUnknownSpread = false;
+    for (const initializer of reference.initializers) {
+      const resolved = collect(initializer, reference.visitedSymbols);
+      if (resolved.hasUnknownSpread) {
+        values.clear();
+        hasUnknownSpread = true;
+      }
+      for (const [propName, value] of resolved.values) values.set(propName, value);
+    }
+    return { hasUnknownSpread, values };
+  }
+
+  return [...collect(expression, visitedSymbols).values.values()];
+}
+
+function staticObjectPropertyValue(
+  expression: ts.Expression,
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+): StaticObjectPropertyValue | undefined {
+  const unwrapped = unwrapExpression(expression);
+  const property = ts.isPropertyAccessExpression(unwrapped)
+    ? { name: unwrapped.name.text, source: unwrapped.expression }
+    : ts.isElementAccessExpression(unwrapped) &&
+        unwrapped.argumentExpression &&
+        ts.isStringLiteralLike(unwrapped.argumentExpression)
+      ? { name: unwrapped.argumentExpression.text, source: unwrapped.expression }
+      : undefined;
+  if (!property) return undefined;
+  return staticObjectPropertyValues(property.source, context, visitedSymbols).find(
+    ({ propName }) => propName === property.name,
+  );
 }
 
 function analyzeConsumerRules(
@@ -817,14 +936,69 @@ function analyzeConsumerRules(
     for (const propName of collectInvokedRenderProps(expression, false)) terminal(propName, "render-prop");
   }
 
-  function collectForwardedProps(expression: ts.Expression): readonly string[] {
+  function collectForwardedProps(expression: ts.Expression, symbolOverride?: ts.Symbol): readonly string[] {
+    const props = new Set<string>();
+
+    function collect(
+      candidate: ts.Expression,
+      visitedSymbols: ReadonlySet<ts.Symbol>,
+      candidateSymbol?: ts.Symbol,
+    ): void {
+      const unwrapped = unwrapExpression(candidate);
+      const directProp = candidateSymbol
+        ? bindings.propSymbols.get(candidateSymbol)
+        : getIncomingProp(unwrapped, bindings, context.checker);
+      if (directProp) {
+        props.add(directProp);
+        return;
+      }
+      const property = candidateSymbol ? undefined : staticObjectPropertyValue(unwrapped, context, visitedSymbols);
+      if (property) {
+        collect(property.value, visitedSymbols, property.valueSymbol);
+        return;
+      }
+      if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
+        for (const propName of collectInvokedRenderProps(unwrapped, true)) props.add(propName);
+        return;
+      }
+      if (ts.isObjectLiteralExpression(unwrapped)) {
+        for (const property of staticObjectPropertyValues(unwrapped, context)) {
+          collect(property.value, visitedSymbols, property.valueSymbol);
+        }
+        return;
+      }
+      if (ts.isArrayLiteralExpression(unwrapped)) {
+        for (const element of unwrapped.elements) {
+          if (ts.isExpression(element)) collect(element, visitedSymbols);
+        }
+        return;
+      }
+      const reference = localVariableReference(unwrapped, context, visitedSymbols, candidateSymbol);
+      if (!reference) return;
+      for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
+    }
+
+    collect(expression, new Set(), symbolOverride);
+    return [...props];
+  }
+
+  function collectForwardedSpreadExclusions(
+    expression: ts.Expression,
+    visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+  ): readonly ReadonlySet<string>[] {
     const unwrapped = unwrapExpression(expression);
-    return [
-      ...collectIncomingProps(unwrapped, bindings, context.checker),
-      ...(ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)
-        ? collectInvokedRenderProps(unwrapped, true)
-        : []),
-    ];
+    const direct = getSpreadExclusions(unwrapped, bindings, context.checker);
+    if (direct) return [direct];
+    if (ts.isObjectLiteralExpression(unwrapped)) {
+      return unwrapped.properties.flatMap((property) =>
+        ts.isSpreadAssignment(property) ? collectForwardedSpreadExclusions(property.expression, visitedSymbols) : [],
+      );
+    }
+    const reference = localVariableReference(unwrapped, context, visitedSymbols);
+    if (!reference) return [];
+    return reference.initializers.flatMap((initializer) =>
+      collectForwardedSpreadExclusions(initializer, reference.visitedSymbols),
+    );
   }
 
   function analyzeJsxAttributes(
@@ -847,8 +1021,19 @@ function analyzeConsumerRules(
           });
         }
       } else if (target) {
-        const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
-        if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
+        for (const excludedProps of collectForwardedSpreadExclusions(property.expression)) {
+          mutableSpreads.push({ excludedProps, targetComponentId: target.id });
+        }
+        for (const forwarded of staticObjectPropertyValues(property.expression, context)) {
+          analyzeRenderPropInvocations(forwarded.value);
+          for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
+            addExactRule(rules, propName, {
+              type: "forward",
+              targetComponentId: target.id,
+              targetPropName: forwarded.propName,
+            });
+          }
+        }
       }
     }
 
@@ -949,35 +1134,25 @@ function analyzeConsumerRules(
       return;
     }
     const target = targetForReference(tagExpression, context);
-    if (propsExpression && ts.isObjectLiteralExpression(propsExpression)) {
-      for (const property of propsExpression.properties) {
-        if (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) {
-          const value = ts.isPropertyAssignment(property) ? property.initializer : property.name;
-          const targetPropName = propertyNameText(property.name);
-          const shorthandSymbol = ts.isShorthandPropertyAssignment(property)
-            ? context.checker.getShorthandAssignmentValueSymbol(property)
-            : undefined;
-          const shorthandPropName = shorthandSymbol ? bindings.propSymbols.get(shorthandSymbol) : undefined;
-          analyzeRenderPropInvocations(value);
-          if (!target || !targetPropName) continue;
-          const forwardedProps = [...collectForwardedProps(value), ...(shorthandPropName ? [shorthandPropName] : [])];
-          for (const propName of new Set(forwardedProps)) {
-            addExactRule(rules, propName, {
-              type: "forward",
-              targetComponentId: target.id,
-              targetPropName,
-            });
-          }
-        } else if (target && ts.isSpreadAssignment(property)) {
-          const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
-          if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
+    if (propsExpression && target) {
+      for (const excludedProps of collectForwardedSpreadExclusions(propsExpression)) {
+        mutableSpreads.push({ excludedProps, targetComponentId: target.id });
+      }
+      for (const forwarded of staticObjectPropertyValues(propsExpression, context)) {
+        analyzeRenderPropInvocations(forwarded.value);
+        for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
+          addExactRule(rules, propName, {
+            type: "forward",
+            targetComponentId: target.id,
+            targetPropName: forwarded.propName,
+          });
         }
       }
     }
     for (const child of children) {
       analyzeRenderPropInvocations(child);
       if (!target) continue;
-      for (const propName of collectIncomingProps(child, bindings, context.checker)) {
+      for (const propName of collectForwardedProps(child)) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
     }
@@ -1008,7 +1183,7 @@ function collectSuppliedTargets(
 ): readonly ComponentTarget[] {
   const targets = new Map<string, ComponentTarget>();
 
-  function collect(expression: ts.Expression): void {
+  function collect(expression: ts.Expression, visitedSymbols: ReadonlySet<ts.Symbol> = new Set()): void {
     const unwrapped = unwrapExpression(expression);
     if (ts.isJsxFragment(unwrapped)) {
       for (const child of unwrapped.children) collectChild(child);
@@ -1051,8 +1226,12 @@ function collectSuppliedTargets(
       return;
     }
     if (ts.isArrayLiteralExpression(unwrapped)) {
-      for (const element of unwrapped.elements) if (ts.isExpression(element)) collect(element);
+      for (const element of unwrapped.elements) if (ts.isExpression(element)) collect(element, visitedSymbols);
+      return;
     }
+    const reference = localVariableReference(unwrapped, context, visitedSymbols);
+    if (!reference) return;
+    for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
   }
 
   function collectChild(child: ts.JsxChild): void {
@@ -1067,43 +1246,68 @@ function collectSuppliedTargets(
 function componentReferenceTargets(
   expression: ts.Expression,
   context: AnalysisContext,
-  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+  symbolOverride?: ts.Symbol,
 ): readonly ComponentTarget[] {
   const targets = new Map<string, ComponentTarget>();
 
-  function collect(candidate: ts.Expression, visited: ReadonlySet<ts.Symbol>): void {
+  function collect(
+    candidate: ts.Expression,
+    visitedSymbols: ReadonlySet<ts.Symbol>,
+    candidateSymbol?: ts.Symbol,
+  ): void {
     const unwrapped = unwrapExpression(candidate);
     if (ts.isObjectLiteralExpression(unwrapped)) {
       for (const property of unwrapped.properties) {
-        if (ts.isPropertyAssignment(property)) collect(property.initializer, visited);
-        else if (ts.isShorthandPropertyAssignment(property)) collect(property.name, visited);
-        else if (ts.isSpreadAssignment(property)) collect(property.expression, visited);
+        if (ts.isPropertyAssignment(property)) collect(property.initializer, visitedSymbols);
+        else if (ts.isShorthandPropertyAssignment(property)) {
+          collect(property.name, visitedSymbols, context.checker.getShorthandAssignmentValueSymbol(property));
+        } else if (ts.isSpreadAssignment(property)) collect(property.expression, visitedSymbols);
       }
       return;
     }
     if (ts.isArrayLiteralExpression(unwrapped)) {
-      for (const element of unwrapped.elements) if (ts.isExpression(element)) collect(element, visited);
+      for (const element of unwrapped.elements) {
+        if (ts.isExpression(element)) collect(element, visitedSymbols);
+      }
       return;
     }
-    if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return;
+    if (!candidateSymbol && !ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return;
 
-    const target = targetForReference(unwrapped, context);
-    if (target) {
+    const property = candidateSymbol ? undefined : staticObjectPropertyValue(unwrapped, context, visitedSymbols);
+    if (property) {
+      collect(property.value, visitedSymbols, property.valueSymbol);
+      return;
+    }
+
+    const definition = resolveDefinition(
+      candidateSymbol ?? context.checker.getSymbolAtLocation(unwrapped),
+      context.checker,
+      context.definitionsBySymbol,
+      context.definitionsByDeclaration,
+    );
+    const target = definition
+      ? { id: definition.id, title: definition.name, definition }
+      : targetForReference(unwrapped, context);
+    const valueSymbol = canonicalSymbol(
+      candidateSymbol ?? context.checker.getSymbolAtLocation(unwrapped),
+      context.checker,
+    );
+    const valueType = valueSymbol
+      ? context.checker.getTypeOfSymbolAtLocation(valueSymbol, unwrapped)
+      : context.checker.getTypeAtLocation(unwrapped);
+    const callable = valueType.getCallSignatures().length + valueType.getConstructSignatures().length > 0;
+    const externalName = target?.title.split(".").at(-1);
+    if (target && (target.definition || (callable && !!externalName && /^[A-Z]/.test(externalName)))) {
       targets.set(target.id, target);
       return;
     }
 
-    const symbol = canonicalSymbol(context.checker.getSymbolAtLocation(unwrapped), context.checker);
-    if (!symbol || visited.has(symbol)) return;
-    const nextVisited = new Set(visited).add(symbol);
-    for (const declaration of symbol.declarations ?? []) {
-      if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
-        collect(declaration.initializer, nextVisited);
-      }
-    }
+    const reference = localVariableReference(unwrapped, context, visitedSymbols, candidateSymbol);
+    if (!reference) return;
+    for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
   }
 
-  collect(expression, visitedSymbols);
+  collect(expression, new Set(), symbolOverride);
   return [...targets.values()].toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
@@ -1118,80 +1322,75 @@ function suppliedRelationship(
   context.suppliedRelationships.push({ receiverId: receiver.id, propName, kind, targets });
 }
 
+function analyzeSuppliedValue(
+  receiver: ComponentTarget,
+  propName: string,
+  expression: ts.Expression,
+  context: AnalysisContext,
+  symbolOverride?: ts.Symbol,
+): void {
+  const componentTargets = componentReferenceTargets(expression, context, symbolOverride);
+  if (componentTargets.length > 0) {
+    suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
+    return;
+  }
+
+  const values = resolveAliasedValues(expression, context, new Set(), symbolOverride);
+  const renderTargets = new Map<string, ComponentTarget>();
+  for (const value of values) {
+    if (!ts.isArrowFunction(value) && !ts.isFunctionExpression(value)) continue;
+    for (const target of returnedTargets(value, context)) renderTargets.set(target.id, target);
+  }
+  if (renderTargets.size > 0) {
+    suppliedRelationship(receiver, propName, "render-prop", [...renderTargets.values()], context);
+    return;
+  }
+
+  suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets(values, context), context);
+}
+
 function analyzeJsxComponentUsage(
   element: ts.JsxElement | ts.JsxSelfClosingElement,
   receiver: ComponentTarget,
   context: AnalysisContext,
 ): void {
   const opening = ts.isJsxElement(element) ? element.openingElement : element;
+  const valuesByProp = new Map<string, StaticObjectPropertyValue>();
   for (const property of opening.attributes.properties) {
-    if (!ts.isJsxAttribute(property)) continue;
-    const expression = jsxAttributeExpression(property);
-    if (!expression) continue;
-    const propName = property.name.getText();
-    const unwrapped = unwrapExpression(expression);
-    if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
-      suppliedRelationship(receiver, propName, "render-prop", returnedTargets(unwrapped, context), context);
+    if (ts.isJsxAttribute(property)) {
+      const expression = jsxAttributeExpression(property);
+      if (expression)
+        valuesByProp.set(property.name.getText(), { propName: property.name.getText(), value: expression });
       continue;
     }
-    const componentTargets = componentReferenceTargets(unwrapped, context);
-    if (componentTargets.length > 0) {
-      suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
-      continue;
+    for (const value of staticObjectPropertyValues(property.expression, context)) {
+      valuesByProp.set(value.propName, value);
     }
-    suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets([unwrapped], context), context);
+  }
+  for (const { propName, value, valueSymbol } of valuesByProp.values()) {
+    analyzeSuppliedValue(receiver, propName, value, context, valueSymbol);
   }
 
   if (ts.isJsxElement(element)) {
-    const nodeChildren: ts.Expression[] = [];
     for (const child of element.children) {
       const expression = ts.isJsxExpression(child)
         ? child.expression
         : ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)
           ? child
           : undefined;
-      if (!expression) continue;
-      const unwrapped = unwrapExpression(expression);
-      if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
-        suppliedRelationship(receiver, "children", "render-prop", returnedTargets(unwrapped, context), context);
-      } else {
-        nodeChildren.push(unwrapped);
-      }
+      if (expression) analyzeSuppliedValue(receiver, "children", expression, context);
     }
-    suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(nodeChildren, context), context);
   }
 }
 
 function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentTarget, context: AnalysisContext): void {
   const [, propsExpression, ...children] = call.arguments;
-  if (propsExpression && ts.isObjectLiteralExpression(propsExpression)) {
-    for (const property of propsExpression.properties) {
-      if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) continue;
-      const propName = propertyNameText(property.name);
-      if (!propName) continue;
-      const value = unwrapExpression(ts.isPropertyAssignment(property) ? property.initializer : property.name);
-      if (ts.isArrowFunction(value) || ts.isFunctionExpression(value)) {
-        suppliedRelationship(receiver, propName, "render-prop", returnedTargets(value, context), context);
-        continue;
-      }
-      const componentTargets = componentReferenceTargets(value, context);
-      if (componentTargets.length > 0) {
-        suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
-        continue;
-      }
-      suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets([value], context), context);
+  if (propsExpression) {
+    for (const { propName, value, valueSymbol } of staticObjectPropertyValues(propsExpression, context)) {
+      analyzeSuppliedValue(receiver, propName, value, context, valueSymbol);
     }
   }
-  const nodeChildren: ts.Expression[] = [];
-  for (const child of children) {
-    const value = unwrapExpression(child);
-    if (ts.isArrowFunction(value) || ts.isFunctionExpression(value)) {
-      suppliedRelationship(receiver, "children", "render-prop", returnedTargets(value, context), context);
-    } else {
-      nodeChildren.push(value);
-    }
-  }
-  suppliedRelationship(receiver, "children", "node-prop", collectSuppliedTargets(nodeChildren, context), context);
+  for (const child of children) analyzeSuppliedValue(receiver, "children", child, context);
 }
 
 function analyzeDefinitionUsages(definition: ComponentDefinition, context: AnalysisContext): void {
@@ -1269,7 +1468,10 @@ function resolveConsumerEndpoints(
   if (visited.has(visitKey)) return [];
   const nextVisited = new Set(visited).add(visitKey);
   const rules = rulesByComponentId.get(componentId);
-  if (!rules) return [{ type: "terminal", kind, rendererId: componentId, propName }];
+  if (!rules) {
+    if (kind === "render-prop" && /^on[A-Z]/.test(propName)) return [];
+    return [{ type: "terminal", kind, rendererId: componentId, propName }];
+  }
   const candidates = [
     ...(rules.exact.get(propName) ?? []),
     ...rules.spreads
