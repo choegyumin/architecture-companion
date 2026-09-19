@@ -48,7 +48,7 @@ Arguments are generator-specific:
 - `--exclude-file <glob>`: optional and repeatable scope-relative file-path exclusion;
 - `--exclude-component <glob>`: optional and repeatable component-title exclusion.
 
-Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded by default. Additional glob matches remove the matching node and its incident edges only. They do not remove unmatched descendants or create shortcut edges. Generation fails if filtering removes every local component because the current `Diagram.graph` schema requires at least one node.
+Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded from analysis by default. Explicit file and component globs are applied after the selected local source is analyzed. Both selectors use the same transparent collapse: a matching component boundary and the implementation-created components beneath it are omitted, while statically confirmed values supplied by its parent pass through to the nearest visible owner. For example, filtering `Layout` from `App → Layout → Content` produces `App → Content`; `Layout` and components created inside `Layout` do not remain in the graph candidate. Hidden elements are never written to the output JSON. Generation fails if filtering leaves no visible local component because the current `Diagram.graph` schema requires at least one node.
 
 ## Output contract
 
@@ -73,6 +73,6 @@ The analyzer emits only statically confirmed relationships:
 - render prop: `Render prop · <actual prop name>`;
 - component prop: `Component prop · <actual prop name>`.
 
-For supplied values, the visual parent is the confirmed local renderer or invoker. Confirmed local prop forwarding is followed through named aliases and static prop bags to that consumer or to the external boundary where local evidence ends. The boundary remains connected to statically visible local values supplied through node props, render props, component props, and component registries; only the package's internal implementation stays opaque. Event-style `onX` callback results are omitted at external boundaries because their return values are not confirmed as rendered.
+For supplied values, the visual parent is the confirmed local renderer or invoker. Confirmed local prop forwarding is followed through named aliases and static prop bags to that consumer or to the external boundary where local evidence ends. External components use the same boundary/implementation visibility model as filtered local components: the external boundary remains visible and connected, while the package implementation is opaque and never expanded. An explicitly component-filtered external boundary is collapsed like any other hidden boundary. Statically visible local values supplied through node props, render props, component props, and component registries remain connected. Event-style `onX` callback results are omitted at external boundaries because their return values are not confirmed as rendered.
 
 The initial identity model is one node per component definition. Unresolved references are omitted without routine warnings. Provider annotations, per-use nodes, other UI frameworks, runtime reconstruction, and change-impact analysis are not implemented.

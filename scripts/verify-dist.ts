@@ -416,49 +416,67 @@ async function verifyInstalledReactComponentGenerator(
     writeFile(join(sourceRoot, "content.tsx"), `export function Content() { return <main />; }\n`),
     writeFile(
       join(sourceRoot, "layout.tsx"),
-      `export function Layout({ children }: { children: unknown }) { return <section>{children}</section>; }\n`,
+      `export function Header() { return <header />; }\nexport function Layout({ children }: { children: unknown }) { return <section><Header />{children}</section>; }\n`,
     ),
   ]);
 
-  const scriptPath = join(skillRoot, reactComponentGeneratorRelativePath);
-  const result = await runInstalledScript(
-    scriptPath,
-    ["--scope", scopePath, "--source", "src"],
-    environment,
-    skillRoot,
-  );
-  assertSuccessfulCompletion(result, scriptPath);
-  const graphPath = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
-  assert.ok(graphPath && isAbsolute(graphPath), "Installed React generator must print one absolute graph path.");
-  const graphDirectory = dirname(graphPath);
-  assert.match(graphDirectory, /architecture-companion-react-components-/);
+  type InstalledGraph = Readonly<{
+    edges: ReadonlyArray<{ kind?: string; label?: string; source: string; target: string }>;
+    groups: readonly unknown[];
+    nodes: ReadonlyArray<{ id: string; title: string }>;
+  }>;
 
-  try {
-    const graph = JSON.parse(await readFile(graphPath, "utf8")) as {
-      edges: ReadonlyArray<{ kind?: string; label?: string; source: string; target: string }>;
-      groups: readonly unknown[];
-      nodes: ReadonlyArray<{ id: string; title: string }>;
-    };
-    assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
-    assert.deepEqual(graph.groups, []);
-    assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Layout"]);
-    const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
-    assert.deepEqual(
-      graph.edges
-        .map((edge) => ({
-          kind: edge.kind,
-          label: edge.label,
-          source: titlesById.get(edge.source),
-          target: titlesById.get(edge.target),
-        }))
-        .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
-      [
-        { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
-        { kind: "node-prop", label: "Node prop · children", source: "Layout", target: "Content" },
-      ],
+  const scriptPath = join(skillRoot, reactComponentGeneratorRelativePath);
+  async function generateGraph(extraArguments: readonly string[] = []): Promise<InstalledGraph> {
+    const result = await runInstalledScript(
+      scriptPath,
+      ["--scope", scopePath, "--source", "src", ...extraArguments],
+      environment,
+      skillRoot,
     );
-  } finally {
-    await rm(graphDirectory, { recursive: true });
+    assertSuccessfulCompletion(result, scriptPath);
+    const graphPath = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+    assert.ok(graphPath && isAbsolute(graphPath), "Installed React generator must print one absolute graph path.");
+    const graphDirectory = dirname(graphPath);
+    assert.match(graphDirectory, /architecture-companion-react-components-/);
+
+    try {
+      return JSON.parse(await readFile(graphPath, "utf8")) as InstalledGraph;
+    } finally {
+      await rm(graphDirectory, { recursive: true });
+    }
+  }
+
+  function edgeFacts(graph: InstalledGraph) {
+    const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+    return graph.edges
+      .map((edge) => ({
+        kind: edge.kind,
+        label: edge.label,
+        source: titlesById.get(edge.source),
+        target: titlesById.get(edge.target),
+      }))
+      .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  }
+
+  const graph = await generateGraph();
+  assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
+  assert.deepEqual(graph.groups, []);
+  assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
+  assert.deepEqual(edgeFacts(graph), [
+    { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
+    { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
+    { kind: "node-prop", label: "Node prop · children", source: "Layout", target: "Content" },
+  ]);
+
+  for (const filtered of [
+    await generateGraph(["--exclude-component", "Layout"]),
+    await generateGraph(["--exclude-file", "src/layout.tsx"]),
+  ]) {
+    assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
+    assert.deepEqual(edgeFacts(filtered), [
+      { kind: "node-prop", label: "Node prop · children", source: "App", target: "Content" },
+    ]);
   }
 }
 
