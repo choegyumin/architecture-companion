@@ -13,6 +13,7 @@ export const diagramSchema = z
     id: artifactDiagramIdSchema,
     title: z.string().min(1),
     generatorId: diagramGeneratorIdSchema,
+    generatorScript: z.string().min(1).optional(),
     layout: diagramLayoutConfigSchema,
     links: z.array(diagramLinkSchema).readonly().optional(),
     graph: diagramGraphSchema,

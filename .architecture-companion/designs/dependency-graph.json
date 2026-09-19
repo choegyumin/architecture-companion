@@ -2,6 +2,7 @@
   "id": "dependency-graph",
   "title": "File dependency graph",
   "generatorId": "file-dependency-graph",
+  "generatorScript": "node \"<generator-directory>/generate.js\" \\\n  --scope \"<scope>\" \\\n  --ts-config \"tsconfig.json\" \\\n  \"src\"",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -10,11 +11,6 @@
   },
   "graph": {
     "groups": [
-      {
-        "id": "group:directory:scripts",
-        "title": "scripts",
-        "parentId": "group:package:."
-      },
       {
         "id": "group:directory:src",
         "title": "src",
@@ -148,34 +144,6 @@
         "type": "default"
       },
       {
-        "id": "external:@tailwindcss/vite",
-        "kind": "External package",
-        "title": "@tailwindcss/vite",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:@testing-library/jest-dom",
-        "kind": "External package",
-        "title": "@testing-library/jest-dom",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:@vitejs/plugin-react",
-        "kind": "External package",
-        "title": "@vitejs/plugin-react",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:@vitest/eslint-plugin",
-        "kind": "External package",
-        "title": "@vitest/eslint-plugin",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
         "id": "external:@xyflow/react",
         "kind": "External package",
         "title": "@xyflow/react",
@@ -211,34 +179,6 @@
         "type": "default"
       },
       {
-        "id": "external:eslint-plugin-better-tailwindcss",
-        "kind": "External package",
-        "title": "eslint-plugin-better-tailwindcss",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:eslint-plugin-react",
-        "kind": "External package",
-        "title": "eslint-plugin-react",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:eslint-plugin-react-hooks",
-        "kind": "External package",
-        "title": "eslint-plugin-react-hooks",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:eslint-plugin-react-refresh",
-        "kind": "External package",
-        "title": "eslint-plugin-react-refresh",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
         "id": "external:hono",
         "kind": "External package",
         "title": "hono",
@@ -267,13 +207,6 @@
         "type": "default"
       },
       {
-        "id": "external:oxlint",
-        "kind": "External package",
-        "title": "oxlint",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
         "id": "external:react",
         "kind": "External package",
         "title": "react",
@@ -295,140 +228,11 @@
         "type": "default"
       },
       {
-        "id": "external:tsup",
-        "kind": "External package",
-        "title": "tsup",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:vite",
-        "kind": "External package",
-        "title": "vite",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
-        "id": "external:vitest",
-        "kind": "External package",
-        "title": "vitest",
-        "groupId": "group:external-packages",
-        "type": "default"
-      },
-      {
         "id": "external:zod",
         "kind": "External package",
         "title": "zod",
         "groupId": "group:external-packages",
         "type": "default"
-      },
-      {
-        "id": "file:oxlint.config.ts",
-        "title": "oxlint.config.ts",
-        "groupId": "group:package:.",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///oxlint.config.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/_schema-generation.ts",
-        "title": "_schema-generation.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/_schema-generation.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/_schema-synchronization.ts",
-        "title": "_schema-synchronization.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/_schema-synchronization.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/clean-dist.ts",
-        "title": "clean-dist.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/clean-dist.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/compose-dist.ts",
-        "title": "compose-dist.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/compose-dist.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/dependency-cruiser-bundling.ts",
-        "title": "dependency-cruiser-bundling.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/dependency-cruiser-bundling.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/generate-schemas.ts",
-        "title": "generate-schemas.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/generate-schemas.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/start-dev-server.ts",
-        "title": "start-dev-server.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/start-dev-server.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:scripts/verify-dist.ts",
-        "title": "verify-dist.ts",
-        "groupId": "group:directory:scripts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///scripts/verify-dist.ts"
-          }
-        ]
       },
       {
         "id": "file:src/cli/generate-file-dependency-graph.command.ts",
@@ -1437,154 +1241,9 @@
             "href": "source:///src/shared/universal/get-or-throw.ts"
           }
         ]
-      },
-      {
-        "id": "file:tsup.config.ts",
-        "title": "tsup.config.ts",
-        "groupId": "group:package:.",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///tsup.config.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:vite.config.ts",
-        "title": "vite.config.ts",
-        "groupId": "group:package:.",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///vite.config.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:vitest.config.mts",
-        "title": "vitest.config.mts",
-        "groupId": "group:package:.",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///vitest.config.mts"
-          }
-        ]
-      },
-      {
-        "id": "file:vitest.setup.ts",
-        "title": "vitest.setup.ts",
-        "groupId": "group:package:.",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///vitest.setup.ts"
-          }
-        ]
       }
     ],
     "edges": [
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3A%40vitest%2Feslint-plugin:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:@vitest/eslint-plugin"
-      },
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3Aeslint-plugin-better-tailwindcss:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:eslint-plugin-better-tailwindcss"
-      },
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3Aeslint-plugin-react-hooks:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:eslint-plugin-react-hooks"
-      },
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3Aeslint-plugin-react-refresh:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:eslint-plugin-react-refresh"
-      },
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3Aeslint-plugin-react:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:eslint-plugin-react"
-      },
-      {
-        "id": "dependency:file%3Aoxlint.config.ts:external%3Aoxlint:runtime",
-        "type": "default",
-        "source": "file:oxlint.config.ts",
-        "target": "external:oxlint"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2F_schema-generation.ts:external%3Azod:runtime",
-        "type": "default",
-        "source": "file:scripts/_schema-generation.ts",
-        "target": "external:zod"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2F_schema-generation.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/_schema-generation.ts",
-        "target": "file:src/features/diagram/diagram-graph.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2F_schema-generation.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/_schema-generation.ts",
-        "target": "file:src/features/diagram/diagram.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2F_schema-synchronization.ts:file%3Ascripts%2F_schema-generation.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/_schema-synchronization.ts",
-        "target": "file:scripts/_schema-generation.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fdependency-cruiser-bundling.ts:external%3Atsup:type-only",
-        "type": "default",
-        "source": "file:scripts/dependency-cruiser-bundling.ts",
-        "target": "external:tsup",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fgenerate-schemas.ts:file%3Ascripts%2F_schema-synchronization.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/generate-schemas.ts",
-        "target": "file:scripts/_schema-synchronization.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fstart-dev-server.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/start-dev-server.ts",
-        "target": "file:src/server/resolve-consumer-scope.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fstart-dev-server.ts:file%3Asrc%2Fserver%2Fstart-server.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/start-dev-server.ts",
-        "target": "file:src/server/start-server.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fverify-dist.ts:file%3Ascripts%2F_schema-synchronization.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/verify-dist.ts",
-        "target": "file:scripts/_schema-synchronization.ts"
-      },
-      {
-        "id": "dependency:file%3Ascripts%2Fverify-dist.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-manifest.ts:runtime",
-        "type": "default",
-        "source": "file:scripts/verify-dist.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-manifest.ts"
-      },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-file-dependency-graph.command.ts:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:type-only",
         "type": "default",
@@ -3181,54 +2840,6 @@
         "type": "default",
         "source": "file:src/shared/react-ui/toggle.tsx",
         "target": "file:src/shared/react/class-name.ts"
-      },
-      {
-        "id": "dependency:file%3Atsup.config.ts:external%3Atsup:runtime",
-        "type": "default",
-        "source": "file:tsup.config.ts",
-        "target": "external:tsup"
-      },
-      {
-        "id": "dependency:file%3Atsup.config.ts:file%3Ascripts%2Fdependency-cruiser-bundling.ts:runtime",
-        "type": "default",
-        "source": "file:tsup.config.ts",
-        "target": "file:scripts/dependency-cruiser-bundling.ts"
-      },
-      {
-        "id": "dependency:file%3Avite.config.ts:external%3A%40tailwindcss%2Fvite:runtime",
-        "type": "default",
-        "source": "file:vite.config.ts",
-        "target": "external:@tailwindcss/vite"
-      },
-      {
-        "id": "dependency:file%3Avite.config.ts:external%3A%40vitejs%2Fplugin-react:runtime",
-        "type": "default",
-        "source": "file:vite.config.ts",
-        "target": "external:@vitejs/plugin-react"
-      },
-      {
-        "id": "dependency:file%3Avite.config.ts:external%3Avite:runtime",
-        "type": "default",
-        "source": "file:vite.config.ts",
-        "target": "external:vite"
-      },
-      {
-        "id": "dependency:file%3Avitest.config.mts:external%3A%40vitejs%2Fplugin-react:runtime",
-        "type": "default",
-        "source": "file:vitest.config.mts",
-        "target": "external:@vitejs/plugin-react"
-      },
-      {
-        "id": "dependency:file%3Avitest.config.mts:external%3Avitest:runtime",
-        "type": "default",
-        "source": "file:vitest.config.mts",
-        "target": "external:vitest"
-      },
-      {
-        "id": "dependency:file%3Avitest.setup.ts:external%3A%40testing-library%2Fjest-dom:runtime",
-        "type": "default",
-        "source": "file:vitest.setup.ts",
-        "target": "external:@testing-library/jest-dom"
       }
     ]
   }

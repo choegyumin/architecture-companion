@@ -70,6 +70,15 @@ describe("diagram parsing", () => {
     expect(parseDiagram(diagram)).toEqual(diagram);
   });
 
+  it("preserves the generator shell script for reproducible regeneration", () => {
+    const diagram = {
+      ...validDiagram,
+      generatorScript: 'node "<generator-directory>/generate.js" --scope "<scope>" --ts-config "tsconfig.json" "src"',
+    } as const;
+
+    expect(parseDiagram(diagram)).toEqual(diagram);
+  });
+
   it("preserves provider-owned layout options", () => {
     const diagram = {
       ...validDiagram,
