@@ -353,6 +353,360 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("resolves static JSX prop bags without promoting event results or external constants", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `
+          export declare function ExternalFlow(props: unknown): unknown;
+          export declare const darkTheme: string;
+        `,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { darkTheme, ExternalFlow } from "ui-kit";
+          import { Body, CardNode, Fallback, Ignored, Panel } from "./local";
+
+          const panel = <Panel />;
+          const renderPanel = () => <Body />;
+          const props = {
+            fallbackComponent: Fallback,
+            nodeTypes: { card: CardNode },
+            onClick: () => <Ignored />,
+            panel,
+            renderPanel,
+          };
+
+          export function App() {
+            return <ExternalFlow {...props} config={{ theme: darkTheme }} theme={darkTheme} />;
+          }
+        `,
+        "src/local.tsx": `
+          export function Body() { return <main />; }
+          export function CardNode() { return <article />; }
+          export function Fallback() { return <aside />; }
+          export function Ignored() { return <div />; }
+          export function Panel() { return <section />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.some(({ title }) => title === "darkTheme")).toBe(false);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "Body",
+            kind: "render-prop",
+            label: "Render prop · renderPanel",
+          },
+          {
+            source: "ExternalFlow",
+            target: "CardNode",
+            kind: "component-prop",
+            label: "Component prop · nodeTypes",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Fallback",
+            kind: "component-prop",
+            label: "Component prop · fallbackComponent",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Panel",
+            kind: "node-prop",
+            label: "Node prop · panel",
+          },
+        ]);
+      },
+    );
+  });
+
+  it("omits mutable aliases, unknown spread overrides, and non-component external callables", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `
+          export declare function ExternalFlow(props: unknown): unknown;
+          export declare function format(value: string): string;
+        `,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { ExternalFlow, format } from "ui-kit";
+          import { A, B } from "./local";
+
+          let panel = <A />;
+          panel = <B />;
+          function replacement() { return { panel: <B /> }; }
+          const props = { panel: <A />, ...replacement() };
+
+          export function App() {
+            return <><ExternalFlow panel={panel} /><ExternalFlow {...props} component={format} /></>;
+          }
+        `,
+        "src/local.tsx": `
+          export function A() { return <main />; }
+          export function B() { return <aside />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.some(({ title }) => title === "format")).toBe(false);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("follows rest props repacked through a static object", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFlow(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { CardNode, Content, Wrapper } from "./components";
+          export function App() {
+            return <Wrapper content={<Content />} nodeTypes={{ card: CardNode }} skip="ignored" />;
+          }
+        `,
+        "src/components.tsx": `
+          import { ExternalFlow } from "ui-kit";
+          export function CardNode() { return <article />; }
+          export function Content() { return <main />; }
+          export function Wrapper({ skip, ...props }: {
+            content: unknown;
+            nodeTypes: { card: () => unknown };
+            skip: string;
+          }) {
+            const repacked = { ...props };
+            return <ExternalFlow {...repacked} />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "CardNode",
+            kind: "component-prop",
+            label: "Component prop · nodeTypes",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Content",
+            kind: "node-prop",
+            label: "Node prop · content",
+          },
+          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("follows values read through static object properties", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFlow(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Body, Child, Wrapper } from "./components";
+          export function App() {
+            return <><Wrapper><Child /></Wrapper><Wrapper>{() => <Body />}</Wrapper></>;
+          }
+        `,
+        "src/components.tsx": `
+          import { ExternalFlow } from "ui-kit";
+          export function Body() { return <main />; }
+          export function Child() { return <div />; }
+          export function Wrapper({ children }: { children: unknown }) {
+            const bag = { children };
+            return <ExternalFlow children={bag.children} />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "Body",
+            kind: "render-prop",
+            label: "Render prop · children",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Child",
+            kind: "node-prop",
+            label: "Node prop · children",
+          },
+          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("follows repacked props and createElement callback children to an external boundary", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFlow(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Body, CardNode, Child, Panel, Wrapper } from "./components";
+
+          export function App() {
+            return (
+              <Wrapper cardComponent={CardNode} panel={<Panel />} renderBody={() => <Body />}>
+                {() => <Child />}
+              </Wrapper>
+            );
+          }
+        `,
+        "src/components.tsx": `
+          import React from "react";
+          import { ExternalFlow } from "ui-kit";
+
+          export function Body() { return <main />; }
+          export function CardNode() { return <article />; }
+          export function Child() { return <div />; }
+          export function Panel() { return <section />; }
+          export function Wrapper({ cardComponent, children, panel, renderBody }: {
+            cardComponent: () => unknown;
+            children: () => unknown;
+            panel: unknown;
+            renderBody: () => unknown;
+          }) {
+            const nodeTypes = { card: cardComponent };
+            const externalProps = { nodeTypes, panel, renderBody };
+            return React.createElement(ExternalFlow, externalProps, () => children());
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "Body",
+            kind: "render-prop",
+            label: "Render prop · renderBody",
+          },
+          {
+            source: "ExternalFlow",
+            target: "CardNode",
+            kind: "component-prop",
+            label: "Component prop · nodeTypes",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Child",
+            kind: "render-prop",
+            label: "Render prop · children",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Panel",
+            kind: "node-prop",
+            label: "Node prop · panel",
+          },
+          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("resolves createElement prop bags and aliased supplied values", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFlow(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.ts": `
+          import React from "react";
+          import { ExternalFlow } from "ui-kit";
+          import { Body, CardNode, Child, Panel } from "./components";
+
+          const panel = React.createElement(Panel);
+          const renderPanel = () => React.createElement(Body);
+          const child = () => React.createElement(Child);
+          const props = { nodeTypes: { card: CardNode }, panel, renderPanel };
+
+          export function App() {
+            return React.createElement(ExternalFlow, props, child);
+          }
+        `,
+        "src/components.ts": `
+          import React from "react";
+          export function Body() { return React.createElement("main"); }
+          export function CardNode() { return React.createElement("article"); }
+          export function Child() { return React.createElement("div"); }
+          export function Panel() { return React.createElement("section"); }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "Body",
+            kind: "render-prop",
+            label: "Render prop · renderPanel",
+          },
+          {
+            source: "ExternalFlow",
+            target: "CardNode",
+            kind: "component-prop",
+            label: "Component prop · nodeTypes",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Child",
+            kind: "render-prop",
+            label: "Render prop · children",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Panel",
+            kind: "node-prop",
+            label: "Node prop · panel",
+          },
+        ]);
+      },
+    );
+  });
+
   it("follows local prop forwarding to an external boundary", async () => {
     await withFixture(
       {
