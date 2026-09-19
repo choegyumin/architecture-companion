@@ -12,9 +12,10 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
+import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { createReviewUpdates } from "@/server/review-updates";
+import { writeArtifact } from "@/server/write-artifact";
 
 function artifact(label: string): Artifact {
   return {
@@ -54,10 +55,6 @@ function artifact(label: string): Artifact {
       },
     ],
   };
-}
-
-async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
-  await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(input));
 }
 
 function annotationsFor(body = "Review the initial workflow."): AnnotationDocument {
@@ -172,10 +169,10 @@ describe("external artifact review", () => {
 
     try {
       expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), "{ partial");
+      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Artifact contains invalid JSON: .architecture-companion/artifact.json",
+        "Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json",
       );
       expect(screen.getByText("Initial workflow")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
@@ -189,7 +186,7 @@ describe("external artifact review", () => {
 
     try {
       expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), "{ partial");
+      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
       await screen.findByRole("alert");
 
       await writeArtifact(scopePath, artifact("Recovered"));

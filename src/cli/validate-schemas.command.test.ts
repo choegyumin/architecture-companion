@@ -3,6 +3,20 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
+import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-artifact";
+import { writeArtifact } from "@/server/write-artifact";
+
+const checkoutBehavior = {
+  id: "checkout",
+  title: "Checkout",
+  generatorId: "freeform",
+  layout: { id: "elk-layered" },
+  graph: {
+    groups: [],
+    nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Submit order" }],
+    edges: [],
+  },
+} as const;
 
 describe("Artifact schema validation command", () => {
   test("requires exactly one explicit scope argument", async () => {
@@ -18,12 +32,10 @@ describe("Artifact schema validation command", () => {
 
   test("validates a valid artifact and prints a single success line", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
-    const artifactDirectory = join(scopePath, ".architecture-companion");
     const outputs: string[] = [];
 
     try {
-      await mkdir(artifactDirectory);
-      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ behaviors: [], designs: [] }));
+      await writeArtifact(scopePath, { behaviors: [], designs: [] });
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -37,15 +49,13 @@ describe("Artifact schema validation command", () => {
 
   test("artifact validation is independent of the scope's Git metadata", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
-    const artifactDirectory = join(scopePath, ".architecture-companion");
     const nonDirectoryPath = join(scopePath, "not-a-directory");
     const outputs: string[] = [];
 
     try {
-      await mkdir(artifactDirectory);
+      await writeArtifact(scopePath, { behaviors: [], designs: [] });
       await writeFile(nonDirectoryPath, "file");
       await symlink(join(nonDirectoryPath, "child"), join(scopePath, ".git"));
-      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ behaviors: [], designs: [] }));
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -66,54 +76,41 @@ describe("Artifact schema validation command", () => {
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact is missing: .architecture-companion/artifact.json");
+      ).rejects.toThrow("Artifact is missing: .architecture-companion");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("fails without stdout when the artifact contains invalid JSON", async () => {
+  test("fails without stdout when a diagram file contains invalid JSON", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
-    const artifactDirectory = join(scopePath, ".architecture-companion");
     const outputs: string[] = [];
 
     try {
-      await mkdir(artifactDirectory);
-      await writeFile(join(artifactDirectory, "artifact.json"), "{ invalid");
+      await mkdir(join(scopePath, BEHAVIORS_RELATIVE_PATH), { recursive: true });
+      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid");
 
       await expect(
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact contains invalid JSON: .architecture-companion/artifact.json");
+      ).rejects.toThrow("Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("fails with a detailed error when the artifact violates a domain rule", async () => {
+  test("fails with a detailed error when the diagram file name does not match the diagram ID", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
-    const artifactDirectory = join(scopePath, ".architecture-companion");
     const outputs: string[] = [];
-    const process = {
-      id: "checkout",
-      title: "Checkout",
-      generatorId: "freeform",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Submit order" }],
-        edges: [],
-      },
-    };
 
     try {
-      await mkdir(artifactDirectory);
+      await mkdir(join(scopePath, BEHAVIORS_RELATIVE_PATH), { recursive: true });
       await writeFile(
-        join(artifactDirectory, "artifact.json"),
-        JSON.stringify({ behaviors: [process, process], designs: [] }),
+        join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"),
+        JSON.stringify({ ...checkoutBehavior, id: "checkout-workflow" }),
       );
 
       await expect(
@@ -121,7 +118,7 @@ describe("Artifact schema validation command", () => {
           writeStdout: (output) => outputs.push(output),
         }),
       ).rejects.toThrow(
-        "Artifact is invalid: .architecture-companion/artifact.json. Invalid artifact: Duplicate behavior ID: checkout",
+        "Diagram file name does not match the diagram ID: .architecture-companion/behaviors/checkout.json must be checkout-workflow.json",
       );
       expect(outputs).toEqual([]);
     } finally {

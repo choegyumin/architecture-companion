@@ -7,8 +7,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const artifact = {
   behaviors: [
@@ -72,7 +72,7 @@ describe("source links in a review", () => {
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "src"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+      await writeArtifact(scopePath, artifact);
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
       const scope = await resolveConsumerScope(scopePath);
       const app = createApp(scope, {
@@ -106,7 +106,7 @@ describe("source links in a review", () => {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "specs"));
       await mkdir(join(scopePath, "src"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+      await writeArtifact(scopePath, artifact);
       await writeFile(
         join(scopePath, "specs/user-review-architecture.spec.tsx"),
         "export const workflowReview = true;\n",

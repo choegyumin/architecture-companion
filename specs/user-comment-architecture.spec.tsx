@@ -9,8 +9,8 @@ import { OverlayProvider } from "overlay-kit";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const artifact = {
   behaviors: [
@@ -32,7 +32,7 @@ const artifact = {
 async function createReview() {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-reviewer-comments-"));
   await mkdir(join(scopePath, ".architecture-companion"));
-  await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+  await writeArtifact(scopePath, artifact);
   const scope = await resolveConsumerScope(scopePath);
 
   return { scope, scopePath };

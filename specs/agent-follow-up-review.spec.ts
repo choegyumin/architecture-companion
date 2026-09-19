@@ -7,8 +7,8 @@ import type { AnnotationDocument } from "@/features/annotation/annotation-docume
 import type { Artifact } from "@/features/artifact/artifact";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { createFileAnnotationRepository } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const artifact: Artifact = {
   behaviors: [
@@ -78,7 +78,7 @@ describe("coding agent retrieves reviewer comments", () => {
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+      await writeArtifact(scopePath, artifact);
       const scope = await resolveConsumerScope(scopePath);
       await createFileAnnotationRepository(scope.path).save({
         artifactRevisionId: createArtifactRevisionId(artifact),

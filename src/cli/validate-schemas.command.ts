@@ -1,10 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import { parseArtifact } from "@/features/artifact/artifact";
+import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH, readArtifact } from "@/server/read-artifact";
 import { resolveConsumerScopePath } from "@/server/resolve-consumer-scope";
-
-const ARTIFACT_RELATIVE_PATH = ".architecture-companion/artifact.json";
 
 export type ValidateSchemasCommandOptions = Readonly<{
   writeStdout: (output: string) => void;
@@ -20,30 +15,13 @@ export async function executeValidateSchemasCommand(
   }
 
   const scopePath = await resolveConsumerScopePath(scopeInput);
-  let source: string;
+  const result = await readArtifact(scopePath);
 
-  try {
-    source = await readFile(join(scopePath, ARTIFACT_RELATIVE_PATH), "utf8");
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      throw new Error(`Artifact is missing: ${ARTIFACT_RELATIVE_PATH}`, { cause: error });
-    }
-    throw error;
+  if (result.status === "missing") {
+    throw new Error(`Artifact is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
   }
-
-  let input: unknown;
-
-  try {
-    input = JSON.parse(source);
-  } catch (error) {
-    throw new Error(`Artifact contains invalid JSON: ${ARTIFACT_RELATIVE_PATH}`, { cause: error });
-  }
-
-  try {
-    parseArtifact(input);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : "Unknown validation error";
-    throw new Error(`Artifact is invalid: ${ARTIFACT_RELATIVE_PATH}. ${detail}`, { cause: error });
+  if (result.status === "invalid") {
+    throw new Error(result.message);
   }
 
   options.writeStdout("Artifact is valid.\n");

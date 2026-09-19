@@ -1,0 +1,99 @@
+{
+  "id": "comment-conflict-resolution",
+  "title": "Resolve comment conflicts",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "elk-layered",
+    "options": {
+      "direction": "RIGHT"
+    }
+  },
+  "links": [
+    {
+      "href": "source:///specs/user-keep-comment-draft.spec.tsx"
+    }
+  ],
+  "graph": {
+    "groups": [],
+    "nodes": [
+      {
+        "type": "default",
+        "id": "comments-detect-change",
+        "kind": "trigger",
+        "title": "External comment change detected",
+        "description": "The open review's comment file changes or is deleted outside the app.",
+        "links": [
+          {
+            "href": "source:///src/server/review-updates.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "comments-has-local-edit",
+        "kind": "condition",
+        "title": "Is the user editing a comment?",
+        "description": "Workspace compares the external document with the current comment edit state.",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "comments-reload-external",
+        "kind": "result",
+        "title": "Apply external comment changes",
+        "description": "With no local edit, apply the latest comment content to the canvas."
+      },
+      {
+        "type": "default",
+        "id": "comments-show-conflict",
+        "kind": "action",
+        "title": "Show conflict options",
+        "description": "When the comment being edited has changed, prompt for a choice between the external comment and the local draft.",
+        "links": [
+          {
+            "href": "source:///src/client/parts/annotation-layer.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "comments-continue-review",
+        "kind": "result",
+        "title": "Continue the review with the chosen content",
+        "description": "Apply the reviewer's choice and offer comment editing and saving again."
+      }
+    ],
+    "edges": [
+      {
+        "type": "default",
+        "id": "comments-detect-to-edit-check",
+        "source": "comments-detect-change",
+        "target": "comments-has-local-edit"
+      },
+      {
+        "type": "default",
+        "id": "comments-no-edit-to-reload",
+        "source": "comments-has-local-edit",
+        "target": "comments-reload-external",
+        "label": "No"
+      },
+      {
+        "type": "default",
+        "id": "comments-edit-to-conflict",
+        "source": "comments-has-local-edit",
+        "target": "comments-show-conflict",
+        "label": "Yes"
+      },
+      {
+        "type": "default",
+        "id": "comments-conflict-to-continue",
+        "source": "comments-show-conflict",
+        "target": "comments-continue-review"
+      }
+    ]
+  }
+}

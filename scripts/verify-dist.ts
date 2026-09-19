@@ -381,8 +381,8 @@ async function verifyInstalledValidationEntry(
   environment: NodeJS.ProcessEnv,
 ): Promise<void> {
   const artifactDirectory = join(scopePath, ".architecture-companion");
-  await mkdir(artifactDirectory);
-  await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ behaviors: [], designs: [] }));
+  await mkdir(join(artifactDirectory, "behaviors"), { recursive: true });
+  await mkdir(join(artifactDirectory, "designs"), { recursive: true });
 
   const scriptPath = join(skillRoot, "validate-schemas.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);

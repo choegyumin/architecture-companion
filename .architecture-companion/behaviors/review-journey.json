@@ -1,0 +1,101 @@
+{
+  "id": "review-journey",
+  "title": "Architecture review journey",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "elk-layered",
+    "options": {
+      "direction": "RIGHT"
+    }
+  },
+  "links": [
+    {
+      "href": "source:///specs/user-review-architecture.spec.tsx"
+    },
+    {
+      "href": "source:///specs/user-comment-architecture.spec.tsx"
+    },
+    {
+      "href": "source:///specs/agent-follow-up-review.spec.ts"
+    }
+  ],
+  "graph": {
+    "groups": [],
+    "nodes": [
+      {
+        "type": "default",
+        "id": "journey-share-review",
+        "kind": "trigger",
+        "title": "Hand off review URL",
+        "description": "The coding agent hands the local review URL it prepared to the reviewer.",
+        "links": [
+          {
+            "href": "source:///src/cli/serve.command.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "journey-inspect-architecture",
+        "kind": "action",
+        "title": "Review diagrams and sources",
+        "description": "The reviewer inspects the process and design diagrams and opens the source evidence they need.",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          },
+          {
+            "href": "source:///src/server/open-source-reference.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "journey-record-annotation",
+        "kind": "action",
+        "title": "Comment on a diagram",
+        "description": "The reviewer leaves a comment at the relevant spot on a diagram.",
+        "links": [
+          {
+            "href": "source:///src/client/parts/annotation-layer.tsx"
+          },
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "journey-send-follow-up-request",
+        "kind": "action",
+        "title": "Send a follow-up request to the coding agent",
+        "description": "The reviewer sends the coding agent a follow-up request based on the review results.",
+        "links": [
+          {
+            "href": "source:///references/review-follow-up.md"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "type": "default",
+        "id": "journey-share-to-inspect",
+        "source": "journey-share-review",
+        "target": "journey-inspect-architecture"
+      },
+      {
+        "type": "default",
+        "id": "journey-inspect-to-annotation",
+        "source": "journey-inspect-architecture",
+        "target": "journey-record-annotation"
+      },
+      {
+        "type": "default",
+        "id": "journey-annotation-to-follow-up",
+        "source": "journey-record-annotation",
+        "target": "journey-send-follow-up-request"
+      }
+    ]
+  }
+}

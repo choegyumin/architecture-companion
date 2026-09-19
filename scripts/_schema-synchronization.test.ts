@@ -37,10 +37,10 @@ describe("schema files", () => {
       await writeSchemaFiles(outputRoot);
       const stalePath = join(outputRoot, "diagram.schema.json");
       await writeFile(stalePath, "{}\n");
-      await rm(join(outputRoot, "artifact.schema.json"));
+      await rm(join(outputRoot, "diagram-graph.schema.json"));
 
       await expect(assertSchemaFilesCurrent(outputRoot)).rejects.toThrow(
-        "Schemas are missing or stale: diagram.schema.json, artifact.schema.json. Run `pnpm run schema-gen`.",
+        "Schemas are missing or stale: diagram-graph.schema.json, diagram.schema.json. Run `pnpm run schema-gen`.",
       );
       expect(await readFile(stalePath, "utf8")).toBe("{}\n");
     });

@@ -19,9 +19,9 @@ Use the absolute path of the consumer directory the user designates as `<scope>`
 
 ## Artifact writing
 
-1. If `<scope>/.architecture-companion/artifact.json` exists, read it first and separate the diagrams to preserve, modify, replace, add, or remove according to the request.
+1. If `<scope>/.architecture-companion/behaviors/` or `<scope>/.architecture-companion/designs/` exists, read the diagram files (`<id>.json`) inside first and separate the diagrams to preserve, modify, replace, add, or remove according to the request.
 
-2. Read `<AC>/references/artifact.schema.json` and follow its linked `$ref`s to confirm the exact JSON structure. Then read `<AC>/references/artifact-writing.md` and apply the writing rules common to all built-in and custom generators.
+2. Read `<AC>/references/diagram.schema.json` and follow its linked `$ref`s to confirm the exact JSON structure. Then read `<AC>/references/artifact-writing.md` and apply the writing rules common to all built-in and custom generators.
 
 3. When creating or regenerating a diagram, discover the installed generators.
 
@@ -33,7 +33,7 @@ Use the absolute path of the consumer directory the user designates as `<scope>`
 
 4. Read `<selected path>/GENERATOR.md` at the chosen absolute path and follow its additional investigation guidance, references, supporting files, and execution instructions. Generator guidance does not replace the common artifact-writing rules, and do not assume every generator provides the same files or entrypoint.
 
-5. Investigate the source code, tests, configuration, and documentation you need, and edit `<scope>/.architecture-companion/artifact.json` directly. Architecture Companion commands do not generate or merge the artifact. The artifact is a complete snapshot: preserve unrelated diagrams and keep diagram and graph element IDs for the same concepts. Record the chosen logical `id` as `generatorId` on every diagram you create or regenerate.
+5. Investigate the source code, tests, configuration, and documentation you need, and edit the diagram files under `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` directly. Architecture Companion commands do not generate or merge the artifact. The artifact is the complete set of diagram files: one JSON file per diagram, named after its diagram `id` (lowercase kebab-case). Preserve unrelated diagram files and keep diagram and graph element IDs for the same concepts. Record the chosen logical `id` as `generatorId` on every diagram you create or regenerate.
 
 6. Validate the candidate once it covers the full request scope.
 
@@ -41,7 +41,7 @@ Use the absolute path of the consumer directory the user designates as `<scope>`
    node "<AC>/validate-schemas.js" "<scope>"
    ```
 
-   On failure, fix the errors from stderr and run it again until it prints `Artifact is valid.`. If you edit `artifact.json` after a successful run, validate again before reporting completion or handing off a URL. Independently of validation, check that the diagram answers the review question, that the evidence and interaction order are accurate, and that it satisfies the generator guidance.
+   On failure, fix the errors from stderr and run it again until it prints `Artifact is valid.`. If you edit any diagram file after a successful run, validate again before reporting completion or handing off a URL. Independently of validation, check that the diagram answers the review question, that the evidence and interaction order are accurate, and that it satisfies the generator guidance.
 
 ## Start the Review UI and hand off the URL
 

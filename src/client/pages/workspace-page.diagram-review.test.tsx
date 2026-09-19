@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -8,7 +8,9 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
+import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const checkoutDiagram = {
   id: "checkout-structure",
@@ -143,14 +145,11 @@ const processArtifact = {
   designs: [],
 };
 
-async function renderArtifact(artifactSource: unknown) {
+type RenderableArtifact = Parameters<typeof writeArtifact>[1];
+
+async function renderArtifact(artifact: RenderableArtifact) {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-diagram-review-"));
-  const artifactDirectory = join(temporaryRoot, ".architecture-companion");
-  await mkdir(artifactDirectory);
-  await writeFile(
-    join(artifactDirectory, "artifact.json"),
-    typeof artifactSource === "string" ? artifactSource : JSON.stringify(artifactSource),
-  );
+  await writeArtifact(temporaryRoot, artifact);
   const scope = await resolveConsumerScope(temporaryRoot);
   const app = createApp(scope);
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -158,15 +157,18 @@ async function renderArtifact(artifactSource: unknown) {
   );
   const review = render(<WorkspacePage client={client} />);
 
-  return async () => {
-    review.unmount();
-    await rm(temporaryRoot, { recursive: true });
+  return {
+    scopePath: temporaryRoot,
+    cleanup: async () => {
+      review.unmount();
+      await rm(temporaryRoot, { recursive: true });
+    },
   };
 }
 
 describe("design (architecture·implementation) review", () => {
   it("shows the design view by default when there are no behaviors", async () => {
-    const cleanupScope = await renderArtifact({ ...designArtifact, behaviors: [] });
+    const { cleanup: cleanupScope } = await renderArtifact({ ...designArtifact, behaviors: [] });
 
     try {
       const processView = await screen.findByRole("tab", { name: "Product Behavior" });
@@ -185,10 +187,10 @@ describe("design (architecture·implementation) review", () => {
       ...designArtifact,
       designs: [{ ...checkoutDiagram, layout: { id: "unknown" } }],
     };
-    const cleanupScope = await renderArtifact(invalidArtifact);
+    const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
-      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid artifact: Invalid discriminator value");
+      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid diagram: Invalid discriminator value");
     } finally {
       await cleanupScope();
     }
@@ -204,17 +206,17 @@ describe("design (architecture·implementation) review", () => {
         },
       ],
     };
-    const cleanupScope = await renderArtifact(invalidArtifact);
+    const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
-      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid artifact: Invalid option: expected one of");
+      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid diagram: Invalid option: expected one of");
     } finally {
       await cleanupScope();
     }
   });
 
   it("shows the groups, details, and connections of the selected design", async () => {
-    const cleanupScope = await renderArtifact(designArtifact);
+    const { cleanup: cleanupScope } = await renderArtifact(designArtifact);
 
     try {
       await userEvent.click(await screen.findByRole("tab", { name: "Code Design" }));
@@ -237,11 +239,12 @@ describe("design (architecture·implementation) review", () => {
 
 describe("process (product workflow) review", () => {
   it("keeps the page running and shows an actionable invalid-artifact error", async () => {
-    const cleanup = await renderArtifact("{ invalid json");
+    const { cleanup, scopePath } = await renderArtifact({ behaviors: [], designs: [] });
+    await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid json");
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Artifact contains invalid JSON: .architecture-companion/artifact.json",
+        "Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json",
       );
       expect(screen.getByText("Architecture Companion")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
@@ -251,7 +254,7 @@ describe("process (product workflow) review", () => {
   });
 
   it("provides read-only review controls for a valid workflow", async () => {
-    const cleanup = await renderArtifact(processArtifact);
+    const { cleanup } = await renderArtifact(processArtifact);
 
     try {
       expect(await screen.findByRole("region", { name: "Invite member product behavior diagram" })).toBeInTheDocument();
@@ -272,7 +275,7 @@ describe("process (product workflow) review", () => {
   });
 
   it("keeps the keyboard tab order of the workflow review controls", async () => {
-    const cleanup = await renderArtifact(processArtifact);
+    const { cleanup } = await renderArtifact(processArtifact);
 
     try {
       await screen.findByRole("heading", { name: "Product Behaviors" });

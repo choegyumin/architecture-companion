@@ -26,7 +26,7 @@ function findObject(value: unknown, predicate: (candidate: JsonObject) => boolea
 }
 
 describe("generateSchemaSources", () => {
-  it("renders the three tracked Draft 2020-12 schemas deterministically", () => {
+  it("renders the two tracked Draft 2020-12 schemas deterministically", () => {
     const first = generateSchemaSources();
     const second = generateSchemaSources();
 
@@ -63,23 +63,6 @@ describe("generateSchemaSources", () => {
         graph: { $ref: "./diagram-graph.schema.json" },
       },
     });
-  });
-
-  it("references the Diagram schema from both Artifact arrays", () => {
-    const artifactSchema = parseJsonObject(generateSchemaSources()["artifact.schema.json"]);
-
-    expect(artifactSchema).toMatchObject({
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "./artifact.schema.json",
-      type: "object",
-      properties: {
-        behaviors: { type: "array", items: { $ref: "./diagram.schema.json" } },
-        designs: { type: "array", items: { $ref: "./diagram.schema.json" } },
-      },
-      required: ["behaviors", "designs"],
-      additionalProperties: false,
-    });
-    expect(artifactSchema).not.toHaveProperty("$defs");
   });
 
   it("describes accepted input before Zod defaults are applied", () => {

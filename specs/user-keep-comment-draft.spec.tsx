@@ -12,8 +12,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 import { createReviewUpdates } from "@/server/review-updates";
 
 const artifact = {
@@ -59,7 +59,7 @@ describe("reviewer keeps their own input after an external comment change", () =
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+      await writeArtifact(scopePath, artifact);
       await mkdir(join(scopePath, ".architecture-companion/annotations"));
       await writeFile(
         join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(artifact))),

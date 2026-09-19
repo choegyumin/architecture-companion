@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -11,8 +11,8 @@ import {
   getAnnotationDocumentRelativePath,
   type RevisionAnnotationRepository,
 } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const baseUrl = "http://architecture-companion.test";
 const emptyDocument: AnnotationDocument = { annotations: [] };
@@ -55,11 +55,6 @@ function document(body: string): AnnotationDocument {
       },
     ],
   };
-}
-
-async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
-  await mkdir(join(scopePath, ".architecture-companion"), { recursive: true });
-  await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(input));
 }
 
 async function putAnnotations(
@@ -132,7 +127,7 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, { behaviors: "invalid", designs: [] });
+      await writeArtifact(scopePath, { behaviors: [{ ...firstArtifact.behaviors[0], unexpected: true }], designs: [] });
       const app = createApp(await resolveConsumerScope(scopePath));
 
       expect((await app.request(`${baseUrl}/api/annotations`)).status).toBe(422);

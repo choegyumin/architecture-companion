@@ -6,15 +6,21 @@ import { executeViewAnnotationsCommand } from "@/cli/view-annotations.command";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
+import { writeArtifact } from "@/server/write-artifact";
 
+const checkoutBehavior = {
+  id: "checkout",
+  title: "Workflow",
+  generatorId: "freeform",
+  layout: { id: "elk-layered" },
+  graph: {
+    groups: [],
+    nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout requested" }],
+    edges: [],
+  },
+} as const;
 const emptyArtifact = { behaviors: [], designs: [] };
 const emptyDocument: AnnotationDocument = { annotations: [] };
-
-async function writeArtifact(scopePath: string, artifact: unknown): Promise<void> {
-  const artifactDirectory = join(scopePath, ".architecture-companion");
-  await mkdir(artifactDirectory, { recursive: true });
-  await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify(artifact));
-}
 
 describe("Active revision Annotation query command", () => {
   test("requires exactly one explicit scope argument", async () => {
@@ -110,13 +116,13 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { behaviors: "invalid", designs: [] });
+      await writeArtifact(scopePath, { behaviors: [{ ...checkoutBehavior, unexpected: true }], designs: [] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact is invalid: .architecture-companion/artifact.json.");
+      ).rejects.toThrow("Artifact is invalid: .architecture-companion/behaviors/checkout.json.");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
