@@ -21,7 +21,7 @@ Use the absolute path of the consumer directory the user designates as `<scope>`
 
 1. If `<scope>/.architecture-companion/artifact.json` exists, read it first and separate the diagrams to preserve, modify, replace, add, or remove according to the request.
 
-2. Read `<AC>/references/artifact.schema.json` and follow its linked `$ref`s to confirm the exact JSON structure. Then read `<AC>/references/artifact-writing.md` and apply the writing rules common to all built-in and custom generators.
+2. Read `<AC>/references/diagram.schema.json` and follow its linked `$ref`s to confirm the exact JSON structure. Then read `<AC>/references/artifact-writing.md` and apply the writing rules common to all built-in and custom generators.
 
 3. When creating or regenerating a diagram, discover the installed generators.
 

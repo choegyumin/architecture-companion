@@ -1,6 +1,6 @@
 # Artifact Writing Rules
 
-Common semantics and layout rules to apply when creating or modifying diagrams. Read [`artifact.schema.json`](artifact.schema.json) and its linked JSON Schemas directly for the exact JSON structure. This document does not repeat the schemas; it explains how to choose properties and compose content.
+Common semantics and layout rules to apply when creating or modifying diagrams. Read [`diagram.schema.json`](diagram.schema.json) and its linked JSON Schemas directly for the exact JSON structure. This document does not repeat the schemas; it explains how to choose properties and compose content.
 
 ## Artifact composition and changes
 
