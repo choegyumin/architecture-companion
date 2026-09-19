@@ -355,9 +355,30 @@
       },
       {
         "type": "default",
+        "id": "external:@xyflow/react#Background",
+        "kind": "External React component",
+        "title": "Background",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
         "id": "external:@xyflow/react#BaseEdge",
         "kind": "External React component",
         "title": "BaseEdge",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#ControlButton",
+        "kind": "External React component",
+        "title": "ControlButton",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Controls",
+        "kind": "External React component",
+        "title": "Controls",
         "description": "@xyflow/react boundary"
       },
       {
@@ -394,6 +415,27 @@
         "kind": "External React component",
         "title": "ReactFlowProvider",
         "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:lucide-react#ExternalLink",
+        "kind": "External React component",
+        "title": "ExternalLink",
+        "description": "lucide-react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:lucide-react#Maximize",
+        "kind": "External React component",
+        "title": "Maximize",
+        "description": "lucide-react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:lucide-react#MessageSquarePlus",
+        "kind": "External React component",
+        "title": "MessageSquarePlus",
+        "description": "lucide-react boundary"
       }
     ],
     "edges": [
@@ -422,6 +464,22 @@
       },
       {
         "type": "default",
+        "id": "edge:12e3b6613c1792c3",
+        "source": "external:@xyflow/react#ReactFlowProvider",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:1787ddb425783566",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-fragment-node",
+        "kind": "component-prop",
+        "label": "Component prop · nodeTypes"
+      },
+      {
+        "type": "default",
         "id": "edge:1ace24e13428df74",
         "source": "component:src/shared/react-ui/button.tsx#Button",
         "target": "external:@base-ui/react#Button",
@@ -433,6 +491,14 @@
         "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
         "target": "external:@base-ui/react#Tabs.List",
         "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:28c73f5ad942c972",
+        "source": "external:@base-ui/react#Tabs.Root",
+        "target": "cmp-workspace-shell",
+        "kind": "node-prop",
+        "label": "Node prop · children"
       },
       {
         "type": "default",
@@ -450,6 +516,62 @@
       },
       {
         "type": "default",
+        "id": "edge:2aaf33424abb7979",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-message-edge",
+        "kind": "component-prop",
+        "label": "Component prop · edgeTypes"
+      },
+      {
+        "type": "default",
+        "id": "edge:2d3438944c89fb16",
+        "source": "external:@base-ui/react#Toggle",
+        "target": "external:lucide-react#MessageSquarePlus",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:2fb646a1b2e47547",
+        "source": "external:@base-ui/react#Tabs.List",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:3130c691aefd02af",
+        "source": "external:@xyflow/react#Controls",
+        "target": "external:@xyflow/react#ControlButton",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:3d5eb0413d1e2567",
+        "source": "external:@base-ui/react#Tabs.Panel",
+        "target": "cmp-diagram-renderer",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:3e9b431e381689aa",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-diagram-links-panel",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:4188d47db729f7b7",
+        "source": "external:@xyflow/react#ControlButton",
+        "target": "external:lucide-react#Maximize",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
         "id": "edge:4d3a8bbc08ad3aab",
         "source": "cmp-message-edge",
         "target": "external:@xyflow/react#EdgeLabelRenderer",
@@ -457,10 +579,34 @@
       },
       {
         "type": "default",
+        "id": "edge:4dd0b6db457f1e4b",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Controls",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:4dd2e60bc8bad453",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-polyline-edge",
+        "kind": "component-prop",
+        "label": "Component prop · edgeTypes"
+      },
+      {
+        "type": "default",
         "id": "edge:596e8ba32527daaa",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
         "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:596ff3c7acded20e",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-lifeline-node",
+        "kind": "component-prop",
+        "label": "Component prop · nodeTypes"
       },
       {
         "type": "default",
@@ -478,10 +624,26 @@
       },
       {
         "type": "default",
+        "id": "edge:697c03368db0bf6c",
+        "source": "external:@base-ui/react#Button",
+        "target": "external:lucide-react#ExternalLink",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
         "id": "edge:6bdc062ce1ef0e33",
         "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
         "target": "external:@base-ui/react#Toggle",
         "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:6bdff7a307692d3b",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-card-node",
+        "kind": "component-prop",
+        "label": "Component prop · nodeTypes"
       },
       {
         "type": "default",
@@ -496,6 +658,14 @@
         "source": "cmp-polyline-edge",
         "target": "external:@xyflow/react#BaseEdge",
         "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:89264d08c4aad65e",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-base-overlay",
+        "kind": "node-prop",
+        "label": "Node prop · children"
       },
       {
         "type": "default",
@@ -564,6 +734,14 @@
       },
       {
         "type": "default",
+        "id": "edge:b8f8e808ddb48449",
+        "source": "external:@xyflow/react#EdgeLabelRenderer",
+        "target": "cmp-base-edge-label",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
         "id": "edge:befeb672e5a817d3",
         "source": "cmp-base-overlay",
         "target": "external:@xyflow/react#Panel",
@@ -585,9 +763,33 @@
       },
       {
         "type": "default",
+        "id": "edge:e87d0d70334104f6",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-labeled-group-node",
+        "kind": "component-prop",
+        "label": "Component prop · nodeTypes"
+      },
+      {
+        "type": "default",
+        "id": "edge:eb4f646dcc8e13a9",
+        "source": "external:@base-ui/react#Tabs.Panel",
+        "target": "cmp-diagram-list",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
         "id": "edge:f0758c6cf6625543",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "kind": "node-prop",
+        "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:f6c94b6522fee768",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Background",
         "kind": "node-prop",
         "label": "Node prop · children"
       },
