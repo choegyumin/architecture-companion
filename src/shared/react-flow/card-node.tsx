@@ -39,9 +39,9 @@ export function CardNode({
     >
       <Handle isConnectable={isConnectable} position={targetPosition} style={{ opacity: 0 }} type="target" />
       {data.eyebrow != null ? (
-        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{data.eyebrow}</p>
+        <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{data.eyebrow}</p>
       ) : null}
-      <h3 className="mt-2 font-heading text-base font-semibold">{data.label}</h3>
+      <h3 className="font-heading text-base font-semibold">{data.label}</h3>
       {data.description != null ? <p className="mt-2 text-sm text-muted-foreground">{data.description}</p> : null}
       {data.details?.length ? (
         <ul className="mt-3 list-disc space-y-1 pl-4 text-xs/relaxed">
