@@ -229,6 +229,18 @@
       },
       {
         "type": "default",
+        "id": "component:src/shared/react-ui/empty.tsx#Empty",
+        "kind": "React component",
+        "title": "Empty",
+        "description": "src/shared/react-ui/empty.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/empty.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
         "id": "component:src/shared/react-ui/form.tsx#Form",
         "kind": "React component",
         "title": "Form",
@@ -799,6 +811,14 @@
         "source": "cmp-diagram-canvas",
         "target": "external:@xyflow/react#ReactFlow",
         "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:f7fc2fe87cbc13bb",
+        "source": "external:@base-ui/react#Tabs.Panel",
+        "target": "component:src/shared/react-ui/empty.tsx#Empty",
+        "kind": "node-prop",
+        "label": "Node prop · children"
       },
       {
         "type": "default",
