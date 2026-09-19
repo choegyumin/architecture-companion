@@ -122,6 +122,35 @@ describe("diagram renderer React Flow adapter", () => {
     });
   });
 
+  it("omits the eyebrow when a default node has no useful kind", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [
+          {
+            id: "file:src/index.ts",
+            type: "default",
+            title: "index.ts",
+            links: [{ text: "source", href: "source:///src/index.ts" }],
+          },
+        ],
+        edges: [],
+      },
+    } satisfies Diagram;
+
+    const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
+
+    expect(measurementNode).toMatchObject({
+      type: "card",
+      data: {
+        label: "index.ts",
+        links: [{ href: "source:///src/index.ts" }],
+      },
+    });
+    expect(measurementNode?.data).not.toHaveProperty("eyebrow");
+  });
+
   it("lets lifeline content determine the measured height", () => {
     const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
 

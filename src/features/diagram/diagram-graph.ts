@@ -28,6 +28,7 @@ const diagramNodeBaseShape = {
 export const defaultDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    kind: z.string().min(1).optional(),
     type: z.literal("default"),
     links: z.array(diagramLinkSchema).optional(),
   })
