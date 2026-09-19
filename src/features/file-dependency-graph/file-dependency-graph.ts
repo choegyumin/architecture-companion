@@ -23,10 +23,21 @@ type DiscoveredSource = Readonly<{
   relativePath: string;
 }>;
 
-type PackageInfo = Readonly<{
+type LocalBoundary = Readonly<{
+  kind: "package" | "scope";
   name: string;
-  rootPath: string;
   relativeRootPath: string;
+  rootPath: string;
+}>;
+
+type LocalGroupDescriptor = Readonly<{
+  group: DiagramGraph["groups"][number];
+  parentId: string | undefined;
+}>;
+
+type LocalGrouping = Readonly<{
+  groupIdByFile: ReadonlyMap<string, string>;
+  groups: readonly DiagramGraph["groups"][number][];
 }>;
 
 type PreparedTsConfig = Readonly<{
@@ -397,15 +408,25 @@ async function cruiseDependencies(
   }
 }
 
-async function readPackageInfo(scopePath: string, sourcePath: string): Promise<PackageInfo> {
+function packageGroupId(relativeDirectoryPath: string): string {
+  return `group:package:${relativeDirectoryPath}`;
+}
+
+function directoryGroupId(relativeDirectoryPath: string): string {
+  return `group:directory:${relativeDirectoryPath}`;
+}
+
+async function findLocalBoundary(scopePath: string, sourcePath: string): Promise<LocalBoundary> {
   let currentPath = dirname(sourcePath);
 
   while (isInside(scopePath, currentPath)) {
-    const manifestPath = join(currentPath, "package.json");
     try {
-      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Readonly<{ name?: unknown }>;
+      const manifest = JSON.parse(await readFile(join(currentPath, "package.json"), "utf8")) as Readonly<{
+        name?: unknown;
+      }>;
       const relativeRootPath = pathToPosix(relative(scopePath, currentPath)) || ".";
       return {
+        kind: currentPath === scopePath ? "scope" : "package",
         name: typeof manifest.name === "string" && manifest.name ? manifest.name : relativeRootPath,
         rootPath: currentPath,
         relativeRootPath,
@@ -419,18 +440,73 @@ async function readPackageInfo(scopePath: string, sourcePath: string): Promise<P
   }
 
   return {
+    kind: "scope",
     name: basename(scopePath),
     rootPath: scopePath,
     relativeRootPath: ".",
   };
 }
 
-function packageGroupId(packageInfo: PackageInfo): string {
-  return `group:package:${packageInfo.relativeRootPath}`;
-}
+async function buildLocalGrouping(
+  scopePath: string,
+  discoveredSources: readonly DiscoveredSource[],
+): Promise<LocalGrouping> {
+  const descriptorsById = new Map<string, LocalGroupDescriptor>();
+  const assignedGroupIdByFile = new Map<string, string>();
+  let ungroupedFileCount = 0;
 
-function directoryGroupId(relativeDirectoryPath: string): string {
-  return `group:directory:${relativeDirectoryPath}`;
+  for (const { absolutePath } of discoveredSources) {
+    const boundary = await findLocalBoundary(scopePath, absolutePath);
+    let parentId: string | undefined;
+
+    if (boundary.kind === "package") {
+      parentId = packageGroupId(boundary.relativeRootPath);
+      descriptorsById.set(parentId, {
+        parentId: undefined,
+        group: {
+          id: parentId,
+          title: boundary.name,
+          description: `Package ${boundary.relativeRootPath}`,
+        },
+      });
+    }
+
+    const relativeDirectoryPath = pathToPosix(relative(boundary.rootPath, dirname(absolutePath)));
+    let accumulatedDirectory = "";
+    for (const segment of relativeDirectoryPath ? relativeDirectoryPath.split("/") : []) {
+      accumulatedDirectory = accumulatedDirectory ? `${accumulatedDirectory}/${segment}` : segment;
+      const scopeRelativeDirectory = pathToPosix(
+        relative(scopePath, join(boundary.rootPath, ...accumulatedDirectory.split("/"))),
+      );
+      const id = directoryGroupId(scopeRelativeDirectory);
+      descriptorsById.set(id, {
+        parentId,
+        group: { id, title: segment },
+      });
+      parentId = id;
+    }
+
+    if (parentId) assignedGroupIdByFile.set(absolutePath, parentId);
+    else ungroupedFileCount += 1;
+  }
+
+  const rootGroups = [...descriptorsById.values()].filter(({ parentId }) => parentId === undefined);
+  const localRootCount = rootGroups.length + ungroupedFileCount;
+  const omittedRootId = localRootCount === 1 ? rootGroups.at(0)?.group.id : undefined;
+  const groups = [...descriptorsById.values()]
+    .filter(({ group }) => group.id !== omittedRootId)
+    .map(({ group, parentId }) => ({
+      ...group,
+      ...(parentId && parentId !== omittedRootId ? { parentId } : {}),
+    }))
+    .toSorted(compareById);
+  const groupIdByFile = new Map<string, string>();
+
+  for (const [absolutePath, groupId] of assignedGroupIdByFile) {
+    if (groupId !== omittedRootId) groupIdByFile.set(absolutePath, groupId);
+  }
+
+  return { groups, groupIdByFile };
 }
 
 function fileNodeId(relativePath: string): string {
@@ -458,51 +534,14 @@ async function buildGraph(
     }
   }
 
-  const groups = new Map<string, DiagramGraph["groups"][number]>();
-  const packageInfoByFile = new Map<string, PackageInfo>();
-
-  for (const { absolutePath } of discoveredSources) {
-    const packageInfo = await readPackageInfo(scopePath, absolutePath);
-    const hasPackageGroup = packageInfo.relativeRootPath !== ".";
-    packageInfoByFile.set(absolutePath, packageInfo);
-    if (hasPackageGroup) {
-      groups.set(packageGroupId(packageInfo), {
-        id: packageGroupId(packageInfo),
-        title: packageInfo.name,
-        description: `Package ${packageInfo.relativeRootPath}`,
-      });
-    }
-
-    const relativeDirectoryPath = pathToPosix(relative(packageInfo.rootPath, dirname(absolutePath)));
-    if (!relativeDirectoryPath) continue;
-
-    let parentId: string | undefined = hasPackageGroup ? packageGroupId(packageInfo) : undefined;
-    let accumulatedDirectory = "";
-    for (const segment of relativeDirectoryPath.split("/")) {
-      accumulatedDirectory = accumulatedDirectory ? `${accumulatedDirectory}/${segment}` : segment;
-      const scopeRelativeDirectory = pathToPosix(
-        relative(scopePath, join(packageInfo.rootPath, ...accumulatedDirectory.split("/"))),
-      );
-      const id = directoryGroupId(scopeRelativeDirectory);
-      groups.set(id, { id, title: segment, ...(parentId ? { parentId } : {}) });
-      parentId = id;
-    }
-  }
-
+  const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
+  const groups = new Map(localGrouping.groups.map((group) => [group.id, group]));
   const localNodeByPath = new Map<string, string>();
   const nodes: DiagramGraph["nodes"][number][] = [];
 
   for (const { absolutePath, relativePath } of discoveredSources) {
-    const packageInfo = packageInfoByFile.get(absolutePath);
-    if (!packageInfo) throw new Error(`Package grouping failed for ${relativePath}.`);
-    const relativeDirectoryPath = pathToPosix(relative(scopePath, dirname(absolutePath)));
     const id = fileNodeId(relativePath);
-    const groupId =
-      dirname(absolutePath) === packageInfo.rootPath
-        ? packageInfo.relativeRootPath === "."
-          ? undefined
-          : packageGroupId(packageInfo)
-        : directoryGroupId(relativeDirectoryPath);
+    const groupId = localGrouping.groupIdByFile.get(absolutePath);
     localNodeByPath.set(absolutePath, id);
     nodes.push({
       type: "default",

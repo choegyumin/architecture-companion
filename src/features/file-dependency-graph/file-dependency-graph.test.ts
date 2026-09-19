@@ -75,10 +75,6 @@ describe("file dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:directory:src",
-          title: "src",
-        },
-        {
           id: "group:external-packages",
           title: "External packages",
         },
@@ -95,21 +91,18 @@ describe("file dependency graph generator", () => {
           type: "default",
           id: "file:src/index.ts",
           title: "index.ts",
-          groupId: "group:directory:src",
           links: [{ text: "source", href: "source:///src/index.ts" }],
         },
         {
           type: "default",
           id: "file:src/runtime.ts",
           title: "runtime.ts",
-          groupId: "group:directory:src",
           links: [{ text: "source", href: "source:///src/runtime.ts" }],
         },
         {
           type: "default",
           id: "file:src/types.ts",
           title: "types.ts",
-          groupId: "group:directory:src",
           links: [{ text: "source", href: "source:///src/types.ts" }],
         },
       ]);
@@ -182,6 +175,103 @@ describe("file dependency graph generator", () => {
           links: [{ text: "source", href: "source:///src/index.ts" }],
         },
       ]);
+    });
+  });
+
+  it("elides one normalized local root and promotes its direct contents", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "src/index.ts", "export const index = true;\n");
+      await writeFixtureFile(rootPath, "src/client/index.ts", "export const client = true;\n");
+      await writeFixtureFile(rootPath, "src/server/index.ts", "export const server = true;\n");
+
+      const graph = await generateFileDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["src/index.ts", "src/client", "src/server"],
+      });
+
+      expect(graph.groups).toEqual([
+        {
+          id: "group:directory:src/client",
+          title: "client",
+        },
+        {
+          id: "group:directory:src/server",
+          title: "server",
+        },
+      ]);
+      expect(graph.nodes).toEqual([
+        expect.objectContaining({
+          id: "file:src/client/index.ts",
+          groupId: "group:directory:src/client",
+        }),
+        expect.not.objectContaining({ groupId: expect.anything() }),
+        expect.objectContaining({
+          id: "file:src/server/index.ts",
+          groupId: "group:directory:src/server",
+        }),
+      ]);
+      expect(graph.nodes.at(1)).toEqual(expect.objectContaining({ id: "file:src/index.ts" }));
+    });
+  });
+
+  it("keeps distinct local roots as groups", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "scripts/build.ts", "export const build = true;\n");
+      await writeFixtureFile(rootPath, "src/index.ts", "export const source = true;\n");
+
+      const graph = await generateFileDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["src", "scripts"],
+      });
+
+      expect(graph.groups).toEqual([
+        {
+          id: "group:directory:scripts",
+          title: "scripts",
+        },
+        {
+          id: "group:directory:src",
+          title: "src",
+        },
+      ]);
+      expect(graph.nodes).toEqual([
+        expect.objectContaining({
+          id: "file:scripts/build.ts",
+          groupId: "group:directory:scripts",
+        }),
+        expect.objectContaining({
+          id: "file:src/index.ts",
+          groupId: "group:directory:src",
+        }),
+      ]);
+    });
+  });
+
+  it("applies sole-root elision to a package boundary", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "packages/nested/package.json", '{"name":"nested-package","type":"module"}\n');
+      await writeFixtureFile(rootPath, "packages/nested/index.ts", "export const index = true;\n");
+      await writeFixtureFile(rootPath, "packages/nested/lib/value.ts", "export const value = true;\n");
+
+      const graph = await generateFileDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["packages/nested"],
+      });
+
+      expect(graph.groups).toEqual([
+        {
+          id: "group:directory:packages/nested/lib",
+          title: "lib",
+        },
+      ]);
+      expect(graph.nodes).toEqual([
+        expect.not.objectContaining({ groupId: expect.anything() }),
+        expect.objectContaining({
+          id: "file:packages/nested/lib/value.ts",
+          groupId: "group:directory:packages/nested/lib",
+        }),
+      ]);
+      expect(graph.nodes.at(0)).toEqual(expect.objectContaining({ id: "file:packages/nested/index.ts" }));
     });
   });
 
