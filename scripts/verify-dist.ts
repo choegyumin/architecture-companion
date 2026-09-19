@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import type { Dirent } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
@@ -37,16 +37,13 @@ const expectedTopLevelEntries = [
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const distributionRoot = join(packageRoot, "dist");
-// Mirrors the projections in compose-dist.ts: each destination must reproduce its source verbatim.
+// Mirrors the static projections in compose-dist.ts. Generator bundles are verified separately.
 const copiedProjections = [
   { source: join(packageRoot, "README.md"), destination: "README.md" },
   { source: join(packageRoot, "SKILL.md"), destination: "SKILL.md" },
   { source: join(packageRoot, "references"), destination: "references" },
-  {
-    source: join(packageRoot, "src", "plugins", "diagram-generators"),
-    destination: "diagram-generators",
-  },
 ] as const;
+const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
 
 type CompletedProcess = Readonly<{
   exitCode: number | null;
@@ -101,6 +98,12 @@ async function readRequiredText(path: string): Promise<string> {
   const content = await readFile(path, "utf8");
   assert.notEqual(content.trim(), "", `${path} must not be empty.`);
   return content;
+}
+
+async function writeFixtureFile(rootPath: string, relativePath: string, content: string): Promise<void> {
+  const filePath = join(rootPath, relativePath);
+  await mkdir(dirname(filePath), { recursive: true });
+  await writeFile(filePath, content);
 }
 
 async function writeSpawnGuard(guardPath: string): Promise<void> {
@@ -158,6 +161,18 @@ async function assertCopiedVerbatim(sourcePath: string, destinationPath: string)
   }
 }
 
+async function verifyGeneratorResources(rootPath: string): Promise<void> {
+  const sourceEntries = await readdir(sourceGeneratorsRoot, { withFileTypes: true });
+
+  for (const entry of sourceEntries.filter((candidate) => candidate.isDirectory())) {
+    const sourceManifestPath = join(sourceGeneratorsRoot, entry.name, "GENERATOR.md");
+    if (!(await pathExists(sourceManifestPath))) continue;
+    await assertCopiedVerbatim(sourceManifestPath, join(rootPath, "diagram-generators", entry.name, "GENERATOR.md"));
+  }
+
+  await readRequiredText(join(rootPath, "diagram-generators", "file-dependency-graph", "generate.js"));
+}
+
 async function verifyDistributionResources(rootPath: string): Promise<void> {
   assert.deepEqual((await readdir(rootPath)).toSorted(), expectedTopLevelEntries);
   assert.deepEqual(await findForbiddenEntries(rootPath), []);
@@ -170,6 +185,7 @@ async function verifyDistributionResources(rootPath: string): Promise<void> {
   for (const { source, destination } of copiedProjections) {
     await assertCopiedVerbatim(source, join(rootPath, destination));
   }
+  await verifyGeneratorResources(rootPath);
 }
 
 function spawnInstalledScript(
@@ -329,12 +345,11 @@ function assertSuccessfulCompletion(result: CompletedProcess, scriptPath: string
 }
 
 async function readExpectedBuiltInGeneratorDescriptors(skillRoot: string): Promise<Readonly<readonly unknown[]>> {
-  const sourceRoot = join(packageRoot, "src", "plugins", "diagram-generators");
-  const childEntries = await readdir(sourceRoot, { withFileTypes: true });
+  const childEntries = await readdir(sourceGeneratorsRoot, { withFileTypes: true });
   const descriptors: { description: string; id: string; path: string; source: "built-in" }[] = [];
 
   for (const { name } of childEntries.filter((entry) => entry.isDirectory())) {
-    const manifestPath = join(sourceRoot, name, "GENERATOR.md");
+    const manifestPath = join(sourceGeneratorsRoot, name, "GENERATOR.md");
     if (!(await pathExists(manifestPath))) continue;
     const manifest = parseDiagramGeneratorManifest(await readFile(manifestPath, "utf8"));
     descriptors.push({
@@ -362,6 +377,57 @@ async function verifyInstalledGeneratorEntry(
   const outputLine = /^([^\n]+)\n$/.exec(viewResult.stdout)?.at(1);
   assert.ok(outputLine, "Installed view-generators.js must print one JSON line.");
   assert.deepEqual(JSON.parse(outputLine), await readExpectedBuiltInGeneratorDescriptors(skillRoot));
+}
+
+async function verifyInstalledFileDependencyGenerator(
+  skillRoot: string,
+  scopePath: string,
+  environment: NodeJS.ProcessEnv,
+): Promise<void> {
+  await writeFixtureFile(scopePath, "package.json", '{"name":"installed-fixture","type":"module"}\n');
+  await writeFixtureFile(
+    scopePath,
+    "tsconfig.json",
+    `${JSON.stringify({ compilerOptions: { paths: { "@/*": ["src/*"] } } }, null, 2)}\n`,
+  );
+  await writeFixtureFile(
+    scopePath,
+    "src/index.ts",
+    'import { value } from "@/value";\nimport feature from "installed-package/feature";\nexport { feature, value };\n',
+  );
+  await writeFixtureFile(scopePath, "src/value.ts", "export const value = true;\n");
+  await writeFixtureFile(
+    scopePath,
+    "node_modules/installed-package/package.json",
+    '{"name":"installed-package","type":"module","exports":{"./feature":"./feature.js"}}\n',
+  );
+  await writeFixtureFile(scopePath, "node_modules/installed-package/feature.js", "export default true;\n");
+
+  const scriptPath = join(skillRoot, "diagram-generators", "file-dependency-graph", "generate.js");
+  const result = await runInstalledScript(
+    scriptPath,
+    ["--scope", scopePath, "--ts-config", "tsconfig.json", "src"],
+    environment,
+    skillRoot,
+  );
+  assertSuccessfulCompletion(result, scriptPath);
+  const outputLine = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+  assert.ok(outputLine, "Installed file dependency generator must print one JSON line.");
+  const output = JSON.parse(outputLine) as Readonly<{ graphPath?: unknown }>;
+  assert.equal(typeof output.graphPath, "string");
+  assert.ok(isAbsolute(output.graphPath as string));
+
+  const graphPath = output.graphPath as string;
+  const graph = JSON.parse(await readRequiredText(graphPath)) as Readonly<{
+    groups?: readonly Readonly<{ id?: unknown }>[];
+    nodes?: readonly Readonly<{ id?: unknown }>[];
+    edges?: readonly Readonly<{ id?: unknown }>[];
+  }>;
+  assert.ok(graph.groups?.some(({ id }) => id === "group:package:."));
+  assert.ok(graph.nodes?.some(({ id }) => id === "file:src/index.ts"));
+  assert.ok(graph.nodes?.some(({ id }) => id === "external:installed-package"));
+  assert.ok(graph.edges?.some(({ id }) => id === "dependency:file:src/index.ts->file:src/value.ts:runtime"));
+  await rm(dirname(graphPath), { recursive: true });
 }
 
 async function verifyInstalledAnnotationEntry(
@@ -453,6 +519,7 @@ try {
 
   const environment = createInstalledEnvironment(skillRoot, homeDirectory, spawnGuardReadyPath, openerMarkerPath);
   await verifyInstalledGeneratorEntry(skillRoot, scopePath, environment);
+  await verifyInstalledFileDependencyGenerator(skillRoot, scopePath, environment);
   await verifyInstalledAnnotationEntry(skillRoot, scopePath, environment);
   await verifyInstalledValidationEntry(skillRoot, scopePath, environment);
   serverProcess = startInstalledServer(skillRoot, scopePath, environment, spawnGuardPath);

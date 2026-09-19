@@ -17,10 +17,6 @@ const expectedTopLevelEntries = [
   "view-generators.js",
 ] as const;
 
-// TODO: Add per-generator bundling when a built-in generator first ships executable files:
-// - Preserve plugin-relative paths in the output:
-//   src/plugins/diagram-generators/foo/bin/run.ts -> dist/diagram-generators/foo/bin/run.js
-// - Keep invocation in GENERATOR.md; do not define a shared entrypoint.
 const projections = [
   { source: join(packageRoot, "README.md"), destination: join(distributionRoot, "README.md") },
   { source: join(packageRoot, "SKILL.md"), destination: join(distributionRoot, "SKILL.md") },
