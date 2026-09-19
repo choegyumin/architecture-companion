@@ -7,6 +7,8 @@ import ts from "typescript";
 
 import type { DefaultDiagramEdge, DefaultDiagramNode, DiagramGraph } from "@/features/diagram/diagram-graph";
 
+/* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
+
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
 const defaultExcludeFilePatterns = [
   "**/node_modules/**",
@@ -224,6 +226,22 @@ function collectReturnExpressions(body: ts.ConciseBody): readonly ts.Expression[
   return expressions;
 }
 
+function getImportModuleSpecifier(symbol: ts.Symbol | undefined): string | undefined {
+  for (const declaration of symbol?.declarations ?? []) {
+    const candidate = ts.isImportSpecifier(declaration)
+      ? declaration.parent.parent.parent
+      : ts.isNamespaceImport(declaration)
+        ? declaration.parent.parent
+        : ts.isImportClause(declaration)
+          ? declaration.parent
+          : undefined;
+    if (candidate && ts.isImportDeclaration(candidate) && ts.isStringLiteral(candidate.moduleSpecifier)) {
+      return candidate.moduleSpecifier.text;
+    }
+  }
+  return undefined;
+}
+
 function isCreateElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
   if (!ts.isCallExpression(node)) return false;
   const callee = unwrapExpression(node.expression);
@@ -425,22 +443,6 @@ function leftmostIdentifier(expression: ts.Expression | ts.JsxTagNameExpression)
   if (ts.isIdentifier(expression)) return expression;
   if (ts.isPropertyAccessExpression(expression)) return leftmostIdentifier(expression.expression);
   if (ts.isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
-  return undefined;
-}
-
-function getImportModuleSpecifier(symbol: ts.Symbol | undefined): string | undefined {
-  for (const declaration of symbol?.declarations ?? []) {
-    const candidate = ts.isImportSpecifier(declaration)
-      ? declaration.parent.parent.parent
-      : ts.isNamespaceImport(declaration)
-        ? declaration.parent.parent
-        : ts.isImportClause(declaration)
-          ? declaration.parent
-          : undefined;
-    if (candidate && ts.isImportDeclaration(candidate) && ts.isStringLiteral(candidate.moduleSpecifier)) {
-      return candidate.moduleSpecifier.text;
-    }
-  }
   return undefined;
 }
 
