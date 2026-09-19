@@ -70,6 +70,15 @@ describe("diagram parsing", () => {
     expect(parseDiagram(diagram)).toEqual(diagram);
   });
 
+  it("preserves free-form generator instructions for reproducible regeneration", () => {
+    const diagram = {
+      ...validDiagram,
+      generatorInstructions: "Regenerate from the consumer scope root using tsconfig.json and the selected src tree.",
+    } as const;
+
+    expect(parseDiagram(diagram)).toEqual(diagram);
+  });
+
   it("preserves provider-owned layout options", () => {
     const diagram = {
       ...validDiagram,

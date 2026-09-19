@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { diagramGraphSchema, diagramIdSchema, diagramLinkSchema } from "@/features/diagram/diagram-graph";
+import { diagramGraphSchema, diagramLinkSchema } from "@/features/diagram/diagram-graph";
 import { diagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
 import { type DiagramGeneratorId, diagramGeneratorIdSchema } from "@/features/diagram-generator/diagram-generator-id";
 
@@ -13,6 +13,7 @@ export const diagramSchema = z
     id: artifactDiagramIdSchema,
     title: z.string().min(1),
     generatorId: diagramGeneratorIdSchema,
+    generatorInstructions: z.string().min(1).optional(),
     layout: diagramLayoutConfigSchema,
     links: z.array(diagramLinkSchema).readonly().optional(),
     graph: diagramGraphSchema,
