@@ -122,6 +122,50 @@ describe("diagram renderer React Flow adapter", () => {
     });
   });
 
+  it("keeps direct render edges unlabeled", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [
+          { id: "parent", type: "default", kind: "React component", title: "Parent", links: [] },
+          { id: "child", type: "default", kind: "React component", title: "Child", links: [] },
+        ],
+        edges: [
+          {
+            id: "render",
+            type: "default",
+            source: "parent",
+            target: "child",
+            kind: "direct-render",
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [],
+      nodes: [
+        { id: "parent", position: { x: 0, y: 0 }, size: { width: 288, height: 144 } },
+        { id: "child", position: { x: 0, y: 240 }, size: { width: 288, height: 144 } },
+      ],
+      edges: [
+        {
+          id: "render",
+          points: [
+            { x: 144, y: 144 },
+            { x: 144, y: 240 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(edges.at(0)).not.toHaveProperty("label");
+    expect(edges.at(0)?.data).not.toHaveProperty("eyebrow");
+  });
+
   it("lets lifeline content determine the measured height", () => {
     const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
 
