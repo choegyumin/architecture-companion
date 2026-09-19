@@ -1,4 +1,4 @@
-import { access, lstat, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
+import { lstat, mkdtemp, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
@@ -18,24 +18,45 @@ export type FileDependencyGraphOptions = Readonly<{
 
 type DependencyKind = "runtime" | "type-only";
 
+type DiscoveredSource = Readonly<{
+  absolutePath: string;
+  relativePath: string;
+}>;
+
 type PackageInfo = Readonly<{
   name: string;
   rootPath: string;
   relativeRootPath: string;
 }>;
 
-type SourceRoot = Readonly<{
-  path: string;
-  isFile: boolean;
+type PreparedTsConfig = Readonly<{
+  compilerOptions: ReturnType<typeof extractTSConfig> | undefined;
+  fileName: string | undefined;
+  temporaryDirectory: string | undefined;
 }>;
 
-const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"]);
+type ResolutionPass = "import" | "require" | "types";
+
+const sourceTypes = [
+  { extension: ".tsx", kind: "TypeScript JSX" },
+  { extension: ".mts", kind: "TypeScript ESM" },
+  { extension: ".cts", kind: "TypeScript CommonJS" },
+  { extension: ".ts", kind: "TypeScript" },
+  { extension: ".jsx", kind: "JavaScript JSX" },
+  { extension: ".mjs", kind: "JavaScript ESM" },
+  { extension: ".cjs", kind: "JavaScript CommonJS" },
+  { extension: ".js", kind: "JavaScript" },
+] as const;
+const sourceExtensions = new Set(sourceTypes.map(({ extension }) => extension));
+const sourceExtensionGlob = sourceTypes.map(({ extension }) => extension.slice(1)).join(",");
 const defaultExcludeGlobs = [
-  "**/__tests__/**",
-  "**/*.{test,spec}.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+  "**/{__tests__,test,tests}/**",
+  `**/*.{test,spec}.{${sourceExtensionGlob}}`,
+  "**/*.{test,spec}.d.{ts,mts,cts}",
   "**/{.next,.nuxt,.svelte-kit,build,coverage,dist,node_modules,out}/**",
-  "**/__generated__/**",
-  "**/*.{gen,generated}.{cjs,cts,js,jsx,mjs,mts,ts,tsx}",
+  "**/{__generated__,generated}/**",
+  `**/*.{gen,generated}.{${sourceExtensionGlob}}`,
+  "**/*.{gen,generated}.d.{ts,mts,cts}",
 ] as const;
 const externalDependencyTypes = new Set([
   "npm",
@@ -48,6 +69,7 @@ const externalDependencyTypes = new Set([
 ]);
 const importConditionNames = ["node", "import", "default"] as const;
 const requireConditionNames = ["node", "require", "default"] as const;
+const typesConditionNames = ["types", "node", "import", "default"] as const;
 const resolverExtensions = [
   ".ts",
   ".tsx",
@@ -62,8 +84,6 @@ const resolverExtensions = [
   ".cjs",
   ".json",
 ] as const;
-
-let cruiseQueue: Promise<void> = Promise.resolve();
 
 function pathToPosix(path: string): string {
   return path.split(sep).join("/");
@@ -81,14 +101,7 @@ function compareById<T extends Readonly<{ id: string }>>(left: T, right: T): num
 }
 
 function sourceKind(path: string): string {
-  if (path.endsWith(".tsx")) return "TypeScript JSX";
-  if (path.endsWith(".mts")) return "TypeScript ESM";
-  if (path.endsWith(".cts")) return "TypeScript CommonJS";
-  if (path.endsWith(".ts")) return "TypeScript";
-  if (path.endsWith(".jsx")) return "JavaScript JSX";
-  if (path.endsWith(".mjs")) return "JavaScript ESM";
-  if (path.endsWith(".cjs")) return "JavaScript CommonJS";
-  return "JavaScript";
+  return sourceTypes.find(({ extension }) => path.endsWith(extension))?.kind ?? "JavaScript";
 }
 
 function sourceHref(relativePath: string): string {
@@ -100,12 +113,24 @@ function sourceHref(relativePath: string): string {
 }
 
 function packageNameFromSpecifier(specifier: string): string | null {
+  if (specifier.startsWith("#") || specifier.startsWith(".") || specifier.startsWith("/")) return null;
   if (specifier.startsWith("@")) {
     const [scope, name] = specifier.split("/");
     return scope && name ? `${scope}/${name}` : null;
   }
   const [name] = specifier.split("/");
   return name || null;
+}
+
+function packageNameFromResolvedPath(resolvedPath: string): string | null {
+  const segments = pathToPosix(resolvedPath).split("/");
+  const nodeModulesIndex = segments.lastIndexOf("node_modules");
+  if (nodeModulesIndex === -1) return null;
+  const firstSegment = segments.at(nodeModulesIndex + 1);
+  if (!firstSegment) return null;
+  if (!firstSegment.startsWith("@")) return firstSegment;
+  const secondSegment = segments.at(nodeModulesIndex + 2);
+  return secondSegment ? `${firstSegment}/${secondSegment}` : null;
 }
 
 function dependencyKind(dependency: IDependency): DependencyKind {
@@ -120,14 +145,21 @@ function isCoreDependency(dependency: IDependency): boolean {
   return dependency.coreModule || dependency.dependencyTypes.includes("core");
 }
 
-function isSelectedSource(path: string, sourceRoots: readonly SourceRoot[]): boolean {
-  return sourceRoots.some((sourceRoot) =>
-    sourceRoot.isFile ? sourceRoot.path === path : isInside(sourceRoot.path, path),
-  );
-}
-
 function isExcluded(relativePath: string, excludeGlobs: readonly string[]): boolean {
   return micromatch.isMatch(relativePath, excludeGlobs, { dot: true });
+}
+
+function isDirectoryExcluded(relativeDirectoryPath: string, excludeGlobs: readonly string[]): boolean {
+  if (!relativeDirectoryPath) return false;
+  const probes = sourceTypes.flatMap(({ extension }) => [
+    `${relativeDirectoryPath}/__architecture_companion_probe__${extension}`,
+    `${relativeDirectoryPath}/nested/__architecture_companion_probe__${extension}`,
+  ]);
+  return probes.every((probe) => isExcluded(probe, excludeGlobs));
+}
+
+function isMissingPath(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
 async function resolveScopePath(scopePath: string): Promise<string> {
@@ -136,52 +168,107 @@ async function resolveScopePath(scopePath: string): Promise<string> {
   return resolvedPath;
 }
 
-async function resolveSourceRoots(scopePath: string, sourcePaths: readonly string[]): Promise<readonly SourceRoot[]> {
+async function resolveSourceRoots(scopePath: string, sourcePaths: readonly string[]): Promise<readonly string[]> {
   if (sourcePaths.length === 0) throw new Error("At least one source path is required.");
 
   return Promise.all(
     sourcePaths.map(async (sourcePath) => {
       const resolvedPath = await realpath(resolve(scopePath, sourcePath));
       if (!isInside(scopePath, resolvedPath)) throw new Error(`Source path must stay within the scope: ${sourcePath}`);
-      return { path: resolvedPath, isFile: (await lstat(resolvedPath)).isFile() };
+      return resolvedPath;
     }),
+  );
+}
+
+async function discoverSources(
+  scopePath: string,
+  sourceRoots: readonly string[],
+  excludeGlobs: readonly string[],
+): Promise<readonly DiscoveredSource[]> {
+  const discoveredSources = new Map<string, DiscoveredSource>();
+  const visitedDirectories = new Set<string>();
+
+  async function visitPath(candidatePath: string): Promise<void> {
+    const lexicalRelativePath = pathToPosix(relative(scopePath, candidatePath));
+    if (isDirectoryExcluded(lexicalRelativePath, excludeGlobs)) return;
+
+    const canonicalPath = await realpath(candidatePath);
+    if (!isInside(scopePath, canonicalPath)) {
+      throw new Error(`Source path resolves outside the scope: ${lexicalRelativePath}`);
+    }
+
+    const candidateStat = await lstat(canonicalPath);
+    if (candidateStat.isDirectory()) {
+      if (visitedDirectories.has(canonicalPath)) return;
+      visitedDirectories.add(canonicalPath);
+      const entries = await readdir(canonicalPath);
+      await Promise.all(entries.map((entry) => visitPath(join(canonicalPath, entry))));
+      return;
+    }
+    if (!candidateStat.isFile()) return;
+
+    const relativePath = pathToPosix(relative(scopePath, canonicalPath));
+    if (!sourceExtensions.has(extname(relativePath)) || isExcluded(relativePath, excludeGlobs)) return;
+    discoveredSources.set(canonicalPath, { absolutePath: canonicalPath, relativePath });
+  }
+
+  for (const sourceRoot of sourceRoots) await visitPath(sourceRoot);
+
+  return [...discoveredSources.values()].toSorted((left, right) =>
+    left.relativePath < right.relativePath ? -1 : left.relativePath > right.relativePath ? 1 : 0,
   );
 }
 
 async function resolveTsConfigPath(scopePath: string, tsConfigPath: string | undefined): Promise<string | undefined> {
   const candidatePath = resolve(scopePath, tsConfigPath ?? "tsconfig.json");
+  let canonicalPath: string;
 
   try {
-    await access(candidatePath);
+    canonicalPath = await realpath(candidatePath);
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT" && tsConfigPath === undefined) {
-      return undefined;
-    }
+    if (isMissingPath(error) && tsConfigPath === undefined) return undefined;
     throw error;
   }
 
-  if (!isInside(scopePath, candidatePath))
-    throw new Error(`TypeScript config must stay within the scope: ${tsConfigPath}`);
-  return candidatePath;
+  if (!isInside(scopePath, canonicalPath)) {
+    throw new Error(`TypeScript config must stay within the scope: ${tsConfigPath ?? "tsconfig.json"}`);
+  }
+  if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
+  return canonicalPath;
 }
 
-async function runSerializedCruise<T>(workingDirectory: string, action: () => Promise<T>): Promise<T> {
-  const previousCruise = cruiseQueue;
-  let releaseCruise: () => void = () => undefined;
-  cruiseQueue = new Promise<void>((resolveQueue) => {
-    releaseCruise = resolveQueue;
-  });
+async function prepareTsConfig(tsConfigPath: string | undefined): Promise<PreparedTsConfig> {
+  if (!tsConfigPath) return { compilerOptions: undefined, fileName: undefined, temporaryDirectory: undefined };
 
-  await previousCruise;
-  const previousWorkingDirectory = process.cwd();
-  process.chdir(workingDirectory);
-
-  try {
-    return await action();
-  } finally {
-    process.chdir(previousWorkingDirectory);
-    releaseCruise();
+  const compilerOptions = extractTSConfig(tsConfigPath);
+  if (compilerOptions.options.baseUrl || !compilerOptions.options.paths) {
+    return { compilerOptions, fileName: tsConfigPath, temporaryDirectory: undefined };
   }
+
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "architecture-companion-tsconfig-"));
+  const compatibilityConfigPath = join(temporaryDirectory, "tsconfig.json");
+  await writeFile(
+    compatibilityConfigPath,
+    `${JSON.stringify(
+      {
+        compilerOptions: {
+          baseUrl: dirname(tsConfigPath),
+          paths: compilerOptions.options.paths,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  return {
+    compilerOptions: {
+      ...compilerOptions,
+      options: { ...compilerOptions.options, baseUrl: dirname(tsConfigPath) },
+    },
+    fileName: compatibilityConfigPath,
+    temporaryDirectory,
+  };
 }
 
 function readCruiseResult(output: ICruiseResult | string): ICruiseResult {
@@ -193,20 +280,20 @@ function readCruiseResult(output: ICruiseResult | string): ICruiseResult {
 async function cruisePass(
   scopePath: string,
   sourcePaths: readonly string[],
-  tsConfigPath: string | undefined,
+  tsConfig: PreparedTsConfig,
   conditionNames: readonly string[],
   mainFields: readonly string[],
 ): Promise<ICruiseResult> {
-  const tsConfig = tsConfigPath ? extractTSConfig(tsConfigPath) : undefined;
   const result = await cruise(
     [...sourcePaths],
     {
       baseDir: scopePath,
+      detectJSDocImports: true,
       doNotFollow: "(^|/)node_modules/",
       progress: { type: "none" },
       skipAnalysisNotInRules: true,
       tsPreCompilationDeps: "specify",
-      ...(tsConfigPath ? { tsConfig: { fileName: tsConfigPath } } : {}),
+      ...(tsConfig.fileName ? { tsConfig: { fileName: tsConfig.fileName } } : {}),
     },
     {
       conditionNames: [...conditionNames],
@@ -215,9 +302,80 @@ async function cruisePass(
       mainFields: [...mainFields],
       mainFiles: ["index"],
     },
-    tsConfig ? { tsConfig } : undefined,
+    tsConfig.compilerOptions ? { tsConfig: tsConfig.compilerOptions } : undefined,
   );
   return readCruiseResult(result.output);
+}
+
+function dependencyKey(dependency: IDependency): string {
+  return JSON.stringify([
+    dependency.module,
+    dependency.moduleSystem,
+    dependency.dynamic,
+    dependency.exoticallyRequired,
+    dependency.typeOnly ?? false,
+    dependency.preCompilationOnly ?? false,
+  ]);
+}
+
+function resolutionPreference(sourcePath: string, dependencies: readonly IDependency[]): readonly ResolutionPass[] {
+  if (dependencies.some((dependency) => dependencyKind(dependency) === "type-only")) {
+    return ["types", "import", "require"];
+  }
+  if (sourcePath.endsWith(".cts") || sourcePath.endsWith(".cjs")) return ["require", "import", "types"];
+  if (sourcePath.endsWith(".mts") || sourcePath.endsWith(".mjs")) return ["import", "require", "types"];
+  if (dependencies.some(({ moduleSystem }) => moduleSystem === "cjs")) return ["require", "import", "types"];
+  return ["import", "require", "types"];
+}
+
+function chooseDependency(
+  sourcePath: string,
+  candidates: Readonly<Partial<Record<ResolutionPass, IDependency>>>,
+): IDependency {
+  const availableCandidates = Object.values(candidates).filter(
+    (candidate): candidate is IDependency => candidate !== undefined,
+  );
+  const fallbackCandidate = availableCandidates.at(0);
+  if (!fallbackCandidate) throw new Error(`dependency-cruiser omitted dependency data for ${sourcePath}.`);
+  const preference = resolutionPreference(sourcePath, availableCandidates);
+  return (
+    preference.map((pass) => candidates[pass]).find((candidate) => candidate && !candidate.couldNotResolve) ??
+    preference.map((pass) => candidates[pass]).find((candidate): candidate is IDependency => candidate !== undefined) ??
+    fallbackCandidate
+  );
+}
+
+function mergeCruiseResults(results: Readonly<Record<ResolutionPass, ICruiseResult>>): readonly IModule[] {
+  const modulesByPass = Object.fromEntries(
+    Object.entries(results).map(([pass, result]) => [
+      pass,
+      new Map(result.modules.map((module) => [module.source, module])),
+    ]),
+  ) as Record<ResolutionPass, Map<string, IModule>>;
+  const sourcePaths = new Set(Object.values(results).flatMap(({ modules }) => modules.map(({ source }) => source)));
+
+  return [...sourcePaths].toSorted().map((sourcePath) => {
+    const baseModule =
+      modulesByPass.import.get(sourcePath) ??
+      modulesByPass.require.get(sourcePath) ??
+      modulesByPass.types.get(sourcePath);
+    if (!baseModule) throw new Error(`dependency-cruiser omitted module data for ${sourcePath}.`);
+
+    const candidatesByKey = new Map<string, Partial<Record<ResolutionPass, IDependency>>>();
+    for (const pass of ["import", "require", "types"] as const) {
+      for (const dependency of modulesByPass[pass].get(sourcePath)?.dependencies ?? []) {
+        const key = dependencyKey(dependency);
+        candidatesByKey.set(key, { ...candidatesByKey.get(key), [pass]: dependency });
+      }
+    }
+
+    return {
+      ...baseModule,
+      dependencies: [...candidatesByKey.entries()]
+        .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+        .map(([, candidates]) => chooseDependency(sourcePath, candidates)),
+    };
+  });
 }
 
 async function cruiseDependencies(
@@ -225,32 +383,31 @@ async function cruiseDependencies(
   sourcePaths: readonly string[],
   tsConfigPath: string | undefined,
 ): Promise<readonly IModule[]> {
-  const cruiseWorkingDirectory = tsConfigPath ? dirname(tsConfigPath) : scopePath;
+  const tsConfig = await prepareTsConfig(tsConfigPath);
 
-  return runSerializedCruise(cruiseWorkingDirectory, async () => {
-    const importResult = await cruisePass(scopePath, sourcePaths, tsConfigPath, importConditionNames, [
+  try {
+    const importResult = await cruisePass(scopePath, sourcePaths, tsConfig, importConditionNames, [
       "module",
       "main",
       "types",
       "typings",
     ]);
-    const requireResult = await cruisePass(scopePath, sourcePaths, tsConfigPath, requireConditionNames, [
+    const requireResult = await cruisePass(scopePath, sourcePaths, tsConfig, requireConditionNames, [
       "main",
       "module",
       "types",
       "typings",
     ]);
-    const requireModules = new Map(requireResult.modules.map((module) => [module.source, module]));
-
-    return importResult.modules.map((module) => ({
-      ...module,
-      dependencies: [
-        ...module.dependencies.filter((dependency) => dependency.moduleSystem !== "cjs"),
-        ...(requireModules.get(module.source)?.dependencies.filter((dependency) => dependency.moduleSystem === "cjs") ??
-          []),
-      ],
-    }));
-  });
+    const typesResult = await cruisePass(scopePath, sourcePaths, tsConfig, typesConditionNames, [
+      "types",
+      "typings",
+      "module",
+      "main",
+    ]);
+    return mergeCruiseResults({ import: importResult, require: requireResult, types: typesResult });
+  } finally {
+    if (tsConfig.temporaryDirectory) await rm(tsConfig.temporaryDirectory, { recursive: true });
+  }
 }
 
 async function readPackageInfo(scopePath: string, sourcePath: string): Promise<PackageInfo> {
@@ -267,7 +424,7 @@ async function readPackageInfo(scopePath: string, sourcePath: string): Promise<P
         relativeRootPath,
       };
     } catch (error) {
-      if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+      if (!isMissingPath(error)) throw error;
     }
 
     if (currentPath === scopePath) break;
@@ -293,31 +450,31 @@ function fileNodeId(relativePath: string): string {
   return `file:${relativePath}`;
 }
 
+function dependencyEdgeId(source: string, target: string, kind: DependencyKind): string {
+  return `dependency:${encodeURIComponent(source)}:${encodeURIComponent(target)}:${kind}`;
+}
+
 async function buildGraph(
   scopePath: string,
-  sourceRoots: readonly SourceRoot[],
+  discoveredSources: readonly DiscoveredSource[],
   modules: readonly IModule[],
-  excludeGlobs: readonly string[],
 ): Promise<DiagramGraph> {
-  const localModules = modules
-    .map((module) => {
-      const absolutePath = resolve(scopePath, module.source);
-      const relativePath = pathToPosix(relative(scopePath, absolutePath));
-      return { absolutePath, module, relativePath };
-    })
-    .filter(
-      ({ absolutePath, relativePath }) =>
-        sourceExtensions.has(extname(relativePath)) &&
-        isSelectedSource(absolutePath, sourceRoots) &&
-        !isExcluded(relativePath, excludeGlobs),
-    );
+  const sourceByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
+  const moduleByPath = new Map<string, IModule>();
 
-  if (localModules.length === 0) throw new Error("No JavaScript or TypeScript source files remained after filtering.");
+  for (const module of modules) {
+    try {
+      const canonicalPath = await realpath(resolve(scopePath, module.source));
+      if (sourceByPath.has(canonicalPath)) moduleByPath.set(canonicalPath, module);
+    } catch (error) {
+      if (!isMissingPath(error)) throw error;
+    }
+  }
 
   const groups = new Map<string, DiagramGraph["groups"][number]>();
   const packageInfoByFile = new Map<string, PackageInfo>();
 
-  for (const { absolutePath } of localModules) {
+  for (const { absolutePath } of discoveredSources) {
     const packageInfo = await readPackageInfo(scopePath, absolutePath);
     packageInfoByFile.set(absolutePath, packageInfo);
     groups.set(packageGroupId(packageInfo), {
@@ -345,7 +502,7 @@ async function buildGraph(
   const localNodeByPath = new Map<string, string>();
   const nodes: DiagramGraph["nodes"][number][] = [];
 
-  for (const { absolutePath, relativePath } of localModules) {
+  for (const { absolutePath, relativePath } of discoveredSources) {
     const packageInfo = packageInfoByFile.get(absolutePath);
     if (!packageInfo) throw new Error(`Package grouping failed for ${relativePath}.`);
     const relativeDirectoryPath = pathToPosix(relative(scopePath, dirname(absolutePath)));
@@ -369,31 +526,25 @@ async function buildGraph(
   const externalNodes = new Map<string, DiagramGraph["nodes"][number]>();
   const edges = new Map<string, DiagramGraph["edges"][number]>();
 
-  for (const { absolutePath, module, relativePath } of localModules) {
+  for (const { absolutePath } of discoveredSources) {
     const source = localNodeByPath.get(absolutePath);
     if (!source) continue;
 
-    for (const dependency of module.dependencies) {
-      if (dependency.couldNotResolve) continue;
+    for (const dependency of moduleByPath.get(absolutePath)?.dependencies ?? []) {
+      if (dependency.couldNotResolve || isCoreDependency(dependency)) continue;
       const kind = dependencyKind(dependency);
-      const resolvedPath = resolve(scopePath, dependency.resolved);
-      let target = localNodeByPath.get(resolvedPath);
+      let target: string | undefined;
 
-      if (!target && isCoreDependency(dependency)) {
-        const title = dependency.module.startsWith("node:") ? dependency.module : `node:${dependency.module}`;
-        target = `builtin:${title}`;
-        externalNodes.set(target, {
-          type: "default",
-          id: target,
-          kind: "Node.js built-in",
-          title,
-          groupId: "group:node-builtins",
-        });
-        groups.set("group:node-builtins", { id: "group:node-builtins", title: "Node.js" });
+      try {
+        const canonicalResolvedPath = await realpath(resolve(scopePath, dependency.resolved));
+        target = localNodeByPath.get(canonicalResolvedPath);
+      } catch (error) {
+        if (!isMissingPath(error)) throw error;
       }
 
       if (!target && isExternalDependency(dependency)) {
-        const packageName = packageNameFromSpecifier(dependency.module);
+        const packageName =
+          packageNameFromResolvedPath(dependency.resolved) ?? packageNameFromSpecifier(dependency.module);
         if (!packageName) continue;
         target = `external:${packageName}`;
         externalNodes.set(target, {
@@ -410,7 +561,7 @@ async function buildGraph(
       }
 
       if (!target) continue;
-      const id = `dependency:${source}->${target}:${kind}`;
+      const id = dependencyEdgeId(source, target, kind);
       edges.set(id, {
         type: "default",
         id,
@@ -419,8 +570,6 @@ async function buildGraph(
         ...(kind === "type-only" ? { kind: "type-only" } : {}),
       });
     }
-
-    if (!localNodeByPath.has(absolutePath)) throw new Error(`Missing source node for ${relativePath}.`);
   }
 
   return diagramGraphSchema.parse({
@@ -432,12 +581,20 @@ async function buildGraph(
 
 export async function generateFileDependencyGraph(options: FileDependencyGraphOptions): Promise<DiagramGraph> {
   const scopePath = await resolveScopePath(options.scopePath);
-  const sourceRoots = await resolveSourceRoots(scopePath, options.sourcePaths);
+  const excludeGlobs = [...defaultExcludeGlobs, ...(options.exclude ?? [])];
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
-  const relativeSourcePaths = sourceRoots.map(({ path }) => pathToPosix(relative(scopePath, path)) || ".");
-  const modules = await cruiseDependencies(scopePath, relativeSourcePaths, tsConfigPath);
+  const sourceRoots = await resolveSourceRoots(scopePath, options.sourcePaths);
+  const discoveredSources = await discoverSources(scopePath, sourceRoots, excludeGlobs);
+  if (discoveredSources.length === 0) {
+    throw new Error("No JavaScript or TypeScript source files remained after filtering.");
+  }
+  const modules = await cruiseDependencies(
+    scopePath,
+    discoveredSources.map(({ relativePath }) => relativePath),
+    tsConfigPath,
+  );
 
-  return buildGraph(scopePath, sourceRoots, modules, [...defaultExcludeGlobs, ...(options.exclude ?? [])]);
+  return buildGraph(scopePath, discoveredSources, modules);
 }
 
 export async function writeFileDependencyGraph(options: FileDependencyGraphOptions): Promise<string> {

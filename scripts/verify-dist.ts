@@ -426,7 +426,7 @@ async function verifyInstalledFileDependencyGenerator(
   assert.ok(graph.groups?.some(({ id }) => id === "group:package:."));
   assert.ok(graph.nodes?.some(({ id }) => id === "file:src/index.ts"));
   assert.ok(graph.nodes?.some(({ id }) => id === "external:installed-package"));
-  assert.ok(graph.edges?.some(({ id }) => id === "dependency:file:src/index.ts->file:src/value.ts:runtime"));
+  assert.ok(graph.edges?.some(({ id }) => id === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"));
   await rm(dirname(graphPath), { recursive: true });
 }
 
