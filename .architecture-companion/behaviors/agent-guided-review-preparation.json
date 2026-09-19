@@ -1,0 +1,142 @@
+{
+  "id": "agent-guided-review-preparation",
+  "title": "Skill trigger — hand off review",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "elk-layered",
+    "options": {
+      "direction": "RIGHT"
+    }
+  },
+  "links": [
+    {
+      "href": "source:///specs/agent-handoff-architecture.spec.ts"
+    }
+  ],
+  "graph": {
+    "groups": [],
+    "nodes": [
+      {
+        "type": "default",
+        "id": "agent-receive-review-task",
+        "kind": "trigger",
+        "title": "Receive an architecture review request",
+        "description": "The coding agent starts preparing a review for the designated consumer scope."
+      },
+      {
+        "type": "default",
+        "id": "agent-discover-generators",
+        "kind": "action",
+        "title": "Discover available generators",
+        "description": "The agent harness discovers built-in, global, and project generator manifests.",
+        "links": [
+          {
+            "href": "source:///src/cli/view-generators.command.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "agent-write-artifact",
+        "kind": "action",
+        "title": "Write the artifact",
+        "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
+        "links": [
+          {
+            "href": "source:///references/diagram.schema.json"
+          },
+          {
+            "href": "source:///references/artifact-writing.md"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "agent-start-runtime",
+        "kind": "action",
+        "title": "Run the Architecture Companion server",
+        "description": "Start the server for the designated scope and print the loopback URL.",
+        "links": [
+          {
+            "href": "source:///src/cli/serve.command.ts"
+          },
+          {
+            "href": "source:///src/server/start-server.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "agent-artifact-valid",
+        "kind": "condition",
+        "title": "Does validate-schemas accept the artifact?",
+        "description": "The coding agent validates the candidate artifact with the validate-schemas command.",
+        "links": [
+          {
+            "href": "source:///src/cli/validate-schemas.command.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "agent-fix-artifact",
+        "kind": "action",
+        "title": "Fix artifact errors",
+        "description": "Fix the artifact from the validation errors and rerun the command until it prints Artifact is valid."
+      },
+      {
+        "type": "default",
+        "id": "agent-share-url",
+        "kind": "result",
+        "title": "Hand off review URL",
+        "description": "Explain what the validated artifact covers and hand the review URL to the reviewer."
+      }
+    ],
+    "edges": [
+      {
+        "type": "default",
+        "id": "agent-task-to-discovery",
+        "source": "agent-receive-review-task",
+        "target": "agent-discover-generators"
+      },
+      {
+        "type": "default",
+        "id": "agent-discovery-to-artifact",
+        "source": "agent-discover-generators",
+        "target": "agent-write-artifact"
+      },
+      {
+        "type": "default",
+        "id": "agent-artifact-to-runtime",
+        "source": "agent-write-artifact",
+        "target": "agent-artifact-valid"
+      },
+      {
+        "type": "default",
+        "id": "agent-runtime-to-validation",
+        "source": "agent-artifact-valid",
+        "target": "agent-start-runtime"
+      },
+      {
+        "type": "default",
+        "id": "agent-invalid-to-fix",
+        "source": "agent-artifact-valid",
+        "target": "agent-fix-artifact",
+        "label": "No"
+      },
+      {
+        "type": "default",
+        "id": "agent-fix-to-validation",
+        "source": "agent-fix-artifact",
+        "target": "agent-artifact-valid"
+      },
+      {
+        "type": "default",
+        "id": "agent-valid-to-share",
+        "source": "agent-start-runtime",
+        "target": "agent-share-url",
+        "label": "Yes"
+      }
+    ]
+  }
+}

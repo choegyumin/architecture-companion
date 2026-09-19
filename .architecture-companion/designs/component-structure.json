@@ -1,0 +1,447 @@
+{
+  "id": "component-structure",
+  "title": "Client component structure",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "elk-layered",
+    "options": {
+      "direction": "DOWN"
+    }
+  },
+  "graph": {
+    "groups": [],
+    "nodes": [
+      {
+        "type": "default",
+        "id": "cmp-main-entry",
+        "kind": "entry",
+        "title": "render",
+        "description": "Assembles ThemeProvider, WorkspacePage, and Toaster at the app entry point",
+        "links": [
+          {
+            "href": "source:///src/client/main.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-workspace-page",
+        "kind": "page",
+        "title": "WorkspacePage",
+        "description": "Coordinates review state, Process and Design selection, and the Annotation controller",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-workspace-shell",
+        "kind": "layout",
+        "title": "WorkspaceShell",
+        "description": "WorkspacePage private component laying out the header, navigation, actions, and children",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-list",
+        "kind": "selector",
+        "title": "DiagramList",
+        "description": "Shows the diagram list and selection state of the current review view",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-list.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-renderer",
+        "kind": "widget",
+        "title": "DiagramRenderer",
+        "description": "Coordinates the measurement lifecycle, layout execution, render model application, and annotation overlay",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-react-flow-adapter",
+        "kind": "adapter",
+        "title": "Diagram React Flow adapter",
+        "description": "Converts Diagram and DiagramLayout into React Flow nodes and edges with primitive presentation data",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-links-panel",
+        "kind": "widget",
+        "title": "DiagramLinksPanel",
+        "description": "Shows diagram links in the canvas bottom-right and delegates source link opening",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-canvas",
+        "kind": "host",
+        "title": "DiagramCanvas",
+        "description": "Owns the closed React Flow host, canvas-owned runtime unions, registry, and pan, zoom, and viewport",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-canvas.tsx"
+          },
+          {
+            "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-annotation-layer",
+        "kind": "annotation part",
+        "title": "AnnotationLayer",
+        "description": "Provides pins, composer, edit, delete, and conflict UI, and the annotation controller contract",
+        "links": [
+          {
+            "href": "source:///src/client/parts/annotation-layer.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-base-overlay",
+        "kind": "overlay",
+        "title": "BaseOverlayPanel",
+        "description": "Provides the canvas overlay render-prop boundary",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-card-node",
+        "kind": "shared node",
+        "title": "CardNode",
+        "description": "Renders the default Diagram node's card presentation and URI controls",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/card-node.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-labeled-group-node",
+        "kind": "shared node",
+        "title": "LabeledGroupNode",
+        "description": "Renders the group presentation with label and description",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-lifeline-node",
+        "kind": "shared node",
+        "title": "LifelineNode",
+        "description": "Renders lifeline headers, activation bars, sequence handles, and URI controls",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/lifeline-node.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-fragment-node",
+        "kind": "shared node",
+        "title": "FragmentNode",
+        "description": "Renders sequence fragment operators, guards, and branch separators",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/fragment-node.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-polyline-edge",
+        "kind": "shared edge",
+        "title": "PolylineEdge",
+        "description": "Renders the path from layout points and the generic edge label",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-message-edge",
+        "kind": "shared edge",
+        "title": "MessageEdge",
+        "description": "Renders sequence message paths and message labels",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/message-edge.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-base-edge-label",
+        "kind": "shared label",
+        "title": "BaseEdgeLabel",
+        "description": "Owns the generic edge label and link presentation, and the edge label z-index",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-message-edge-label-placement",
+        "kind": "shared label placement",
+        "title": "Message edge label placement",
+        "description": "Computes message label placement for self-message loops",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-polyline-edge-label-placement",
+        "kind": "shared label placement",
+        "title": "Polyline edge label placement",
+        "description": "Computes polyline label placement from the longest segment's midpoint",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-artifact",
+        "kind": "artifact",
+        "title": "Diagram artifact",
+        "description": "Owns DiagramElements, the complete Diagram schema, and semantic validation",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-graph.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/diagram.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-layout",
+        "kind": "layout",
+        "title": "Diagram layout",
+        "description": "Provides the built-in config union and layoutDiagram dispatcher",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-strategies",
+        "kind": "layout strategy",
+        "title": "Built-in layout strategies",
+        "description": "Computes ELK layered and sequence geometry with per-strategy config schemas",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "type": "default",
+        "id": "cmp-e01",
+        "source": "cmp-main-entry",
+        "target": "cmp-workspace-page",
+        "kind": "renders"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e02",
+        "source": "cmp-workspace-page",
+        "target": "cmp-workspace-shell",
+        "kind": "composes"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e03",
+        "source": "cmp-workspace-page",
+        "target": "cmp-diagram-list",
+        "kind": "renders"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e04",
+        "source": "cmp-workspace-page",
+        "target": "cmp-diagram-renderer",
+        "kind": "renders",
+        "label": "workflow or implementation Diagram"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e05",
+        "source": "cmp-diagram-renderer",
+        "target": "cmp-react-flow-adapter",
+        "kind": "uses"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e06",
+        "source": "cmp-diagram-renderer",
+        "target": "cmp-diagram-canvas",
+        "kind": "renders"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e07",
+        "source": "cmp-diagram-renderer",
+        "target": "cmp-base-overlay",
+        "kind": "uses"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e08",
+        "source": "cmp-base-overlay",
+        "target": "cmp-annotation-layer",
+        "kind": "renders"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e09",
+        "source": "cmp-react-flow-adapter",
+        "target": "cmp-diagram-artifact",
+        "kind": "reads"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e10",
+        "source": "cmp-diagram-renderer",
+        "target": "cmp-diagram-layout",
+        "kind": "uses",
+        "label": "layoutDiagram"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e11",
+        "source": "cmp-diagram-layout",
+        "target": "cmp-diagram-strategies",
+        "kind": "dispatches"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e12",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-card-node",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e13",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-labeled-group-node",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e14",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-lifeline-node",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e15",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-fragment-node",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e16",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-polyline-edge",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e17",
+        "source": "cmp-diagram-canvas",
+        "target": "cmp-message-edge",
+        "kind": "registers"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e18",
+        "source": "cmp-diagram-renderer",
+        "target": "cmp-diagram-links-panel",
+        "kind": "renders"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e19",
+        "source": "cmp-polyline-edge",
+        "target": "cmp-polyline-edge-label-placement",
+        "kind": "uses"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e20",
+        "source": "cmp-polyline-edge",
+        "target": "cmp-base-edge-label",
+        "kind": "uses"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e21",
+        "source": "cmp-message-edge",
+        "target": "cmp-message-edge-label-placement",
+        "kind": "uses"
+      },
+      {
+        "type": "default",
+        "id": "cmp-e22",
+        "source": "cmp-message-edge",
+        "target": "cmp-base-edge-label",
+        "kind": "uses"
+      }
+    ]
+  }
+}

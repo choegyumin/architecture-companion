@@ -1,0 +1,704 @@
+{
+  "id": "implementation-sequence",
+  "title": "Review session execution sequence",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "sequence"
+  },
+  "graph": {
+    "groups": [],
+    "nodes": [
+      {
+        "id": "user",
+        "kind": "actor",
+        "title": "User",
+        "links": [],
+        "type": "lifeline",
+        "activations": []
+      },
+      {
+        "id": "agent",
+        "kind": "actor",
+        "title": "Agent",
+        "links": [
+          {
+            "href": "source:///SKILL.md"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-agent",
+            "startsAt": {
+              "messageId": "m00",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m04a",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "cli",
+        "kind": "participant",
+        "title": "CLI",
+        "links": [
+          {
+            "href": "source:///src/cli/serve.ts"
+          },
+          {
+            "href": "source:///src/cli/serve.command.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-cli",
+            "startsAt": {
+              "messageId": "m01",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m04",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "browser",
+        "kind": "participant",
+        "title": "Browser",
+        "links": [
+          {
+            "href": "source:///src/client/main.tsx"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-browser-boot",
+            "startsAt": {
+              "messageId": "m05",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m06",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-browser-source",
+            "startsAt": {
+              "messageId": "m19",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m20",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-browser-comment",
+            "startsAt": {
+              "messageId": "m24",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m25",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "workspace",
+        "kind": "participant",
+        "title": "WorkspacePage",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          },
+          {
+            "href": "source:///src/client/parts/diagram-list.tsx"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-workspace",
+            "startsAt": {
+              "messageId": "m06",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m26",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "data-client",
+        "kind": "participant",
+        "title": "DataClient",
+        "links": [
+          {
+            "href": "source:///src/client/data-client.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-data-client-load",
+            "startsAt": {
+              "messageId": "m07",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m12f",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-data-client-source",
+            "startsAt": {
+              "messageId": "m20a",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m21",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-data-client-annotation",
+            "startsAt": {
+              "messageId": "m26",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m27",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "server",
+        "kind": "participant",
+        "title": "Hono server",
+        "links": [
+          {
+            "href": "source:///src/server/create-app.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-server-review",
+            "startsAt": {
+              "messageId": "m08",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m11",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-server-annotations",
+            "startsAt": {
+              "messageId": "m12b",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m12e",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-server-source",
+            "startsAt": {
+              "messageId": "m21",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m23",
+              "endpoint": "target"
+            }
+          },
+          {
+            "id": "act-server-annotation",
+            "startsAt": {
+              "messageId": "m27",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m28",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "filesystem",
+        "kind": "participant",
+        "title": "Filesystem",
+        "links": [
+          {
+            "href": "source:///src/server/read-artifact.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-filesystem-read",
+            "startsAt": {
+              "messageId": "m09",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m10",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-filesystem-annotations",
+            "startsAt": {
+              "messageId": "m12c",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m12d",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-filesystem-open",
+            "startsAt": {
+              "messageId": "m22",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m23",
+              "endpoint": "source"
+            }
+          },
+          {
+            "id": "act-filesystem-save",
+            "startsAt": {
+              "messageId": "m28",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m28",
+              "endpoint": "target"
+            }
+          }
+        ]
+      },
+      {
+        "id": "renderer",
+        "kind": "participant",
+        "title": "DiagramRenderer",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          },
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-renderer",
+            "startsAt": {
+              "messageId": "m13",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m17",
+              "endpoint": "source"
+            }
+          }
+        ]
+      },
+      {
+        "id": "canvas",
+        "kind": "participant",
+        "title": "DiagramCanvas",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-canvas.tsx"
+          },
+          {
+            "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-canvas",
+            "startsAt": {
+              "messageId": "m14",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m17",
+              "endpoint": "target"
+            }
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "kind": "participant",
+        "title": "Diagram layout",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-layout.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/diagram-spatial.ts"
+          }
+        ],
+        "type": "lifeline",
+        "activations": [
+          {
+            "id": "act-layout",
+            "startsAt": {
+              "messageId": "m15",
+              "endpoint": "target"
+            },
+            "endsAt": {
+              "messageId": "m16",
+              "endpoint": "source"
+            }
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "m00",
+        "type": "message",
+        "source": "user",
+        "target": "agent",
+        "label": "Architecture review request",
+        "messageType": "sync"
+      },
+      {
+        "id": "m01",
+        "type": "message",
+        "source": "agent",
+        "target": "cli",
+        "label": "Run Architecture Companion",
+        "messageType": "sync"
+      },
+      {
+        "id": "m02",
+        "type": "message",
+        "source": "cli",
+        "target": "cli",
+        "label": "resolveConsumerScope()",
+        "href": "source:///src/server/resolve-consumer-scope.ts",
+        "messageType": "sync"
+      },
+      {
+        "id": "m03",
+        "type": "message",
+        "source": "cli",
+        "target": "server",
+        "label": "startServer()",
+        "href": "source:///src/server/start-server.ts",
+        "messageType": "sync"
+      },
+      {
+        "id": "m04",
+        "type": "message",
+        "source": "cli",
+        "target": "agent",
+        "label": "Print local URL",
+        "messageType": "return"
+      },
+      {
+        "id": "m04a",
+        "type": "message",
+        "source": "agent",
+        "target": "user",
+        "label": "Hand off review URL",
+        "messageType": "return"
+      },
+      {
+        "id": "m05",
+        "type": "message",
+        "source": "user",
+        "target": "browser",
+        "label": "Open the received URL",
+        "messageType": "sync"
+      },
+      {
+        "id": "m06",
+        "type": "message",
+        "source": "browser",
+        "target": "workspace",
+        "label": "Mount WorkspacePage",
+        "messageType": "sync"
+      },
+      {
+        "id": "m06a",
+        "type": "message",
+        "source": "workspace",
+        "target": "data-client",
+        "label": "Subscribe to review updates",
+        "messageType": "sync"
+      },
+      {
+        "id": "m06b",
+        "type": "message",
+        "source": "data-client",
+        "target": "server",
+        "label": "GET /api/review/events",
+        "messageType": "async"
+      },
+      {
+        "id": "m07",
+        "type": "message",
+        "source": "workspace",
+        "target": "data-client",
+        "label": "Load review data",
+        "messageType": "sync"
+      },
+      {
+        "id": "m08",
+        "type": "message",
+        "source": "data-client",
+        "target": "server",
+        "label": "GET /api/review",
+        "messageType": "sync"
+      },
+      {
+        "id": "m09",
+        "type": "message",
+        "source": "server",
+        "target": "filesystem",
+        "label": "Read artifact file",
+        "messageType": "sync"
+      },
+      {
+        "id": "m10",
+        "type": "message",
+        "source": "filesystem",
+        "target": "server",
+        "label": "artifact file",
+        "messageType": "return"
+      },
+      {
+        "id": "m11",
+        "type": "message",
+        "source": "server",
+        "target": "data-client",
+        "label": "Review response",
+        "messageType": "return"
+      },
+      {
+        "id": "m12",
+        "type": "message",
+        "source": "data-client",
+        "target": "workspace",
+        "label": "Review data",
+        "messageType": "return"
+      },
+      {
+        "id": "m12a",
+        "type": "message",
+        "source": "workspace",
+        "target": "data-client",
+        "label": "Load Annotations",
+        "messageType": "sync"
+      },
+      {
+        "id": "m12b",
+        "type": "message",
+        "source": "data-client",
+        "target": "server",
+        "label": "GET /api/annotations",
+        "messageType": "sync"
+      },
+      {
+        "id": "m12c",
+        "type": "message",
+        "source": "server",
+        "target": "filesystem",
+        "label": "Read Annotation document",
+        "messageType": "sync"
+      },
+      {
+        "id": "m12d",
+        "type": "message",
+        "source": "filesystem",
+        "target": "server",
+        "label": "Annotation document",
+        "messageType": "return"
+      },
+      {
+        "id": "m12e",
+        "type": "message",
+        "source": "server",
+        "target": "data-client",
+        "label": "Annotation response",
+        "messageType": "return"
+      },
+      {
+        "id": "m12f",
+        "type": "message",
+        "source": "data-client",
+        "target": "workspace",
+        "label": "Annotation data",
+        "messageType": "return"
+      },
+      {
+        "id": "m13",
+        "type": "message",
+        "source": "workspace",
+        "target": "renderer",
+        "label": "Render the active Diagram",
+        "messageType": "sync"
+      },
+      {
+        "id": "m14",
+        "type": "message",
+        "source": "renderer",
+        "target": "canvas",
+        "label": "Build measurement nodes",
+        "messageType": "sync"
+      },
+      {
+        "id": "m15",
+        "type": "message",
+        "source": "renderer",
+        "target": "layout",
+        "label": "layoutDiagram(DiagramElements, DiagramNodeSizes)",
+        "messageType": "sync"
+      },
+      {
+        "id": "m16",
+        "type": "message",
+        "source": "layout",
+        "target": "renderer",
+        "label": "DiagramLayout",
+        "messageType": "return"
+      },
+      {
+        "id": "m17",
+        "type": "message",
+        "source": "renderer",
+        "target": "canvas",
+        "label": "Render the React Flow model",
+        "messageType": "sync"
+      },
+      {
+        "id": "m18",
+        "type": "message",
+        "source": "canvas",
+        "target": "browser",
+        "label": "Render DiagramCanvas",
+        "messageType": "async"
+      },
+      {
+        "id": "m19",
+        "type": "message",
+        "source": "user",
+        "target": "browser",
+        "label": "Click a source link",
+        "messageType": "sync"
+      },
+      {
+        "id": "m20",
+        "type": "message",
+        "source": "browser",
+        "target": "workspace",
+        "label": "Open source",
+        "messageType": "sync"
+      },
+      {
+        "id": "m20a",
+        "type": "message",
+        "source": "workspace",
+        "target": "data-client",
+        "label": "openSource()",
+        "messageType": "sync"
+      },
+      {
+        "id": "m21",
+        "type": "message",
+        "source": "data-client",
+        "target": "server",
+        "label": "POST /api/source/open",
+        "href": "source:///src/server/open-source-reference.ts",
+        "messageType": "sync"
+      },
+      {
+        "id": "m22",
+        "type": "message",
+        "source": "server",
+        "target": "filesystem",
+        "label": "Open the validated source",
+        "messageType": "sync"
+      },
+      {
+        "id": "m23",
+        "type": "message",
+        "source": "filesystem",
+        "target": "server",
+        "label": "Opened",
+        "messageType": "return"
+      },
+      {
+        "id": "m24",
+        "type": "message",
+        "source": "user",
+        "target": "browser",
+        "label": "Leave a comment",
+        "messageType": "sync"
+      },
+      {
+        "id": "m25",
+        "type": "message",
+        "source": "browser",
+        "target": "workspace",
+        "label": "Run Annotation controller actions",
+        "messageType": "sync"
+      },
+      {
+        "id": "m26",
+        "type": "message",
+        "source": "workspace",
+        "target": "data-client",
+        "label": "Save Annotations",
+        "messageType": "sync"
+      },
+      {
+        "id": "m27",
+        "type": "message",
+        "source": "data-client",
+        "target": "server",
+        "label": "PUT /api/annotations",
+        "messageType": "sync"
+      },
+      {
+        "id": "m28",
+        "type": "message",
+        "source": "server",
+        "target": "filesystem",
+        "label": "Save Annotation document",
+        "href": "source:///src/server/file-annotation-repository.ts",
+        "messageType": "sync"
+      }
+    ]
+  }
+}

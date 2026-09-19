@@ -1,0 +1,983 @@
+{
+  "id": "dependency-graph",
+  "title": "Module dependency graph",
+  "generatorId": "freeform",
+  "layout": {
+    "id": "elk-layered",
+    "options": {
+      "direction": "RIGHT"
+    }
+  },
+  "graph": {
+    "groups": [
+      {
+        "id": "dep-cli",
+        "title": "src/cli",
+        "description": "Execution entry points and consumer scope resolution"
+      },
+      {
+        "id": "dep-features",
+        "title": "src/features",
+        "description": "Product artifact and domain contracts"
+      },
+      {
+        "id": "dep-diagram",
+        "title": "diagram",
+        "description": "Common Diagram artifact and built-in layouts",
+        "parentId": "dep-features"
+      },
+      {
+        "id": "dep-artifact",
+        "title": "artifact",
+        "description": "Artifact composition and revision boundaries",
+        "parentId": "dep-features"
+      },
+      {
+        "id": "dep-annotation",
+        "title": "annotation",
+        "description": "Spatial Annotation data and behavior",
+        "parentId": "dep-features"
+      },
+      {
+        "id": "dep-server",
+        "title": "src/server",
+        "description": "Hono API, file storage, and update polling"
+      },
+      {
+        "id": "dep-plugins",
+        "title": "src/plugins",
+        "description": "Built-in Diagram generator resources and contract"
+      },
+      {
+        "id": "dep-generator",
+        "title": "diagram-generators",
+        "parentId": "dep-plugins"
+      },
+      {
+        "id": "dep-shared",
+        "title": "src/shared",
+        "description": "Lower layers unaware of product context"
+      },
+      {
+        "id": "dep-shared-react",
+        "title": "react",
+        "parentId": "dep-shared"
+      },
+      {
+        "id": "dep-shared-react-ui",
+        "title": "react-ui",
+        "parentId": "dep-shared"
+      },
+      {
+        "id": "dep-shared-react-flow",
+        "title": "react-flow",
+        "parentId": "dep-shared"
+      },
+      {
+        "id": "dep-shared-universal",
+        "title": "universal",
+        "parentId": "dep-shared"
+      },
+      {
+        "id": "dep-shared-node",
+        "title": "node",
+        "parentId": "dep-shared"
+      },
+      {
+        "id": "dep-client",
+        "title": "src/client",
+        "description": "Browser data adapter and React UI"
+      },
+      {
+        "id": "dep-client-entry",
+        "title": "entry",
+        "parentId": "dep-client"
+      },
+      {
+        "id": "dep-client-data",
+        "title": "data-client.ts",
+        "parentId": "dep-client"
+      },
+      {
+        "id": "dep-client-pages",
+        "title": "pages",
+        "parentId": "dep-client"
+      },
+      {
+        "id": "dep-client-parts",
+        "title": "parts",
+        "parentId": "dep-client"
+      },
+      {
+        "id": "dep-client-widgets",
+        "title": "widgets",
+        "parentId": "dep-client"
+      }
+    ],
+    "nodes": [
+      {
+        "type": "default",
+        "id": "dep-cli-runner",
+        "kind": "entry",
+        "title": "CLI commands",
+        "description": "Lists generators and annotations for the designated scope, validates the artifact, starts the server, and provides the stdout contract",
+        "links": [
+          {
+            "href": "source:///src/cli/serve.command.ts"
+          },
+          {
+            "href": "source:///src/cli/view-generators.command.ts"
+          },
+          {
+            "href": "source:///src/cli/view-annotations.command.ts"
+          },
+          {
+            "href": "source:///src/cli/validate-schemas.command.ts"
+          }
+        ],
+        "groupId": "dep-cli"
+      },
+      {
+        "type": "default",
+        "id": "dep-consumer-scope",
+        "kind": "data",
+        "title": "ConsumerScope",
+        "description": "Resolves the canonical path and Git membership of the scope input",
+        "links": [
+          {
+            "href": "source:///src/server/consumer-scope.ts"
+          },
+          {
+            "href": "source:///src/server/resolve-consumer-scope.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-artifact-schema",
+        "kind": "schema",
+        "title": "Artifact",
+        "description": "Defines the Artifact schema with process and design diagram lists",
+        "links": [
+          {
+            "href": "source:///src/features/artifact/artifact.ts"
+          }
+        ],
+        "groupId": "dep-artifact"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-artifact",
+        "kind": "schema",
+        "title": "Diagram artifact",
+        "description": "DiagramElements with the complete Diagram schema, layout config, and semantic validation",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-graph.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/diagram.ts"
+          }
+        ],
+        "groupId": "dep-diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-layout",
+        "kind": "layout",
+        "title": "Diagram layout",
+        "description": "Built-in config union and the closed layoutDiagram dispatcher",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-layout.ts"
+          }
+        ],
+        "groupId": "dep-diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-spatial",
+        "kind": "spatial contract",
+        "title": "Diagram spatial contracts",
+        "description": "DiagramNodeSizes and the DiagramLayout geometry result",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-spatial.ts"
+          }
+        ],
+        "groupId": "dep-diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-link-policy",
+        "kind": "link policy",
+        "title": "Diagram link policy",
+        "description": "Source link detection and link label policy",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/diagram-link.ts"
+          }
+        ],
+        "groupId": "dep-diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-layout-strategies",
+        "kind": "layout strategy",
+        "title": "Built-in layout strategies",
+        "description": "ELK layered and sequence layout computation with strategy config schemas",
+        "links": [
+          {
+            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+          }
+        ],
+        "groupId": "dep-diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-annotation-domain",
+        "kind": "domain",
+        "title": "Annotation model and actions",
+        "description": "Annotation document, draft, update, move, and remove operations, revision annotation lookup, and the repository contract",
+        "links": [
+          {
+            "href": "source:///src/features/annotation/annotation-document.ts"
+          },
+          {
+            "href": "source:///src/features/annotation/create-annotation-draft.ts"
+          },
+          {
+            "href": "source:///src/features/annotation/manage-annotations.ts"
+          },
+          {
+            "href": "source:///src/features/annotation/revision-annotations.ts"
+          }
+        ],
+        "groupId": "dep-annotation"
+      },
+      {
+        "type": "default",
+        "id": "dep-server-runtime",
+        "kind": "runtime",
+        "title": "startServer",
+        "description": "Combines the Hono server, static client, and artifact polling lifecycle",
+        "links": [
+          {
+            "href": "source:///src/server/start-server.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-server-api",
+        "kind": "api",
+        "title": "createApp",
+        "description": "Defines the review, SSE, annotations, and source-open endpoints",
+        "links": [
+          {
+            "href": "source:///src/server/create-app.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-artifact-io",
+        "kind": "repository",
+        "title": "Artifact read and validation",
+        "description": "Reads artifact JSON and validates it against the Artifact and Diagram schemas",
+        "links": [
+          {
+            "href": "source:///src/server/read-artifact.ts"
+          },
+          {
+            "href": "source:///src/server/validate-artifact.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-annotation-io",
+        "kind": "repository",
+        "title": "FileAnnotationRepository",
+        "description": "Reads and stores Annotation documents isolated per Artifact revision, providing active revision lookup and ETags",
+        "links": [
+          {
+            "href": "source:///src/server/file-annotation-repository.ts"
+          },
+          {
+            "href": "source:///src/server/read-active-revision-annotations.ts"
+          },
+          {
+            "href": "source:///src/server/create-annotation-etag.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-source-open",
+        "kind": "source flow",
+        "title": "Source reference opening",
+        "description": "Source link validation, local path opening, and request guard decisions",
+        "links": [
+          {
+            "href": "source:///src/server/open-source-reference.ts"
+          },
+          {
+            "href": "source:///src/server/source-open-request.ts"
+          },
+          {
+            "href": "source:///src/server/local-app-action-request.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-revision-id",
+        "kind": "identity",
+        "title": "Artifact revision identity",
+        "description": "Computes the revision ID from the artifact contents",
+        "links": [
+          {
+            "href": "source:///src/server/create-artifact-revision-id.ts"
+          },
+          {
+            "href": "source:///src/features/artifact/artifact-revision-id.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-review-updates",
+        "kind": "poller",
+        "title": "ReviewUpdates",
+        "description": "Compares fingerprints of the active Artifact revision and its Annotation document and notifies SSE listeners",
+        "links": [
+          {
+            "href": "source:///src/server/review-updates.ts"
+          }
+        ],
+        "groupId": "dep-server"
+      },
+      {
+        "type": "default",
+        "id": "dep-generator-contract",
+        "kind": "extension contract",
+        "title": "Generator manifest contract",
+        "description": "Lowercase kebab-case IDs and the strict GENERATOR.md metadata and prompt contract",
+        "links": [
+          {
+            "href": "source:///src/features/diagram-generator/diagram-generator-id.ts"
+          },
+          {
+            "href": "source:///src/features/diagram-generator/diagram-generator-manifest.ts"
+          }
+        ],
+        "groupId": "dep-generator"
+      },
+      {
+        "type": "default",
+        "id": "dep-freeform-generator",
+        "kind": "extension discovery",
+        "title": "Diagram generator discovery",
+        "description": "Discovers and sorts direct-child manifests of the built-in, global, and project roots",
+        "links": [
+          {
+            "href": "source:///src/cli/view-generators.command.ts"
+          },
+          {
+            "href": "source:///src/cli/view-generators.ts"
+          }
+        ],
+        "groupId": "dep-generator"
+      },
+      {
+        "type": "default",
+        "id": "dep-main-entry",
+        "kind": "entry",
+        "title": "render",
+        "description": "Assembles ThemeProvider, WorkspacePage, and Toaster",
+        "links": [
+          {
+            "href": "source:///src/client/main.tsx"
+          }
+        ],
+        "groupId": "dep-client-entry"
+      },
+      {
+        "type": "default",
+        "id": "dep-data-client",
+        "kind": "client adapter",
+        "title": "DataClient",
+        "description": "Combines Hono RPC, annotation ETags, and SSE parsing into the browser adapter",
+        "links": [
+          {
+            "href": "source:///src/client/data-client.ts"
+          }
+        ],
+        "groupId": "dep-client-data"
+      },
+      {
+        "type": "default",
+        "id": "dep-workspace-page",
+        "kind": "page",
+        "title": "WorkspacePage",
+        "description": "Coordinates review state with Diagram selection, rendering, and Annotations",
+        "links": [
+          {
+            "href": "source:///src/client/pages/workspace-page.tsx"
+          }
+        ],
+        "groupId": "dep-client-pages"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-renderer",
+        "kind": "widget",
+        "title": "DiagramRenderer",
+        "description": "Coordinates the measurement lifecycle, layout execution, render model application, and annotation overlay",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ],
+        "groupId": "dep-client-widgets"
+      },
+      {
+        "type": "default",
+        "id": "dep-react-flow-adapter",
+        "kind": "adapter",
+        "title": "Diagram React Flow adapter",
+        "description": "Converts artifact and layout into React Flow nodes and edges with primitive data",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
+          }
+        ],
+        "groupId": "dep-client-widgets"
+      },
+      {
+        "type": "default",
+        "id": "dep-links-panel",
+        "kind": "widget",
+        "title": "DiagramLinksPanel",
+        "description": "Lists diagram links and delegates source link opening",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
+          }
+        ],
+        "groupId": "dep-client-widgets"
+      },
+      {
+        "type": "default",
+        "id": "dep-annotation-layer",
+        "kind": "part",
+        "title": "AnnotationLayer",
+        "description": "Provides pins, composer, and edit, delete, and conflict UI",
+        "links": [
+          {
+            "href": "source:///src/client/parts/annotation-layer.tsx"
+          }
+        ],
+        "groupId": "dep-client-parts"
+      },
+      {
+        "type": "default",
+        "id": "dep-diagram-canvas",
+        "kind": "part",
+        "title": "DiagramCanvas",
+        "description": "Owns the React Flow host, canvas-owned registry, and pan, zoom, and viewport",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-canvas.tsx"
+          },
+          {
+            "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
+          }
+        ],
+        "groupId": "dep-client-parts"
+      },
+      {
+        "type": "default",
+        "id": "dep-shared-flow-primitives",
+        "kind": "shared React Flow",
+        "title": "React Flow primitives",
+        "description": "artifact-agnostic custom nodes, edges, labels, overlay panel",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/card-node.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/lifeline-node.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/fragment-node.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/message-edge.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
+          },
+          {
+            "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
+          },
+          {
+            "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+          }
+        ],
+        "groupId": "dep-shared-react-flow"
+      },
+      {
+        "type": "default",
+        "id": "dep-shared-react-ui-foundation",
+        "kind": "shared React UI",
+        "title": "React UI primitives and theme",
+        "description": "Base UI controls, shell, drawer, toast, theme context",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/button.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-ui/theme-provider.tsx"
+          },
+          {
+            "href": "source:///src/shared/react-ui/drawer.tsx"
+          }
+        ],
+        "groupId": "dep-shared-react-ui"
+      },
+      {
+        "type": "default",
+        "id": "dep-react-utilities",
+        "kind": "utility",
+        "title": "React utilities",
+        "description": "cn class merging and safe context creation",
+        "links": [
+          {
+            "href": "source:///src/shared/react/class-name.ts"
+          },
+          {
+            "href": "source:///src/shared/react/safe-context.ts"
+          }
+        ],
+        "groupId": "dep-shared-react"
+      },
+      {
+        "type": "default",
+        "id": "dep-open-local-path",
+        "kind": "utility",
+        "title": "openLocalPath",
+        "description": "Per-platform local path opening launcher",
+        "links": [
+          {
+            "href": "source:///src/shared/node/open-local-path.ts"
+          }
+        ],
+        "groupId": "dep-shared-node"
+      },
+      {
+        "type": "default",
+        "id": "dep-get-or-throw",
+        "kind": "utility",
+        "title": "getOrThrow",
+        "description": "Shared utility that checks the required-value lookup invariant",
+        "links": [
+          {
+            "href": "source:///src/shared/universal/get-or-throw.ts"
+          }
+        ],
+        "groupId": "dep-shared-universal"
+      }
+    ],
+    "edges": [
+      {
+        "type": "default",
+        "id": "dep-e01",
+        "source": "dep-cli-runner",
+        "target": "dep-consumer-scope",
+        "kind": "imports",
+        "label": "resolve"
+      },
+      {
+        "type": "default",
+        "id": "dep-e02",
+        "source": "dep-cli-runner",
+        "target": "dep-server-runtime",
+        "kind": "imports",
+        "label": "start server"
+      },
+      {
+        "type": "default",
+        "id": "dep-e03",
+        "source": "dep-server-runtime",
+        "target": "dep-server-api",
+        "kind": "imports",
+        "label": "create app"
+      },
+      {
+        "type": "default",
+        "id": "dep-e04",
+        "source": "dep-server-runtime",
+        "target": "dep-review-updates",
+        "kind": "owns",
+        "label": "polling lifecycle"
+      },
+      {
+        "type": "default",
+        "id": "dep-e05",
+        "source": "dep-server-api",
+        "target": "dep-artifact-io",
+        "kind": "imports",
+        "label": "read review"
+      },
+      {
+        "type": "default",
+        "id": "dep-e06",
+        "source": "dep-server-api",
+        "target": "dep-annotation-io",
+        "kind": "assembles",
+        "label": "default repository"
+      },
+      {
+        "type": "default",
+        "id": "dep-e08",
+        "source": "dep-artifact-io",
+        "target": "dep-artifact-schema",
+        "kind": "imports",
+        "label": "parse"
+      },
+      {
+        "type": "default",
+        "id": "dep-e09",
+        "source": "dep-artifact-schema",
+        "target": "dep-diagram-artifact",
+        "kind": "imports",
+        "label": "shared Diagram schema"
+      },
+      {
+        "type": "default",
+        "id": "dep-e10",
+        "source": "dep-diagram-artifact",
+        "target": "dep-diagram-layout",
+        "kind": "imports",
+        "label": "layout config schema"
+      },
+      {
+        "type": "default",
+        "id": "dep-e11",
+        "source": "dep-diagram-layout",
+        "target": "dep-diagram-spatial",
+        "kind": "imports",
+        "label": "spatial types"
+      },
+      {
+        "type": "default",
+        "id": "dep-e12",
+        "source": "dep-diagram-layout",
+        "target": "dep-layout-strategies",
+        "kind": "dispatches",
+        "label": "closed built-ins"
+      },
+      {
+        "type": "default",
+        "id": "dep-e13",
+        "source": "dep-layout-strategies",
+        "target": "dep-diagram-artifact",
+        "kind": "type imports",
+        "label": "DiagramElements"
+      },
+      {
+        "type": "default",
+        "id": "dep-e14",
+        "source": "dep-layout-strategies",
+        "target": "dep-diagram-spatial",
+        "kind": "type imports",
+        "label": "spatial contracts"
+      },
+      {
+        "type": "default",
+        "id": "dep-e15",
+        "source": "dep-layout-strategies",
+        "target": "dep-get-or-throw",
+        "kind": "imports",
+        "label": "required size lookup"
+      },
+      {
+        "type": "default",
+        "id": "dep-e16",
+        "source": "dep-diagram-artifact",
+        "target": "dep-generator-contract",
+        "kind": "imports",
+        "label": "generator ID schema"
+      },
+      {
+        "type": "default",
+        "id": "dep-e17",
+        "source": "dep-freeform-generator",
+        "target": "dep-generator-contract",
+        "kind": "imports",
+        "label": "parse manifest"
+      },
+      {
+        "type": "default",
+        "id": "dep-e18",
+        "source": "dep-main-entry",
+        "target": "dep-data-client",
+        "kind": "imports",
+        "label": "create client"
+      },
+      {
+        "type": "default",
+        "id": "dep-e19",
+        "source": "dep-main-entry",
+        "target": "dep-workspace-page",
+        "kind": "renders",
+        "label": "app page"
+      },
+      {
+        "type": "default",
+        "id": "dep-e20",
+        "source": "dep-workspace-page",
+        "target": "dep-data-client",
+        "kind": "imports",
+        "label": "server actions"
+      },
+      {
+        "type": "default",
+        "id": "dep-e21",
+        "source": "dep-workspace-page",
+        "target": "dep-diagram-renderer",
+        "kind": "renders",
+        "label": "active Diagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-e22",
+        "source": "dep-workspace-page",
+        "target": "dep-annotation-domain",
+        "kind": "imports",
+        "label": "annotation controller"
+      },
+      {
+        "type": "default",
+        "id": "dep-e24",
+        "source": "dep-diagram-renderer",
+        "target": "dep-react-flow-adapter",
+        "kind": "imports",
+        "label": "conversion"
+      },
+      {
+        "type": "default",
+        "id": "dep-e25",
+        "source": "dep-diagram-renderer",
+        "target": "dep-diagram-layout",
+        "kind": "imports",
+        "label": "layoutDiagram"
+      },
+      {
+        "type": "default",
+        "id": "dep-e26",
+        "source": "dep-diagram-renderer",
+        "target": "dep-diagram-canvas",
+        "kind": "renders",
+        "label": "render model"
+      },
+      {
+        "type": "default",
+        "id": "dep-e27",
+        "source": "dep-diagram-renderer",
+        "target": "dep-annotation-layer",
+        "kind": "composes",
+        "label": "annotation overlay"
+      },
+      {
+        "type": "default",
+        "id": "dep-e28",
+        "source": "dep-react-flow-adapter",
+        "target": "dep-diagram-artifact",
+        "kind": "imports",
+        "label": "artifact types"
+      },
+      {
+        "type": "default",
+        "id": "dep-e29",
+        "source": "dep-react-flow-adapter",
+        "target": "dep-diagram-spatial",
+        "kind": "imports",
+        "label": "layout types"
+      },
+      {
+        "type": "default",
+        "id": "dep-e30",
+        "source": "dep-react-flow-adapter",
+        "target": "dep-shared-flow-primitives",
+        "kind": "imports",
+        "label": "presentation types"
+      },
+      {
+        "type": "default",
+        "id": "dep-e31",
+        "source": "dep-diagram-canvas",
+        "target": "dep-shared-flow-primitives",
+        "kind": "registers",
+        "label": "runtime components"
+      },
+      {
+        "type": "default",
+        "id": "dep-e32",
+        "source": "dep-diagram-canvas",
+        "target": "dep-diagram-spatial",
+        "kind": "type imports",
+        "label": "viewport point"
+      },
+      {
+        "type": "default",
+        "id": "dep-e33",
+        "source": "dep-annotation-layer",
+        "target": "dep-annotation-domain",
+        "kind": "imports",
+        "label": "annotation types"
+      },
+      {
+        "type": "default",
+        "id": "dep-e34",
+        "source": "dep-annotation-layer",
+        "target": "dep-shared-react-ui-foundation",
+        "kind": "imports",
+        "label": "UI primitives"
+      },
+      {
+        "type": "default",
+        "id": "dep-e35",
+        "source": "dep-workspace-page",
+        "target": "dep-shared-react-ui-foundation",
+        "kind": "imports",
+        "label": "shell UI"
+      },
+      {
+        "type": "default",
+        "id": "dep-e36",
+        "source": "dep-server-api",
+        "target": "dep-source-open",
+        "kind": "imports",
+        "label": "source open"
+      },
+      {
+        "type": "default",
+        "id": "dep-e37",
+        "source": "dep-server-api",
+        "target": "dep-revision-id",
+        "kind": "imports",
+        "label": "revision id"
+      },
+      {
+        "type": "default",
+        "id": "dep-e38",
+        "source": "dep-review-updates",
+        "target": "dep-revision-id",
+        "kind": "imports",
+        "label": "revision id"
+      },
+      {
+        "type": "default",
+        "id": "dep-e39",
+        "source": "dep-cli-runner",
+        "target": "dep-annotation-io",
+        "kind": "imports",
+        "label": "view annotations"
+      },
+      {
+        "type": "default",
+        "id": "dep-e40",
+        "source": "dep-react-flow-adapter",
+        "target": "dep-diagram-link-policy",
+        "kind": "imports",
+        "label": "link policy"
+      },
+      {
+        "type": "default",
+        "id": "dep-e41",
+        "source": "dep-diagram-renderer",
+        "target": "dep-links-panel",
+        "kind": "renders",
+        "label": "diagram links"
+      },
+      {
+        "type": "default",
+        "id": "dep-e42",
+        "source": "dep-links-panel",
+        "target": "dep-shared-react-ui-foundation",
+        "kind": "imports",
+        "label": "button"
+      },
+      {
+        "type": "default",
+        "id": "dep-e43",
+        "source": "dep-links-panel",
+        "target": "dep-diagram-link-policy",
+        "kind": "imports",
+        "label": "link policy"
+      },
+      {
+        "type": "default",
+        "id": "dep-e44",
+        "source": "dep-shared-react-ui-foundation",
+        "target": "dep-react-utilities",
+        "kind": "imports",
+        "label": "cn, safe context"
+      },
+      {
+        "type": "default",
+        "id": "dep-e45",
+        "source": "dep-diagram-renderer",
+        "target": "dep-react-utilities",
+        "kind": "imports",
+        "label": "cn"
+      },
+      {
+        "type": "default",
+        "id": "dep-e46",
+        "source": "dep-server-api",
+        "target": "dep-open-local-path",
+        "kind": "imports",
+        "label": "default open path"
+      },
+      {
+        "type": "default",
+        "id": "dep-e47",
+        "source": "dep-data-client",
+        "target": "dep-server-api",
+        "kind": "type imports",
+        "label": "AppType RPC"
+      },
+      {
+        "type": "default",
+        "id": "dep-e48",
+        "source": "dep-data-client",
+        "target": "dep-annotation-domain",
+        "kind": "imports",
+        "label": "revision annotations"
+      }
+    ]
+  }
+}
