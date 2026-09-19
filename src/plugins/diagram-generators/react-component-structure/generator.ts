@@ -10,7 +10,7 @@ import type { DefaultDiagramEdge, DefaultDiagramNode, DiagramGraph } from "@/fea
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
-const defaultExcludeFilePatterns = [
+const defaultAnalysisExcludeFilePatterns = [
   "**/node_modules/**",
   "**/dist/**",
   "**/build/**",
@@ -65,16 +65,29 @@ type Relationship = Readonly<{
   propName?: string;
 }>;
 
+type SuppliedValueKind = Exclude<ReactComponentRelationshipKind, "direct-render">;
+
+type SuppliedValue = Readonly<{
+  propName: string;
+  kind: SuppliedValueKind;
+  targetUseIds: readonly string[];
+}>;
+
+type ComponentUse = Readonly<{
+  id: string;
+  ownerId: string;
+  target: ComponentTarget;
+  suppliedValues: SuppliedValue[];
+}>;
+
 type TerminalRule = Readonly<{
   type: "terminal";
-  kind: Exclude<ReactComponentRelationshipKind, "direct-render">;
-  rendererId: string;
-  propName: string;
+  kind: SuppliedValueKind;
 }>;
 
 type ForwardRule = Readonly<{
   type: "forward";
-  targetComponentId: string;
+  targetUseId: string;
   targetPropName: string;
 }>;
 
@@ -82,14 +95,23 @@ type ConsumerRule = TerminalRule | ForwardRule;
 
 type ConsumerRules = Readonly<{
   exact: Map<string, ConsumerRule[]>;
-  spreads: ReadonlyArray<Readonly<{ excludedProps: ReadonlySet<string>; targetComponentId: string }>>;
+  spreads: ReadonlyArray<Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string }>>;
 }>;
 
-type SuppliedRelationship = Readonly<{
-  receiverId: string;
+type ConsumerRouteStep = Readonly<{
+  useId: string;
+  componentId: string;
   propName: string;
-  kind: Exclude<ReactComponentRelationshipKind, "direct-render">;
-  targets: readonly ComponentTarget[];
+}>;
+
+type ConsumerRoute = Readonly<{
+  kind: SuppliedValueKind;
+  steps: readonly ConsumerRouteStep[];
+}>;
+
+type ComponentVisibility = Readonly<{
+  boundaryVisible: boolean;
+  implementationAnalyzed: boolean;
 }>;
 
 type PropBindings = Readonly<{
@@ -104,8 +126,9 @@ type AnalysisContext = Readonly<{
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>;
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>;
   externalTargets: Map<string, ComponentTarget>;
-  relationships: Map<string, Relationship>;
-  suppliedRelationships: SuppliedRelationship[];
+  uses: Map<string, ComponentUse>;
+  directUseIdsByOwner: Map<string, string[]>;
+  analyzedUseIds: Set<string>;
 }>;
 
 function toPosixPath(path: string): string {
@@ -594,6 +617,30 @@ function targetForReference(
   return target;
 }
 
+function componentUseId(ownerId: string, node: ts.Node, targetId: string): string {
+  return [ownerId, toPosixPath(node.getSourceFile().fileName), node.pos, node.end, targetId].join("\0");
+}
+
+function ensureComponentUse(
+  ownerId: string,
+  node: ts.Node,
+  target: ComponentTarget,
+  context: AnalysisContext,
+): ComponentUse {
+  const id = componentUseId(ownerId, node, target.id);
+  const existing = context.uses.get(id);
+  if (existing) return existing;
+  const use = { id, ownerId, target, suppliedValues: [] } satisfies ComponentUse;
+  context.uses.set(id, use);
+  return use;
+}
+
+function addDirectUse(context: AnalysisContext, use: ComponentUse): void {
+  const existing = context.directUseIdsByOwner.get(use.ownerId) ?? [];
+  if (!existing.includes(use.id)) existing.push(use.id);
+  context.directUseIdsByOwner.set(use.ownerId, existing);
+}
+
 function symbolForBindingName(name: ts.BindingName, checker: ts.TypeChecker): ts.Symbol | undefined {
   return ts.isIdentifier(name) ? checker.getSymbolAtLocation(name) : undefined;
 }
@@ -827,62 +874,66 @@ function resolveAliasedValues(
   );
 }
 
+type StaticObjectProperties = Readonly<{
+  hasUnknownSpread: boolean;
+  values: ReadonlyMap<string, StaticObjectPropertyValue>;
+}>;
+
+function collectStaticObjectProperties(
+  expression: ts.Expression,
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+): StaticObjectProperties {
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isObjectLiteralExpression(unwrapped)) {
+    const values = new Map<string, StaticObjectPropertyValue>();
+    let hasUnknownSpread = false;
+    for (const property of unwrapped.properties) {
+      if (ts.isPropertyAssignment(property)) {
+        const propName = propertyNameText(property.name);
+        if (propName) values.set(propName, { propName, value: property.initializer });
+      } else if (ts.isShorthandPropertyAssignment(property)) {
+        const propName = propertyNameText(property.name);
+        if (propName) {
+          values.set(propName, {
+            propName,
+            value: property.name,
+            valueSymbol: context.checker.getShorthandAssignmentValueSymbol(property),
+          });
+        }
+      } else if (ts.isSpreadAssignment(property)) {
+        const spread = collectStaticObjectProperties(property.expression, context, visitedSymbols);
+        if (spread.hasUnknownSpread) {
+          values.clear();
+          hasUnknownSpread = true;
+        }
+        for (const [propName, value] of spread.values) values.set(propName, value);
+      }
+    }
+    return { hasUnknownSpread, values };
+  }
+  const reference = localVariableReference(unwrapped, context, visitedSymbols);
+  if (!reference) return { hasUnknownSpread: true, values: new Map() };
+
+  const values = new Map<string, StaticObjectPropertyValue>();
+  let hasUnknownSpread = false;
+  for (const initializer of reference.initializers) {
+    const resolved = collectStaticObjectProperties(initializer, context, reference.visitedSymbols);
+    if (resolved.hasUnknownSpread) {
+      values.clear();
+      hasUnknownSpread = true;
+    }
+    for (const [propName, value] of resolved.values) values.set(propName, value);
+  }
+  return { hasUnknownSpread, values };
+}
+
 function staticObjectPropertyValues(
   expression: ts.Expression,
   context: AnalysisContext,
   visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
 ): readonly StaticObjectPropertyValue[] {
-  type CollectedValues = Readonly<{
-    hasUnknownSpread: boolean;
-    values: ReadonlyMap<string, StaticObjectPropertyValue>;
-  }>;
-
-  function collect(candidate: ts.Expression, visited: ReadonlySet<ts.Symbol>): CollectedValues {
-    const unwrapped = unwrapExpression(candidate);
-    if (ts.isObjectLiteralExpression(unwrapped)) {
-      const values = new Map<string, StaticObjectPropertyValue>();
-      let hasUnknownSpread = false;
-      for (const property of unwrapped.properties) {
-        if (ts.isPropertyAssignment(property)) {
-          const propName = propertyNameText(property.name);
-          if (propName) values.set(propName, { propName, value: property.initializer });
-        } else if (ts.isShorthandPropertyAssignment(property)) {
-          const propName = propertyNameText(property.name);
-          if (propName) {
-            values.set(propName, {
-              propName,
-              value: property.name,
-              valueSymbol: context.checker.getShorthandAssignmentValueSymbol(property),
-            });
-          }
-        } else if (ts.isSpreadAssignment(property)) {
-          const spread = collect(property.expression, visited);
-          if (spread.hasUnknownSpread) {
-            values.clear();
-            hasUnknownSpread = true;
-          }
-          for (const [propName, value] of spread.values) values.set(propName, value);
-        }
-      }
-      return { hasUnknownSpread, values };
-    }
-    const reference = localVariableReference(unwrapped, context, visited);
-    if (!reference) return { hasUnknownSpread: true, values: new Map() };
-
-    const values = new Map<string, StaticObjectPropertyValue>();
-    let hasUnknownSpread = false;
-    for (const initializer of reference.initializers) {
-      const resolved = collect(initializer, reference.visitedSymbols);
-      if (resolved.hasUnknownSpread) {
-        values.clear();
-        hasUnknownSpread = true;
-      }
-      for (const [propName, value] of resolved.values) values.set(propName, value);
-    }
-    return { hasUnknownSpread, values };
-  }
-
-  return [...collect(expression, visitedSymbols).values.values()];
+  return [...collectStaticObjectProperties(expression, context, visitedSymbols).values.values()];
 }
 
 function staticObjectPropertyValue(
@@ -910,12 +961,53 @@ function analyzeConsumerRules(
   bindings: PropBindings,
 ): ConsumerRules {
   const rules: ConsumerRules = { exact: new Map(), spreads: [] };
-  const mutableSpreads = rules.spreads as Array<
-    Readonly<{ excludedProps: ReadonlySet<string>; targetComponentId: string }>
-  >;
+  const mutableSpreads = rules.spreads as Array<Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string }>>;
 
   function terminal(propName: string, kind: TerminalRule["kind"]): void {
-    addExactRule(rules, propName, { type: "terminal", kind, rendererId: definition.id, propName });
+    addExactRule(rules, propName, { type: "terminal", kind });
+  }
+
+  function removeForwardingToProp(targetUseId: string, targetPropName: string): void {
+    for (const [incomingPropName, existing] of rules.exact) {
+      rules.exact.set(
+        incomingPropName,
+        existing.filter(
+          (rule) =>
+            rule.type !== "forward" || rule.targetUseId !== targetUseId || rule.targetPropName !== targetPropName,
+        ),
+      );
+    }
+    for (const [index, spread] of mutableSpreads.entries()) {
+      if (spread.targetUseId !== targetUseId) continue;
+      mutableSpreads[index] = {
+        ...spread,
+        excludedProps: new Set(spread.excludedProps).add(targetPropName),
+      };
+    }
+  }
+
+  function removeForwardingOverriddenBySpread(targetUseId: string, excludedProps: ReadonlySet<string>): void {
+    for (const [incomingPropName, existing] of rules.exact) {
+      rules.exact.set(
+        incomingPropName,
+        existing.filter(
+          (rule) =>
+            rule.type !== "forward" || rule.targetUseId !== targetUseId || excludedProps.has(rule.targetPropName),
+        ),
+      );
+    }
+  }
+
+  function clearForwardingToTarget(targetUseId: string): void {
+    for (const [incomingPropName, existing] of rules.exact) {
+      rules.exact.set(
+        incomingPropName,
+        existing.filter((rule) => rule.type !== "forward" || rule.targetUseId !== targetUseId),
+      );
+    }
+    for (let index = mutableSpreads.length - 1; index >= 0; index -= 1) {
+      if (mutableSpreads[index]?.targetUseId === targetUseId) mutableSpreads.splice(index, 1);
+    }
   }
 
   function collectInvokedRenderProps(expression: ts.Expression, traverseRootFunction: boolean): readonly string[] {
@@ -1003,33 +1095,41 @@ function analyzeConsumerRules(
 
   function analyzeJsxAttributes(
     attributes: ts.JsxAttributes,
-    target: ComponentTarget | undefined,
+    targetUseId: string | undefined,
     children: readonly ts.JsxChild[],
   ): void {
     for (const property of attributes.properties) {
       if (ts.isJsxAttribute(property)) {
+        const targetPropName = property.name.getText();
+        if (targetUseId) removeForwardingToProp(targetUseId, targetPropName);
         const expression = jsxAttributeExpression(property);
         if (!expression) continue;
         analyzeRenderPropInvocations(expression);
-        if (!target) continue;
-        const targetPropName = property.name.getText();
+        if (!targetUseId) continue;
         for (const propName of new Set(collectForwardedProps(expression))) {
           addExactRule(rules, propName, {
             type: "forward",
-            targetComponentId: target.id,
+            targetUseId,
             targetPropName,
           });
         }
-      } else if (target) {
-        for (const excludedProps of collectForwardedSpreadExclusions(property.expression)) {
-          mutableSpreads.push({ excludedProps, targetComponentId: target.id });
+      } else if (targetUseId) {
+        const forwardedSpreads = collectForwardedSpreadExclusions(property.expression);
+        const staticProperties = collectStaticObjectProperties(property.expression, context);
+        if (forwardedSpreads.length === 0 && staticProperties.hasUnknownSpread) {
+          clearForwardingToTarget(targetUseId);
         }
-        for (const forwarded of staticObjectPropertyValues(property.expression, context)) {
+        for (const excludedProps of forwardedSpreads) {
+          removeForwardingOverriddenBySpread(targetUseId, excludedProps);
+          mutableSpreads.push({ excludedProps, targetUseId });
+        }
+        for (const forwarded of staticProperties.values.values()) {
+          removeForwardingToProp(targetUseId, forwarded.propName);
           analyzeRenderPropInvocations(forwarded.value);
           for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
             addExactRule(rules, propName, {
               type: "forward",
-              targetComponentId: target.id,
+              targetUseId,
               targetPropName: forwarded.propName,
             });
           }
@@ -1037,11 +1137,12 @@ function analyzeConsumerRules(
       }
     }
 
+    if (targetUseId && children.length > 0) removeForwardingToProp(targetUseId, "children");
     for (const child of children) {
       if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
-      if (!target || !ts.isJsxExpression(child) || !child.expression) continue;
+      if (!targetUseId || !ts.isJsxExpression(child) || !child.expression) continue;
       for (const propName of new Set(collectForwardedProps(child.expression))) {
-        addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
+        addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children" });
       }
     }
   }
@@ -1091,7 +1192,8 @@ function analyzeConsumerRules(
         return;
       }
       const target = targetForReference(opening.tagName, context);
-      analyzeJsxAttributes(opening.attributes, target, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
+      const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id) : undefined;
+      analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
       return;
     }
 
@@ -1134,26 +1236,29 @@ function analyzeConsumerRules(
       return;
     }
     const target = targetForReference(tagExpression, context);
-    if (propsExpression && target) {
+    const targetUseId = target ? componentUseId(definition.id, call, target.id) : undefined;
+    if (propsExpression && targetUseId) {
       for (const excludedProps of collectForwardedSpreadExclusions(propsExpression)) {
-        mutableSpreads.push({ excludedProps, targetComponentId: target.id });
+        mutableSpreads.push({ excludedProps, targetUseId });
       }
       for (const forwarded of staticObjectPropertyValues(propsExpression, context)) {
+        removeForwardingToProp(targetUseId, forwarded.propName);
         analyzeRenderPropInvocations(forwarded.value);
         for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
           addExactRule(rules, propName, {
             type: "forward",
-            targetComponentId: target.id,
+            targetUseId,
             targetPropName: forwarded.propName,
           });
         }
       }
     }
+    if (targetUseId && children.length > 0) removeForwardingToProp(targetUseId, "children");
     for (const child of children) {
       analyzeRenderPropInvocations(child);
-      if (!target) continue;
+      if (!targetUseId) continue;
       for (const propName of collectForwardedProps(child)) {
-        addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
+        addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children" });
       }
     }
   }
@@ -1166,22 +1271,20 @@ function relationshipKey(relationship: Relationship): string {
   return [relationship.source, relationship.target, relationship.kind, relationship.propName ?? ""].join("\0");
 }
 
-function addRelationship(context: AnalysisContext, relationship: Relationship): void {
-  context.relationships.set(relationshipKey(relationship), relationship);
-}
-
-function returnedTargets(
+function returnedUses(
   callback: ts.ArrowFunction | ts.FunctionExpression,
+  ownerId: string,
   context: AnalysisContext,
-): readonly ComponentTarget[] {
-  return collectSuppliedTargets(collectReturnExpressions(callback.body), context);
+): readonly ComponentUse[] {
+  return collectSuppliedUses(collectReturnExpressions(callback.body), ownerId, context);
 }
 
-function collectSuppliedTargets(
+function collectSuppliedUses(
   expressions: readonly ts.Expression[],
+  ownerId: string,
   context: AnalysisContext,
-): readonly ComponentTarget[] {
-  const targets = new Map<string, ComponentTarget>();
+): readonly ComponentUse[] {
+  const uses = new Map<string, ComponentUse>();
 
   function collect(expression: ts.Expression, visitedSymbols: ReadonlySet<ts.Symbol> = new Set()): void {
     const unwrapped = unwrapExpression(expression);
@@ -1197,8 +1300,9 @@ function collectSuppliedTargets(
       }
       const target = targetForReference(opening.tagName, context);
       if (target) {
-        targets.set(target.id, target);
-        analyzeJsxComponentUsage(unwrapped, target, context);
+        const use = ensureComponentUse(ownerId, unwrapped, target, context);
+        analyzeJsxComponentUsage(unwrapped, use, context);
+        uses.set(use.id, use);
       }
       return;
     }
@@ -1211,8 +1315,9 @@ function collectSuppliedTargets(
       }
       const target = targetForReference(tagExpression, context);
       if (target) {
-        targets.set(target.id, target);
-        analyzeCreateElementUsage(unwrapped, target, context);
+        const use = ensureComponentUse(ownerId, unwrapped, target, context);
+        analyzeCreateElementUsage(unwrapped, use, context);
+        uses.set(use.id, use);
       }
       return;
     }
@@ -1240,15 +1345,16 @@ function collectSuppliedTargets(
   }
 
   for (const expression of expressions) collect(expression);
-  return [...targets.values()].toSorted((left, right) => left.id.localeCompare(right.id));
+  return [...uses.values()].toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
-function componentReferenceTargets(
+function componentReferenceUses(
   expression: ts.Expression,
+  ownerId: string,
   context: AnalysisContext,
   symbolOverride?: ts.Symbol,
-): readonly ComponentTarget[] {
-  const targets = new Map<string, ComponentTarget>();
+): readonly ComponentUse[] {
+  const uses = new Map<string, ComponentUse>();
 
   function collect(
     candidate: ts.Expression,
@@ -1298,7 +1404,8 @@ function componentReferenceTargets(
     const callable = valueType.getCallSignatures().length + valueType.getConstructSignatures().length > 0;
     const externalName = target?.title.split(".").at(-1);
     if (target && (target.definition || (callable && !!externalName && /^[A-Z]/.test(externalName)))) {
-      targets.set(target.id, target);
+      const use = ensureComponentUse(ownerId, unwrapped, target, context);
+      uses.set(use.id, use);
       return;
     }
 
@@ -1308,52 +1415,58 @@ function componentReferenceTargets(
   }
 
   collect(expression, new Set(), symbolOverride);
-  return [...targets.values()].toSorted((left, right) => left.id.localeCompare(right.id));
+  return [...uses.values()].toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
-function suppliedRelationship(
-  receiver: ComponentTarget,
+function addSuppliedValue(
+  receiver: ComponentUse,
   propName: string,
-  kind: SuppliedRelationship["kind"],
-  targets: readonly ComponentTarget[],
-  context: AnalysisContext,
+  kind: SuppliedValueKind,
+  targets: readonly ComponentUse[],
 ): void {
   if (targets.length === 0) return;
-  context.suppliedRelationships.push({ receiverId: receiver.id, propName, kind, targets });
+  receiver.suppliedValues.push({
+    propName,
+    kind,
+    targetUseIds: [...new Set(targets.map(({ id }) => id))].toSorted(),
+  });
 }
 
 function analyzeSuppliedValue(
-  receiver: ComponentTarget,
+  receiver: ComponentUse,
   propName: string,
   expression: ts.Expression,
   context: AnalysisContext,
   symbolOverride?: ts.Symbol,
 ): void {
-  const componentTargets = componentReferenceTargets(expression, context, symbolOverride);
-  if (componentTargets.length > 0) {
-    suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
+  const componentUses = componentReferenceUses(expression, receiver.ownerId, context, symbolOverride);
+  if (componentUses.length > 0) {
+    addSuppliedValue(receiver, propName, "component-prop", componentUses);
     return;
   }
 
   const values = resolveAliasedValues(expression, context, new Set(), symbolOverride);
-  const renderTargets = new Map<string, ComponentTarget>();
+  const renderUses = new Map<string, ComponentUse>();
   for (const value of values) {
     if (!ts.isArrowFunction(value) && !ts.isFunctionExpression(value)) continue;
-    for (const target of returnedTargets(value, context)) renderTargets.set(target.id, target);
+    for (const use of returnedUses(value, receiver.ownerId, context)) renderUses.set(use.id, use);
   }
-  if (renderTargets.size > 0) {
-    suppliedRelationship(receiver, propName, "render-prop", [...renderTargets.values()], context);
+  if (renderUses.size > 0) {
+    addSuppliedValue(receiver, propName, "render-prop", [...renderUses.values()]);
     return;
   }
 
-  suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets(values, context), context);
+  addSuppliedValue(receiver, propName, "node-prop", collectSuppliedUses(values, receiver.ownerId, context));
 }
 
 function analyzeJsxComponentUsage(
   element: ts.JsxElement | ts.JsxSelfClosingElement,
-  receiver: ComponentTarget,
+  receiver: ComponentUse,
   context: AnalysisContext,
 ): void {
+  if (context.analyzedUseIds.has(receiver.id)) return;
+  context.analyzedUseIds.add(receiver.id);
+
   const opening = ts.isJsxElement(element) ? element.openingElement : element;
   const valuesByProp = new Map<string, StaticObjectPropertyValue>();
   for (const property of opening.attributes.properties) {
@@ -1383,7 +1496,10 @@ function analyzeJsxComponentUsage(
   }
 }
 
-function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentTarget, context: AnalysisContext): void {
+function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentUse, context: AnalysisContext): void {
+  if (context.analyzedUseIds.has(receiver.id)) return;
+  context.analyzedUseIds.add(receiver.id);
+
   const [, propsExpression, ...children] = call.arguments;
   if (propsExpression) {
     for (const { propName, value, valueSymbol } of staticObjectPropertyValues(propsExpression, context)) {
@@ -1394,109 +1510,120 @@ function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentT
 }
 
 function analyzeDefinitionUsages(definition: ComponentDefinition, context: AnalysisContext): void {
-  function analyzeRendered(expression: ts.Expression, directRenderer: ComponentDefinition): void {
+  function analyzeRendered(expression: ts.Expression): void {
     const unwrapped = unwrapExpression(expression);
     if (ts.isJsxFragment(unwrapped)) {
-      for (const child of unwrapped.children) analyzeChild(child, directRenderer);
+      for (const child of unwrapped.children) analyzeChild(child);
       return;
     }
     if (ts.isJsxElement(unwrapped) || ts.isJsxSelfClosingElement(unwrapped)) {
       const opening = ts.isJsxElement(unwrapped) ? unwrapped.openingElement : unwrapped;
       if (isIntrinsicJsxTag(opening.tagName)) {
-        if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child, directRenderer);
+        if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child);
         return;
       }
       const target = targetForReference(opening.tagName, context);
       if (!target) return;
-      addRelationship(context, { source: directRenderer.id, target: target.id, kind: "direct-render" });
-      analyzeJsxComponentUsage(unwrapped, target, context);
+      const use = ensureComponentUse(definition.id, unwrapped, target, context);
+      addDirectUse(context, use);
+      analyzeJsxComponentUsage(unwrapped, use, context);
       return;
     }
     if (ts.isCallExpression(unwrapped) && isCreateElementCall(unwrapped, context.checker)) {
       const [tagExpression] = unwrapped.arguments;
       if (!tagExpression) return;
       if (ts.isStringLiteral(tagExpression)) {
-        for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child, directRenderer);
+        for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child);
         return;
       }
       const target = targetForReference(tagExpression, context);
       if (!target) return;
-      addRelationship(context, { source: directRenderer.id, target: target.id, kind: "direct-render" });
-      analyzeCreateElementUsage(unwrapped, target, context);
+      const use = ensureComponentUse(definition.id, unwrapped, target, context);
+      addDirectUse(context, use);
+      analyzeCreateElementUsage(unwrapped, use, context);
       return;
     }
     if (ts.isConditionalExpression(unwrapped)) {
-      analyzeRendered(unwrapped.whenTrue, directRenderer);
-      analyzeRendered(unwrapped.whenFalse, directRenderer);
+      analyzeRendered(unwrapped.whenTrue);
+      analyzeRendered(unwrapped.whenFalse);
       return;
     }
     if (ts.isBinaryExpression(unwrapped)) {
-      analyzeRendered(unwrapped.right, directRenderer);
+      analyzeRendered(unwrapped.right);
       return;
     }
     if (ts.isArrayLiteralExpression(unwrapped)) {
-      for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, directRenderer);
+      for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element);
       return;
     }
     if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
       for (const argument of unwrapped.arguments) {
         if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-          for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned, directRenderer);
+          for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned);
         }
       }
     }
   }
 
-  function analyzeChild(child: ts.JsxChild, renderer: ComponentDefinition): void {
-    if (ts.isJsxExpression(child) && child.expression) analyzeRendered(child.expression, renderer);
+  function analyzeChild(child: ts.JsxChild): void {
+    if (ts.isJsxExpression(child) && child.expression) analyzeRendered(child.expression);
     else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
-      analyzeRendered(child, renderer);
+      analyzeRendered(child);
     }
   }
 
-  for (const root of definition.renderRoots) analyzeRendered(root, definition);
+  for (const root of definition.renderRoots) analyzeRendered(root);
 }
 
-function resolveConsumerEndpoints(
-  componentId: string,
+function resolveConsumerRoutes(
+  receiverUse: ComponentUse,
   propName: string,
-  kind: SuppliedRelationship["kind"],
+  kind: SuppliedValueKind,
   rulesByComponentId: ReadonlyMap<string, ConsumerRules>,
+  context: AnalysisContext,
   visited: ReadonlySet<string> = new Set(),
-): readonly TerminalRule[] {
-  const visitKey = `${componentId}\0${propName}\0${kind}`;
+): readonly ConsumerRoute[] {
+  const visitKey = `${receiverUse.id}\0${propName}\0${kind}`;
   if (visited.has(visitKey)) return [];
   const nextVisited = new Set(visited).add(visitKey);
-  const rules = rulesByComponentId.get(componentId);
+  const step = { useId: receiverUse.id, componentId: receiverUse.target.id, propName } satisfies ConsumerRouteStep;
+  const rules = rulesByComponentId.get(receiverUse.target.id);
   if (!rules) {
     if (kind === "render-prop" && /^on[A-Z]/.test(propName)) return [];
-    return [{ type: "terminal", kind, rendererId: componentId, propName }];
+    return [{ kind, steps: [step] }];
   }
   const candidates = [
     ...(rules.exact.get(propName) ?? []),
     ...rules.spreads
       .filter(({ excludedProps }) => !excludedProps.has(propName))
-      .map(({ targetComponentId }): ForwardRule => ({ type: "forward", targetComponentId, targetPropName: propName })),
+      .map(({ targetUseId }): ForwardRule => ({ type: "forward", targetUseId, targetPropName: propName })),
   ];
-  const endpoints = new Map<string, TerminalRule>();
+  const routes = new Map<string, ConsumerRoute>();
 
   for (const rule of candidates) {
     if (rule.type === "terminal") {
-      if (rule.kind === kind) endpoints.set(JSON.stringify(rule), rule);
+      if (rule.kind === kind) {
+        const route = { kind, steps: [step] } satisfies ConsumerRoute;
+        routes.set(JSON.stringify(route), route);
+      }
       continue;
     }
-    for (const endpoint of resolveConsumerEndpoints(
-      rule.targetComponentId,
+    const targetUse = context.uses.get(rule.targetUseId);
+    if (!targetUse) continue;
+    for (const downstream of resolveConsumerRoutes(
+      targetUse,
       rule.targetPropName,
       kind,
       rulesByComponentId,
+      context,
       nextVisited,
     )) {
-      endpoints.set(JSON.stringify(endpoint), endpoint);
+      const route = { kind, steps: [step, ...downstream.steps] } satisfies ConsumerRoute;
+      routes.set(JSON.stringify(route), route);
     }
   }
 
-  return [...endpoints.values()];
+  return [...routes.values()];
 }
 
 function relationshipLabel(relationship: Relationship): string | undefined {
@@ -1518,13 +1645,238 @@ function sourceHref(relativePath: string): string {
   return `source:///${relativePath.split("/").map(encodeURIComponent).join("/")}`;
 }
 
+function createVisibilityByTarget(
+  definitions: readonly ComponentDefinition[],
+  externalTargets: ReadonlyMap<string, ComponentTarget>,
+  excludeFilePatterns: readonly string[],
+  excludeComponentPatterns: readonly string[],
+): ReadonlyMap<string, ComponentVisibility> {
+  const visibility = new Map<string, ComponentVisibility>();
+  for (const definition of definitions) {
+    const hidden =
+      matchesAny(definition.relativePath, excludeFilePatterns) || matchesAny(definition.name, excludeComponentPatterns);
+    visibility.set(definition.id, {
+      boundaryVisible: !hidden,
+      implementationAnalyzed: !hidden,
+    });
+  }
+  for (const target of externalTargets.values()) {
+    visibility.set(target.id, {
+      boundaryVisible: !matchesAny(target.title, excludeComponentPatterns),
+      implementationAnalyzed: false,
+    });
+  }
+  return visibility;
+}
+
+function sourceDefinitionIds(
+  definitions: readonly ComponentDefinition[],
+  uses: ReadonlyMap<string, ComponentUse>,
+): readonly string[] {
+  const definitionIds = new Set(definitions.map(({ id }) => id));
+  const adjacency = new Map(definitions.map(({ id }) => [id, new Set<string>()]));
+  for (const use of uses.values()) {
+    if (definitionIds.has(use.ownerId) && use.target.definition) {
+      adjacency.get(use.ownerId)?.add(use.target.id);
+    }
+  }
+
+  let nextIndex = 0;
+  const indices = new Map<string, number>();
+  const lowLinks = new Map<string, number>();
+  const stack: string[] = [];
+  const onStack = new Set<string>();
+  const components: string[][] = [];
+
+  function connect(componentId: string): void {
+    indices.set(componentId, nextIndex);
+    lowLinks.set(componentId, nextIndex);
+    nextIndex += 1;
+    stack.push(componentId);
+    onStack.add(componentId);
+
+    for (const targetId of [...(adjacency.get(componentId) ?? [])].toSorted()) {
+      if (!indices.has(targetId)) {
+        connect(targetId);
+        lowLinks.set(componentId, Math.min(lowLinks.get(componentId)!, lowLinks.get(targetId)!));
+      } else if (onStack.has(targetId)) {
+        lowLinks.set(componentId, Math.min(lowLinks.get(componentId)!, indices.get(targetId)!));
+      }
+    }
+
+    if (lowLinks.get(componentId) !== indices.get(componentId)) return;
+    const component: string[] = [];
+    while (stack.length > 0) {
+      const member = stack.pop()!;
+      onStack.delete(member);
+      component.push(member);
+      if (member === componentId) break;
+    }
+    components.push(component.toSorted());
+  }
+
+  for (const definition of definitions) {
+    if (!indices.has(definition.id)) connect(definition.id);
+  }
+
+  const componentIndexById = new Map<string, number>();
+  components.forEach((component, index) => {
+    for (const componentId of component) componentIndexById.set(componentId, index);
+  });
+  const incoming = new Set<number>();
+  for (const [sourceId, targetIds] of adjacency) {
+    const sourceIndex = componentIndexById.get(sourceId);
+    for (const targetId of targetIds) {
+      const targetIndex = componentIndexById.get(targetId);
+      if (sourceIndex !== undefined && targetIndex !== undefined && sourceIndex !== targetIndex)
+        incoming.add(targetIndex);
+    }
+  }
+
+  return components
+    .filter((_, index) => !incoming.has(index))
+    .flat()
+    .toSorted();
+}
+
+function collapseComponentStructure(
+  definitions: readonly ComponentDefinition[],
+  context: AnalysisContext,
+  rulesByComponentId: ReadonlyMap<string, ConsumerRules>,
+  visibility: ReadonlyMap<string, ComponentVisibility>,
+): Readonly<{ visibleNodeIds: ReadonlySet<string>; relationships: readonly Relationship[] }> {
+  const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
+  const visibleNodeIds = new Set<string>();
+  const relationships = new Map<string, Relationship>();
+  const queuedDefinitions = new Set<string>();
+  const processedDefinitions = new Set<string>();
+  const definitionQueue: string[] = [];
+
+  function targetVisibility(targetId: string): ComponentVisibility {
+    return visibility.get(targetId) ?? { boundaryVisible: false, implementationAnalyzed: false };
+  }
+
+  function addFinalRelationship(relationship: Relationship): void {
+    relationships.set(relationshipKey(relationship), relationship);
+  }
+
+  function makeVisible(target: ComponentTarget): void {
+    const policy = targetVisibility(target.id);
+    if (!policy.boundaryVisible) return;
+    visibleNodeIds.add(target.id);
+    if (
+      target.definition &&
+      policy.implementationAnalyzed &&
+      !queuedDefinitions.has(target.id) &&
+      !processedDefinitions.has(target.id)
+    ) {
+      queuedDefinitions.add(target.id);
+      definitionQueue.push(target.id);
+    }
+  }
+
+  function processSuppliedTarget(
+    targetUse: ComponentUse,
+    sourceId: string,
+    kind: SuppliedValueKind,
+    propName: string,
+    trail: ReadonlySet<string>,
+  ): void {
+    const visitKey = [targetUse.id, sourceId, kind, propName].join("\0");
+    if (trail.has(visitKey)) return;
+    const nextTrail = new Set(trail).add(visitKey);
+    const policy = targetVisibility(targetUse.target.id);
+    if (!policy.boundaryVisible) {
+      processUseSupplies(targetUse, sourceId, nextTrail, { kind, propName });
+      return;
+    }
+
+    makeVisible(targetUse.target);
+    addFinalRelationship({ source: sourceId, target: targetUse.target.id, kind, propName });
+    processUseSupplies(targetUse, targetUse.target.id, nextTrail);
+  }
+
+  function processUseSupplies(
+    receiverUse: ComponentUse,
+    fallbackSourceId: string,
+    trail: ReadonlySet<string> = new Set(),
+    inherited?: Readonly<{ kind: SuppliedValueKind; propName: string }>,
+  ): void {
+    const receiverVisible = targetVisibility(receiverUse.target.id).boundaryVisible;
+    for (const supplied of receiverUse.suppliedValues) {
+      const routes = resolveConsumerRoutes(receiverUse, supplied.propName, supplied.kind, rulesByComponentId, context);
+      if (routes.length === 0) continue;
+
+      if (!receiverVisible) {
+        const relationship = inherited ?? { kind: supplied.kind, propName: supplied.propName };
+        for (const targetUseId of supplied.targetUseIds) {
+          const targetUse = context.uses.get(targetUseId);
+          if (targetUse) {
+            processSuppliedTarget(targetUse, fallbackSourceId, relationship.kind, relationship.propName, trail);
+          }
+        }
+        continue;
+      }
+
+      for (const route of routes) {
+        let lastVisibleStep: ConsumerRouteStep | undefined;
+        for (const step of route.steps) {
+          if (!targetVisibility(step.componentId).boundaryVisible) break;
+          lastVisibleStep = step;
+        }
+        if (!lastVisibleStep) continue;
+        for (const targetUseId of supplied.targetUseIds) {
+          const targetUse = context.uses.get(targetUseId);
+          if (targetUse) {
+            processSuppliedTarget(targetUse, lastVisibleStep.componentId, route.kind, lastVisibleStep.propName, trail);
+          }
+        }
+      }
+    }
+  }
+
+  function processDirectUse(sourceId: string, use: ComponentUse): void {
+    const policy = targetVisibility(use.target.id);
+    if (policy.boundaryVisible) {
+      makeVisible(use.target);
+      addFinalRelationship({ source: sourceId, target: use.target.id, kind: "direct-render" });
+    }
+    processUseSupplies(use, sourceId);
+  }
+
+  for (const rootId of sourceDefinitionIds(definitions, context.uses)) {
+    const definition = definitionsById.get(rootId);
+    if (!definition || !targetVisibility(rootId).boundaryVisible) continue;
+    makeVisible({ id: definition.id, title: definition.name, definition });
+  }
+
+  while (definitionQueue.length > 0) {
+    const definitionId = definitionQueue.shift()!;
+    queuedDefinitions.delete(definitionId);
+    if (processedDefinitions.has(definitionId)) continue;
+    processedDefinitions.add(definitionId);
+    for (const useId of [...(context.directUseIdsByOwner.get(definitionId) ?? [])].toSorted()) {
+      const use = context.uses.get(useId);
+      if (use) processDirectUse(definitionId, use);
+    }
+  }
+
+  return {
+    visibleNodeIds,
+    relationships: [...relationships.values()].toSorted((left, right) =>
+      relationshipKey(left).localeCompare(relationshipKey(right)),
+    ),
+  };
+}
+
 function createGraph(
   definitions: readonly ComponentDefinition[],
   externalTargets: ReadonlyMap<string, ComponentTarget>,
+  visibleNodeIds: ReadonlySet<string>,
   relationships: readonly Relationship[],
-  excludeComponentPatterns: readonly string[],
 ): DiagramGraph {
   const localNodes = definitions
+    .filter(({ id }) => visibleNodeIds.has(id))
     .map((definition): DefaultDiagramNode => ({
       type: "default",
       id: definition.id,
@@ -1532,19 +1884,18 @@ function createGraph(
       title: definition.name,
       description: definition.relativePath,
       links: [{ href: sourceHref(definition.relativePath) }],
-    }))
-    .filter((node) => !matchesAny(node.title, excludeComponentPatterns));
+    }));
   if (localNodes.length === 0) throw new Error("No React component definitions remain after filtering.");
 
   const externalNodes = [...externalTargets.values()]
+    .filter(({ id }) => visibleNodeIds.has(id))
     .map((target): DefaultDiagramNode => ({
       type: "default",
       id: target.id,
       kind: "External React component",
       title: target.title,
       description: `${target.externalPackage} boundary`,
-    }))
-    .filter((node) => !matchesAny(node.title, excludeComponentPatterns));
+    }));
   const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
   const edges: DefaultDiagramEdge[] = relationships
     .filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target))
@@ -1557,10 +1908,7 @@ function createGraph(
       ...(relationshipLabel(relationship) ? { label: relationshipLabel(relationship) } : {}),
     }))
     .toSorted((left, right) => left.id.localeCompare(right.id));
-  const connectedNodeIds = new Set(edges.flatMap(({ source, target }) => [source, target]));
-  const nodes = [...localNodes, ...externalNodes.filter(({ id }) => connectedNodeIds.has(id))].toSorted((left, right) =>
-    left.id.localeCompare(right.id),
-  );
+  const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
 
   return { groups: [], nodes, edges };
 }
@@ -1570,8 +1918,7 @@ export async function generateReactComponentStructureGraph(
 ): Promise<DiagramGraph> {
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
   const scopePath = await realpath(options.scopePath);
-  const excludeFilePatterns = [...defaultExcludeFilePatterns, ...(options.excludeFilePatterns ?? [])];
-  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, excludeFilePatterns);
+  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, defaultAnalysisExcludeFilePatterns);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
 
   const program = ts.createProgram({
@@ -1603,41 +1950,24 @@ export async function generateReactComponentStructureGraph(
     definitionsBySymbol,
     definitionsByDeclaration,
     externalTargets: new Map(),
-    relationships: new Map(),
-    suppliedRelationships: [],
+    uses: new Map(),
+    directUseIdsByOwner: new Map(),
+    analyzedUseIds: new Set(),
   };
+  for (const definition of definitions) analyzeDefinitionUsages(definition, context);
+
   const rulesByComponentId = new Map<string, ConsumerRules>();
   for (const definition of definitions) {
     const bindings = createPropBindings(definition, checker);
     rulesByComponentId.set(definition.id, analyzeConsumerRules(definition, context, bindings));
   }
-  for (const definition of definitions) analyzeDefinitionUsages(definition, context);
 
-  for (const supplied of context.suppliedRelationships) {
-    const endpoints = resolveConsumerEndpoints(
-      supplied.receiverId,
-      supplied.propName,
-      supplied.kind,
-      rulesByComponentId,
-    );
-    for (const endpoint of endpoints) {
-      for (const target of supplied.targets) {
-        addRelationship(context, {
-          source: endpoint.rendererId,
-          target: target.id,
-          kind: endpoint.kind,
-          propName: endpoint.propName,
-        });
-      }
-    }
-  }
-
-  return createGraph(
+  const visibility = createVisibilityByTarget(
     definitions,
     context.externalTargets,
-    [...context.relationships.values()].toSorted((left, right) =>
-      relationshipKey(left).localeCompare(relationshipKey(right)),
-    ),
+    options.excludeFilePatterns ?? [],
     options.excludeComponentPatterns ?? [],
   );
+  const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
+  return createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
 }

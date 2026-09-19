@@ -996,30 +996,316 @@ describe("React component structure generator", () => {
     );
   });
 
-  it("applies default and explicit glob filters without shortcut edges", async () => {
+  it("collapses component and file filters through the same parent-supplied path", async () => {
     await withFixture(
       {
         "dist/built.tsx": `export function Built() { return <div />; }`,
         "src/app.tsx": `
-          import { Hidden } from "./hidden";
-          import { Visible } from "./visible";
-          export function App() { return <><Hidden /><Visible /></>; }
+          import { Content } from "./content";
+          import { Layout } from "./layout";
+          export function App() { return <Layout><Content /></Layout>; }
         `,
+        "src/content.tsx": `export function Content() { return <main />; }`,
         "src/feature.test.tsx": `export function TestOnly() { return <div />; }`,
         "src/generated.generated.tsx": `export function Generated() { return <div />; }`,
-        "src/hidden.tsx": `export function Hidden() { return <div />; }`,
-        "src/visible.tsx": `export function Visible() { return <div />; }`,
+        "src/layout.tsx": `
+          export function Header() { return <header />; }
+          export function Layout({ children }: { children: unknown }) {
+            return <section><Header />{children}</section>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const common = { scopePath, sourcePaths: ["src", "dist"] } as const;
+        const [componentFiltered, fileFiltered] = await Promise.all([
+          generateReactComponentStructureGraph({ ...common, excludeComponentPatterns: ["Layout"] }),
+          generateReactComponentStructureGraph({ ...common, excludeFilePatterns: ["src/layout.tsx"] }),
+        ]);
+
+        for (const graph of [componentFiltered, fileFiltered]) {
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
+          expect(edgeFacts(graph)).toEqual([
+            { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          ]);
+        }
+      },
+    );
+  });
+
+  it("passes every supplied relationship kind through a hidden component", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Body, Footer, Frame, Header } from "./frame";
+          export function App() {
+            return <Frame header={<Header />} renderBody={() => <Body />} footerComponent={Footer} />;
+          }
+        `,
+        "src/frame.tsx": `
+          export function Header() { return <header />; }
+          export function Body() { return <main />; }
+          export function Footer() { return <footer />; }
+          export function Internal() { return <aside />; }
+          export function Frame({ header, renderBody, footerComponent: FooterComponent }: {
+            header: unknown;
+            renderBody: () => unknown;
+            footerComponent: () => unknown;
+          }) {
+            return <><Internal />{header}{renderBody()}<FooterComponent /></>;
+          }
+        `,
       },
       async (scopePath) => {
         const graph = await generateReactComponentStructureGraph({
           scopePath,
-          sourcePaths: ["src", "dist"],
-          excludeComponentPatterns: ["Hidden"],
-          excludeFilePatterns: ["src/visible.tsx"],
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Frame"],
         });
 
-        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App"]);
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Body", "Footer", "Header"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Body", kind: "render-prop", label: "Render prop · renderBody" },
+          {
+            source: "App",
+            target: "Footer",
+            kind: "component-prop",
+            label: "Component prop · footerComponent",
+          },
+          { source: "App", target: "Header", kind: "node-prop", label: "Node prop · header" },
+        ]);
+      },
+    );
+  });
+
+  it("uses the last visible public prop when forwarding reaches a hidden implementation", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Content, Wrapper } from "./components";
+          export function App() { return <Wrapper><Content /></Wrapper>; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Internal() { return <aside />; }
+          export function Hidden({ slot }: { slot: unknown }) { return <><Internal />{slot}</>; }
+          export function Wrapper({ children }: { children: unknown }) { return <Hidden slot={children} />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Hidden"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Wrapper"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "Content", kind: "node-prop", label: "Node prop · children" },
+        ]);
+      },
+    );
+  });
+
+  it("does not pass a supplied value through a later prop override", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Content, Wrapper } from "./components";
+          export function App() { return <Wrapper><Content /></Wrapper>; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Own() { return <aside />; }
+          export function Primitive({ children }: { children: unknown }) { return <section>{children}</section>; }
+          export function Wrapper({ children }: { children: unknown }) {
+            return <Primitive {...{ children }} children={<Own />} />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Wrapper"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
         expect(graph.edges).toEqual([]);
+      },
+    );
+  });
+
+  it("passes nested supplied values through a hidden supplied target", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Content, Hidden, Layout } from "./components";
+          export function App() { return <Layout><Hidden><Content /></Hidden></Layout>; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Internal() { return <aside />; }
+          export function Hidden({ children }: { children: unknown }) { return <><Internal />{children}</>; }
+          export function Layout({ children }: { children: unknown }) { return <section>{children}</section>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Hidden"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
+          { source: "Layout", target: "Content", kind: "node-prop", label: "Node prop · children" },
+        ]);
+      },
+    );
+  });
+
+  it("keeps the visible relationship kind across consecutive hidden supplied targets", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Content, Hidden, Layout } from "./components";
+          export function App() { return <Layout render={() => <Hidden slot={<Content />} />} />; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Hidden({ slot }: { slot: unknown }) { return <section>{slot}</section>; }
+          export function Layout({ render }: { render: () => unknown }) { return <>{render()}</>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Hidden"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
+          { source: "Layout", target: "Content", kind: "render-prop", label: "Render prop · render" },
+        ]);
+      },
+    );
+  });
+
+  it("keeps supplied targets with their own parent when a hidden definition is reused", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { ParentA, ParentB } from "./parents";
+          export function App() { return <><ParentA /><ParentB /></>; }
+        `,
+        "src/parents.tsx": `
+          export function ContentA() { return <main>A</main>; }
+          export function ContentB() { return <main>B</main>; }
+          export function Layout({ children }: { children: unknown }) { return <section>{children}</section>; }
+          export function ParentA() { return <Layout><ContentA /></Layout>; }
+          export function ParentB() { return <Layout><ContentB /></Layout>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Layout"],
+        });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ParentA", kind: "direct-render", label: undefined },
+          { source: "App", target: "ParentB", kind: "direct-render", label: undefined },
+          { source: "ParentA", target: "ContentA", kind: "node-prop", label: "Node prop · children" },
+          { source: "ParentB", target: "ContentB", kind: "node-prop", label: "Node prop · children" },
+        ]);
+      },
+    );
+  });
+
+  it("collapses an explicitly hidden external boundary without expanding package internals", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalLayout(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { ExternalLayout } from "ui-kit";
+          export function Content() { return <main />; }
+          export function App() { return <ExternalLayout><Content /></ExternalLayout>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["ExternalLayout"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+        ]);
+      },
+    );
+  });
+
+  it("keeps a shared definition when a visible path still reaches it", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Hidden, Shared } from "./components";
+          export function App() { return <><Hidden /><Shared /></>; }
+        `,
+        "src/components.tsx": `
+          export function Shared() { return <main />; }
+          export function Hidden() { return <Shared />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Hidden"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Shared"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Shared", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("preserves source cycles without making hidden implementations new roots", async () => {
+    await withFixture(
+      {
+        "src/cycle.tsx": `
+          export function A() { return <B />; }
+          export function B() { return <A />; }
+        `,
+      },
+      async (scopePath) => {
+        const baseline = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const filtered = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["B"],
+        });
+
+        expect(edgeFacts(baseline)).toEqual([
+          { source: "A", target: "B", kind: "direct-render", label: undefined },
+          { source: "B", target: "A", kind: "direct-render", label: undefined },
+        ]);
+        expect(filtered.nodes.map(({ title }) => title)).toEqual(["A"]);
+        expect(filtered.edges).toEqual([]);
       },
     );
   });
