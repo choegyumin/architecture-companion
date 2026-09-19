@@ -30,7 +30,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       dependency-cruiser:
-        specifier: ^18.3.1
+        specifier: 18.3.1
         version: 18.3.1
       elkjs:
         specifier: ^0.11.1
