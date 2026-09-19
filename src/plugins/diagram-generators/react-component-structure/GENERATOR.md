@@ -73,6 +73,6 @@ The analyzer emits only statically confirmed relationships:
 - render prop: `Render prop · <actual prop name>`;
 - component prop: `Component prop · <actual prop name>`.
 
-For supplied values, the visual parent is the local component that actually renders or invokes the value. Confirmed local prop forwarding is followed to that renderer or invoker. External imported React components appear as boundary nodes, but their package internals and unconfirmed prop consumption are not expanded.
+For supplied values, the visual parent is the component that receives and renders or invokes the value. Confirmed local prop forwarding is followed to the final local consumer or external boundary. An external boundary remains connected to statically visible local values supplied through node props, render props, component props, and component registries. Only the package's internal implementation and unconfirmed relationships remain opaque.
 
 The initial identity model is one node per component definition. Unresolved references are omitted without routine warnings. Provider annotations, per-use nodes, other UI frameworks, runtime reconstruction, and change-impact analysis are not implemented.

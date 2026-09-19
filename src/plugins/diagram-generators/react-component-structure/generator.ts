@@ -817,6 +817,16 @@ function analyzeConsumerRules(
     for (const propName of collectInvokedRenderProps(expression, false)) terminal(propName, "render-prop");
   }
 
+  function collectForwardedProps(expression: ts.Expression): readonly string[] {
+    const unwrapped = unwrapExpression(expression);
+    return [
+      ...collectIncomingProps(unwrapped, bindings, context.checker),
+      ...(ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)
+        ? collectInvokedRenderProps(unwrapped, true)
+        : []),
+    ];
+  }
+
   function analyzeJsxAttributes(
     attributes: ts.JsxAttributes,
     target: ComponentTarget | undefined,
@@ -827,20 +837,16 @@ function analyzeConsumerRules(
         const expression = jsxAttributeExpression(property);
         if (!expression) continue;
         analyzeRenderPropInvocations(expression);
-        if (!target?.definition) continue;
+        if (!target) continue;
         const targetPropName = property.name.getText();
-        const forwardedProps = [
-          ...collectIncomingProps(expression, bindings, context.checker),
-          ...collectInvokedRenderProps(expression, true),
-        ];
-        for (const propName of new Set(forwardedProps)) {
+        for (const propName of new Set(collectForwardedProps(expression))) {
           addExactRule(rules, propName, {
             type: "forward",
             targetComponentId: target.id,
             targetPropName,
           });
         }
-      } else if (target?.definition) {
+      } else if (target) {
         const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
         if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
       }
@@ -848,12 +854,8 @@ function analyzeConsumerRules(
 
     for (const child of children) {
       if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
-      if (!target?.definition || !ts.isJsxExpression(child) || !child.expression) continue;
-      const forwardedProps = [
-        ...collectIncomingProps(child.expression, bindings, context.checker),
-        ...collectInvokedRenderProps(child.expression, true),
-      ];
-      for (const propName of new Set(forwardedProps)) {
+      if (!target || !ts.isJsxExpression(child) || !child.expression) continue;
+      for (const propName of new Set(collectForwardedProps(child.expression))) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
     }
@@ -957,12 +959,8 @@ function analyzeConsumerRules(
             : undefined;
           const shorthandPropName = shorthandSymbol ? bindings.propSymbols.get(shorthandSymbol) : undefined;
           analyzeRenderPropInvocations(value);
-          if (!target?.definition || !targetPropName) continue;
-          const forwardedProps = [
-            ...collectIncomingProps(value, bindings, context.checker),
-            ...(shorthandPropName ? [shorthandPropName] : []),
-            ...collectInvokedRenderProps(value, true),
-          ];
+          if (!target || !targetPropName) continue;
+          const forwardedProps = [...collectForwardedProps(value), ...(shorthandPropName ? [shorthandPropName] : [])];
           for (const propName of new Set(forwardedProps)) {
             addExactRule(rules, propName, {
               type: "forward",
@@ -970,7 +968,7 @@ function analyzeConsumerRules(
               targetPropName,
             });
           }
-        } else if (target?.definition && ts.isSpreadAssignment(property)) {
+        } else if (target && ts.isSpreadAssignment(property)) {
           const exclusions = getSpreadExclusions(property.expression, bindings, context.checker);
           if (exclusions) mutableSpreads.push({ excludedProps: exclusions, targetComponentId: target.id });
         }
@@ -978,7 +976,7 @@ function analyzeConsumerRules(
     }
     for (const child of children) {
       analyzeRenderPropInvocations(child);
-      if (!target?.definition) continue;
+      if (!target) continue;
       for (const propName of collectIncomingProps(child, bindings, context.checker)) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
@@ -1066,10 +1064,47 @@ function collectSuppliedTargets(
   return [...targets.values()].toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
-function componentReferenceTarget(expression: ts.Expression, context: AnalysisContext): ComponentTarget | undefined {
-  const unwrapped = unwrapExpression(expression);
-  if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return undefined;
-  return targetForReference(unwrapped, context);
+function componentReferenceTargets(
+  expression: ts.Expression,
+  context: AnalysisContext,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+): readonly ComponentTarget[] {
+  const targets = new Map<string, ComponentTarget>();
+
+  function collect(candidate: ts.Expression, visited: ReadonlySet<ts.Symbol>): void {
+    const unwrapped = unwrapExpression(candidate);
+    if (ts.isObjectLiteralExpression(unwrapped)) {
+      for (const property of unwrapped.properties) {
+        if (ts.isPropertyAssignment(property)) collect(property.initializer, visited);
+        else if (ts.isShorthandPropertyAssignment(property)) collect(property.name, visited);
+        else if (ts.isSpreadAssignment(property)) collect(property.expression, visited);
+      }
+      return;
+    }
+    if (ts.isArrayLiteralExpression(unwrapped)) {
+      for (const element of unwrapped.elements) if (ts.isExpression(element)) collect(element, visited);
+      return;
+    }
+    if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return;
+
+    const target = targetForReference(unwrapped, context);
+    if (target) {
+      targets.set(target.id, target);
+      return;
+    }
+
+    const symbol = canonicalSymbol(context.checker.getSymbolAtLocation(unwrapped), context.checker);
+    if (!symbol || visited.has(symbol)) return;
+    const nextVisited = new Set(visited).add(symbol);
+    for (const declaration of symbol.declarations ?? []) {
+      if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+        collect(declaration.initializer, nextVisited);
+      }
+    }
+  }
+
+  collect(expression, visitedSymbols);
+  return [...targets.values()].toSorted((left, right) => left.id.localeCompare(right.id));
 }
 
 function suppliedRelationship(
@@ -1079,7 +1114,7 @@ function suppliedRelationship(
   targets: readonly ComponentTarget[],
   context: AnalysisContext,
 ): void {
-  if (!receiver.definition || targets.length === 0) return;
+  if (targets.length === 0) return;
   context.suppliedRelationships.push({ receiverId: receiver.id, propName, kind, targets });
 }
 
@@ -1099,9 +1134,9 @@ function analyzeJsxComponentUsage(
       suppliedRelationship(receiver, propName, "render-prop", returnedTargets(unwrapped, context), context);
       continue;
     }
-    const componentTarget = componentReferenceTarget(unwrapped, context);
-    if (componentTarget) {
-      suppliedRelationship(receiver, propName, "component-prop", [componentTarget], context);
+    const componentTargets = componentReferenceTargets(unwrapped, context);
+    if (componentTargets.length > 0) {
+      suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
       continue;
     }
     suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets([unwrapped], context), context);
@@ -1139,9 +1174,9 @@ function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentT
         suppliedRelationship(receiver, propName, "render-prop", returnedTargets(value, context), context);
         continue;
       }
-      const componentTarget = componentReferenceTarget(value, context);
-      if (componentTarget) {
-        suppliedRelationship(receiver, propName, "component-prop", [componentTarget], context);
+      const componentTargets = componentReferenceTargets(value, context);
+      if (componentTargets.length > 0) {
+        suppliedRelationship(receiver, propName, "component-prop", componentTargets, context);
         continue;
       }
       suppliedRelationship(receiver, propName, "node-prop", collectSuppliedTargets([value], context), context);
@@ -1234,7 +1269,7 @@ function resolveConsumerEndpoints(
   if (visited.has(visitKey)) return [];
   const nextVisited = new Set(visited).add(visitKey);
   const rules = rulesByComponentId.get(componentId);
-  if (!rules) return [];
+  if (!rules) return [{ type: "terminal", kind, rendererId: componentId, propName }];
   const candidates = [
     ...(rules.exact.get(propName) ?? []),
     ...rules.spreads

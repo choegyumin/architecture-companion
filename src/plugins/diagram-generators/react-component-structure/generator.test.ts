@@ -224,7 +224,7 @@ describe("React component structure generator", () => {
     );
   });
 
-  it("shows confirmed external components and omits unresolved relationships", async () => {
+  it("uses external boundaries as confirmed node-prop connection points", async () => {
     await withFixture(
       {
         "node_modules/ui-kit/index.d.ts": `
@@ -238,24 +238,188 @@ describe("React component structure generator", () => {
         }),
         "src/app.tsx": `
           import { ExternalFrame, ExternalLeaf } from "ui-kit";
-          import { Local } from "./local";
+          import { Body, Header } from "./local";
 
           export function App() {
-            return <ExternalFrame><ExternalLeaf /><Local /><Unresolved /></ExternalFrame>;
+            return (
+              <ExternalFrame header={<Header />}>
+                <ExternalLeaf />
+                <Body />
+                <Unresolved />
+              </ExternalFrame>
+            );
           }
         `,
-        "src/local.tsx": `export function Local() { return <div />; }`,
+        "src/local.tsx": `
+          export function Body() { return <main />; }
+          export function Header() { return <header />; }
+        `,
       },
       async (scopePath) => {
         const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
 
-        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "ExternalFrame", "Local"]);
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual([
+          "App",
+          "Body",
+          "ExternalFrame",
+          "ExternalLeaf",
+          "Header",
+        ]);
         expect(graph.nodes.find(({ title }) => title === "ExternalFrame")).toMatchObject({
           kind: "External React component",
           description: "ui-kit boundary",
         });
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFrame",
+            target: "Body",
+            kind: "node-prop",
+            label: "Node prop · children",
+          },
+          {
+            source: "ExternalFrame",
+            target: "ExternalLeaf",
+            kind: "node-prop",
+            label: "Node prop · children",
+          },
+          {
+            source: "ExternalFrame",
+            target: "Header",
+            kind: "node-prop",
+            label: "Node prop · header",
+          },
+        ]);
+      },
+    );
+  });
+
+  it("uses external boundaries as render and component prop connection points", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalFlow(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { ExternalFlow } from "ui-kit";
+          import { CardNode, Fallback, Panel } from "./local";
+
+          const nodeTypes = { card: CardNode };
+
+          export function App() {
+            return (
+              <ExternalFlow
+                fallbackComponent={Fallback}
+                nodeTypes={nodeTypes}
+                renderPanel={() => <Panel />}
+              />
+            );
+          }
+        `,
+        "src/local.tsx": `
+          export function CardNode() { return <article />; }
+          export function Fallback() { return <aside />; }
+          export function Panel() { return <section />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalFlow",
+            target: "CardNode",
+            kind: "component-prop",
+            label: "Component prop · nodeTypes",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Fallback",
+            kind: "component-prop",
+            label: "Component prop · fallbackComponent",
+          },
+          {
+            source: "ExternalFlow",
+            target: "Panel",
+            kind: "render-prop",
+            label: "Render prop · renderPanel",
+          },
+        ]);
+      },
+    );
+  });
+
+  it("follows local prop forwarding to an external boundary", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function ExternalPanel(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Body, Fallback, Panel, Wrapper } from "./components";
+
+          export function App() {
+            return (
+              <Wrapper
+                fallbackComponent={Fallback}
+                panel={<Panel />}
+                renderBody={() => <Body />}
+              />
+            );
+          }
+        `,
+        "src/components.tsx": `
+          import { ExternalPanel } from "ui-kit";
+
+          export function Body() { return <main />; }
+          export function Fallback() { return <aside />; }
+          export function Panel() { return <section />; }
+          export function Wrapper({ fallbackComponent, panel, renderBody }: {
+            fallbackComponent: () => unknown;
+            panel: unknown;
+            renderBody: () => unknown;
+          }) {
+            return (
+              <ExternalPanel
+                fallbackComponent={fallbackComponent}
+                panel={panel}
+                renderBody={renderBody}
+              />
+            );
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          {
+            source: "ExternalPanel",
+            target: "Body",
+            kind: "render-prop",
+            label: "Render prop · renderBody",
+          },
+          {
+            source: "ExternalPanel",
+            target: "Fallback",
+            kind: "component-prop",
+            label: "Component prop · fallbackComponent",
+          },
+          {
+            source: "ExternalPanel",
+            target: "Panel",
+            kind: "node-prop",
+            label: "Node prop · panel",
+          },
+          { source: "Wrapper", target: "ExternalPanel", kind: "direct-render", label: undefined },
         ]);
       },
     );
