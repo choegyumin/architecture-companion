@@ -362,7 +362,7 @@ async function buildGraph(
       title: basename(relativePath),
       details: [relativePath],
       groupId,
-      links: [{ text: "Open source", href: sourceHref(relativePath) }],
+      links: [{ href: sourceHref(relativePath) }],
     });
   }
 
@@ -399,7 +399,7 @@ async function buildGraph(
         externalNodes.set(target, {
           type: "default",
           id: target,
-          kind: "external package",
+          kind: "External package",
           title: packageName,
           groupId: "group:external-packages",
         });
