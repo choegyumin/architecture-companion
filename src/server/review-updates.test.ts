@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -6,33 +6,26 @@ import type { AnnotationDocument } from "@/features/annotation/annotation-docume
 import type { Artifact } from "@/features/artifact/artifact";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH, readArtifact } from "@/server/read-artifact";
+import { BEHAVIORS_RELATIVE_PATH, readArtifact } from "@/server/read-artifact";
 import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/server/review-updates";
+import { writeArtifact } from "@/server/write-artifact";
 
-function artifact(title: string): Artifact {
+function behavior(title: string): Artifact["behaviors"][number] {
   return {
-    behaviors: [
-      {
-        id: "checkout",
-        title: "Workflow",
-        generatorId: "freeform",
-        layout: { id: "elk-layered", options: { direction: "RIGHT" } },
-        graph: {
-          groups: [],
-          nodes: [{ id: "submit", type: "default", kind: "trigger", title }],
-          edges: [],
-        },
-      },
-    ],
-    designs: [],
+    id: "checkout",
+    title: "Workflow",
+    generatorId: "freeform",
+    layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+    graph: {
+      groups: [],
+      nodes: [{ id: "submit", type: "default", kind: "trigger", title }],
+      edges: [],
+    },
   };
 }
 
-async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
-  const artifactPath = join(scopePath, ARTIFACT_RELATIVE_PATH);
-  const temporaryPath = join(scopePath, ".architecture-companion/.artifact-test.tmp");
-  await writeFile(temporaryPath, JSON.stringify(input));
-  await rename(temporaryPath, artifactPath);
+function artifact(title: string): Artifact {
+  return { behaviors: [behavior(title)], designs: [] };
 }
 
 async function writeAnnotations(
@@ -197,22 +190,22 @@ describe("review updates", () => {
         updatesSeen = [...updatesSeen, update];
       });
 
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), "{ partial");
+      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
       await vi.waitFor(() => expect(updatesSeen).toEqual([{ revision: 1, status: "invalid" }]));
       expect(await readArtifact(scopePath)).toEqual({
         status: "invalid",
-        message: "Artifact contains invalid JSON: .architecture-companion/artifact.json",
+        message: "Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json",
       });
 
       await writeAnnotations(scopePath, artifact("Checkout requested"), annotations("Ignored while invalid"));
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(1);
 
-      await writeArtifact(scopePath, { ...artifact("Unsupported"), unexpected: true });
+      await writeArtifact(scopePath, { behaviors: [{ ...behavior("Unsupported"), unexpected: true }], designs: [] });
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 2, status: "invalid" }));
       expect(await readArtifact(scopePath)).toMatchObject({
         status: "invalid",
-        message: expect.stringContaining("Invalid artifact"),
+        message: expect.stringContaining("Artifact is invalid: .architecture-companion/behaviors/checkout.json"),
       });
 
       await writeArtifact(scopePath, artifact("Checkout recovered"));

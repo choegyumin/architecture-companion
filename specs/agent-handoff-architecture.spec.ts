@@ -7,6 +7,7 @@ import { executeServeCommand } from "@/cli/serve.command";
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
 import { executeViewGeneratorsCommand } from "@/cli/view-generators.command";
 import type { StartedServer } from "@/server/start-server";
+import { writeArtifact } from "@/server/write-artifact";
 
 const spawnProcess = vi.hoisted(() =>
   vi.fn(() => {
@@ -120,23 +121,20 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
         ]),
       );
 
-      const artifactDirectory = join(scopePath, ".architecture-companion");
-      const artifactPath = join(artifactDirectory, "artifact.json");
       const collectValidationOutput = (output: string) => {
         validationOutputs = [...validationOutputs, output];
       };
 
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
-      ).rejects.toThrow("Artifact is missing: .architecture-companion/artifact.json");
+      ).rejects.toThrow("Artifact is missing: .architecture-companion/behaviors");
 
-      await mkdir(artifactDirectory, { recursive: true });
-      await writeFile(artifactPath, JSON.stringify(reviewArtifact("Invalid_ID")));
+      await writeArtifact(scopePath, reviewArtifact("Invalid_ID"));
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
       ).rejects.toThrow("Artifact is invalid");
 
-      await writeFile(artifactPath, JSON.stringify(reviewArtifact("dependency-graph")));
+      await writeArtifact(scopePath, reviewArtifact("dependency-graph"));
       await executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput });
       expect(validationOutputs).toEqual(["Artifact is valid.\n"]);
 

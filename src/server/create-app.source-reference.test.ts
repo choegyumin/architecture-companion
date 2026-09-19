@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createApp } from "@/server/create-app";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { isSourceOpenRequestAllowed } from "@/server/source-open-request";
+import { writeArtifact } from "@/server/write-artifact";
 
 const baseUrl = "http://architecture-companion.test";
 
@@ -48,12 +48,6 @@ function artifact() {
       },
     ],
   };
-}
-
-async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
-  const artifactPath = join(scopePath, ARTIFACT_RELATIVE_PATH);
-  await mkdir(join(scopePath, ".architecture-companion"), { recursive: true });
-  await writeFile(artifactPath, JSON.stringify(input));
 }
 
 async function postOpen(app: ReturnType<typeof createApp>, href: string, origin = baseUrl) {

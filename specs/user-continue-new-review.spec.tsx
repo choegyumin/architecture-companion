@@ -13,8 +13,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
 
 function artifact(nodeTitle: string): Artifact {
@@ -62,7 +62,7 @@ describe("reviewer continues a review after the artifact is revised", () => {
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, ".architecture-companion/annotations"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(initialArtifact));
+      await writeArtifact(scopePath, initialArtifact);
       await writeFile(
         join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(initialArtifact))),
         JSON.stringify(initialComments),
@@ -85,7 +85,7 @@ describe("reviewer continues a review after the artifact is revised", () => {
           await screen.findByRole("button", { name: "Comment: Please refine the trigger wording." }),
         ).toBeInTheDocument();
 
-        await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(revisedArtifact));
+        await writeArtifact(scopePath, revisedArtifact);
         expect(await screen.findByText("Checkout started")).toBeInTheDocument();
         expect(
           screen.queryByRole("button", { name: "Comment: Please refine the trigger wording." }),

@@ -4,9 +4,13 @@ import { diagramGraphSchema, diagramIdSchema, diagramLinkSchema } from "@/featur
 import { diagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
 import { type DiagramGeneratorId, diagramGeneratorIdSchema } from "@/features/diagram-generator/diagram-generator-id";
 
+export const artifactDiagramIdSchema = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]*$/, "Diagram ID must be lowercase kebab-case (letters, digits, hyphens)");
+
 export const diagramSchema = z
   .object({
-    id: diagramIdSchema,
+    id: artifactDiagramIdSchema,
     title: z.string().min(1),
     generatorId: diagramGeneratorIdSchema,
     layout: diagramLayoutConfigSchema,

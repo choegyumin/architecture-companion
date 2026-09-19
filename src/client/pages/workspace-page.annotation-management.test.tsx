@@ -13,8 +13,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const artifact: Artifact = {
   behaviors: [
@@ -32,17 +32,6 @@ const artifact: Artifact = {
   ],
   designs: [
     {
-      id: "checkout-structure",
-      title: "Checkout structure",
-      generatorId: "freeform",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
-        edges: [],
-      },
-    },
-    {
       id: "catalog-structure",
       title: "Catalog structure",
       generatorId: "freeform",
@@ -50,6 +39,17 @@ const artifact: Artifact = {
       graph: {
         groups: [],
         nodes: [{ type: "default", id: "catalog-page", kind: "component", title: "Catalog page" }],
+        edges: [],
+      },
+    },
+    {
+      id: "checkout-structure",
+      title: "Checkout structure",
+      generatorId: "freeform",
+      layout: { id: "elk-layered" },
+      graph: {
+        groups: [],
+        nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
         edges: [],
       },
     },
@@ -79,7 +79,7 @@ function savedFeedbackDocument(body: string): AnnotationDocument {
 async function createReview(initialDocument?: AnnotationDocument) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comment-management-"));
   await mkdir(join(scopePath, ".architecture-companion"));
-  await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+  await writeArtifact(scopePath, artifact);
   if (initialDocument) {
     await mkdir(join(scopePath, ".architecture-companion/annotations"));
     await writeFile(

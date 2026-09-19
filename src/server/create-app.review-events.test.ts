@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -8,8 +8,8 @@ import type { ConsumerScope } from "@/server/consumer-scope";
 import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
+import { writeArtifact } from "@/server/write-artifact";
 
 function artifact(title: string): Artifact {
   return {
@@ -28,13 +28,6 @@ function artifact(title: string): Artifact {
     ],
     designs: [],
   };
-}
-
-async function writeArtifact(scopePath: string, input: unknown): Promise<void> {
-  const artifactPath = join(scopePath, ARTIFACT_RELATIVE_PATH);
-  const temporaryPath = join(scopePath, ".architecture-companion/.artifact-events.tmp");
-  await writeFile(temporaryPath, JSON.stringify(input));
-  await rename(temporaryPath, artifactPath);
 }
 
 async function writeAnnotations(scopePath: string, activeArtifact: Artifact, body: string): Promise<void> {

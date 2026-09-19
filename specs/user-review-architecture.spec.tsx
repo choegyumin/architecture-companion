@@ -8,8 +8,8 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { ARTIFACT_RELATIVE_PATH } from "@/server/read-artifact";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { writeArtifact } from "@/server/write-artifact";
 
 const artifact = {
   behaviors: [
@@ -85,7 +85,7 @@ describe("reviewer understands the architecture from diagrams and source evidenc
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "src"));
-      await writeFile(join(scopePath, ARTIFACT_RELATIVE_PATH), JSON.stringify(artifact));
+      await writeArtifact(scopePath, artifact);
       await writeFile(join(scopePath, "src/catalog-page.ts"), "export const catalogPage = true;\n");
       const scope = await resolveConsumerScope(scopePath);
       const app = createApp(scope, {
