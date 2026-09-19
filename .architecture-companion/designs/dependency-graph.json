@@ -11,18 +11,12 @@
   "graph": {
     "groups": [
       {
-        "id": "group:directory:src",
-        "title": "src"
-      },
-      {
         "id": "group:directory:src/cli",
-        "title": "cli",
-        "parentId": "group:directory:src"
+        "title": "cli"
       },
       {
         "id": "group:directory:src/client",
-        "title": "client",
-        "parentId": "group:directory:src"
+        "title": "client"
       },
       {
         "id": "group:directory:src/client/pages",
@@ -41,8 +35,7 @@
       },
       {
         "id": "group:directory:src/features",
-        "title": "features",
-        "parentId": "group:directory:src"
+        "title": "features"
       },
       {
         "id": "group:directory:src/features/annotation",
@@ -76,13 +69,11 @@
       },
       {
         "id": "group:directory:src/server",
-        "title": "server",
-        "parentId": "group:directory:src"
+        "title": "server"
       },
       {
         "id": "group:directory:src/shared",
-        "title": "shared",
-        "parentId": "group:directory:src"
+        "title": "shared"
       },
       {
         "id": "group:directory:src/shared/node",

@@ -423,8 +423,9 @@ async function verifyInstalledFileDependencyGenerator(
     nodes?: readonly Readonly<{ id?: unknown }>[];
     edges?: readonly Readonly<{ id?: unknown }>[];
   }>;
-  assert.ok(graph.groups?.some(({ id }) => id === "group:directory:src"));
+  assert.ok(!graph.groups?.some(({ id }) => id === "group:directory:src"));
   assert.ok(!graph.groups?.some(({ id }) => id === "group:package:."));
+  assert.ok(graph.groups?.some(({ id }) => id === "group:external-packages"));
   assert.ok(graph.nodes?.some(({ id }) => id === "file:src/index.ts"));
   assert.ok(graph.nodes?.some(({ id }) => id === "external:installed-package"));
   assert.ok(graph.edges?.some(({ id }) => id === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"));
