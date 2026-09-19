@@ -4,11 +4,14 @@ Common semantics and layout rules to apply when creating or modifying diagrams. 
 
 ## Artifact composition and changes
 
+- Each diagram is one JSON file. Store behavior diagrams in `.architecture-companion/behaviors/<id>.json` and design diagrams in `.architecture-companion/designs/<id>.json`.
+- The file name must equal the diagram `id`, and IDs are lowercase kebab-case (`^[a-z0-9][a-z0-9-]*$`) because they double as file names. Removing a diagram means deleting its file.
 - Put user-visible behavior and actor journeys in `behaviors`.
 - Put code structure, architecture, runtime interactions, data flow, and system boundaries in `designs`.
-- The artifact is a complete snapshot of the current state. Preserve unrelated diagrams, and never write merge instructions or partial patches.
+- The artifact is the complete set of diagram files. Preserve unrelated diagram files, and never write merge instructions or partial patches.
 - Reuse existing diagrams and graph element IDs for the same concepts. Do not repurpose an existing ID for a concept whose meaning changed.
 - Record the chosen logical generator ID as `generatorId` on every diagram you create or regenerate. Reading the artifact must not require that generator to be installed.
+- When several files belong to one change, edit them in a single continuous sequence. Every individual file stays valid on its own, so intermediate states only affect meaning, never validity.
 
 Make each diagram answer one central review question. Do not express the same meaning redundantly across multiple elements; when a graph grows complicated because it serves different questions, split the diagram.
 
