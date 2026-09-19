@@ -13,7 +13,7 @@ import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates
 
 function artifact(title: string): Artifact {
   return {
-    processes: [
+    behaviors: [
       {
         title: "Workflow",
         generatorId: "freeform",
@@ -45,7 +45,7 @@ async function writeAnnotations(scopePath: string, activeArtifact: Artifact, bod
       annotations: [
         {
           id: "review-note",
-          anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },
+          anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
           comment: {
             id: "review-comment",
             author: { id: "reviewer", name: "Reviewer" },

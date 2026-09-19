@@ -1,6 +1,6 @@
 ---
 id: freeform
-description: Builds evidence-based Process and Design diagrams for questions no dedicated generator covers.
+description: Builds evidence-based Product Behavior and Code Design diagrams for questions no dedicated generator covers.
 ---
 
 # Freeform Diagram Generator
@@ -11,7 +11,7 @@ For questions no dedicated generator covers, produce the smallest diagram set th
 
 2. Before creating any element, decide what the reviewer needs to verify. Prefer boundaries, decisions, state changes, data movement, failure paths, and interactions over file inventories.
 
-3. Create only the Processes and Designs the question needs. A Process shows the start, choices, and outcomes an actor observes; a Design shows structure, responsibilities, dependencies, data flow, and runtime interactions. When both are needed, give them separate review questions.
+3. Create only the Product Behaviors and Code Designs the question needs. A Product Behavior shows the start, choices, and outcomes an actor observes; a Code Design shows structure, responsibilities, dependencies, data flow, and runtime interactions. When both are needed, give them separate review questions.
 
 4. Keep one central question per diagram, and reduce the element count as long as no important branch or dependency is hidden. If static structure and time-ordered interaction are both needed but hard to read on one canvas, split the diagram.
 

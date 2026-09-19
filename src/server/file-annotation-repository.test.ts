@@ -22,7 +22,7 @@ function document(body: string): AnnotationDocument {
     annotations: [
       {
         id: `annotation-${body}`,
-        anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },
+        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
         comment: {
           id: `comment-${body}`,
           author: { id: "reviewer", name: "Reviewer" },
@@ -73,7 +73,7 @@ const emptyDocument = {annotations: [] };
 const document = {
   annotations: [{
     id: \`annotation-\${body}\`,
-    anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },
+    anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
     comment: {
       id: \`comment-\${body}\`,
       author: { id: "reviewer", name: "Reviewer" },
@@ -204,7 +204,7 @@ describe("per-revision Annotation file repository", () => {
     }
   });
 
-  test("rejects one stale document among concurrent saves from different processes", async () => {
+  test("rejects one stale document among concurrent saves from different behaviors", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-annotations-"));
     const startPath = join(scopePath, "start");
     const readyPaths = [join(scopePath, "first.ready"), join(scopePath, "second.ready")];

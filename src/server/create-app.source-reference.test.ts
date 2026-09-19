@@ -11,7 +11,7 @@ const baseUrl = "http://architecture-companion.test";
 
 function artifact() {
   return {
-    processes: [
+    behaviors: [
       {
         id: "checkout",
         title: "Checkout workflow",

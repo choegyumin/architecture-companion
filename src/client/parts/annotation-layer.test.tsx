@@ -15,7 +15,7 @@ const controller: AnnotationCanvasController = {
       {
         id: "thread-1",
         anchor: {
-          canvasId: "process:checkout",
+          canvasId: "behavior:checkout",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -36,7 +36,7 @@ const controller: AnnotationCanvasController = {
   removeEdit: vi.fn(async () => undefined),
   resolveEditConflict: vi.fn(async () => undefined),
   saveEdit: vi.fn(async () => true),
-  surface: { canvasId: "process:checkout" },
+  surface: { canvasId: "behavior:checkout" },
 };
 
 describe("annotation layer", () => {

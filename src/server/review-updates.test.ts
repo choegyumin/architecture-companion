@@ -11,7 +11,7 @@ import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/se
 
 function artifact(title: string): Artifact {
   return {
-    processes: [
+    behaviors: [
       {
         id: "checkout",
         title: "Workflow",
@@ -51,7 +51,7 @@ function annotations(body: string): AnnotationDocument {
       {
         id: "review-note",
         anchor: {
-          canvasId: "process:checkout",
+          canvasId: "behavior:checkout",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -219,7 +219,7 @@ describe("review updates", () => {
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
       expect(await readArtifact(scopePath)).toMatchObject({
         status: "valid",
-        artifact: { processes: [{ graph: { nodes: [{ title: "Checkout recovered" }] } }] },
+        artifact: { behaviors: [{ graph: { nodes: [{ title: "Checkout recovered" }] } }] },
       });
     } finally {
       await updates?.close();

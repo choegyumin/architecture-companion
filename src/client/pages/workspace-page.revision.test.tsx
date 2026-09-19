@@ -18,7 +18,7 @@ import { createReviewUpdates } from "@/server/review-updates";
 
 function artifact(label: string): Artifact {
   return {
-    processes: [
+    behaviors: [
       {
         title: "Workflow",
         generatorId: "freeform",
@@ -66,7 +66,7 @@ function annotationsFor(body = "Review the initial workflow."): AnnotationDocume
       {
         id: "process-feedback",
         anchor: {
-          canvasId: "process:checkout",
+          canvasId: "behavior:checkout",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -150,12 +150,12 @@ describe("external artifact review", () => {
         expect(
           await screen.findByRole("button", { name: "Comment: Review the initial workflow." }),
         ).toBeInTheDocument();
-        await userEvent.click(screen.getByRole("tab", { name: "Design" }));
+        await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
         expect(await screen.findByText("Initial component")).toBeInTheDocument();
 
         await writeArtifact(scopePath, changedArtifact);
         expect(await screen.findByText("Changed component")).toBeInTheDocument();
-        await userEvent.click(screen.getByRole("tab", { name: "Process" }));
+        await userEvent.click(screen.getByRole("tab", { name: "Product Behavior" }));
         expect(await screen.findByText("Changed workflow")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Comment: Review the initial workflow." })).not.toBeInTheDocument();
       } finally {

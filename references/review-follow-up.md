@@ -9,13 +9,13 @@ In the result the skill queried, a non-null `artifactRevisionId` is an opaque va
 Each Annotation carries the following semantics.
 
 - An Annotation has a single `comment`.
-- On a Process canvas, `anchor.canvasId` has the form `process:<process-id>`.
-- On a Design canvas, `anchor.canvasId` has the form `design:<design-id>`.
+- On a Product Behavior canvas, `anchor.canvasId` has the form `behavior:<behavior-id>`.
+- On a Code Design canvas, `anchor.canvasId` has the form `design:<design-id>`.
 - When the reviewer selected a group, node, or edge, `anchor.target` records its `type` and stable element `id`.
 - `anchor.target` is absent only for a canvas-level Annotation created without selecting an element.
 - `anchor.point` is the pin's visual position and does not replace the selected element target.
 
-Find the diagram in the active artifact through the Process or Design ID in `canvasId`, then match `target.id` inside that diagram. Runtime validation checks the Annotation structure but not whether these IDs actually exist in the active artifact. Prefer the stable element ID over the point when a target exists, and never guess a missing target from a nearby position or a similar title.
+Find the diagram in the active artifact through the Product Behavior or Code Design ID in `canvasId`, then match `target.id` inside that diagram. Runtime validation checks the Annotation structure but not whether these IDs actually exist in the active artifact. Prefer the stable element ID over the point when a target exists, and never guess a missing target from a nearby position or a similar title.
 
 ## Request interpretation
 

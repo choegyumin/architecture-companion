@@ -31,7 +31,7 @@ describe("local review scope", () => {
         basename(temporaryRoot),
       );
       expect(screen.getByRole("button", { name: "Toggle theme" })).toBeInTheDocument();
-      expect(screen.getByRole("tab", { name: "Process" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Product Behavior" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
       expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "No review artifacts yet" })).toBeInTheDocument();

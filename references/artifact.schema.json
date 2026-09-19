@@ -3,7 +3,7 @@
   "$id": "./artifact.schema.json",
   "type": "object",
   "properties": {
-    "processes": {
+    "behaviors": {
       "type": "array",
       "items": {
         "$ref": "./diagram.schema.json"
@@ -17,7 +17,7 @@
     }
   },
   "required": [
-    "processes",
+    "behaviors",
     "designs"
   ],
   "additionalProperties": false

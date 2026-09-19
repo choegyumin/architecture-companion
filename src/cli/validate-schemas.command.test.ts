@@ -23,7 +23,7 @@ describe("Artifact schema validation command", () => {
 
     try {
       await mkdir(artifactDirectory);
-      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ processes: [], designs: [] }));
+      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ behaviors: [], designs: [] }));
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -45,7 +45,7 @@ describe("Artifact schema validation command", () => {
       await mkdir(artifactDirectory);
       await writeFile(nonDirectoryPath, "file");
       await symlink(join(nonDirectoryPath, "child"), join(scopePath, ".git"));
-      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ processes: [], designs: [] }));
+      await writeFile(join(artifactDirectory, "artifact.json"), JSON.stringify({ behaviors: [], designs: [] }));
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -113,7 +113,7 @@ describe("Artifact schema validation command", () => {
       await mkdir(artifactDirectory);
       await writeFile(
         join(artifactDirectory, "artifact.json"),
-        JSON.stringify({ processes: [process, process], designs: [] }),
+        JSON.stringify({ behaviors: [process, process], designs: [] }),
       );
 
       await expect(
@@ -121,7 +121,7 @@ describe("Artifact schema validation command", () => {
           writeStdout: (output) => outputs.push(output),
         }),
       ).rejects.toThrow(
-        "Artifact is invalid: .architecture-companion/artifact.json. Invalid artifact: Duplicate process ID: checkout",
+        "Artifact is invalid: .architecture-companion/artifact.json. Invalid artifact: Duplicate behavior ID: checkout",
       );
       expect(outputs).toEqual([]);
     } finally {

@@ -823,9 +823,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
           }
           navigation={
             <TabsList aria-label="Review views">
-              <TabsTrigger value="process">Process</TabsTrigger>
+              <TabsTrigger value="process">Product Behavior</TabsTrigger>
               <TabsTrigger disabled value="design">
-                Design
+                Code Design
               </TabsTrigger>
             </TabsList>
           }
@@ -860,7 +860,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   const { artifact } = state.review;
-  const activeProcess = artifact.processes.find(({ id }) => id === activeProcessId) ?? artifact.processes.at(0);
+  const activeProcess = artifact.behaviors.find(({ id }) => id === activeProcessId) ?? artifact.behaviors.at(0);
   const activeDesign = artifact.designs.find(({ id }) => id === activeDesignId) ?? artifact.designs.at(0);
   const activeReviewView: ReviewView | null =
     requestedReviewView === "process" && activeProcess
@@ -876,19 +876,19 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     activeReviewView === "process" && activeProcess
       ? {
           activeDiagram: activeProcess,
-          ariaLabel: `${activeProcess.title} process diagram`,
-          annotationSurface: { canvasId: `process:${activeProcess.id}` },
-          diagrams: artifact.processes,
-          heading: "Processes",
+          ariaLabel: `${activeProcess.title} product behavior diagram`,
+          annotationSurface: { canvasId: `behavior:${activeProcess.id}` },
+          diagrams: artifact.behaviors,
+          heading: "Product Behaviors",
           onSelect: setActiveProcessId,
         }
       : activeReviewView === "design" && activeDesign
         ? {
             activeDiagram: activeDesign,
-            ariaLabel: `${activeDesign.title} design diagram`,
+            ariaLabel: `${activeDesign.title} code design diagram`,
             annotationSurface: { canvasId: `design:${activeDesign.id}` },
             diagrams: artifact.designs,
-            heading: "Designs",
+            heading: "Code Designs",
             onSelect: setActiveDesignId,
           }
         : undefined;
@@ -940,11 +940,11 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         }
         navigation={
           <TabsList aria-label="Review views">
-            <TabsTrigger disabled={artifact.processes.length === 0} value="process">
-              Process
+            <TabsTrigger disabled={artifact.behaviors.length === 0} value="process">
+              Product Behavior
             </TabsTrigger>
             <TabsTrigger disabled={artifact.designs.length === 0} value="design">
-              Design
+              Code Design
             </TabsTrigger>
           </TabsList>
         }

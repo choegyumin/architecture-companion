@@ -66,7 +66,7 @@ describe("DataClient", () => {
       annotations: [
         {
           id: "annotation-1",
-          anchor: { canvasId: "process:checkout", point: { x: 120, y: 80 } },
+          anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
           comment: {
             id: "comment-1",
             author: { id: "reviewer", name: "Reviewer" },
@@ -127,7 +127,7 @@ describe("DataClient", () => {
           JSON.stringify({
             scope: { isGitRepository: false, path: "/consumer" },
             artifact: {
-              processes: [diagram("invite", "Invite member"), diagram("checkout", "Checkout workflow")],
+              behaviors: [diagram("invite", "Invite member"), diagram("checkout", "Checkout workflow")],
               designs: [diagram("structure", "Structure"), diagram("catalog", "Catalog")],
             },
           }),
@@ -137,7 +137,7 @@ describe("DataClient", () => {
 
     const review = await createDataClient(baseUrl, fetcher).getReview();
 
-    expect(review.artifact?.processes.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
+    expect(review.artifact?.behaviors.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
     expect(review.artifact?.designs.map(({ title }) => title)).toEqual(["Catalog", "Structure"]);
   });
 });
