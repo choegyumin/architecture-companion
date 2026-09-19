@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -49,6 +49,7 @@ describe("file dependency graph generator", () => {
         rootPath,
         "src/index.ts",
         [
+          'import "node:fs";',
           'import { runtimeValue } from "./runtime.js";',
           'import type { Shape } from "./types.js";',
           'import sample from "sample-package";',
@@ -127,19 +128,19 @@ describe("file dependency graph generator", () => {
       expect(graph.edges).toEqual([
         {
           type: "default",
-          id: "dependency:file:src/index.ts->external:sample-package:runtime",
+          id: "dependency:file%3Asrc%2Findex.ts:external%3Asample-package:runtime",
           source: "file:src/index.ts",
           target: "external:sample-package",
         },
         {
           type: "default",
-          id: "dependency:file:src/index.ts->file:src/runtime.ts:runtime",
+          id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fruntime.ts:runtime",
           source: "file:src/index.ts",
           target: "file:src/runtime.ts",
         },
         {
           type: "default",
-          id: "dependency:file:src/index.ts->file:src/types.ts:type-only",
+          id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Ftypes.ts:type-only",
           source: "file:src/index.ts",
           target: "file:src/types.ts",
           kind: "type-only",
@@ -166,7 +167,7 @@ describe("file dependency graph generator", () => {
 
       expect(graph.edges).toContainEqual({
         type: "default",
-        id: "dependency:file:src/index.ts->file:src/aliased.ts:runtime",
+        id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Faliased.ts:runtime",
         source: "file:src/index.ts",
         target: "file:src/aliased.ts",
       });
@@ -225,6 +226,197 @@ describe("file dependency graph generator", () => {
         "external:require-condition-package",
         "external:subpath-package",
       ]);
+    });
+  });
+
+  it("excludes test, generated, and build paths before analysis", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
+      await writeFixtureFile(rootPath, "src/example.spec.d.ts", "export type Spec = true;\n");
+      await writeFixtureFile(rootPath, "src/model.generated.d.ts", "export type Generated = true;\n");
+      await writeFixtureFile(rootPath, "src/generated/helper.ts", "export const generated = true;\n");
+      await writeFixtureFile(rootPath, "test/helper.ts", "export const test = true;\n");
+      await writeFixtureFile(rootPath, "tests/helper.ts", "export const tests = true;\n");
+      await writeFixtureFile(rootPath, "dist/hidden.ts", "export const hidden = true;\n");
+      await chmod(join(rootPath, "dist"), 0o000);
+
+      try {
+        const graph = await generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["."] });
+        expect(graph.nodes.filter(({ id }) => id.startsWith("file:"))).toEqual([
+          expect.objectContaining({ id: "file:src/index.ts" }),
+        ]);
+      } finally {
+        await chmod(join(rootPath, "dist"), 0o755);
+      }
+    });
+  });
+
+  it("resolves CommonJS-emitted imports, types exports, and package imports aliases", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFile(
+        join(rootPath, "package.json"),
+        `${JSON.stringify(
+          {
+            name: "fixture-package",
+            type: "module",
+            imports: { "#sample": "sample-package" },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      await writeFixtureFile(
+        rootPath,
+        "tsconfig.json",
+        `${JSON.stringify({ compilerOptions: { module: "NodeNext", moduleResolution: "NodeNext" } }, null, 2)}\n`,
+      );
+      await writePackage(
+        rootPath,
+        "require-only-package",
+        { exports: { require: "./require.cjs" } },
+        { "require.cjs": "module.exports = true;\n" },
+      );
+      await writePackage(
+        rootPath,
+        "types-only-package",
+        { exports: { types: "./index.d.ts" } },
+        { "index.d.ts": "export interface Shape { value: boolean }\n" },
+      );
+      await writePackage(
+        rootPath,
+        "sample-package",
+        { exports: "./index.js", type: "module" },
+        { "index.js": "export default true;\n" },
+      );
+      await writeFixtureFile(
+        rootPath,
+        "src/index.cts",
+        [
+          'import required from "require-only-package";',
+          'import type { Shape } from "types-only-package";',
+          'import sample from "#sample";',
+          "export const value: Shape = { value: required && sample };",
+          "",
+        ].join("\n"),
+      );
+
+      const graph = await generateFileDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["src"],
+        tsConfigPath: "tsconfig.json",
+      });
+
+      expect(
+        graph.nodes
+          .filter(({ kind }) => kind === "External package")
+          .map(({ id }) => id)
+          .toSorted(),
+      ).toEqual(["external:require-only-package", "external:sample-package", "external:types-only-package"]);
+      expect(graph.edges).toContainEqual(
+        expect.objectContaining({
+          source: "file:src/index.cts",
+          target: "external:types-only-package",
+          kind: "type-only",
+        }),
+      );
+    });
+  });
+
+  it("includes JSDoc type imports as type-only dependencies", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(
+        rootPath,
+        "src/index.js",
+        '/** @type {import("./types.js").Shape} */\nexport const value = { enabled: true };\n',
+      );
+      await writeFixtureFile(rootPath, "src/types.js", "export {};\n");
+
+      const graph = await generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+
+      expect(graph.edges).toContainEqual(
+        expect.objectContaining({
+          source: "file:src/index.js",
+          target: "file:src/types.js",
+          kind: "type-only",
+        }),
+      );
+    });
+  });
+
+  it("rejects source and tsconfig symlinks that escape the scope", async () => {
+    await withFixture(async (rootPath) => {
+      const outsideRoot = await mkdtemp(join(tmpdir(), "architecture-companion-outside-scope-"));
+
+      try {
+        await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
+        await writeFixtureFile(outsideRoot, "outside.ts", "export const outside = true;\n");
+        await writeFixtureFile(outsideRoot, "tsconfig.json", "{}\n");
+        await symlink(join(outsideRoot, "outside.ts"), join(rootPath, "src", "leak.ts"));
+        await symlink(join(outsideRoot, "tsconfig.json"), join(rootPath, "tsconfig.json"));
+
+        await expect(
+          generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"], tsConfigPath: "tsconfig.json" }),
+        ).rejects.toThrow("TypeScript config must stay within the scope");
+
+        await rm(join(rootPath, "tsconfig.json"));
+        await expect(generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] })).rejects.toThrow(
+          "Source path resolves outside the scope",
+        );
+      } finally {
+        await rm(outsideRoot, { recursive: true });
+      }
+    });
+  });
+
+  it("keeps distinct dependencies when file names contain edge delimiters", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "src/a.ts", 'import "./b.ts->file:src/c.js";\n');
+      await writeFixtureFile(rootPath, "src/b.ts->file:src/c.ts", "export {};\n");
+      await writeFixtureFile(rootPath, "src/a.ts->file:src/b.ts", 'import "../c.js";\n');
+      await writeFixtureFile(rootPath, "src/c.ts", "export {};\n");
+
+      const graph = await generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+      const collidingEdges = graph.edges.filter(({ source }) =>
+        ["file:src/a.ts", "file:src/a.ts->file:src/b.ts"].includes(source),
+      );
+
+      expect(collidingEdges).toHaveLength(2);
+      expect(collidingEdges).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source: "file:src/a.ts",
+            target: "file:src/b.ts->file:src/c.ts",
+          }),
+          expect.objectContaining({
+            source: "file:src/a.ts->file:src/b.ts",
+            target: "file:src/c.ts",
+          }),
+        ]),
+      );
+    });
+  });
+
+  it("does not change the process working directory while resolving tsconfig paths", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(
+        rootPath,
+        "tsconfig.json",
+        `${JSON.stringify({ compilerOptions: { paths: { "@/*": ["src/*"] } } }, null, 2)}\n`,
+      );
+      await writeFixtureFile(rootPath, "src/index.ts", 'import "@/value";\n');
+      await writeFixtureFile(rootPath, "src/value.ts", "export const value = true;\n");
+      const changeWorkingDirectory = vi.spyOn(process, "chdir");
+
+      try {
+        await generateFileDependencyGraph({
+          scopePath: rootPath,
+          sourcePaths: ["src"],
+          tsConfigPath: "tsconfig.json",
+        });
+        expect(changeWorkingDirectory).not.toHaveBeenCalled();
+      } finally {
+        changeWorkingDirectory.mockRestore();
+      }
     });
   });
 
