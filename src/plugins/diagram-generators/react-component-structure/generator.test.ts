@@ -1136,6 +1136,58 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("respects JSX spread override order in forwarded consumer rules", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function External(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { ExplicitWrapper, StaticSpreadWrapper, UnknownSpreadWrapper } from "./components";
+          export function A() { return <main />; }
+          export function App() {
+            return <>
+              <ExplicitWrapper panel={<A />} />
+              <StaticSpreadWrapper panel={<A />} />
+              <UnknownSpreadWrapper panel={<A />} replacement={{}} />
+            </>;
+          }
+        `,
+        "src/components.tsx": `
+          import { External } from "ui-kit";
+          export function B() { return <aside />; }
+          export function ExplicitWrapper({ panel }: { panel: unknown }) {
+            const props = { panel };
+            return <External {...props} panel={<B />} />;
+          }
+          export function StaticSpreadWrapper({ panel }: { panel: unknown }) {
+            return <External panel={panel} {...{ panel: <B /> }} />;
+          }
+          export function UnknownSpreadWrapper({ panel, replacement }: { panel: unknown; replacement: object }) {
+            return <External panel={panel} {...replacement} />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.some(({ title }) => title === "A")).toBe(false);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExplicitWrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "StaticSpreadWrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "UnknownSpreadWrapper", kind: "direct-render", label: undefined },
+          { source: "ExplicitWrapper", target: "External", kind: "direct-render", label: undefined },
+          { source: "External", target: "B", kind: "node-prop", label: "Node prop · panel" },
+          { source: "StaticSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
+          { source: "UnknownSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
   it("keeps children forwarding through whitespace and comment-only JSX bodies", async () => {
     await withFixture(
       {
