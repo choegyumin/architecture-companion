@@ -808,6 +808,12 @@ function jsxAttributeExpression(attribute: ts.JsxAttribute): ts.Expression | und
   return undefined;
 }
 
+function isEffectiveJsxChild(child: ts.JsxChild): boolean {
+  if (ts.isJsxText(child)) return !child.containsOnlyTriviaWhiteSpaces;
+  if (ts.isJsxExpression(child)) return !!child.expression;
+  return true;
+}
+
 function propertyNameText(name: ts.PropertyName): string | undefined {
   if (
     ts.isIdentifier(name) ||
@@ -1137,8 +1143,9 @@ function analyzeConsumerRules(
       }
     }
 
-    if (targetUseId && children.length > 0) removeForwardingToProp(targetUseId, "children");
-    for (const child of children) {
+    const effectiveChildren = children.filter(isEffectiveJsxChild);
+    if (targetUseId && effectiveChildren.length > 0) removeForwardingToProp(targetUseId, "children");
+    for (const child of effectiveChildren) {
       if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
       if (!targetUseId || !ts.isJsxExpression(child) || !child.expression) continue;
       for (const propName of new Set(collectForwardedProps(child.expression))) {

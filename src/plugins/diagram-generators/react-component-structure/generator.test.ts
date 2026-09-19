@@ -1136,6 +1136,38 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("keeps children forwarding through whitespace and comment-only JSX bodies", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Content, Wrapper } from "./components";
+          export function App() { return <Wrapper><Content /></Wrapper>; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Primitive({ children }: { children: unknown }) { return <section>{children}</section>; }
+          export function Wrapper({ children }: { children: unknown }) {
+            return <Primitive {...{ children }}>
+              {/* spacing only */}
+            </Primitive>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["Wrapper"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+        ]);
+      },
+    );
+  });
+
   it("passes nested supplied values through a hidden supplied target", async () => {
     await withFixture(
       {
