@@ -158,7 +158,7 @@
         "id": "dep-artifact-schema",
         "kind": "schema",
         "title": "Artifact",
-        "description": "Defines the Artifact schema with process and design diagram lists",
+        "description": "Validates the assembled behavior and design diagram lists with unique diagram IDs",
         "links": [
           {
             "href": "source:///src/features/artifact/artifact.ts"
@@ -290,7 +290,7 @@
         "id": "dep-artifact-io",
         "kind": "repository",
         "title": "Artifact read and validation",
-        "description": "Reads artifact JSON and validates it against the Artifact and Diagram schemas",
+        "description": "Reads per-diagram files from behaviors and designs directories, checks file names against diagram IDs, and validates every diagram",
         "links": [
           {
             "href": "source:///src/server/read-artifact.ts"
