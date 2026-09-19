@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import type { Dirent } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
@@ -37,16 +37,14 @@ const expectedTopLevelEntries = [
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const distributionRoot = join(packageRoot, "dist");
-// Mirrors the projections in compose-dist.ts: each destination must reproduce its source verbatim.
+// Mirrors the non-executable projections in compose-dist.ts: each destination must reproduce its source verbatim.
 const copiedProjections = [
   { source: join(packageRoot, "README.md"), destination: "README.md" },
   { source: join(packageRoot, "SKILL.md"), destination: "SKILL.md" },
   { source: join(packageRoot, "references"), destination: "references" },
-  {
-    source: join(packageRoot, "src", "plugins", "diagram-generators"),
-    destination: "diagram-generators",
-  },
 ] as const;
+const diagramGeneratorSourceRoot = join(packageRoot, "src", "plugins", "diagram-generators");
+const reactComponentGeneratorRelativePath = join("diagram-generators", "react-component-structure", "cli", "run.js");
 
 type CompletedProcess = Readonly<{
   exitCode: number | null;
@@ -158,6 +156,44 @@ async function assertCopiedVerbatim(sourcePath: string, destinationPath: string)
   }
 }
 
+async function collectRelativeFiles(
+  rootPath: string,
+  include: (path: string) => boolean,
+  currentPath: string = rootPath,
+): Promise<readonly string[]> {
+  const entries = await readdir(currentPath, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = join(currentPath, entry.name);
+      if (entry.isDirectory()) return collectRelativeFiles(rootPath, include, entryPath);
+      return entry.isFile() && include(entryPath) ? [relative(rootPath, entryPath)] : [];
+    }),
+  );
+  return files.flat().toSorted();
+}
+
+async function assertGeneratorResources(rootPath: string): Promise<void> {
+  const destinationRoot = join(rootPath, "diagram-generators");
+  const resourcePaths = await collectRelativeFiles(
+    diagramGeneratorSourceRoot,
+    (path) => ![".ts", ".tsx"].includes(extname(path)),
+  );
+  assert.ok(resourcePaths.length > 0, "Built-in generators must include resources.");
+  for (const resourcePath of resourcePaths) {
+    assert.deepEqual(
+      await readFile(join(destinationRoot, resourcePath)),
+      await readFile(join(diagramGeneratorSourceRoot, resourcePath)),
+      `${join(destinationRoot, resourcePath)} must match its source resource.`,
+    );
+  }
+  assert.deepEqual(
+    await collectRelativeFiles(destinationRoot, (path) => [".ts", ".tsx"].includes(extname(path))),
+    [],
+    "Installed generators must not contain TypeScript source files.",
+  );
+  await readRequiredText(join(rootPath, reactComponentGeneratorRelativePath));
+}
+
 async function verifyDistributionResources(rootPath: string): Promise<void> {
   assert.deepEqual((await readdir(rootPath)).toSorted(), expectedTopLevelEntries);
   assert.deepEqual(await findForbiddenEntries(rootPath), []);
@@ -170,6 +206,7 @@ async function verifyDistributionResources(rootPath: string): Promise<void> {
   for (const { source, destination } of copiedProjections) {
     await assertCopiedVerbatim(source, join(rootPath, destination));
   }
+  await assertGeneratorResources(rootPath);
 }
 
 function spawnInstalledScript(
@@ -364,6 +401,67 @@ async function verifyInstalledGeneratorEntry(
   assert.deepEqual(JSON.parse(outputLine), await readExpectedBuiltInGeneratorDescriptors(skillRoot));
 }
 
+async function verifyInstalledReactComponentGenerator(
+  skillRoot: string,
+  scopePath: string,
+  environment: NodeJS.ProcessEnv,
+): Promise<void> {
+  const sourceRoot = join(scopePath, "src");
+  await mkdir(sourceRoot, { recursive: true });
+  await Promise.all([
+    writeFile(
+      join(sourceRoot, "app.tsx"),
+      `import { Content } from "./content";\nimport { Layout } from "./layout";\nexport function App() { return <Layout><Content /></Layout>; }\n`,
+    ),
+    writeFile(join(sourceRoot, "content.tsx"), `export function Content() { return <main />; }\n`),
+    writeFile(
+      join(sourceRoot, "layout.tsx"),
+      `export function Layout({ children }: { children: unknown }) { return <section>{children}</section>; }\n`,
+    ),
+  ]);
+
+  const scriptPath = join(skillRoot, reactComponentGeneratorRelativePath);
+  const result = await runInstalledScript(
+    scriptPath,
+    ["--scope", scopePath, "--source", "src"],
+    environment,
+    skillRoot,
+  );
+  assertSuccessfulCompletion(result, scriptPath);
+  const graphPath = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+  assert.ok(graphPath && isAbsolute(graphPath), "Installed React generator must print one absolute graph path.");
+  const graphDirectory = dirname(graphPath);
+  assert.match(graphDirectory, /architecture-companion-react-components-/);
+
+  try {
+    const graph = JSON.parse(await readFile(graphPath, "utf8")) as {
+      edges: ReadonlyArray<{ kind?: string; label?: string; source: string; target: string }>;
+      groups: readonly unknown[];
+      nodes: ReadonlyArray<{ id: string; title: string }>;
+    };
+    assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
+    assert.deepEqual(graph.groups, []);
+    assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Layout"]);
+    const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+    assert.deepEqual(
+      graph.edges
+        .map((edge) => ({
+          kind: edge.kind,
+          label: edge.label,
+          source: titlesById.get(edge.source),
+          target: titlesById.get(edge.target),
+        }))
+        .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+      [
+        { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
+        { kind: "node-prop", label: "Node prop · children", source: "Layout", target: "Content" },
+      ],
+    );
+  } finally {
+    await rm(graphDirectory, { recursive: true });
+  }
+}
+
 async function verifyInstalledAnnotationEntry(
   skillRoot: string,
   scopePath: string,
@@ -453,6 +551,7 @@ try {
 
   const environment = createInstalledEnvironment(skillRoot, homeDirectory, spawnGuardReadyPath, openerMarkerPath);
   await verifyInstalledGeneratorEntry(skillRoot, scopePath, environment);
+  await verifyInstalledReactComponentGenerator(skillRoot, scopePath, environment);
   await verifyInstalledAnnotationEntry(skillRoot, scopePath, environment);
   await verifyInstalledValidationEntry(skillRoot, scopePath, environment);
   serverProcess = startInstalledServer(skillRoot, scopePath, environment, spawnGuardPath);
