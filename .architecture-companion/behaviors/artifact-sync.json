@@ -1,6 +1,6 @@
 {
-  "id": "artifact-revision-sync",
-  "title": "Artifact refresh",
+  "id": "artifact-sync",
+  "title": "Sync artifact revision",
   "generatorId": "freeform",
   "layout": {
     "id": "elk-layered",

@@ -1,6 +1,6 @@
 {
   "id": "dependency-graph",
-  "title": "Module dependency graph",
+  "title": "Dependency graph",
   "generatorId": "freeform",
   "layout": {
     "id": "elk-layered",

@@ -1,6 +1,6 @@
 {
-  "id": "implementation-sequence",
-  "title": "Review session execution sequence",
+  "id": "review-session-sequence",
+  "title": "Review session sequence",
   "generatorId": "freeform",
   "layout": {
     "id": "sequence"

@@ -1,6 +1,6 @@
 {
-  "id": "agent-guided-review-preparation",
-  "title": "Skill trigger — hand off review",
+  "id": "review-preparation",
+  "title": "Prepare Review URL (Skill trigger)",
   "generatorId": "freeform",
   "layout": {
     "id": "elk-layered",
