@@ -37,18 +37,9 @@ type PreparedTsConfig = Readonly<{
 
 type ResolutionPass = "import" | "require" | "types";
 
-const sourceTypes = [
-  { extension: ".tsx", kind: "TypeScript JSX" },
-  { extension: ".mts", kind: "TypeScript ESM" },
-  { extension: ".cts", kind: "TypeScript CommonJS" },
-  { extension: ".ts", kind: "TypeScript" },
-  { extension: ".jsx", kind: "JavaScript JSX" },
-  { extension: ".mjs", kind: "JavaScript ESM" },
-  { extension: ".cjs", kind: "JavaScript CommonJS" },
-  { extension: ".js", kind: "JavaScript" },
-] as const;
-const sourceExtensions: ReadonlySet<string> = new Set(sourceTypes.map(({ extension }) => extension));
-const sourceExtensionGlob = sourceTypes.map(({ extension }) => extension.slice(1)).join(",");
+const sourceExtensions = [".tsx", ".mts", ".cts", ".ts", ".jsx", ".mjs", ".cjs", ".js"] as const;
+const sourceExtensionSet: ReadonlySet<string> = new Set(sourceExtensions);
+const sourceExtensionGlob = sourceExtensions.map((extension) => extension.slice(1)).join(",");
 const defaultExcludeGlobs = [
   "**/{__tests__,test,tests}/**",
   `**/*.{test,spec}.{${sourceExtensionGlob}}`,
@@ -100,10 +91,6 @@ function compareById<T extends Readonly<{ id: string }>>(left: T, right: T): num
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
 
-function sourceKind(path: string): string {
-  return sourceTypes.find(({ extension }) => path.endsWith(extension))?.kind ?? "JavaScript";
-}
-
 function sourceHref(relativePath: string): string {
   const encodedPath = relativePath
     .split("/")
@@ -151,7 +138,7 @@ function isExcluded(relativePath: string, excludeGlobs: readonly string[]): bool
 
 function isDirectoryExcluded(relativeDirectoryPath: string, excludeGlobs: readonly string[]): boolean {
   if (!relativeDirectoryPath) return false;
-  const probes = sourceTypes.flatMap(({ extension }) => [
+  const probes = sourceExtensions.flatMap((extension) => [
     `${relativeDirectoryPath}/__architecture_companion_probe__${extension}`,
     `${relativeDirectoryPath}/nested/__architecture_companion_probe__${extension}`,
   ]);
@@ -208,7 +195,7 @@ async function discoverSources(
     if (!candidateStat.isFile()) return;
 
     const relativePath = pathToPosix(relative(scopePath, canonicalPath));
-    if (!sourceExtensions.has(extname(relativePath)) || isExcluded(relativePath, excludeGlobs)) return;
+    if (!sourceExtensionSet.has(extname(relativePath)) || isExcluded(relativePath, excludeGlobs)) return;
     discoveredSources.set(canonicalPath, { absolutePath: canonicalPath, relativePath });
   }
 
@@ -515,11 +502,9 @@ async function buildGraph(
     nodes.push({
       type: "default",
       id,
-      kind: sourceKind(relativePath),
       title: basename(relativePath),
-      details: [relativePath],
       groupId,
-      links: [{ href: sourceHref(relativePath) }],
+      links: [{ text: "source", href: sourceHref(relativePath) }],
     });
   }
 

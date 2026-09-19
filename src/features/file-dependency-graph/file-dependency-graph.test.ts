@@ -100,29 +100,23 @@ describe("file dependency graph generator", () => {
         {
           type: "default",
           id: "file:src/index.ts",
-          kind: "TypeScript",
           title: "index.ts",
-          details: ["src/index.ts"],
           groupId: "group:directory:src",
-          links: [{ href: "source:///src/index.ts" }],
+          links: [{ text: "source", href: "source:///src/index.ts" }],
         },
         {
           type: "default",
           id: "file:src/runtime.ts",
-          kind: "TypeScript",
           title: "runtime.ts",
-          details: ["src/runtime.ts"],
           groupId: "group:directory:src",
-          links: [{ href: "source:///src/runtime.ts" }],
+          links: [{ text: "source", href: "source:///src/runtime.ts" }],
         },
         {
           type: "default",
           id: "file:src/types.ts",
-          kind: "TypeScript",
           title: "types.ts",
-          details: ["src/types.ts"],
           groupId: "group:directory:src",
-          links: [{ href: "source:///src/types.ts" }],
+          links: [{ text: "source", href: "source:///src/types.ts" }],
         },
       ]);
       expect(graph.edges).toEqual([

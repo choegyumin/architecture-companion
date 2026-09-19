@@ -96,7 +96,6 @@
             },
             "required": [
               "id",
-              "kind",
               "title",
               "type"
             ],
