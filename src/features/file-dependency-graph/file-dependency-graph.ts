@@ -47,7 +47,7 @@ const sourceTypes = [
   { extension: ".cjs", kind: "JavaScript CommonJS" },
   { extension: ".js", kind: "JavaScript" },
 ] as const;
-const sourceExtensions = new Set(sourceTypes.map(({ extension }) => extension));
+const sourceExtensions: ReadonlySet<string> = new Set(sourceTypes.map(({ extension }) => extension));
 const sourceExtensionGlob = sourceTypes.map(({ extension }) => extension.slice(1)).join(",");
 const defaultExcludeGlobs = [
   "**/{__tests__,test,tests}/**",
