@@ -48,6 +48,7 @@ describe("generateSchemaSources", () => {
       required: ["id", "title", "generatorId", "layout", "graph"],
       additionalProperties: false,
       properties: {
+        generatorInstructions: { type: "string", minLength: 1 },
         links: {
           type: "array",
           items: {

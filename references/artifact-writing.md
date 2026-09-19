@@ -11,6 +11,8 @@ Common semantics and layout rules to apply when creating or modifying diagrams. 
 - The artifact is the complete set of diagram files. Preserve unrelated diagram files, and never write merge instructions or partial patches.
 - Reuse existing diagrams and graph element IDs for the same concepts. Do not repurpose an existing ID for a concept whose meaning changed.
 - Record the chosen logical generator ID as `generatorId` on every diagram you create or regenerate. Reading the artifact must not require that generator to be installed.
+- Record reproducible regeneration context as free-form text in `generatorInstructions` when the generator depends on choices not captured by `generatorId`. Include selected inputs, options, working-directory assumptions, commands, or manual steps as needed, and preserve these instructions when editing the generated graph.
+- Write command-backed instructions to run from the consumer scope root. Use `<generator-directory>` for a session-specific absolute generator directory, use scope-relative paths, and use `.` for the scope when the command supports it. Preserve every option and selected source path exactly.
 - When several files belong to one change, edit them in a single continuous sequence. Every individual file stays valid on its own, so intermediate states only affect meaning, never validity.
 
 Make each diagram answer one central review question. Do not express the same meaning redundantly across multiple elements; when a graph grows complicated because it serves different questions, split the diagram.
