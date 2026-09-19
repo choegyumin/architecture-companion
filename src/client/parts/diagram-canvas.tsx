@@ -22,7 +22,7 @@ import {
   useState,
 } from "react";
 
-import { fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
+import { DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
@@ -126,7 +126,7 @@ export function DiagramCanvas({
         edgesFocusable={false}
         edgeTypes={diagramEdgeTypes}
         elementsSelectable={false}
-        minZoom={0.25}
+        minZoom={DIAGRAM_MIN_ZOOM}
         nodes={nodes}
         nodesConnectable={false}
         nodesDraggable={false}
