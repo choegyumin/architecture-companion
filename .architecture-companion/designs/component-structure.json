@@ -313,44 +313,44 @@
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#ButtonPrimitive",
+        "id": "external:@base-ui/react#Button",
         "kind": "External React component",
-        "title": "ButtonPrimitive",
+        "title": "Button",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#TabsPrimitive.List",
+        "id": "external:@base-ui/react#Tabs.List",
         "kind": "External React component",
-        "title": "TabsPrimitive.List",
+        "title": "Tabs.List",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#TabsPrimitive.Panel",
+        "id": "external:@base-ui/react#Tabs.Panel",
         "kind": "External React component",
-        "title": "TabsPrimitive.Panel",
+        "title": "Tabs.Panel",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#TabsPrimitive.Root",
+        "id": "external:@base-ui/react#Tabs.Root",
         "kind": "External React component",
-        "title": "TabsPrimitive.Root",
+        "title": "Tabs.Root",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#TabsPrimitive.Tab",
+        "id": "external:@base-ui/react#Tabs.Tab",
         "kind": "External React component",
-        "title": "TabsPrimitive.Tab",
+        "title": "Tabs.Tab",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#TogglePrimitive",
+        "id": "external:@base-ui/react#Toggle",
         "kind": "External React component",
-        "title": "TogglePrimitive",
+        "title": "Toggle",
         "description": "@base-ui/react boundary"
       },
       {
@@ -422,6 +422,20 @@
       },
       {
         "type": "default",
+        "id": "edge:1ace24e13428df74",
+        "source": "component:src/shared/react-ui/button.tsx#Button",
+        "target": "external:@base-ui/react#Button",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:1e508198b7da1135",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "target": "external:@base-ui/react#Tabs.List",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
         "id": "edge:28d9dde4dea9f004",
         "source": "cmp-annotation-layer",
         "target": "component:src/shared/react-ui/form.tsx#Form",
@@ -432,13 +446,6 @@
         "id": "edge:2a00fe69cf97484d",
         "source": "cmp-lifeline-node",
         "target": "external:@xyflow/react#Handle",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:3d92e00f11175192",
-        "source": "component:src/shared/react-ui/tabs.tsx#Tabs",
-        "target": "external:@base-ui/react#TabsPrimitive.Root",
         "kind": "direct-render"
       },
       {
@@ -464,16 +471,23 @@
       },
       {
         "type": "default",
-        "id": "edge:5f15fe16d590f7d9",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
-        "target": "external:@base-ui/react#TabsPrimitive.Panel",
+        "id": "edge:63ed758cd3c032d7",
+        "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
         "kind": "direct-render"
       },
       {
         "type": "default",
-        "id": "edge:63ed758cd3c032d7",
-        "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "id": "edge:6bdc062ce1ef0e33",
+        "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "target": "external:@base-ui/react#Toggle",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:7478ccb0b882c093",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
+        "target": "external:@base-ui/react#Tabs.Tab",
         "kind": "direct-render"
       },
       {
@@ -497,6 +511,20 @@
         "target": "component:src/shared/react-ui/card.tsx#Card",
         "kind": "node-prop",
         "label": "Node prop · children"
+      },
+      {
+        "type": "default",
+        "id": "edge:95a78290cab78567",
+        "source": "component:src/shared/react-ui/tabs.tsx#Tabs",
+        "target": "external:@base-ui/react#Tabs.Root",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:9665a62724b477a5",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "external:@base-ui/react#Tabs.Panel",
+        "kind": "direct-render"
       },
       {
         "type": "default",
@@ -557,39 +585,11 @@
       },
       {
         "type": "default",
-        "id": "edge:d91dc64aac104182",
-        "source": "component:src/shared/react-ui/button.tsx#Button",
-        "target": "external:@base-ui/react#ButtonPrimitive",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:da54c7c826cb1d6a",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "target": "external:@base-ui/react#TabsPrimitive.List",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:ddbec3ffb10c1c15",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "target": "external:@base-ui/react#TabsPrimitive.Tab",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
         "id": "edge:f0758c6cf6625543",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent",
         "kind": "node-prop",
         "label": "Node prop · children"
-      },
-      {
-        "type": "default",
-        "id": "edge:f6a5049746e1f900",
-        "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "target": "external:@base-ui/react#TogglePrimitive",
-        "kind": "direct-render"
       },
       {
         "type": "default",
