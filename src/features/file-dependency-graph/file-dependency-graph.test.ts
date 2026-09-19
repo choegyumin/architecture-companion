@@ -92,7 +92,7 @@ describe("file dependency graph generator", () => {
         {
           type: "default",
           id: "external:sample-package",
-          kind: "external package",
+          kind: "External package",
           title: "sample-package",
           groupId: "group:external-packages",
         },
@@ -103,7 +103,7 @@ describe("file dependency graph generator", () => {
           title: "index.ts",
           details: ["src/index.ts"],
           groupId: "group:directory:src",
-          links: [{ text: "Open source", href: "source:///src/index.ts" }],
+          links: [{ href: "source:///src/index.ts" }],
         },
         {
           type: "default",
@@ -112,7 +112,7 @@ describe("file dependency graph generator", () => {
           title: "runtime.ts",
           details: ["src/runtime.ts"],
           groupId: "group:directory:src",
-          links: [{ text: "Open source", href: "source:///src/runtime.ts" }],
+          links: [{ href: "source:///src/runtime.ts" }],
         },
         {
           type: "default",
@@ -121,7 +121,7 @@ describe("file dependency graph generator", () => {
           title: "types.ts",
           details: ["src/types.ts"],
           groupId: "group:directory:src",
-          links: [{ text: "Open source", href: "source:///src/types.ts" }],
+          links: [{ href: "source:///src/types.ts" }],
         },
       ]);
       expect(graph.edges).toEqual([
@@ -216,7 +216,7 @@ describe("file dependency graph generator", () => {
 
       const graph = await generateFileDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
       const externalNodeIds = graph.nodes
-        .filter(({ kind }) => kind === "external package")
+        .filter(({ kind }) => kind === "External package")
         .map(({ id }) => id)
         .toSorted();
 
