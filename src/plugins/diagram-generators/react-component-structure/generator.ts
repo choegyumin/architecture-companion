@@ -242,46 +242,82 @@ function getImportModuleSpecifier(symbol: ts.Symbol | undefined): string | undef
   return undefined;
 }
 
+function getImportedName(symbol: ts.Symbol | undefined): string | undefined {
+  for (const declaration of symbol?.declarations ?? []) {
+    if (ts.isImportSpecifier(declaration)) return (declaration.propertyName ?? declaration.name).text;
+    if (ts.isImportClause(declaration)) return "default";
+    if (ts.isNamespaceImport(declaration)) return "*";
+  }
+  return undefined;
+}
+
 function isCreateElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
   if (!ts.isCallExpression(node)) return false;
   const callee = unwrapExpression(node.expression);
-  if (ts.isPropertyAccessExpression(callee)) return callee.name.text === "createElement";
-  if (!ts.isIdentifier(callee) || callee.text !== "createElement") return false;
-  return getImportModuleSpecifier(checker.getSymbolAtLocation(callee)) === "react";
+  if (ts.isPropertyAccessExpression(callee)) {
+    if (callee.name.text !== "createElement") return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+  }
+  if (!ts.isIdentifier(callee)) return false;
+  const symbol = checker.getSymbolAtLocation(callee);
+  return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === "createElement";
+}
+
+function isArrayRenderingMethodCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+  const callee = unwrapExpression(call.expression);
+  if (!ts.isPropertyAccessExpression(callee) || !["flatMap", "map"].includes(callee.name.text)) return false;
+  const declaration = checker.getResolvedSignature(call)?.getDeclaration();
+  if (!declaration) return false;
+  return /^lib\..*\.d\.ts$/.test(basename(declaration.getSourceFile().fileName));
 }
 
 function containsReactOutput(expression: ts.Expression, checker: ts.TypeChecker): boolean {
-  let found = false;
-
-  function visit(node: ts.Node): void {
-    if (found) return;
-    if (
-      ts.isJsxElement(node) ||
-      ts.isJsxSelfClosingElement(node) ||
-      ts.isJsxFragment(node) ||
-      isCreateElementCall(node, checker)
-    ) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(node, visit);
+  const unwrapped = unwrapExpression(expression);
+  if (ts.isJsxElement(unwrapped) || ts.isJsxSelfClosingElement(unwrapped) || ts.isJsxFragment(unwrapped)) return true;
+  if (ts.isCallExpression(unwrapped)) {
+    if (isCreateElementCall(unwrapped, checker)) return true;
+    if (!isArrayRenderingMethodCall(unwrapped, checker)) return false;
+    return unwrapped.arguments.some(
+      (argument) =>
+        (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) &&
+        collectReturnExpressions(argument.body).some((returned) => containsReactOutput(returned, checker)),
+    );
   }
-
-  visit(expression);
-  return found;
+  if (ts.isConditionalExpression(unwrapped)) {
+    return containsReactOutput(unwrapped.whenTrue, checker) || containsReactOutput(unwrapped.whenFalse, checker);
+  }
+  if (ts.isBinaryExpression(unwrapped)) return containsReactOutput(unwrapped.right, checker);
+  if (ts.isArrayLiteralExpression(unwrapped)) {
+    return unwrapped.elements.some((element) => ts.isExpression(element) && containsReactOutput(element, checker));
+  }
+  return false;
 }
 
-function unwrapFunction(initializer: ts.Expression): FunctionLike | undefined {
+function isReactWrapperCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+  const callee = unwrapExpression(call.expression);
+  if (ts.isIdentifier(callee)) {
+    const symbol = checker.getSymbolAtLocation(callee);
+    return (
+      getImportModuleSpecifier(symbol) === "react" && ["forwardRef", "memo"].includes(getImportedName(symbol) ?? "")
+    );
+  }
+  if (!ts.isPropertyAccessExpression(callee) || !["forwardRef", "memo"].includes(callee.name.text)) return false;
+  const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+  return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+}
+
+function unwrapFunction(initializer: ts.Expression, checker: ts.TypeChecker): FunctionLike | undefined {
   const expression = unwrapExpression(initializer);
   if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) return expression;
-  if (!ts.isCallExpression(expression) || expression.arguments.length === 0) return undefined;
-  const calleeName = ts.isIdentifier(expression.expression)
-    ? expression.expression.text
-    : ts.isPropertyAccessExpression(expression.expression)
-      ? expression.expression.name.text
-      : undefined;
-  if (calleeName !== "memo" && calleeName !== "forwardRef") return undefined;
-  return unwrapFunction(expression.arguments.at(0) as ts.Expression);
+  if (
+    !ts.isCallExpression(expression) ||
+    expression.arguments.length === 0 ||
+    !isReactWrapperCall(expression, checker)
+  ) {
+    return undefined;
+  }
+  return unwrapFunction(expression.arguments.at(0) as ts.Expression, checker);
 }
 
 function isComponentName(name: string): boolean {
@@ -353,7 +389,7 @@ function collectComponentDefinitions(
       if (ts.isVariableStatement(statement)) {
         for (const declaration of statement.declarationList.declarations) {
           if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
-          const functionLike = unwrapFunction(declaration.initializer);
+          const functionLike = unwrapFunction(declaration.initializer, checker);
           if (!functionLike || !functionLike.body) continue;
           addDefinition(
             sourceFile,
@@ -392,7 +428,7 @@ function collectComponentDefinitions(
       }
 
       if (ts.isExportAssignment(statement)) {
-        const functionLike = unwrapFunction(statement.expression);
+        const functionLike = unwrapFunction(statement.expression, checker);
         if (!functionLike?.body) continue;
         const name = defaultExportName(sourceFile);
         const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
@@ -427,14 +463,29 @@ function resolveDefinition(
   checker: ts.TypeChecker,
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>,
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>,
+  visited: ReadonlySet<ts.Symbol> = new Set(),
 ): ComponentDefinition | undefined {
-  if (!symbol) return undefined;
+  if (!symbol || visited.has(symbol)) return undefined;
+  const nextVisited = new Set(visited).add(symbol);
   const canonical = canonicalSymbol(symbol, checker);
   const direct = canonical ? definitionsBySymbol.get(canonical) : undefined;
   if (direct) return direct;
   for (const declaration of canonical?.declarations ?? symbol.declarations ?? []) {
     const definition = definitionsByDeclaration.get(declaration);
     if (definition) return definition;
+    if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+      const initializer = unwrapExpression(declaration.initializer);
+      if (ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)) {
+        const aliasedDefinition = resolveDefinition(
+          checker.getSymbolAtLocation(initializer),
+          checker,
+          definitionsBySymbol,
+          definitionsByDeclaration,
+          nextVisited,
+        );
+        if (aliasedDefinition) return aliasedDefinition;
+      }
+    }
   }
   return undefined;
 }
@@ -461,8 +512,51 @@ function hasExternalDeclaration(symbol: ts.Symbol | undefined, checker: ts.TypeC
   );
 }
 
-function jsxTagText(tagName: ts.JsxTagNameExpression): string {
-  return tagName.getText();
+function isReactSymbol(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): boolean {
+  if (getImportModuleSpecifier(symbol) === "react") return true;
+  const canonical = canonicalSymbol(symbol, checker);
+  return (canonical?.declarations ?? symbol?.declarations ?? []).some((declaration) => {
+    const fileName = toPosixPath(declaration.getSourceFile().fileName);
+    return fileName.includes("/node_modules/react/") || fileName.includes("/node_modules/@types/react/");
+  });
+}
+
+function declarationName(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): string | undefined {
+  const canonical = canonicalSymbol(symbol, checker);
+  for (const declaration of canonical?.declarations ?? []) {
+    if (
+      (ts.isClassDeclaration(declaration) ||
+        ts.isFunctionDeclaration(declaration) ||
+        ts.isVariableDeclaration(declaration)) &&
+      declaration.name &&
+      ts.isIdentifier(declaration.name)
+    ) {
+      return declaration.name.text;
+    }
+  }
+  return canonical && canonical.name !== "default" && !canonical.name.startsWith('"') ? canonical.name : undefined;
+}
+
+function importedBindingName(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): string | undefined {
+  for (const declaration of symbol?.declarations ?? []) {
+    if (ts.isImportSpecifier(declaration)) return (declaration.propertyName ?? declaration.name).text;
+    if (ts.isImportClause(declaration)) return declarationName(symbol, checker) ?? "default";
+  }
+  return undefined;
+}
+
+function canonicalExternalTitle(
+  expression: ts.Expression | ts.JsxTagNameExpression,
+  symbol: ts.Symbol | undefined,
+  importSymbol: ts.Symbol | undefined,
+  checker: ts.TypeChecker,
+): string {
+  const localRoot = leftmostIdentifier(expression);
+  const sourceText = expression.getText();
+  const suffix = localRoot && sourceText.startsWith(localRoot.text) ? sourceText.slice(localRoot.text.length) : "";
+  const rootName = importedBindingName(importSymbol, checker);
+  if (rootName) return `${rootName}${suffix}`;
+  return declarationName(symbol, checker) ?? (suffix.startsWith(".") ? suffix.slice(1) : sourceText);
 }
 
 function isIntrinsicJsxTag(tagName: ts.JsxTagNameExpression): boolean {
@@ -486,7 +580,7 @@ function targetForReference(
     return undefined;
   }
 
-  const title = ts.isJsxTagNameExpression(expression) ? jsxTagText(expression) : expression.getText();
+  const title = canonicalExternalTitle(expression, symbol, importSymbol, checker);
   if (packageName === "react" && /(?:^|\.)Fragment$/.test(title)) return undefined;
   const key = `${packageName}\0${title}`;
   const existing = context.externalTargets.get(key);
@@ -667,6 +761,19 @@ function jsxAttributeExpression(attribute: ts.JsxAttribute): ts.Expression | und
   return undefined;
 }
 
+function propertyNameText(name: ts.PropertyName): string | undefined {
+  if (
+    ts.isIdentifier(name) ||
+    ts.isPrivateIdentifier(name) ||
+    ts.isStringLiteralLike(name) ||
+    ts.isNumericLiteral(name)
+  ) {
+    return name.text;
+  }
+  if (ts.isComputedPropertyName(name) && ts.isStringLiteralLike(name.expression)) return name.expression.text;
+  return undefined;
+}
+
 function collectIncomingProps(
   expression: ts.Expression,
   bindings: PropBindings,
@@ -692,16 +799,22 @@ function analyzeConsumerRules(
     addExactRule(rules, propName, { type: "terminal", kind, rendererId: definition.id, propName });
   }
 
-  function analyzeRenderPropInvocations(expression: ts.Expression): void {
-    function visit(node: ts.Node): void {
-      if (ts.isFunctionLike(node)) return;
+  function collectInvokedRenderProps(expression: ts.Expression, traverseRootFunction: boolean): readonly string[] {
+    const props = new Set<string>();
+    function visit(node: ts.Node, isRoot: boolean): void {
+      if (ts.isFunctionLike(node) && !(isRoot && traverseRootFunction)) return;
       if (ts.isCallExpression(node)) {
         const propName = getIncomingProp(node.expression, bindings, context.checker);
-        if (propName) terminal(propName, "render-prop");
+        if (propName) props.add(propName);
       }
-      ts.forEachChild(node, visit);
+      ts.forEachChild(node, (child) => visit(child, false));
     }
-    visit(expression);
+    visit(expression, true);
+    return [...props];
+  }
+
+  function analyzeRenderPropInvocations(expression: ts.Expression): void {
+    for (const propName of collectInvokedRenderProps(expression, false)) terminal(propName, "render-prop");
   }
 
   function analyzeJsxAttributes(
@@ -715,11 +828,16 @@ function analyzeConsumerRules(
         if (!expression) continue;
         analyzeRenderPropInvocations(expression);
         if (!target?.definition) continue;
-        for (const propName of collectIncomingProps(expression, bindings, context.checker)) {
+        const targetPropName = property.name.getText();
+        const forwardedProps = [
+          ...collectIncomingProps(expression, bindings, context.checker),
+          ...collectInvokedRenderProps(expression, true),
+        ];
+        for (const propName of new Set(forwardedProps)) {
           addExactRule(rules, propName, {
             type: "forward",
             targetComponentId: target.id,
-            targetPropName: property.name.getText(),
+            targetPropName,
           });
         }
       } else if (target?.definition) {
@@ -731,7 +849,11 @@ function analyzeConsumerRules(
     for (const child of children) {
       if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
       if (!target?.definition || !ts.isJsxExpression(child) || !child.expression) continue;
-      for (const propName of collectIncomingProps(child.expression, bindings, context.checker)) {
+      const forwardedProps = [
+        ...collectIncomingProps(child.expression, bindings, context.checker),
+        ...collectInvokedRenderProps(child.expression, true),
+      ];
+      for (const propName of new Set(forwardedProps)) {
         addExactRule(rules, propName, { type: "forward", targetComponentId: target.id, targetPropName: "children" });
       }
     }
@@ -755,9 +877,11 @@ function analyzeConsumerRules(
         analyzeCreateElement(unwrapped);
         return;
       }
-      for (const argument of unwrapped.arguments) {
-        if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-          for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned);
+      if (isArrayRenderingMethodCall(unwrapped, context.checker)) {
+        for (const argument of unwrapped.arguments) {
+          if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
+            for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned);
+          }
         }
       }
       return;
@@ -825,14 +949,25 @@ function analyzeConsumerRules(
     const target = targetForReference(tagExpression, context);
     if (propsExpression && ts.isObjectLiteralExpression(propsExpression)) {
       for (const property of propsExpression.properties) {
-        if (ts.isPropertyAssignment(property)) {
-          analyzeRenderPropInvocations(property.initializer);
-          if (!target?.definition) continue;
-          for (const propName of collectIncomingProps(property.initializer, bindings, context.checker)) {
+        if (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) {
+          const value = ts.isPropertyAssignment(property) ? property.initializer : property.name;
+          const targetPropName = propertyNameText(property.name);
+          const shorthandSymbol = ts.isShorthandPropertyAssignment(property)
+            ? context.checker.getShorthandAssignmentValueSymbol(property)
+            : undefined;
+          const shorthandPropName = shorthandSymbol ? bindings.propSymbols.get(shorthandSymbol) : undefined;
+          analyzeRenderPropInvocations(value);
+          if (!target?.definition || !targetPropName) continue;
+          const forwardedProps = [
+            ...collectIncomingProps(value, bindings, context.checker),
+            ...(shorthandPropName ? [shorthandPropName] : []),
+            ...collectInvokedRenderProps(value, true),
+          ];
+          for (const propName of new Set(forwardedProps)) {
             addExactRule(rules, propName, {
               type: "forward",
               targetComponentId: target.id,
-              targetPropName: property.name.getText(),
+              targetPropName,
             });
           }
         } else if (target?.definition && ts.isSpreadAssignment(property)) {
@@ -996,9 +1131,10 @@ function analyzeCreateElementUsage(call: ts.CallExpression, receiver: ComponentT
   const [, propsExpression, ...children] = call.arguments;
   if (propsExpression && ts.isObjectLiteralExpression(propsExpression)) {
     for (const property of propsExpression.properties) {
-      if (!ts.isPropertyAssignment(property)) continue;
-      const propName = property.name.getText().replaceAll(/["']/g, "");
-      const value = unwrapExpression(property.initializer);
+      if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) continue;
+      const propName = propertyNameText(property.name);
+      if (!propName) continue;
+      const value = unwrapExpression(ts.isPropertyAssignment(property) ? property.initializer : property.name);
       if (ts.isArrowFunction(value) || ts.isFunctionExpression(value)) {
         suppliedRelationship(receiver, propName, "render-prop", returnedTargets(value, context), context);
         continue;
@@ -1068,7 +1204,7 @@ function analyzeDefinitionUsages(definition: ComponentDefinition, context: Analy
       for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, directRenderer);
       return;
     }
-    if (ts.isCallExpression(unwrapped)) {
+    if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
       for (const argument of unwrapped.arguments) {
         if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
           for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned, directRenderer);

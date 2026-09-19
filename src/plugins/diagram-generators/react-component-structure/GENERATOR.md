@@ -18,6 +18,12 @@ The source checkout contains:
 
 The installed distribution contains this guide and the bundled `cli/run.js` executable. It does not require package installation in the consumer project.
 
+## Analysis tools
+
+- TypeScript Compiler API parses JS, JSX, TS, and TSX, creates the project `Program`, and supplies lexical symbols, alias resolution, and module resolution.
+- `micromatch` applies generation-time file-path and component-name glob exclusions.
+- The analyzer adds the four React relationship rules and supplied-value consumption analysis. It does not infer runtime behavior from types alone.
+
 Run the executable adjacent to this guide. In an installed distribution:
 
 ```sh
@@ -40,14 +46,13 @@ Arguments are generator-specific:
 - `--source <path>`: required and repeatable file or directory, absolute or relative to the scope;
 - `--tsconfig <path>`: optional TypeScript configuration, absolute or relative to the scope; otherwise the nearest scope `tsconfig.json` is used;
 - `--exclude-file <glob>`: optional and repeatable scope-relative file-path exclusion;
-- `--exclude-component <glob>`: optional and repeatable component-title exclusion;
-- `--output <file>`: optional explicit graph path; without it, the generator creates an untracked temporary directory and graph file.
+- `--exclude-component <glob>`: optional and repeatable component-title exclusion.
 
-Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded by default. Additional glob matches remove the matching node and its incident edges only. They do not remove unmatched descendants or create shortcut edges.
+Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded by default. Additional glob matches remove the matching node and its incident edges only. They do not remove unmatched descendants or create shortcut edges. Generation fails if filtering removes every local component because the current `Diagram.graph` schema requires at least one node.
 
 ## Output contract
 
-Successful execution prints one absolute file path followed by a newline. That file contains only a strict graph candidate:
+Successful execution creates an untracked operating-system temporary directory and prints its absolute graph-file path followed by a newline. That file contains only a strict graph candidate:
 
 ```json
 {

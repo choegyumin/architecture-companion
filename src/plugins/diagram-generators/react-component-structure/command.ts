@@ -1,18 +1,17 @@
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 
 import { generateReactComponentStructureGraph, type GenerateReactComponentStructureOptions } from "./generator";
 
 const usage = `Usage: react-component-structure --scope <directory> --source <path> [--source <path> ...]
-  [--tsconfig <path>] [--exclude-file <glob> ...] [--exclude-component <glob> ...] [--output <file>]`;
+  [--tsconfig <path>] [--exclude-file <glob> ...] [--exclude-component <glob> ...]`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
-  currentWorkingDirectory?: () => string;
 }>;
 
-type ParsedArguments = GenerateReactComponentStructureOptions & Readonly<{ outputPath?: string }>;
+type ParsedArguments = GenerateReactComponentStructureOptions;
 
 function readValue(args: readonly string[], index: number, option: string): string {
   const value = args.at(index + 1);
@@ -23,7 +22,6 @@ function readValue(args: readonly string[], index: number, option: string): stri
 function parseArguments(args: readonly string[]): ParsedArguments {
   let scopePath: string | undefined;
   let tsconfigPath: string | undefined;
-  let outputPath: string | undefined;
   const sourcePaths: string[] = [];
   const excludeFilePatterns: string[] = [];
   const excludeComponentPatterns: string[] = [];
@@ -47,10 +45,6 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     } else if (option === "--exclude-component") {
       excludeComponentPatterns.push(readValue(args, index, option));
       index += 1;
-    } else if (option === "--output") {
-      if (outputPath) throw new Error(`--output may be provided only once.\n${usage}`);
-      outputPath = readValue(args, index, option);
-      index += 1;
     } else {
       throw new Error(`Unknown argument: ${option ?? ""}\n${usage}`);
     }
@@ -63,7 +57,6 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(tsconfigPath ? { tsconfigPath } : {}),
     ...(excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {}),
     ...(excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}),
-    ...(outputPath ? { outputPath } : {}),
   };
 }
 
@@ -71,11 +64,12 @@ export async function executeReactComponentStructureCommand(
   args: readonly string[],
   environment: CommandEnvironment,
 ): Promise<string> {
-  const { outputPath, ...options } = parseArguments(args);
+  const options = parseArguments(args);
   const graph = await generateReactComponentStructureGraph(options);
-  const resolvedOutputPath = outputPath
-    ? resolve(environment.currentWorkingDirectory?.() ?? process.cwd(), outputPath)
-    : join(await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")), "graph.json");
+  const resolvedOutputPath = join(
+    await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")),
+    "graph.json",
+  );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(graph, undefined, 2)}\n`);
   environment.writeStdout(`${resolvedOutputPath}\n`);
