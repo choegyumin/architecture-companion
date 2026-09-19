@@ -159,6 +159,33 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("follows render props wrapped in callbacks to the final invoker", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Body, Wrapper } from "./components";
+          export function App() { return <Wrapper render={() => <Body />} />; }
+        `,
+        "src/components.tsx": `
+          export function Body() { return <main />; }
+          export function Primitive({ render }: { render: () => unknown }) { return <>{render()}</>; }
+          export function Wrapper({ render }: { render: () => unknown }) {
+            return <Primitive render={() => render()} />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "Primitive", target: "Body", kind: "render-prop", label: "Render prop · render" },
+          { source: "Wrapper", target: "Primitive", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
   it("follows named and rest-prop forwarding to the final renderer", async () => {
     await withFixture(
       {
@@ -255,6 +282,49 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("does not treat unrelated createElement, memo, or callback factories as React output", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Child } from "./child";
+          const Other = { createElement: (value: unknown) => value };
+          const cache = (value: unknown) => value;
+          const memo = (value: unknown) => value;
+
+          export function CustomCreate() { return Other.createElement(Child); }
+          export function Cached() { return cache(() => <Child />); }
+          export function Factory() { return () => <Child />; }
+          export const Wrapped = memo(() => <Child />);
+        `,
+        "src/child.tsx": `export function Child() { return <main />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ title }) => title)).toEqual(["Child"]);
+        expect(graph.edges).toEqual([]);
+      },
+    );
+  });
+
+  it("keeps confirmed Array.map component rendering", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Child } from "./child";
+          export function App() { return [1].map(() => <Child />); }
+        `,
+        "src/child.tsx": `export function Child() { return <main />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
+      },
+    );
+  });
+
   it("supports JS, JSX, TS, and TSX component definitions", async () => {
     await withFixture(
       {
@@ -294,6 +364,49 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("follows shorthand and quoted createElement props to the final renderer", async () => {
+    await withFixture(
+      {
+        "src/app.ts": `
+          import React from "react";
+          import { Primitive, QuotedContent, QuotedLayout, ShorthandContent, ShorthandLayout } from "./components";
+          export function App() {
+            return [
+              React.createElement(ShorthandLayout, null, React.createElement(ShorthandContent)),
+              React.createElement(QuotedLayout, null, React.createElement(QuotedContent)),
+            ];
+          }
+        `,
+        "src/components.ts": `
+          import React from "react";
+          export function Primitive({ children }: { children: unknown }) {
+            return React.createElement("section", null, children);
+          }
+          export function ShorthandContent() { return React.createElement("main"); }
+          export function QuotedContent() { return React.createElement("aside"); }
+          export function ShorthandLayout({ children }: { children: unknown }) {
+            return React.createElement(Primitive, { children });
+          }
+          export function QuotedLayout({ children }: { children: unknown }) {
+            return React.createElement(Primitive, { "children": children });
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "QuotedLayout", kind: "direct-render", label: undefined },
+          { source: "App", target: "ShorthandLayout", kind: "direct-render", label: undefined },
+          { source: "Primitive", target: "QuotedContent", kind: "node-prop", label: "Node prop · children" },
+          { source: "Primitive", target: "ShorthandContent", kind: "node-prop", label: "Node prop · children" },
+          { source: "QuotedLayout", target: "Primitive", kind: "direct-render", label: undefined },
+          { source: "ShorthandLayout", target: "Primitive", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
   it("resolves aliased re-exports to class component definitions", async () => {
     await withFixture(
       {
@@ -316,6 +429,51 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Button", kind: "direct-render", label: undefined },
         ]);
+      },
+    );
+  });
+
+  it("uses canonical external export names instead of local aliases", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function Button(props: unknown): unknown;`,
+        "node_modules/ui-kit/package.json": JSON.stringify({
+          name: "ui-kit",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Button as PrimaryButton } from "ui-kit";
+          export function App() { return <PrimaryButton />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const external = graph.nodes.find(({ kind }) => kind === "External React component");
+
+        expect(external).toMatchObject({ id: "external:ui-kit#Button", title: "Button" });
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("resolves local component value aliases", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Child } from "./child";
+          const Alias = Child;
+          export function App() { return <Alias />; }
+        `,
+        "src/child.tsx": `export function Child() { return <main />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
       },
     );
   });
@@ -346,6 +504,31 @@ describe("React component structure generator", () => {
         expect(graph.edges).toEqual([]);
       },
     );
+  });
+
+  it("rejects filters that would violate the nonempty Diagram.graph schema", async () => {
+    await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
+      await expect(
+        generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["**"],
+        }),
+      ).rejects.toThrow("No React component definitions remain after filtering.");
+    });
+  });
+
+  it("rejects caller-selected output paths", async () => {
+    await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
+      const outputs: string[] = [];
+
+      await expect(
+        executeReactComponentStructureCommand(["--scope", scopePath, "--source", "src", "--output", "tracked.json"], {
+          writeStdout: (output) => outputs.push(output),
+        }),
+      ).rejects.toThrow("Unknown argument: --output");
+      expect(outputs).toEqual([]);
+    });
   });
 
   it("writes only a graph candidate to a temporary file through the command seam", async () => {
