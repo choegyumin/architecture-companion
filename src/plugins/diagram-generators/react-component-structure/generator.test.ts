@@ -19,9 +19,11 @@ async function withFixture(
         "tsconfig.json": JSON.stringify({
           compilerOptions: {
             allowJs: true,
+            baseUrl: ".",
             jsx: "preserve",
             module: "ESNext",
             moduleResolution: "Bundler",
+            paths: { "@/*": ["src/*"] },
             skipLibCheck: true,
             target: "ESNext",
           },
@@ -192,6 +194,27 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
         ]);
+      },
+    );
+  });
+
+  it("does not misclassify local path aliases as external component boundaries", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { AliasWrapper } from "@/factory";
+          export function App() { return <AliasWrapper />; }
+        `,
+        "src/factory.ts": `
+          function createWrapper() { return Symbol("wrapper"); }
+          export const AliasWrapper = createWrapper();
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App"]);
+        expect(graph.edges).toEqual([]);
       },
     );
   });
