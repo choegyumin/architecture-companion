@@ -463,17 +463,20 @@ async function buildGraph(
 
   for (const { absolutePath } of discoveredSources) {
     const packageInfo = await readPackageInfo(scopePath, absolutePath);
+    const hasPackageGroup = packageInfo.relativeRootPath !== ".";
     packageInfoByFile.set(absolutePath, packageInfo);
-    groups.set(packageGroupId(packageInfo), {
-      id: packageGroupId(packageInfo),
-      title: packageInfo.name,
-      description: `Package ${packageInfo.relativeRootPath}`,
-    });
+    if (hasPackageGroup) {
+      groups.set(packageGroupId(packageInfo), {
+        id: packageGroupId(packageInfo),
+        title: packageInfo.name,
+        description: `Package ${packageInfo.relativeRootPath}`,
+      });
+    }
 
     const relativeDirectoryPath = pathToPosix(relative(packageInfo.rootPath, dirname(absolutePath)));
     if (!relativeDirectoryPath) continue;
 
-    let parentId = packageGroupId(packageInfo);
+    let parentId: string | undefined = hasPackageGroup ? packageGroupId(packageInfo) : undefined;
     let accumulatedDirectory = "";
     for (const segment of relativeDirectoryPath.split("/")) {
       accumulatedDirectory = accumulatedDirectory ? `${accumulatedDirectory}/${segment}` : segment;
@@ -481,7 +484,7 @@ async function buildGraph(
         relative(scopePath, join(packageInfo.rootPath, ...accumulatedDirectory.split("/"))),
       );
       const id = directoryGroupId(scopeRelativeDirectory);
-      groups.set(id, { id, title: segment, parentId });
+      groups.set(id, { id, title: segment, ...(parentId ? { parentId } : {}) });
       parentId = id;
     }
   }
@@ -496,14 +499,16 @@ async function buildGraph(
     const id = fileNodeId(relativePath);
     const groupId =
       dirname(absolutePath) === packageInfo.rootPath
-        ? packageGroupId(packageInfo)
+        ? packageInfo.relativeRootPath === "."
+          ? undefined
+          : packageGroupId(packageInfo)
         : directoryGroupId(relativeDirectoryPath);
     localNodeByPath.set(absolutePath, id);
     nodes.push({
       type: "default",
       id,
       title: basename(relativePath),
-      groupId,
+      ...(groupId ? { groupId } : {}),
       links: [{ text: "source", href: sourceHref(relativePath) }],
     });
   }

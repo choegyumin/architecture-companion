@@ -36,7 +36,7 @@ The referenced file contains only a `Diagram.graph` candidate with `groups`, `no
 1. Read the existing per-diagram artifact before changing it.
 2. Read the temporary graph candidate programmatically.
 3. Preserve, revise, or replace the existing graph according to the review request. Preserve unrelated diagrams and stable IDs for unchanged concepts.
-4. Keep source files as nodes. Directory and package groups organize local files. External packages remain boundary nodes; never expand their internals.
+4. Keep source files as nodes. Directory groups and nested package boundaries organize local files; the consumer scope itself is not a group. External packages remain boundary nodes; never expand their internals.
 5. Unmarked dependency edges are runtime dependencies. Edges with kind `type-only` exist only before TypeScript compilation.
 6. When adopting the candidate, set the diagram's `generatorId` to `file-dependency-graph` and preserve or choose the surrounding diagram `id`, `title`, and `layout` separately.
 7. Validate the complete Architecture Companion artifact through the standard validation command before review.

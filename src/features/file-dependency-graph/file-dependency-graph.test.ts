@@ -77,16 +77,10 @@ describe("file dependency graph generator", () => {
         {
           id: "group:directory:src",
           title: "src",
-          parentId: "group:package:.",
         },
         {
           id: "group:external-packages",
           title: "External packages",
-        },
-        {
-          id: "group:package:.",
-          title: "fixture-package",
-          description: "Package .",
         },
       ]);
       expect(graph.nodes).toEqual([
@@ -138,6 +132,54 @@ describe("file dependency graph generator", () => {
           source: "file:src/index.ts",
           target: "file:src/types.ts",
           kind: "type-only",
+        },
+      ]);
+    });
+  });
+
+  it("omits the scope package group while preserving nested package boundaries", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "root.ts", "export const root = true;\n");
+      await writeFixtureFile(rootPath, "src/index.ts", "export const source = true;\n");
+      await writeFixtureFile(rootPath, "packages/nested/package.json", '{"name":"nested-package","type":"module"}\n');
+      await writeFixtureFile(rootPath, "packages/nested/index.ts", "export const nested = true;\n");
+
+      const graph = await generateFileDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["root.ts", "src", "packages/nested"],
+      });
+
+      expect(graph.groups).toEqual([
+        {
+          id: "group:directory:src",
+          title: "src",
+        },
+        {
+          id: "group:package:packages/nested",
+          title: "nested-package",
+          description: "Package packages/nested",
+        },
+      ]);
+      expect(graph.nodes).toEqual([
+        {
+          type: "default",
+          id: "file:packages/nested/index.ts",
+          title: "index.ts",
+          groupId: "group:package:packages/nested",
+          links: [{ text: "source", href: "source:///packages/nested/index.ts" }],
+        },
+        {
+          type: "default",
+          id: "file:root.ts",
+          title: "root.ts",
+          links: [{ text: "source", href: "source:///root.ts" }],
+        },
+        {
+          type: "default",
+          id: "file:src/index.ts",
+          title: "index.ts",
+          groupId: "group:directory:src",
+          links: [{ text: "source", href: "source:///src/index.ts" }],
         },
       ]);
     });

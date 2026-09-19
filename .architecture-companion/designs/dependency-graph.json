@@ -12,8 +12,7 @@
     "groups": [
       {
         "id": "group:directory:src",
-        "title": "src",
-        "parentId": "group:package:."
+        "title": "src"
       },
       {
         "id": "group:directory:src/cli",
@@ -113,11 +112,6 @@
       {
         "id": "group:external-packages",
         "title": "External packages"
-      },
-      {
-        "id": "group:package:.",
-        "title": "architecture-companion",
-        "description": "Package ."
       }
     ],
     "nodes": [
