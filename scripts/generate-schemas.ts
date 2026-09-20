@@ -2,10 +2,10 @@ import { fileURLToPath } from "node:url";
 
 import { assertSchemaFilesCurrent, writeSchemaFiles } from "./_schema-synchronization";
 
-const referencesRoot = fileURLToPath(new URL("../references", import.meta.url));
+const schemasRoot = fileURLToPath(new URL("../skills/architecture-companion/schemas", import.meta.url));
 
 if (process.argv.includes("--check")) {
-  await assertSchemaFilesCurrent(referencesRoot);
+  await assertSchemaFilesCurrent(schemasRoot);
 } else {
-  await writeSchemaFiles(referencesRoot);
+  await writeSchemaFiles(schemasRoot);
 }

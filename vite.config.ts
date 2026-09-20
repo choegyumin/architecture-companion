@@ -23,7 +23,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist/client",
+    outDir: "skills/architecture-companion/runtime/client",
     sourcemap: true,
   },
 });

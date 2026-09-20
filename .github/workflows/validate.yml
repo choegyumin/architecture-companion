@@ -1,8 +1,14 @@
-name: Validate pull request
+name: Validate
 
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,3 +36,12 @@ jobs:
             "pnpm type-check" \
             "pnpm test" \
             "pnpm build"
+      - name: Check skill files
+        run: |
+          changes="$(git status --porcelain --untracked-files=all -- \
+            skills/architecture-companion)"
+          if [ -n "$changes" ]; then
+            printf '%s\n' 'The checked-in skill does not match the build result. Run `pnpm build` and commit the result.'
+            printf '%s\n' "$changes"
+            exit 1
+          fi
