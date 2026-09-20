@@ -3,11 +3,11 @@ import { spawn } from "node:child_process";
 import type { Dirent } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
-import { isPathInside } from "@/shared/node/path";
+import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
 import { assertSchemaFilesCurrent } from "./_schema-synchronization";
 
@@ -45,9 +45,10 @@ const copiedProjections = [
   { source: join(packageRoot, "references"), destination: "references" },
 ] as const;
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
-const expectedBuiltInGeneratorEntries = {
+const expectedBuiltInGeneratorFiles = {
   freeform: ["GENERATOR.md"],
   "js-module-dependency-graph": ["GENERATOR.md", "generate.js"],
+  "react-component-structure": ["GENERATOR.md", join("cli", "run.js")],
 } as const;
 
 type CompletedProcess = Readonly<{
@@ -87,7 +88,7 @@ async function pathExists(path: string): Promise<boolean> {
     await readFile(path);
     return true;
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") return false;
+    if (isMissingPathError(error)) return false;
     throw error;
   }
 }
@@ -159,13 +160,25 @@ async function assertCopiedVerbatim(sourcePath: string, destinationPath: string)
   }
 }
 
+async function collectRelativeFiles(rootPath: string, currentPath: string = rootPath): Promise<readonly string[]> {
+  const entries = await readdir(currentPath, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = join(currentPath, entry.name);
+      if (entry.isDirectory()) return collectRelativeFiles(rootPath, entryPath);
+      return entry.isFile() ? [relative(rootPath, entryPath)] : [];
+    }),
+  );
+  return files.flat().toSorted();
+}
+
 async function verifyGeneratorResources(rootPath: string): Promise<void> {
   const sourceEntries = await readdir(sourceGeneratorsRoot, { withFileTypes: true });
   const sourceGeneratorNames = sourceEntries
     .filter((entry) => entry.isDirectory())
     .map(({ name }) => name)
     .toSorted();
-  const expectedGeneratorNames = Object.keys(expectedBuiltInGeneratorEntries).toSorted();
+  const expectedGeneratorNames = Object.keys(expectedBuiltInGeneratorFiles).toSorted();
   assert.deepEqual(
     sourceGeneratorNames,
     expectedGeneratorNames,
@@ -184,17 +197,17 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
     "Installed generator directories must match the built-in source generators.",
   );
 
-  for (const [generatorName, expectedEntries] of Object.entries(expectedBuiltInGeneratorEntries)) {
+  for (const [generatorName, expectedFiles] of Object.entries(expectedBuiltInGeneratorFiles)) {
     const sourceManifestPath = join(sourceGeneratorsRoot, generatorName, "GENERATOR.md");
     const installedGeneratorPath = join(installedGeneratorsRoot, generatorName);
     assert.deepEqual(
-      (await readdir(installedGeneratorPath)).toSorted(),
-      [...expectedEntries].toSorted(),
-      `${installedGeneratorPath} must contain only its distributable resources.`,
+      await collectRelativeFiles(installedGeneratorPath),
+      [...expectedFiles].toSorted(),
+      `${installedGeneratorPath} must contain only its distributable files.`,
     );
     await assertCopiedVerbatim(sourceManifestPath, join(installedGeneratorPath, "GENERATOR.md"));
-    if (expectedEntries.some((entry) => entry === "generate.js")) {
-      await readRequiredText(join(installedGeneratorPath, "generate.js"));
+    for (const generatedFile of expectedFiles.filter((file) => file !== "GENERATOR.md")) {
+      await readRequiredText(join(installedGeneratorPath, generatedFile));
     }
   }
 }
@@ -405,6 +418,110 @@ async function verifyInstalledGeneratorEntry(
   assert.deepEqual(JSON.parse(outputLine), await readExpectedBuiltInGeneratorDescriptors(skillRoot));
 }
 
+async function verifyInstalledReactComponentGenerator(
+  skillRoot: string,
+  scopePath: string,
+  environment: NodeJS.ProcessEnv,
+): Promise<void> {
+  const sourceRoot = join(scopePath, "src");
+  const externalSourceRoot = join(scopePath, "external-src");
+  const externalPackageRoot = join(scopePath, "node_modules", "ui-kit");
+  await Promise.all([
+    mkdir(sourceRoot, { recursive: true }),
+    mkdir(externalSourceRoot, { recursive: true }),
+    mkdir(externalPackageRoot, { recursive: true }),
+  ]);
+  await Promise.all([
+    writeFile(
+      join(sourceRoot, "app.tsx"),
+      `import { Content } from "./content";\nimport { Layout } from "./layout";\nexport function App() { return <Layout><Content /></Layout>; }\n`,
+    ),
+    writeFile(join(sourceRoot, "content.tsx"), `export function Content() { return <main />; }\n`),
+    writeFile(
+      join(sourceRoot, "layout.tsx"),
+      `export function Header() { return <header />; }\nexport function Layout({ children }: { children: unknown }) { return <section><Header />{children}</section>; }\n`,
+    ),
+    writeFile(
+      join(externalSourceRoot, "app.tsx"),
+      `import { ActionButton } from "./barrel";\nconst Alias = ActionButton;\nexport function App() { return <Alias />; }\n`,
+    ),
+    writeFile(join(externalSourceRoot, "barrel.ts"), `export { Button as ActionButton } from "ui-kit";\n`),
+    writeFile(join(externalPackageRoot, "index.d.ts"), `export declare function Button(props: unknown): unknown;\n`),
+    writeFile(
+      join(externalPackageRoot, "package.json"),
+      JSON.stringify({ name: "ui-kit", type: "module", exports: { ".": { types: "./index.d.ts" } } }),
+    ),
+  ]);
+
+  type InstalledGraph = Readonly<{
+    edges: ReadonlyArray<{ kind?: string; label?: string; source: string; target: string }>;
+    groups: readonly unknown[];
+    nodes: ReadonlyArray<{ id: string; title: string }>;
+  }>;
+
+  const scriptPath = join(skillRoot, "diagram-generators", "react-component-structure", "cli", "run.js");
+  async function generateGraph(extraArguments: readonly string[] = [], sourcePath = "src"): Promise<InstalledGraph> {
+    const result = await runInstalledScript(
+      scriptPath,
+      ["--scope", scopePath, "--source", sourcePath, ...extraArguments],
+      environment,
+      skillRoot,
+    );
+    assertSuccessfulCompletion(result, scriptPath);
+    const graphPath = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+    assert.ok(graphPath && isAbsolute(graphPath), "Installed React generator must print one absolute graph path.");
+    const graphDirectory = dirname(graphPath);
+    assert.match(graphDirectory, /architecture-companion-react-components-/);
+
+    try {
+      return JSON.parse(await readFile(graphPath, "utf8")) as InstalledGraph;
+    } finally {
+      await rm(graphDirectory, { recursive: true });
+    }
+  }
+
+  function edgeFacts(graph: InstalledGraph) {
+    const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+    return graph.edges
+      .map((edge) => ({
+        kind: edge.kind,
+        label: edge.label,
+        source: titlesById.get(edge.source),
+        target: titlesById.get(edge.target),
+      }))
+      .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  }
+
+  const graph = await generateGraph();
+  assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
+  assert.deepEqual(graph.groups, []);
+  assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
+  assert.deepEqual(edgeFacts(graph), [
+    { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
+    { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
+    { kind: "NODE (children)", label: "from App", source: "Layout", target: "Content" },
+  ]);
+
+  const externalAliasGraph = await generateGraph([], "external-src");
+  assert.deepEqual(
+    externalAliasGraph.nodes.map(({ id }) => id),
+    ["component:external-src/app.tsx#App", "external:ui-kit#Button"],
+  );
+  assert.deepEqual(edgeFacts(externalAliasGraph), [
+    { kind: "direct-render", label: undefined, source: "App", target: "Button" },
+  ]);
+
+  for (const filtered of [
+    await generateGraph(["--exclude-component", "Layout"]),
+    await generateGraph(["--exclude-file", "src/layout.tsx"]),
+  ]) {
+    assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
+    assert.deepEqual(edgeFacts(filtered), [
+      { kind: "NODE (children)", label: "from App", source: "App", target: "Content" },
+    ]);
+  }
+}
+
 async function verifyInstalledJsModuleDependencyGenerator(
   skillRoot: string,
   scopePath: string,
@@ -547,6 +664,7 @@ try {
 
   const environment = createInstalledEnvironment(skillRoot, homeDirectory, spawnGuardReadyPath, openerMarkerPath);
   await verifyInstalledGeneratorEntry(skillRoot, scopePath, environment);
+  await verifyInstalledReactComponentGenerator(skillRoot, scopePath, environment);
   await verifyInstalledJsModuleDependencyGenerator(skillRoot, scopePath, environment);
   await verifyInstalledAnnotationEntry(skillRoot, scopePath, environment);
   await verifyInstalledValidationEntry(skillRoot, scopePath, environment);

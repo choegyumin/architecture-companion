@@ -177,6 +177,12 @@ describe("diagram generator discovery command", () => {
           source: "built-in",
           path: resolve(builtInRoot, "js-module-dependency-graph"),
         },
+        {
+          id: "react-component-structure",
+          description: expect.any(String),
+          source: "built-in",
+          path: resolve(builtInRoot, "react-component-structure"),
+        },
       ]);
     } finally {
       await rm(temporaryRoot, { recursive: true });

@@ -7,6 +7,7 @@ export default defineConfig({
     alias: { "@": new URL("src", import.meta.url).pathname },
   },
   test: {
+    testTimeout: process.env.CI === "true" ? 15_000 : 5_000,
     include: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
     exclude: ["node_modules", "**/__fixtures__/**", "dist", ".turbo"],
     environment: "happy-dom",

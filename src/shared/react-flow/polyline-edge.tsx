@@ -42,7 +42,7 @@ export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }:
             }}
           >
             {data.eyebrow != null ? (
-              <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{data.eyebrow}</p>
+              <p className="text-[10px] font-semibold tracking-wide text-muted-foreground">{data.eyebrow}</p>
             ) : null}
             <BaseEdgeLabel href={data.href} onActivate={data.onLinkActivate} text={label} />
           </div>

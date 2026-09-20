@@ -1,7 +1,8 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "generatorId": "freeform",
+  "generatorId": "react-component-structure",
+  "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identities external:@base-ui/react#* and external:lucide-react#*, then preserve existing graph element IDs when merging.",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -13,22 +14,9 @@
     "nodes": [
       {
         "type": "default",
-        "id": "cmp-main-entry",
-        "kind": "entry",
-        "title": "render",
-        "description": "Assembles ThemeProvider, WorkspacePage, and Toaster at the app entry point",
-        "links": [
-          {
-            "href": "source:///src/client/main.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
         "id": "cmp-workspace-page",
-        "kind": "page",
         "title": "WorkspacePage",
-        "description": "Coordinates review state, Process and Design selection, and the Annotation controller",
+        "description": "src/client/pages/workspace-page.tsx",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -38,9 +26,8 @@
       {
         "type": "default",
         "id": "cmp-workspace-shell",
-        "kind": "layout",
         "title": "WorkspaceShell",
-        "description": "WorkspacePage private component laying out the header, navigation, actions, and children",
+        "description": "src/client/pages/workspace-page.tsx",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -49,73 +36,9 @@
       },
       {
         "type": "default",
-        "id": "cmp-diagram-list",
-        "kind": "selector",
-        "title": "DiagramList",
-        "description": "Shows the diagram list and selection state of the current review view",
-        "links": [
-          {
-            "href": "source:///src/client/parts/diagram-list.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "cmp-diagram-renderer",
-        "kind": "widget",
-        "title": "DiagramRenderer",
-        "description": "Coordinates the measurement lifecycle, layout execution, render model application, and annotation overlay",
-        "links": [
-          {
-            "href": "source:///src/client/widgets/diagram-renderer.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "cmp-react-flow-adapter",
-        "kind": "adapter",
-        "title": "Diagram React Flow adapter",
-        "description": "Converts Diagram and DiagramLayout into React Flow nodes and edges with primitive presentation data",
-        "links": [
-          {
-            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "cmp-diagram-links-panel",
-        "kind": "widget",
-        "title": "DiagramLinksPanel",
-        "description": "Shows diagram links in the canvas bottom-right and delegates source link opening",
-        "links": [
-          {
-            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "cmp-diagram-canvas",
-        "kind": "host",
-        "title": "DiagramCanvas",
-        "description": "Owns the closed React Flow host, canvas-owned runtime unions, registry, and pan, zoom, and viewport",
-        "links": [
-          {
-            "href": "source:///src/client/parts/diagram-canvas.tsx"
-          },
-          {
-            "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
         "id": "cmp-annotation-layer",
-        "kind": "annotation part",
         "title": "AnnotationLayer",
-        "description": "Provides pins, composer, edit, delete, and conflict UI, and the annotation controller contract",
+        "description": "src/client/parts/annotation-layer.tsx",
         "links": [
           {
             "href": "source:///src/client/parts/annotation-layer.tsx"
@@ -124,10 +47,75 @@
       },
       {
         "type": "default",
+        "id": "cmp-diagram-canvas",
+        "title": "DiagramCanvas",
+        "description": "src/client/parts/diagram-canvas.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-canvas.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-list",
+        "title": "DiagramList",
+        "description": "src/client/parts/diagram-list.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/parts/diagram-list.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-links-panel",
+        "title": "DiagramLinksPanel",
+        "description": "src/client/widgets/diagram-links-panel.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-diagram-renderer",
+        "title": "DiagramRenderer",
+        "description": "src/client/widgets/diagram-renderer.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
+        "title": "DiagramRendererContent",
+        "description": "src/client/widgets/diagram-renderer.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "cmp-base-edge-label",
+        "title": "BaseEdgeLabel",
+        "description": "src/shared/react-flow/base-edge-label.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
         "id": "cmp-base-overlay",
-        "kind": "overlay",
         "title": "BaseOverlayPanel",
-        "description": "Provides the canvas overlay render-prop boundary",
+        "description": "src/shared/react-flow/base-overlay-panel.tsx",
         "links": [
           {
             "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
@@ -137,9 +125,8 @@
       {
         "type": "default",
         "id": "cmp-card-node",
-        "kind": "shared node",
         "title": "CardNode",
-        "description": "Renders the default Diagram node's card presentation and URI controls",
+        "description": "src/shared/react-flow/card-node.tsx",
         "links": [
           {
             "href": "source:///src/shared/react-flow/card-node.tsx"
@@ -148,10 +135,20 @@
       },
       {
         "type": "default",
+        "id": "cmp-fragment-node",
+        "title": "FragmentNode",
+        "description": "src/shared/react-flow/fragment-node.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/fragment-node.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
         "id": "cmp-labeled-group-node",
-        "kind": "shared node",
         "title": "LabeledGroupNode",
-        "description": "Renders the group presentation with label and description",
+        "description": "src/shared/react-flow/labeled-group-node.tsx",
         "links": [
           {
             "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
@@ -161,9 +158,8 @@
       {
         "type": "default",
         "id": "cmp-lifeline-node",
-        "kind": "shared node",
         "title": "LifelineNode",
-        "description": "Renders lifeline headers, activation bars, sequence handles, and URI controls",
+        "description": "src/shared/react-flow/lifeline-node.tsx",
         "links": [
           {
             "href": "source:///src/shared/react-flow/lifeline-node.tsx"
@@ -172,34 +168,9 @@
       },
       {
         "type": "default",
-        "id": "cmp-fragment-node",
-        "kind": "shared node",
-        "title": "FragmentNode",
-        "description": "Renders sequence fragment operators, guards, and branch separators",
-        "links": [
-          {
-            "href": "source:///src/shared/react-flow/fragment-node.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "cmp-polyline-edge",
-        "kind": "shared edge",
-        "title": "PolylineEdge",
-        "description": "Renders the path from layout points and the generic edge label",
-        "links": [
-          {
-            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
         "id": "cmp-message-edge",
-        "kind": "shared edge",
         "title": "MessageEdge",
-        "description": "Renders sequence message paths and message labels",
+        "description": "src/shared/react-flow/message-edge.tsx",
         "links": [
           {
             "href": "source:///src/shared/react-flow/message-edge.tsx"
@@ -208,239 +179,490 @@
       },
       {
         "type": "default",
-        "id": "cmp-base-edge-label",
-        "kind": "shared label",
-        "title": "BaseEdgeLabel",
-        "description": "Owns the generic edge label and link presentation, and the edge label z-index",
+        "id": "cmp-polyline-edge",
+        "title": "PolylineEdge",
+        "description": "src/shared/react-flow/polyline-edge.tsx",
         "links": [
           {
-            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
           }
         ]
       },
       {
         "type": "default",
-        "id": "cmp-message-edge-label-placement",
-        "kind": "shared label placement",
-        "title": "Message edge label placement",
-        "description": "Computes message label placement for self-message loops",
+        "id": "component:src/shared/react-ui/button.tsx#Button",
+        "title": "Button",
+        "description": "src/shared/react-ui/button.tsx",
         "links": [
           {
-            "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
+            "href": "source:///src/shared/react-ui/button.tsx"
           }
         ]
       },
       {
         "type": "default",
-        "id": "cmp-polyline-edge-label-placement",
-        "kind": "shared label placement",
-        "title": "Polyline edge label placement",
-        "description": "Computes polyline label placement from the longest segment's midpoint",
+        "id": "component:src/shared/react-ui/card.tsx#Card",
+        "title": "Card",
+        "description": "src/shared/react-ui/card.tsx",
         "links": [
           {
-            "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
+            "href": "source:///src/shared/react-ui/card.tsx"
           }
         ]
       },
       {
         "type": "default",
-        "id": "cmp-diagram-artifact",
-        "kind": "artifact",
-        "title": "Diagram artifact",
-        "description": "Owns DiagramElements, the complete Diagram schema, and semantic validation",
+        "id": "component:src/shared/react-ui/empty.tsx#Empty",
+        "title": "Empty",
+        "description": "src/shared/react-ui/empty.tsx",
         "links": [
           {
-            "href": "source:///src/features/diagram/diagram-graph.ts"
-          },
-          {
-            "href": "source:///src/features/diagram/diagram.ts"
+            "href": "source:///src/shared/react-ui/empty.tsx"
           }
         ]
       },
       {
         "type": "default",
-        "id": "cmp-diagram-layout",
-        "kind": "layout",
-        "title": "Diagram layout",
-        "description": "Provides the built-in config union and layoutDiagram dispatcher",
+        "id": "component:src/shared/react-ui/form.tsx#Form",
+        "title": "Form",
+        "description": "src/shared/react-ui/form.tsx",
         "links": [
           {
-            "href": "source:///src/features/diagram/diagram-layout.ts"
+            "href": "source:///src/shared/react-ui/form.tsx"
           }
         ]
       },
       {
         "type": "default",
-        "id": "cmp-diagram-strategies",
-        "kind": "layout strategy",
-        "title": "Built-in layout strategies",
-        "description": "Computes ELK layered and sequence geometry with per-strategy config schemas",
+        "id": "component:src/shared/react-ui/tabs.tsx#Tabs",
+        "title": "Tabs",
+        "description": "src/shared/react-ui/tabs.tsx",
         "links": [
           {
-            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
-          },
-          {
-            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+            "href": "source:///src/shared/react-ui/tabs.tsx"
           }
         ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "title": "TabsContent",
+        "description": "src/shared/react-ui/tabs.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/tabs.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "title": "TabsList",
+        "description": "src/shared/react-ui/tabs.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/tabs.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
+        "title": "TabsTrigger",
+        "description": "src/shared/react-ui/tabs.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/tabs.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "title": "ThemeToggle",
+        "description": "src/shared/react-ui/theme-toggle.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/theme-toggle.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "title": "Toggle",
+        "description": "src/shared/react-ui/toggle.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/toggle.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Background",
+        "title": "Background",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#BaseEdge",
+        "title": "BaseEdge",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#ControlButton",
+        "title": "ControlButton",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Controls",
+        "title": "Controls",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#EdgeLabelRenderer",
+        "title": "EdgeLabelRenderer",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Handle",
+        "title": "Handle",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Panel",
+        "title": "Panel",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#ReactFlow",
+        "title": "ReactFlow",
+        "description": "@xyflow/react boundary"
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#ReactFlowProvider",
+        "title": "ReactFlowProvider",
+        "description": "@xyflow/react boundary"
       }
     ],
     "edges": [
       {
         "type": "default",
-        "id": "cmp-e01",
-        "source": "cmp-main-entry",
-        "target": "cmp-workspace-page",
-        "kind": "renders"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e02",
-        "source": "cmp-workspace-page",
-        "target": "cmp-workspace-shell",
-        "kind": "composes"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e03",
-        "source": "cmp-workspace-page",
-        "target": "cmp-diagram-list",
-        "kind": "renders"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e04",
-        "source": "cmp-workspace-page",
-        "target": "cmp-diagram-renderer",
-        "kind": "renders",
-        "label": "workflow or implementation Diagram"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e05",
-        "source": "cmp-diagram-renderer",
-        "target": "cmp-react-flow-adapter",
-        "kind": "uses"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e06",
-        "source": "cmp-diagram-renderer",
-        "target": "cmp-diagram-canvas",
-        "kind": "renders"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e07",
-        "source": "cmp-diagram-renderer",
-        "target": "cmp-base-overlay",
-        "kind": "uses"
-      },
-      {
-        "type": "default",
         "id": "cmp-e08",
         "source": "cmp-base-overlay",
         "target": "cmp-annotation-layer",
-        "kind": "renders"
+        "kind": "RENDER (children)",
+        "label": "from DiagramRendererContent"
       },
       {
         "type": "default",
-        "id": "cmp-e09",
-        "source": "cmp-react-flow-adapter",
-        "target": "cmp-diagram-artifact",
-        "kind": "reads"
+        "id": "edge:00c8650c385175f9",
+        "source": "cmp-workspace-shell",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "kind": "NODE (navigation)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
-        "id": "cmp-e10",
-        "source": "cmp-diagram-renderer",
-        "target": "cmp-diagram-layout",
-        "kind": "uses",
-        "label": "layoutDiagram"
+        "id": "edge:08d79761eeec9741",
+        "source": "cmp-workspace-shell",
+        "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "kind": "NODE (actions)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
-        "id": "cmp-e11",
-        "source": "cmp-diagram-layout",
-        "target": "cmp-diagram-strategies",
-        "kind": "dispatches"
+        "id": "edge:0e54fe1e7aeff7a1",
+        "source": "cmp-diagram-links-panel",
+        "target": "external:@xyflow/react#Panel",
+        "kind": "direct-render"
       },
       {
         "type": "default",
-        "id": "cmp-e12",
-        "source": "cmp-diagram-canvas",
-        "target": "cmp-card-node",
-        "kind": "registers"
+        "id": "edge:12e3b6613c1792c3",
+        "source": "external:@xyflow/react#ReactFlowProvider",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
+        "kind": "NODE (children)",
+        "label": "from DiagramRenderer"
       },
       {
         "type": "default",
-        "id": "cmp-e13",
-        "source": "cmp-diagram-canvas",
-        "target": "cmp-labeled-group-node",
-        "kind": "registers"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e14",
-        "source": "cmp-diagram-canvas",
-        "target": "cmp-lifeline-node",
-        "kind": "registers"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e15",
-        "source": "cmp-diagram-canvas",
+        "id": "edge:1787ddb425783566",
+        "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-fragment-node",
-        "kind": "registers"
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
-        "id": "cmp-e16",
-        "source": "cmp-diagram-canvas",
-        "target": "cmp-polyline-edge",
-        "kind": "registers"
+        "id": "edge:1a6150dfbd550b5b",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "component:src/shared/react-ui/empty.tsx#Empty",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
-        "id": "cmp-e17",
-        "source": "cmp-diagram-canvas",
+        "id": "edge:28d9dde4dea9f004",
+        "source": "cmp-annotation-layer",
+        "target": "component:src/shared/react-ui/form.tsx#Form",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:2a00fe69cf97484d",
+        "source": "cmp-lifeline-node",
+        "target": "external:@xyflow/react#Handle",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:2a4926f2250b6d13",
+        "source": "component:src/shared/react-ui/tabs.tsx#Tabs",
+        "target": "cmp-workspace-shell",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:2aaf33424abb7979",
+        "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-message-edge",
-        "kind": "registers"
+        "kind": "COMPONENT (edgeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
-        "id": "cmp-e18",
-        "source": "cmp-diagram-renderer",
+        "id": "edge:3130c691aefd02af",
+        "source": "external:@xyflow/react#Controls",
+        "target": "external:@xyflow/react#ControlButton",
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:3e9b431e381689aa",
+        "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-diagram-links-panel",
-        "kind": "renders"
+        "kind": "NODE (children)",
+        "label": "from DiagramRendererContent"
       },
       {
         "type": "default",
-        "id": "cmp-e19",
-        "source": "cmp-polyline-edge",
-        "target": "cmp-polyline-edge-label-placement",
-        "kind": "uses"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e20",
-        "source": "cmp-polyline-edge",
-        "target": "cmp-base-edge-label",
-        "kind": "uses"
-      },
-      {
-        "type": "default",
-        "id": "cmp-e21",
+        "id": "edge:4d3a8bbc08ad3aab",
         "source": "cmp-message-edge",
-        "target": "cmp-message-edge-label-placement",
-        "kind": "uses"
+        "target": "external:@xyflow/react#EdgeLabelRenderer",
+        "kind": "direct-render"
       },
       {
         "type": "default",
-        "id": "cmp-e22",
-        "source": "cmp-message-edge",
+        "id": "edge:4dd0b6db457f1e4b",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Controls",
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:4dd2e60bc8bad453",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-polyline-edge",
+        "kind": "COMPONENT (edgeTypes)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:596e8ba32527daaa",
+        "source": "cmp-workspace-shell",
+        "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:596ff3c7acded20e",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-lifeline-node",
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:5ddad41ea5b2cf6f",
+        "source": "cmp-diagram-renderer",
+        "target": "external:@xyflow/react#ReactFlowProvider",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:5e04e6cb2a266383",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:63ed758cd3c032d7",
+        "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:6bdff7a307692d3b",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-card-node",
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:7868e57b4694d57e",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "cmp-diagram-list",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:8204f754cf4b910b",
+        "source": "cmp-polyline-edge",
+        "target": "external:@xyflow/react#BaseEdge",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:89264d08c4aad65e",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-base-overlay",
+        "kind": "NODE (children)",
+        "label": "from DiagramRendererContent"
+      },
+      {
+        "type": "default",
+        "id": "edge:8fb80b2ba48f017c",
+        "source": "cmp-lifeline-node",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:94218d539464a34f",
+        "source": "component:src/shared/react-ui/form.tsx#Form",
+        "target": "component:src/shared/react-ui/card.tsx#Card",
+        "kind": "NODE (children)",
+        "label": "from AnnotationLayer"
+      },
+      {
+        "type": "default",
+        "id": "edge:9d882f8de2de5e0f",
+        "source": "cmp-card-node",
+        "target": "external:@xyflow/react#Handle",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:a1356542ff2147a3",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "cmp-diagram-renderer",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:a3c9f8e48c342dd6",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
+        "target": "cmp-diagram-canvas",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:a762a87d9778bfb2",
+        "source": "cmp-polyline-edge",
+        "target": "external:@xyflow/react#EdgeLabelRenderer",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:b8bba78826f4ef6b",
+        "source": "cmp-workspace-page",
+        "target": "component:src/shared/react-ui/tabs.tsx#Tabs",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:b8f8e808ddb48449",
+        "source": "external:@xyflow/react#EdgeLabelRenderer",
         "target": "cmp-base-edge-label",
-        "kind": "uses"
+        "kind": "NODE (children)",
+        "label": "from MessageEdge, PolylineEdge"
+      },
+      {
+        "type": "default",
+        "id": "edge:befeb672e5a817d3",
+        "source": "cmp-base-overlay",
+        "target": "external:@xyflow/react#Panel",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:d246d4016671f628",
+        "source": "cmp-card-node",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:d6131ccfcf273e3e",
+        "source": "cmp-diagram-list",
+        "target": "component:src/shared/react-ui/card.tsx#Card",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:e87d0d70334104f6",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "cmp-labeled-group-node",
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:f0758c6cf6625543",
+        "source": "cmp-workspace-shell",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:f6c94b6522fee768",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Background",
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:f7b64f6f66fa6c29",
+        "source": "cmp-diagram-canvas",
+        "target": "external:@xyflow/react#ReactFlow",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
+        "id": "edge:fa9d84eef3cbaad2",
+        "source": "cmp-message-edge",
+        "target": "external:@xyflow/react#BaseEdge",
+        "kind": "direct-render"
       }
     ]
   }

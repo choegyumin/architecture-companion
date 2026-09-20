@@ -18,7 +18,6 @@ export type DiagramLink = z.infer<typeof diagramLinkSchema>;
 
 const diagramNodeBaseShape = {
   id: diagramIdSchema,
-  kind: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1).optional(),
   details: z.array(z.string().min(1)).optional(),
@@ -51,6 +50,7 @@ const activationSchema = z
 export const lifelineDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    kind: z.string().min(1),
     type: z.literal("lifeline"),
     links: z.array(diagramLinkSchema).optional(),
     activations: z.array(activationSchema),
@@ -69,6 +69,7 @@ const fragmentBranchSchema = z
 export const fragmentDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    kind: z.string().min(1),
     type: z.literal("fragment"),
     operator: z.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
     branches: z.array(fragmentBranchSchema).min(1),

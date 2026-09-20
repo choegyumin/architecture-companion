@@ -122,33 +122,111 @@ describe("diagram renderer React Flow adapter", () => {
     });
   });
 
-  it("omits the eyebrow when a default node has no useful kind", () => {
+  it("omits the card eyebrow when a default node has no kind", () => {
     const diagram = {
       ...sequenceDiagram,
       graph: {
         groups: [],
-        nodes: [
-          {
-            id: "file:src/index.ts",
-            type: "default",
-            title: "index.ts",
-            links: [{ text: "source", href: "source:///src/index.ts" }],
-          },
-        ],
+        nodes: [{ id: "component", type: "default", title: "Component" }],
         edges: [],
       },
     } satisfies Diagram;
 
     const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
 
-    expect(measurementNode).toMatchObject({
-      type: "card",
-      data: {
-        label: "index.ts",
-        links: [{ href: "source:///src/index.ts" }],
-      },
-    });
+    expect(measurementNode?.data).toMatchObject({ label: "Component" });
     expect(measurementNode?.data).not.toHaveProperty("eyebrow");
+  });
+
+  it("keeps direct render edges unlabeled", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [
+          { id: "parent", type: "default", kind: "React component", title: "Parent", links: [] },
+          { id: "child", type: "default", kind: "React component", title: "Child", links: [] },
+        ],
+        edges: [
+          {
+            id: "render",
+            type: "default",
+            source: "parent",
+            target: "child",
+            kind: "direct-render",
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [],
+      nodes: [
+        { id: "parent", position: { x: 0, y: 0 }, size: { width: 288, height: 144 } },
+        { id: "child", position: { x: 0, y: 240 }, size: { width: 288, height: 144 } },
+      ],
+      edges: [
+        {
+          id: "render",
+          points: [
+            { x: 144, y: 144 },
+            { x: 144, y: 240 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(edges.at(0)).not.toHaveProperty("label");
+    expect(edges.at(0)?.data).not.toHaveProperty("eyebrow");
+  });
+
+  it("preserves case-sensitive prop names in relationship kinds", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [
+          { id: "renderer", type: "default", kind: "React component", title: "Renderer" },
+          { id: "content", type: "default", kind: "React component", title: "Content" },
+        ],
+        edges: [
+          {
+            id: "render",
+            type: "default",
+            source: "renderer",
+            target: "content",
+            kind: "RENDER (fooBar)",
+            label: "from App",
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [],
+      nodes: [
+        { id: "renderer", position: { x: 0, y: 0 }, size: { width: 288, height: 144 } },
+        { id: "content", position: { x: 400, y: 0 }, size: { width: 288, height: 144 } },
+      ],
+      edges: [
+        {
+          id: "render",
+          points: [
+            { x: 288, y: 72 },
+            { x: 400, y: 72 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(edges.at(0)).toMatchObject({
+      label: "from App",
+      data: { eyebrow: "RENDER (fooBar)" },
+    });
   });
 
   it("lets lifeline content determine the measured height", () => {

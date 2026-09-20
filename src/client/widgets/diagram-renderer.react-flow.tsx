@@ -270,7 +270,7 @@ export function buildDiagramReactFlowRenderModel(
         ...(edge.label ? { label: edge.label } : {}),
         data: {
           points: placement.points,
-          ...(edge.kind ? { eyebrow: edge.kind } : {}),
+          ...(edge.kind && edge.kind !== "direct-render" ? { eyebrow: edge.kind } : {}),
           ...(edge.href ? { href: edge.href } : {}),
           onLinkActivate,
         },
