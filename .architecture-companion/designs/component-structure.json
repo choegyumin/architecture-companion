@@ -2,7 +2,7 @@
   "id": "component-structure",
   "title": "Component structure",
   "generatorId": "react-component-structure",
-  "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identity external:@base-ui/react#* and preserve existing graph element IDs when merging.",
+  "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identities external:@base-ui/react#* and external:lucide-react#*, then preserve existing graph element IDs when merging.",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -351,24 +351,6 @@
         "id": "external:@xyflow/react#ReactFlowProvider",
         "title": "ReactFlowProvider",
         "description": "@xyflow/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:lucide-react#ExternalLink",
-        "title": "ExternalLink",
-        "description": "lucide-react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:lucide-react#Maximize",
-        "title": "Maximize",
-        "description": "lucide-react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:lucide-react#MessageSquarePlus",
-        "title": "MessageSquarePlus",
-        "description": "lucide-react boundary"
       }
     ],
     "edges": [
@@ -429,14 +411,6 @@
       },
       {
         "type": "default",
-        "id": "edge:1ef26ab03fed13b9",
-        "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "target": "external:lucide-react#MessageSquarePlus",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
-      },
-      {
-        "type": "default",
         "id": "edge:28d9dde4dea9f004",
         "source": "cmp-annotation-layer",
         "target": "component:src/shared/react-ui/form.tsx#Form",
@@ -480,14 +454,6 @@
         "target": "cmp-diagram-links-panel",
         "kind": "NODE (children)",
         "label": "from DiagramRendererContent"
-      },
-      {
-        "type": "default",
-        "id": "edge:4188d47db729f7b7",
-        "source": "external:@xyflow/react#ControlButton",
-        "target": "external:lucide-react#Maximize",
-        "kind": "NODE (children)",
-        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -556,14 +522,6 @@
         "target": "cmp-card-node",
         "kind": "COMPONENT (nodeTypes)",
         "label": "from DiagramCanvas"
-      },
-      {
-        "type": "default",
-        "id": "edge:77a29b8be7bad746",
-        "source": "component:src/shared/react-ui/button.tsx#Button",
-        "target": "external:lucide-react#ExternalLink",
-        "kind": "NODE (children)",
-        "label": "from CardNode, LifelineNode"
       },
       {
         "type": "default",
