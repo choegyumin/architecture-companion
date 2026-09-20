@@ -10,12 +10,12 @@
   },
   "editor.formatOnSave": true,
   "files.readonlyInclude": {
-    "**/schema.json": true,
-    "**/*.schema.json": true
+    "skills/architecture-companion/schemas/**": true,
+    "skills/architecture-companion/runtime/**": true
   },
   "files.watcherExclude": {
-    "**/schema.json": true,
-    "**/*.schema.json": true
+    "skills/architecture-companion/schemas/**": true,
+    "skills/architecture-companion/runtime/**": true
   },
   "tailwindCSS.classFunctions": ["classnames", "clsx", "cn", "cva", "cx", "twMerge", "cns"],
   "files.associations": {

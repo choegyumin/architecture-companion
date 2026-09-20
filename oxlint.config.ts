@@ -194,6 +194,7 @@ export default defineConfig({
     "**/coverage",
     "**/schema.json",
     "**/*.schema.json",
+    "skills/architecture-companion/runtime",
   ],
   plugins: ["typescript", "unicorn", "import", "react"],
   jsPlugins: [
