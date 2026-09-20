@@ -558,10 +558,21 @@ function externalPackageName(moduleSpecifier: string): string | undefined {
   return moduleSpecifier.split("/").at(0);
 }
 
+function externalPackageNameFromFile(fileName: string): string | undefined {
+  const normalized = toPosixPath(fileName);
+  const marker = "/node_modules/";
+  const markerIndex = normalized.lastIndexOf(marker);
+  if (markerIndex < 0) return undefined;
+  const modulePath = normalized.slice(markerIndex + marker.length);
+  if (modulePath.startsWith("@")) return modulePath.split("/").slice(0, 2).join("/");
+  const packageName = modulePath.split("/").at(0);
+  return packageName && !packageName.startsWith(".") ? packageName : undefined;
+}
+
 function hasExternalDeclaration(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): boolean {
   const canonical = canonicalSymbol(symbol, checker);
   return (canonical?.declarations ?? symbol?.declarations ?? []).some((declaration) =>
-    toPosixPath(declaration.getSourceFile().fileName).includes("/node_modules/"),
+    externalPackageNameFromFile(declaration.getSourceFile().fileName),
   );
 }
 
@@ -590,26 +601,138 @@ function declarationName(symbol: ts.Symbol | undefined, checker: ts.TypeChecker)
   return canonical && canonical.name !== "default" && !canonical.name.startsWith('"') ? canonical.name : undefined;
 }
 
-function importedBindingName(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): string | undefined {
-  for (const declaration of symbol?.declarations ?? []) {
-    if (ts.isImportSpecifier(declaration)) return (declaration.propertyName ?? declaration.name).text;
-    if (ts.isImportClause(declaration)) return declarationName(symbol, checker) ?? "default";
+type ModuleBinding = Readonly<{
+  moduleSpecifier: string;
+  importedName: string;
+}>;
+
+type ExternalSymbolOrigin = Readonly<{
+  packageName: string;
+  importedName?: string;
+  symbol: ts.Symbol;
+}>;
+
+type ExternalReference = Readonly<{
+  packageName: string;
+  title: string;
+}>;
+
+function moduleBinding(symbol: ts.Symbol): ModuleBinding | undefined {
+  for (const declaration of symbol.declarations ?? []) {
+    const candidate = ts.isImportSpecifier(declaration)
+      ? declaration.parent.parent.parent
+      : ts.isNamespaceImport(declaration)
+        ? declaration.parent.parent
+        : ts.isImportClause(declaration)
+          ? declaration.parent
+          : ts.isExportSpecifier(declaration)
+            ? declaration.parent.parent
+            : ts.isNamespaceExport(declaration)
+              ? declaration.parent
+              : undefined;
+    if (
+      !candidate ||
+      (!ts.isImportDeclaration(candidate) && !ts.isExportDeclaration(candidate)) ||
+      !candidate.moduleSpecifier ||
+      !ts.isStringLiteral(candidate.moduleSpecifier)
+    ) {
+      continue;
+    }
+
+    const importedName =
+      ts.isImportSpecifier(declaration) || ts.isExportSpecifier(declaration)
+        ? (declaration.propertyName ?? declaration.name).text
+        : ts.isImportClause(declaration)
+          ? "default"
+          : "*";
+    return { moduleSpecifier: candidate.moduleSpecifier.text, importedName };
   }
   return undefined;
 }
 
-function canonicalExternalTitle(
-  expression: ts.Expression | ts.JsxTagNameExpression,
-  symbol: ts.Symbol | undefined,
-  importSymbol: ts.Symbol | undefined,
-  checker: ts.TypeChecker,
-): string {
+function symbolAliasChain(symbol: ts.Symbol, checker: ts.TypeChecker): readonly ts.Symbol[] {
+  const chain: ts.Symbol[] = [];
+  const visited = new Set<ts.Symbol>();
+  let current: ts.Symbol | undefined = symbol;
+  while (current && !visited.has(current)) {
+    chain.push(current);
+    visited.add(current);
+    current = (current.flags & ts.SymbolFlags.Alias) !== 0 ? checker.getImmediateAliasedSymbol(current) : undefined;
+  }
+  return chain;
+}
+
+function externalPackageForSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): string | undefined {
+  const canonical = canonicalSymbol(symbol, checker);
+  for (const declaration of canonical?.declarations ?? symbol.declarations ?? []) {
+    const packageName = externalPackageNameFromFile(declaration.getSourceFile().fileName);
+    if (packageName) return packageName;
+  }
+  return undefined;
+}
+
+function externalSymbolOrigin(symbol: ts.Symbol, checker: ts.TypeChecker): ExternalSymbolOrigin | undefined {
+  const chain = symbolAliasChain(symbol, checker);
+  const externalSymbol = chain.at(-1);
+  if (!externalSymbol || !hasExternalDeclaration(externalSymbol, checker)) return undefined;
+
+  for (const candidate of chain) {
+    const binding = moduleBinding(candidate);
+    const packageName = binding ? externalPackageName(binding.moduleSpecifier) : undefined;
+    if (packageName) {
+      return { packageName, importedName: binding.importedName, symbol: externalSymbol };
+    }
+  }
+
+  const packageName = externalPackageForSymbol(externalSymbol, checker);
+  return packageName ? { packageName, symbol: externalSymbol } : undefined;
+}
+
+function externalReferenceSuffix(expression: ts.Expression | ts.JsxTagNameExpression): string {
   const localRoot = leftmostIdentifier(expression);
   const sourceText = expression.getText();
-  const suffix = localRoot && sourceText.startsWith(localRoot.text) ? sourceText.slice(localRoot.text.length) : "";
-  const rootName = importedBindingName(importSymbol, checker);
-  if (rootName) return `${rootName}${suffix}`;
-  return declarationName(symbol, checker) ?? (suffix.startsWith(".") ? suffix.slice(1) : sourceText);
+  return localRoot && sourceText.startsWith(localRoot.text) ? sourceText.slice(localRoot.text.length) : "";
+}
+
+function resolveExternalReference(
+  expression: ts.Expression | ts.JsxTagNameExpression,
+  context: AnalysisContext,
+  symbolOverride?: ts.Symbol,
+  visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+): ExternalReference | undefined {
+  const candidate = ts.isJsxNamespacedName(expression) ? expression : unwrapExpression(expression);
+  const localRoot = leftmostIdentifier(candidate);
+  const symbol = symbolOverride ?? (localRoot ? context.checker.getSymbolAtLocation(localRoot) : undefined);
+  if (!symbol || visitedSymbols.has(symbol)) return undefined;
+  const suffix = externalReferenceSuffix(candidate);
+  const origin = externalSymbolOrigin(symbol, context.checker);
+  if (origin) {
+    const canonicalName = declarationName(origin.symbol, context.checker);
+    const rootName =
+      origin.importedName === "*"
+        ? undefined
+        : origin.importedName === "default"
+          ? (canonicalName ?? "default")
+          : (origin.importedName ?? canonicalName);
+    const title = rootName
+      ? `${rootName}${suffix}`
+      : suffix.startsWith(".")
+        ? suffix.slice(1)
+        : (canonicalName ?? candidate.getText());
+    return { packageName: origin.packageName, title };
+  }
+
+  if (!localRoot) return undefined;
+  const reference = localVariableReference(localRoot, context, visitedSymbols, symbol);
+  if (!reference) return undefined;
+  const resolved = new Map<string, ExternalReference>();
+  for (const initializer of reference.initializers) {
+    const target = resolveExternalReference(initializer, context, undefined, reference.visitedSymbols);
+    if (!target) continue;
+    const next = { ...target, title: `${target.title}${suffix}` };
+    resolved.set(`${next.packageName}\0${next.title}`, next);
+  }
+  return resolved.size === 1 ? [...resolved.values()].at(0) : undefined;
 }
 
 function isIntrinsicJsxTag(tagName: ts.JsxTagNameExpression): boolean {
@@ -619,29 +742,23 @@ function isIntrinsicJsxTag(tagName: ts.JsxTagNameExpression): boolean {
 function targetForReference(
   expression: ts.Expression | ts.JsxTagNameExpression,
   context: AnalysisContext,
+  symbolOverride?: ts.Symbol,
 ): ComponentTarget | undefined {
   const checker = context.checker;
-  const symbol = checker.getSymbolAtLocation(expression);
+  const symbol = symbolOverride ?? checker.getSymbolAtLocation(expression);
   const definition = resolveDefinition(symbol, checker, context.definitionsBySymbol, context.definitionsByDeclaration);
   if (definition) return { id: definition.id, title: definition.name, definition };
 
-  const importIdentifier = leftmostIdentifier(expression);
-  const importSymbol = importIdentifier ? checker.getSymbolAtLocation(importIdentifier) : symbol;
-  const moduleSpecifier = getImportModuleSpecifier(importSymbol);
-  const packageName = moduleSpecifier ? externalPackageName(moduleSpecifier) : undefined;
-  if (!packageName || (!hasExternalDeclaration(symbol, checker) && !hasExternalDeclaration(importSymbol, checker))) {
-    return undefined;
-  }
-
-  const title = canonicalExternalTitle(expression, symbol, importSymbol, checker);
-  if (packageName === "react" && /(?:^|\.)Fragment$/.test(title)) return undefined;
-  const key = `${packageName}\0${title}`;
+  const external = resolveExternalReference(expression, context, symbolOverride);
+  if (!external) return undefined;
+  if (external.packageName === "react" && /(?:^|\.)Fragment$/.test(external.title)) return undefined;
+  const key = `${external.packageName}\0${external.title}`;
   const existing = context.externalTargets.get(key);
   if (existing) return existing;
   const target = {
-    id: `external:${packageName}#${title}`,
-    title,
-    externalPackage: packageName,
+    id: `external:${external.packageName}#${external.title}`,
+    title: external.title,
+    externalPackage: external.packageName,
   } satisfies ComponentTarget;
   context.externalTargets.set(key, target);
   return target;
@@ -1435,7 +1552,7 @@ function componentReferenceUses(
     );
     const target = definition
       ? { id: definition.id, title: definition.name, definition }
-      : targetForReference(unwrapped, context);
+      : targetForReference(unwrapped, context, candidateSymbol);
     const valueSymbol = canonicalSymbol(
       candidateSymbol ?? context.checker.getSymbolAtLocation(unwrapped),
       context.checker,

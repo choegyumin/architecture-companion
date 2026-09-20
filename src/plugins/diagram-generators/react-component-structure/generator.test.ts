@@ -53,6 +53,17 @@ function edgeFacts(graph: DiagramGraph) {
     .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
 
+function externalPackageFiles(declarations: string): Readonly<Record<string, string>> {
+  return {
+    "node_modules/ui-kit/index.d.ts": declarations,
+    "node_modules/ui-kit/package.json": JSON.stringify({
+      name: "ui-kit",
+      type: "module",
+      exports: { ".": { types: "./index.d.ts" } },
+    }),
+  };
+}
+
 describe("React component structure generator", () => {
   it("uses the component that renders children as the visual parent", async () => {
     await withFixture(
@@ -1159,6 +1170,228 @@ describe("React component structure generator", () => {
         expect(external).not.toHaveProperty("kind");
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("resolves immutable external aliases in JSX and createElement", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`
+          export declare function Button(props: unknown): unknown;
+          export declare function Panel(props: unknown): unknown;
+        `),
+        "src/app.tsx": `
+          import React from "react";
+          import { Button, Panel } from "ui-kit";
+          const ButtonAlias = Button;
+          const PanelAlias = Panel;
+          export function App() {
+            return <><ButtonAlias />{React.createElement(PanelAlias)}</>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual([
+          "component:src/app.tsx#App",
+          "external:ui-kit#Button",
+          "external:ui-kit#Panel",
+        ]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Panel", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("follows multi-hop const aliases but omits mutable external aliases", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`
+          export declare function Button(props: unknown): unknown;
+          export declare function Panel(props: unknown): unknown;
+        `),
+        "src/app.tsx": `
+          import { Button, Panel } from "ui-kit";
+          const First = Button;
+          const Second = First;
+          let Mutable = Panel;
+          Mutable = Button;
+          export function App() { return <><Second /><Mutable /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual([
+          "component:src/app.tsx#App",
+          "external:ui-kit#Button",
+        ]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("keeps canonical package provenance through named barrel chains", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`export declare function Button(props: unknown): unknown;`),
+        "src/app.tsx": `
+          import { ActionButton } from "./second-barrel";
+          export function App() { return <ActionButton />; }
+        `,
+        "src/first-barrel.ts": `export { Button as PrimaryButton } from "ui-kit";`,
+        "src/second-barrel.ts": `export { PrimaryButton as ActionButton } from "./first-barrel";`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("keeps canonical package provenance through export-star barrels", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`export declare function Button(props: unknown): unknown;`),
+        "src/app.tsx": `
+          import { Button as StarButton } from "./barrel";
+          export function App() { return <StarButton />; }
+        `,
+        "src/barrel.ts": `export * from "ui-kit";`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("keeps canonical package provenance through default barrel forms", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`export default function Button(props: unknown): unknown;`),
+        "src/app.tsx": `
+          import { PrimaryButton } from "./named-default";
+          import ForwardedButton from "./forward-default";
+          export function NamedConsumer() { return <PrimaryButton />; }
+          export function ForwardConsumer() { return <ForwardedButton />; }
+          export function App() { return <><NamedConsumer /><ForwardConsumer /></>; }
+        `,
+        "src/named-default.ts": `export { default as PrimaryButton } from "ui-kit";`,
+        "src/forward-default.ts": `export { default } from "ui-kit";`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ForwardConsumer", kind: "direct-render", label: undefined },
+          { source: "App", target: "NamedConsumer", kind: "direct-render", label: undefined },
+          { source: "ForwardConsumer", target: "Button", kind: "direct-render", label: undefined },
+          { source: "NamedConsumer", target: "Button", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("preserves namespace export paths through const aliases", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`
+          export declare namespace Tabs {
+            function Root(props: unknown): unknown;
+          }
+        `),
+        "src/app.tsx": `
+          import * as UI from "ui-kit";
+          const RootAlias = UI.Tabs.Root;
+          export function App() { return <RootAlias />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes).toContainEqual(
+          expect.objectContaining({ id: "external:ui-kit#Tabs.Root", title: "Tabs.Root" }),
+        );
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Tabs.Root", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("keeps supplied values and children connected through external aliases", async () => {
+    await withFixture(
+      {
+        ...externalPackageFiles(`
+          export declare function ExternalFrame(props: unknown): unknown;
+          export declare function Header(props: unknown): unknown;
+          export declare function Body(props: unknown): unknown;
+          export declare function Footer(props: unknown): unknown;
+          export declare function Wrapper(props: unknown): unknown;
+        `),
+        "src/app.tsx": `
+          import { ExternalFrame, Wrapper } from "ui-kit";
+          import { KitBody, KitFooter, KitHeader } from "./barrel";
+          import { Content } from "./content";
+          const FrameAlias = ExternalFrame;
+          const HeaderAlias = KitHeader;
+          const BodyAlias = KitBody;
+          const FooterAlias = KitFooter;
+          const WrapperAlias = Wrapper;
+          const footerComponent = FooterAlias;
+          const frameProps = { footerComponent };
+          export function App() {
+            return <>
+              <FrameAlias
+                {...frameProps}
+                header={<HeaderAlias />}
+                renderBody={() => <BodyAlias />}
+              />
+              <WrapperAlias><Content /></WrapperAlias>
+            </>;
+          }
+        `,
+        "src/barrel.ts": `
+          export {
+            Body as KitBody,
+            Footer as KitFooter,
+            Header as KitHeader,
+          } from "ui-kit";
+        `,
+        "src/content.tsx": `export function Content() { return <main />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "ExternalFrame", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
+          {
+            source: "ExternalFrame",
+            target: "Footer",
+            kind: "COMPONENT (footerComponent)",
+            label: "from App",
+          },
+          { source: "ExternalFrame", target: "Header", kind: "NODE (header)", label: "from App" },
+          { source: "Wrapper", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );
