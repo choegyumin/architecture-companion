@@ -3,10 +3,11 @@ import { spawn } from "node:child_process";
 import type { Dirent } from "node:fs";
 import { cp, mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
+import { isPathInside } from "@/shared/node/path";
 
 import { assertSchemaFilesCurrent } from "./_schema-synchronization";
 
@@ -61,13 +62,6 @@ type InstalledProcess = ReturnType<typeof spawnInstalledScript>;
 type ObservedProcess = Readonly<{
   completion: Promise<CompletedProcess>;
 }>;
-
-function isPathInside(parentPath: string, candidatePath: string): boolean {
-  const relativePath = relative(parentPath, candidatePath);
-  return (
-    relativePath === "" || (relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
-  );
-}
 
 function withoutNodeResolutionOverrides(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return Object.fromEntries(

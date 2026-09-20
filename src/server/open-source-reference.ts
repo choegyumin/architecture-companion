@@ -1,7 +1,8 @@
 import { realpath, stat } from "node:fs/promises";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { join } from "node:path";
 
 import type { ConsumerScope } from "@/server/consumer-scope";
+import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
 export type SourceLocation = Readonly<{
   relativePath: string;
@@ -19,15 +20,6 @@ export type OpenPath = (location: OpenSourceLocation) => Promise<void>;
 
 export type OpenSourceReferenceResult =
   Readonly<{ status: 200; href: string }> | Readonly<{ status: 400 | 403 | 404 | 422 | 500; message: string }>;
-
-function isMissingPathError(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
-}
-
-function isOutsideScope(scopePath: string, sourcePath: string): boolean {
-  const relativePath = relative(scopePath, sourcePath);
-  return relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath);
-}
 
 export function parseSourceHref(href: string): SourceLocation {
   let url: URL;
@@ -96,7 +88,7 @@ export async function openSourceReference(
     throw error;
   }
 
-  if (isOutsideScope(canonicalScopePath, sourcePath)) {
+  if (!isPathInside(canonicalScopePath, sourcePath)) {
     return { status: 403, message: "Source path resolves outside the review scope." };
   }
 

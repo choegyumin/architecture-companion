@@ -6,8 +6,9 @@ import type { ICruiseResult, IDependency, IModule } from "dependency-cruiser";
 import { cruise } from "dependency-cruiser";
 import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 
+import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
+
 import type { DiscoveredSourceFile } from "./discover-source-files";
-import { isMissingPathError, isPathInside, toPosixPath } from "./path-safety";
 
 export type DependencyKind = "runtime" | "type-only";
 

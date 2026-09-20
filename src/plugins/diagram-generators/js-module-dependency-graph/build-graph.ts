@@ -2,10 +2,10 @@ import { readFile } from "node:fs/promises";
 import { basename, dirname, join, relative } from "node:path";
 
 import { type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
+import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
 import type { AnalyzedModule, DependencyKind } from "./analyze-module-dependencies";
 import type { DiscoveredSourceFile } from "./discover-source-files";
-import { isMissingPathError, isPathInside, toPosixPath } from "./path-safety";
 
 type LocalBoundary = Readonly<{
   kind: "package" | "scope";

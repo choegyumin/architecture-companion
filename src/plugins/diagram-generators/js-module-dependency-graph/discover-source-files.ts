@@ -3,7 +3,7 @@ import { extname, join, relative, resolve } from "node:path";
 
 import micromatch from "micromatch";
 
-import { isPathInside, toPosixPath } from "./path-safety";
+import { isPathInside, toPosixPath } from "@/shared/node/path";
 
 export type DiscoveredSourceFile = Readonly<{
   absolutePath: string;
