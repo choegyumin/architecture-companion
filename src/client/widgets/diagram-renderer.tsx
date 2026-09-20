@@ -47,7 +47,10 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
   const hasStartedLayout = useRef(false);
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
   const latestLayoutInputs = useRef({ diagram, getNodes, onOpenSource, setNodes });
-  latestLayoutInputs.current = { diagram, getNodes, onOpenSource, setNodes };
+
+  useEffect(() => {
+    latestLayoutInputs.current = { diagram, getNodes, onOpenSource, setNodes };
+  }, [diagram, getNodes, onOpenSource, setNodes]);
 
   useEffect(() => {
     let cancelled = false;
