@@ -1,10 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
 
 import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH } from "@/server/read-artifact";
 
-type WritableDiagramCollection = readonly (object & { id: string })[];
+type WritableDiagram = Readonly<{
+  id: string;
+  [key: string]: unknown;
+}>;
+type WritableDiagramCollection = readonly WritableDiagram[];
 
 export type WritableArtifact = Readonly<{
   behaviors: WritableDiagramCollection;
@@ -16,11 +20,7 @@ const artifactKinds = [
   { relativePath: DESIGNS_RELATIVE_PATH, diagrams: "designs" },
 ] as const;
 
-async function writeDiagramFile(
-  scopePath: string,
-  relativePath: string,
-  diagram: object & { id: string },
-): Promise<void> {
+async function writeDiagramFile(scopePath: string, relativePath: string, diagram: WritableDiagram): Promise<void> {
   const directoryPath = join(scopePath, relativePath);
   const fileName = `${diagram.id}.json`;
   const temporaryPath = join(directoryPath, `.${diagram.id}-${randomUUID()}.tmp`);

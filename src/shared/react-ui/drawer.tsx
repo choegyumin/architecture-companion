@@ -1,4 +1,4 @@
-import { DrawerPreview as DrawerPrimitive } from "@base-ui/react/drawer";
+import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { useMemo } from "react";
 
 import { cn } from "@/shared/react/class-name";

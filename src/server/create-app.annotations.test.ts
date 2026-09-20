@@ -127,7 +127,10 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, { behaviors: [{ ...firstArtifact.behaviors[0], unexpected: true }], designs: [] });
+      await writeArtifact(scopePath, {
+        behaviors: [{ ...firstArtifact.behaviors.at(0)!, unexpected: true }],
+        designs: [],
+      });
       const app = createApp(await resolveConsumerScope(scopePath));
 
       expect((await app.request(`${baseUrl}/api/annotations`)).status).toBe(422);

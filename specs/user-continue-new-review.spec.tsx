@@ -14,8 +14,8 @@ import { createApp } from "@/server/create-app";
 import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
+import { writeArtifact } from "@/server/write-artifact";
 
 function artifact(nodeTitle: string): Artifact {
   return {

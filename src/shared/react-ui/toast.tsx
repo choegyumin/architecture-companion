@@ -115,33 +115,32 @@ function ToastClose({
 }
 
 function getToastIcon(type: string | undefined) {
+  const className = cn(type === "error" && "text-destructive", type === "loading" && "animate-spin");
+
   switch (type) {
     case "success":
-      return CircleCheckIcon;
+      return <CircleCheckIcon aria-hidden="true" className={className} />;
     case "info":
-      return InfoIcon;
+      return <InfoIcon aria-hidden="true" className={className} />;
     case "warning":
-      return TriangleAlertIcon;
+      return <TriangleAlertIcon aria-hidden="true" className={className} />;
     case "error":
-      return OctagonXIcon;
+      return <OctagonXIcon aria-hidden="true" className={className} />;
     case "loading":
-      return Loader2Icon;
+      return <Loader2Icon aria-hidden="true" className={className} />;
     default:
-      return undefined;
+      return null;
   }
 }
 
 function ToastIcon({ type }: { type: string | undefined }) {
-  const Icon = getToastIcon(type);
+  const icon = getToastIcon(type);
 
-  if (!Icon) return null;
+  if (!icon) return null;
 
   return (
     <span data-slot="toast-icon" className="shrink-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4">
-      <Icon
-        aria-hidden="true"
-        className={cn(type === "error" && "text-destructive", type === "loading" && "animate-spin")}
-      />
+      {icon}
     </span>
   );
 }
