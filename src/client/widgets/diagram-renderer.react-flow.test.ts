@@ -166,6 +166,53 @@ describe("diagram renderer React Flow adapter", () => {
     expect(edges.at(0)?.data).not.toHaveProperty("eyebrow");
   });
 
+  it("preserves case-sensitive prop names in relationship kinds", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [
+          { id: "renderer", type: "default", kind: "React component", title: "Renderer" },
+          { id: "content", type: "default", kind: "React component", title: "Content" },
+        ],
+        edges: [
+          {
+            id: "render",
+            type: "default",
+            source: "renderer",
+            target: "content",
+            kind: "RENDER (fooBar)",
+            label: "from App",
+          },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [],
+      nodes: [
+        { id: "renderer", position: { x: 0, y: 0 }, size: { width: 288, height: 144 } },
+        { id: "content", position: { x: 400, y: 0 }, size: { width: 288, height: 144 } },
+      ],
+      edges: [
+        {
+          id: "render",
+          points: [
+            { x: 288, y: 72 },
+            { x: 400, y: 72 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+
+    expect(edges.at(0)).toMatchObject({
+      label: "from App",
+      data: { eyebrow: "RENDER (fooBar)" },
+    });
+  });
+
   it("lets lifeline content determine the measured height", () => {
     const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
 
