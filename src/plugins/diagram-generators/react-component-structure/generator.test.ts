@@ -955,6 +955,81 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("detects an anonymous default function declaration", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import ProfilePage from "./profile-page";
+          export function App() { return <ProfilePage />; }
+        `,
+        "src/content.tsx": `export function Content() { return <main />; }`,
+        "src/profile-page.tsx": `
+          import { Content } from "./content";
+          export function ProfilePage() { return <aside />; }
+          export default function () { return <Content />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const defaultPageId = "component:src/profile-page.tsx#default";
+
+        expect(graph.nodes.filter(({ title }) => title === "ProfilePage")).toHaveLength(2);
+        expect(graph.nodes).toContainEqual(expect.objectContaining({ id: defaultPageId, title: "ProfilePage" }));
+        expect(graph.edges).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ source: "component:src/app.tsx#App", target: defaultPageId }),
+            expect.objectContaining({ source: defaultPageId, target: "component:src/content.tsx#Content" }),
+          ]),
+        );
+      },
+    );
+  });
+
+  it("detects an anonymous default class declaration", async () => {
+    await withFixture(
+      {
+        "src/app.jsx": `
+          import Dialog from "./dialog";
+          export function App() { return <Dialog />; }
+        `,
+        "src/dialog.jsx": `
+          import React from "react";
+          import { Panel } from "./panel";
+          export default class extends React.Component {
+            render() { return <Panel />; }
+          }
+        `,
+        "src/panel.jsx": `export function Panel() { return <section />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes).toContainEqual(
+          expect.objectContaining({ id: "component:src/dialog.jsx#default", title: "Dialog" }),
+        );
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Dialog", kind: "direct-render", label: undefined },
+          { source: "Dialog", target: "Panel", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("ignores anonymous default declarations without React output", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `export function App() { return <main />; }`,
+        "src/not-a-class.ts": `export default class { render() { return 1; } }`,
+        "src/not-a-function.ts": `export default function () { return 1; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+      },
+    );
+  });
+
   it("filters an anonymous default expression by its stable identity only", async () => {
     await withFixture(
       {

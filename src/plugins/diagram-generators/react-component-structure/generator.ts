@@ -367,6 +367,17 @@ function createComponentId(relativePath: string, identityName: string): string {
   return `component:${relativePath}#${identityName}`;
 }
 
+function isDefaultExportDeclaration(declaration: ts.FunctionDeclaration | ts.ClassDeclaration): boolean {
+  return declaration.modifiers?.some(({ kind }) => kind === ts.SyntaxKind.DefaultKeyword) ?? false;
+}
+
+function defaultExportSymbol(sourceFile: ts.SourceFile, checker: ts.TypeChecker): ts.Symbol | undefined {
+  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+  return moduleSymbol
+    ? checker.getExportsOfModule(moduleSymbol).find((candidate) => candidate.name === "default")
+    : undefined;
+}
+
 function collectComponentDefinitions(
   sourceFiles: readonly ts.SourceFile[],
   scopePath: string,
@@ -408,17 +419,21 @@ function collectComponentDefinitions(
 
   for (const sourceFile of sourceFiles) {
     for (const statement of sourceFile.statements) {
-      if (ts.isFunctionDeclaration(statement) && statement.body && statement.name) {
+      if (ts.isFunctionDeclaration(statement) && statement.body) {
+        const anonymousDefault = !statement.name && isDefaultExportDeclaration(statement);
+        const name = statement.name?.text ?? (anonymousDefault ? defaultExportName(sourceFile) : undefined);
+        if (!name) continue;
         const roots = collectReturnExpressions(statement.body);
         addDefinition(
           sourceFile,
           statement,
-          statement.name.text,
-          checker.getSymbolAtLocation(statement.name),
+          name,
+          statement.name ? checker.getSymbolAtLocation(statement.name) : defaultExportSymbol(sourceFile, checker),
           statement,
           roots,
           statement.body,
           false,
+          anonymousDefault ? "default" : name,
         );
         continue;
       }
@@ -442,7 +457,10 @@ function collectComponentDefinitions(
         continue;
       }
 
-      if (ts.isClassDeclaration(statement) && statement.name) {
+      if (ts.isClassDeclaration(statement)) {
+        const anonymousDefault = !statement.name && isDefaultExportDeclaration(statement);
+        const name = statement.name?.text ?? (anonymousDefault ? defaultExportName(sourceFile) : undefined);
+        if (!name) continue;
         const renderMethod = statement.members.find(
           (member): member is ts.MethodDeclaration =>
             ts.isMethodDeclaration(member) &&
@@ -454,12 +472,13 @@ function collectComponentDefinitions(
         addDefinition(
           sourceFile,
           statement,
-          statement.name.text,
-          checker.getSymbolAtLocation(statement.name),
+          name,
+          statement.name ? checker.getSymbolAtLocation(statement.name) : defaultExportSymbol(sourceFile, checker),
           undefined,
           collectReturnExpressions(renderMethod.body),
           renderMethod.body,
           true,
+          anonymousDefault ? "default" : name,
         );
         continue;
       }
@@ -468,15 +487,11 @@ function collectComponentDefinitions(
         const functionLike = unwrapFunction(statement.expression, checker);
         if (!functionLike?.body) continue;
         const name = defaultExportName(sourceFile);
-        const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-        const symbol = moduleSymbol
-          ? checker.getExportsOfModule(moduleSymbol).find((candidate) => candidate.name === "default")
-          : undefined;
         addDefinition(
           sourceFile,
           statement,
           name,
-          symbol,
+          defaultExportSymbol(sourceFile, checker),
           functionLike,
           collectReturnExpressions(functionLike.body),
           functionLike.body,
