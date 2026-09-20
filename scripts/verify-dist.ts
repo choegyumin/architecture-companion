@@ -466,7 +466,7 @@ async function verifyInstalledReactComponentGenerator(
   assert.deepEqual(edgeFacts(graph), [
     { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
     { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
-    { kind: "node-prop", label: "Node prop · children", source: "Layout", target: "Content" },
+    { kind: "NODE (children)", label: "from App", source: "Layout", target: "Content" },
   ]);
 
   for (const filtered of [
@@ -475,7 +475,7 @@ async function verifyInstalledReactComponentGenerator(
   ]) {
     assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
     assert.deepEqual(edgeFacts(filtered), [
-      { kind: "node-prop", label: "Node prop · children", source: "App", target: "Content" },
+      { kind: "NODE (children)", label: "from App", source: "App", target: "Content" },
     ]);
   }
 }

@@ -68,11 +68,13 @@ It never writes an Architecture Companion artifact. Read the existing diagram fi
 
 The analyzer emits only statically confirmed relationships:
 
-- direct render: no edge label;
-- node prop, including `children`: `Node prop · <actual prop name>`;
-- render prop: `Render prop · <actual prop name>`;
-- component prop: `Component prop · <actual prop name>`.
+- direct render: no visible relationship label;
+- node prop, including `children`: kind `NODE (<renderer prop name>)`, label `from <supplier>`;
+- render prop: kind `RENDER (<invoker prop name>)`, label `from <supplier>`;
+- component prop: kind `COMPONENT (<renderer prop name>)`, label `from <supplier>`.
 
-For supplied values, the visual parent is the confirmed local renderer or invoker. Confirmed local prop forwarding is followed through named aliases and static prop bags to that consumer or to the external boundary where local evidence ends. External components use the same boundary/implementation visibility model as filtered local components: the external boundary remains visible and connected, while the package implementation is opaque and never expanded. An explicitly component-filtered external boundary is collapsed like any other hidden boundary. Statically visible local values supplied through node props, render props, component props, and component registries remain connected. Event-style `onX` callback results are omitted at external boundaries because their return values are not confirmed as rendered.
+For supplied values, the visual parent is the confirmed local renderer or invoker. The label names the component definition that created the supplied target. Confirmed local prop forwarding is followed through named aliases and static prop bags, so the kind uses the final visible renderer's case-preserved prop name while the label retains the original supplier. When several component definitions supply the same target through one semantic relationship, their names are sorted and combined in one label instead of duplicating the edge.
+
+External components use the same boundary/implementation visibility model as filtered local components: the external boundary remains visible and connected, while the package implementation is opaque and never expanded. An explicitly component-filtered external boundary is collapsed like any other hidden boundary. Statically visible local values supplied through node props, render props, component props, and component registries remain connected. Event-style `onX` callback results are omitted at external boundaries because their return values are not confirmed as rendered.
 
 The initial identity model is one node per component definition. Unresolved references are omitted without routine warnings. Provider annotations, per-use nodes, other UI frameworks, runtime reconstruction, and change-impact analysis are not implemented.

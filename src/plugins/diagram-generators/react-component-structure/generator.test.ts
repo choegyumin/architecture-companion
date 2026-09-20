@@ -78,7 +78,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
-          { source: "Layout", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          { source: "Layout", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );
@@ -113,15 +113,48 @@ describe("React component structure generator", () => {
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Frame", kind: "direct-render", label: undefined },
-          { source: "Frame", target: "Body", kind: "render-prop", label: "Render prop · renderBody" },
+          { source: "Frame", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
           {
             source: "Frame",
             target: "Footer",
-            kind: "component-prop",
-            label: "Component prop · footerComponent",
+            kind: "COMPONENT (footerComponent)",
+            label: "from App",
           },
-          { source: "Frame", target: "Header", kind: "node-prop", label: "Node prop · header" },
+          { source: "Frame", target: "Header", kind: "NODE (header)", label: "from App" },
         ]);
+      },
+    );
+  });
+
+  it("keeps original suppliers when multiple components forward values to one renderer", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { ParentA, ParentB } from "./components";
+          export function App() { return <><ParentA /><ParentB /></>; }
+        `,
+        "src/components.tsx": `
+          export function Content() { return <main />; }
+          export function Renderer({ body }: { body: unknown }) { return <>{body}</>; }
+          export function Wrapper({ content }: { content: unknown }) { return <Renderer body={content} />; }
+          export function ParentA() { return <Wrapper content={<Content />} />; }
+          export function ParentB() { return <Wrapper content={<Content />} />; }
+        `,
+      },
+      async (scopePath) => {
+        const first = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const second = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const contentId = first.nodes.find(({ title }) => title === "Content")?.id;
+        const relationship = first.edges.find(({ target }) => target === contentId);
+        const repeatedRelationship = second.edges.find(({ target }) => target === contentId);
+
+        expect(relationship).toMatchObject({
+          source: first.nodes.find(({ title }) => title === "Renderer")?.id,
+          target: contentId,
+          kind: "NODE (body)",
+          label: "from ParentA, ParentB",
+        });
+        expect(repeatedRelationship?.id).toBe(relationship?.id);
       },
     );
   });
@@ -152,7 +185,7 @@ describe("React component structure generator", () => {
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Frame", kind: "direct-render", label: undefined },
-          { source: "Frame", target: "Body", kind: "render-prop", label: "Render prop · children" },
+          { source: "Frame", target: "Body", kind: "RENDER (children)", label: "from App" },
           { source: "Frame", target: "ExternalPanel", kind: "direct-render", label: undefined },
         ]);
       },
@@ -179,7 +212,7 @@ describe("React component structure generator", () => {
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
-          { source: "Primitive", target: "Body", kind: "render-prop", label: "Render prop · render" },
+          { source: "Primitive", target: "Body", kind: "RENDER (render)", label: "from App" },
           { source: "Wrapper", target: "Primitive", kind: "direct-render", label: undefined },
         ]);
       },
@@ -216,8 +249,8 @@ describe("React component structure generator", () => {
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
           { source: "Layout", target: "Primitive", kind: "direct-render", label: undefined },
-          { source: "Primitive", target: "Content", kind: "node-prop", label: "Node prop · children" },
-          { source: "Primitive", target: "Content", kind: "node-prop", label: "Node prop · content" },
+          { source: "Primitive", target: "Content", kind: "NODE (children)", label: "from App" },
+          { source: "Primitive", target: "Content", kind: "NODE (content)", label: "from App" },
           { source: "Wrapper", target: "Primitive", kind: "direct-render", label: undefined },
         ]);
       },
@@ -274,20 +307,20 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFrame",
             target: "Body",
-            kind: "node-prop",
-            label: "Node prop · children",
+            kind: "NODE (children)",
+            label: "from App",
           },
           {
             source: "ExternalFrame",
             target: "ExternalLeaf",
-            kind: "node-prop",
-            label: "Node prop · children",
+            kind: "NODE (children)",
+            label: "from App",
           },
           {
             source: "ExternalFrame",
             target: "Header",
-            kind: "node-prop",
-            label: "Node prop · header",
+            kind: "NODE (header)",
+            label: "from App",
           },
         ]);
       },
@@ -333,20 +366,20 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "CardNode",
-            kind: "component-prop",
-            label: "Component prop · nodeTypes",
+            kind: "COMPONENT (nodeTypes)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Fallback",
-            kind: "component-prop",
-            label: "Component prop · fallbackComponent",
+            kind: "COMPONENT (fallbackComponent)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Panel",
-            kind: "render-prop",
-            label: "Render prop · renderPanel",
+            kind: "RENDER (renderPanel)",
+            label: "from App",
           },
         ]);
       },
@@ -400,26 +433,26 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "Body",
-            kind: "render-prop",
-            label: "Render prop · renderPanel",
+            kind: "RENDER (renderPanel)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "CardNode",
-            kind: "component-prop",
-            label: "Component prop · nodeTypes",
+            kind: "COMPONENT (nodeTypes)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Fallback",
-            kind: "component-prop",
-            label: "Component prop · fallbackComponent",
+            kind: "COMPONENT (fallbackComponent)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Panel",
-            kind: "node-prop",
-            label: "Node prop · panel",
+            kind: "NODE (panel)",
+            label: "from App",
           },
         ]);
       },
@@ -504,14 +537,14 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "CardNode",
-            kind: "component-prop",
-            label: "Component prop · nodeTypes",
+            kind: "COMPONENT (nodeTypes)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Content",
-            kind: "node-prop",
-            label: "Node prop · content",
+            kind: "NODE (content)",
+            label: "from App",
           },
           { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
         ]);
@@ -552,14 +585,14 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "Body",
-            kind: "render-prop",
-            label: "Render prop · children",
+            kind: "RENDER (children)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Child",
-            kind: "node-prop",
-            label: "Node prop · children",
+            kind: "NODE (children)",
+            label: "from App",
           },
           { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
         ]);
@@ -615,26 +648,26 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "Body",
-            kind: "render-prop",
-            label: "Render prop · renderBody",
+            kind: "RENDER (renderBody)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "CardNode",
-            kind: "component-prop",
-            label: "Component prop · nodeTypes",
+            kind: "COMPONENT (nodeTypes)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Child",
-            kind: "render-prop",
-            label: "Render prop · children",
+            kind: "RENDER (children)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Panel",
-            kind: "node-prop",
-            label: "Node prop · panel",
+            kind: "NODE (panel)",
+            label: "from App",
           },
           { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
         ]);
@@ -681,26 +714,26 @@ describe("React component structure generator", () => {
           {
             source: "ExternalFlow",
             target: "Body",
-            kind: "render-prop",
-            label: "Render prop · renderPanel",
+            kind: "RENDER (renderPanel)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "CardNode",
-            kind: "component-prop",
-            label: "Component prop · nodeTypes",
+            kind: "COMPONENT (nodeTypes)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Child",
-            kind: "render-prop",
-            label: "Render prop · children",
+            kind: "RENDER (children)",
+            label: "from App",
           },
           {
             source: "ExternalFlow",
             target: "Panel",
-            kind: "node-prop",
-            label: "Node prop · panel",
+            kind: "NODE (panel)",
+            label: "from App",
           },
         ]);
       },
@@ -758,20 +791,20 @@ describe("React component structure generator", () => {
           {
             source: "ExternalPanel",
             target: "Body",
-            kind: "render-prop",
-            label: "Render prop · renderBody",
+            kind: "RENDER (renderBody)",
+            label: "from App",
           },
           {
             source: "ExternalPanel",
             target: "Fallback",
-            kind: "component-prop",
-            label: "Component prop · fallbackComponent",
+            kind: "COMPONENT (fallbackComponent)",
+            label: "from App",
           },
           {
             source: "ExternalPanel",
             target: "Panel",
-            kind: "node-prop",
-            label: "Node prop · panel",
+            kind: "NODE (panel)",
+            label: "from App",
           },
           { source: "Wrapper", target: "ExternalPanel", kind: "direct-render", label: undefined },
         ]);
@@ -916,8 +949,8 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "QuotedLayout", kind: "direct-render", label: undefined },
           { source: "App", target: "ShorthandLayout", kind: "direct-render", label: undefined },
-          { source: "Primitive", target: "QuotedContent", kind: "node-prop", label: "Node prop · children" },
-          { source: "Primitive", target: "ShorthandContent", kind: "node-prop", label: "Node prop · children" },
+          { source: "Primitive", target: "QuotedContent", kind: "NODE (children)", label: "from App" },
+          { source: "Primitive", target: "ShorthandContent", kind: "NODE (children)", label: "from App" },
           { source: "QuotedLayout", target: "Primitive", kind: "direct-render", label: undefined },
           { source: "ShorthandLayout", target: "Primitive", kind: "direct-render", label: undefined },
         ]);
@@ -1025,7 +1058,7 @@ describe("React component structure generator", () => {
         for (const graph of [componentFiltered, fileFiltered]) {
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
           expect(edgeFacts(graph)).toEqual([
-            { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+            { source: "App", target: "Content", kind: "NODE (children)", label: "from App" },
           ]);
         }
       },
@@ -1064,14 +1097,14 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Body", "Footer", "Header"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Body", kind: "render-prop", label: "Render prop · renderBody" },
+          { source: "App", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
           {
             source: "App",
             target: "Footer",
-            kind: "component-prop",
-            label: "Component prop · footerComponent",
+            kind: "COMPONENT (footerComponent)",
+            label: "from App",
           },
-          { source: "App", target: "Header", kind: "node-prop", label: "Node prop · header" },
+          { source: "App", target: "Header", kind: "NODE (header)", label: "from App" },
         ]);
       },
     );
@@ -1101,7 +1134,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Wrapper"]);
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
-          { source: "Wrapper", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          { source: "Wrapper", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );
@@ -1180,7 +1213,12 @@ describe("React component structure generator", () => {
           { source: "App", target: "StaticSpreadWrapper", kind: "direct-render", label: undefined },
           { source: "App", target: "UnknownSpreadWrapper", kind: "direct-render", label: undefined },
           { source: "ExplicitWrapper", target: "External", kind: "direct-render", label: undefined },
-          { source: "External", target: "B", kind: "node-prop", label: "Node prop · panel" },
+          {
+            source: "External",
+            target: "B",
+            kind: "NODE (panel)",
+            label: "from ExplicitWrapper, StaticSpreadWrapper",
+          },
           { source: "StaticSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
           { source: "UnknownSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
         ]);
@@ -1214,7 +1252,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          { source: "App", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );
@@ -1244,7 +1282,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
-          { source: "Layout", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          { source: "Layout", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );
@@ -1273,7 +1311,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
-          { source: "Layout", target: "Content", kind: "render-prop", label: "Render prop · render" },
+          { source: "Layout", target: "Content", kind: "RENDER (render)", label: "from App" },
         ]);
       },
     );
@@ -1304,8 +1342,8 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ParentA", kind: "direct-render", label: undefined },
           { source: "App", target: "ParentB", kind: "direct-render", label: undefined },
-          { source: "ParentA", target: "ContentA", kind: "node-prop", label: "Node prop · children" },
-          { source: "ParentB", target: "ContentB", kind: "node-prop", label: "Node prop · children" },
+          { source: "ParentA", target: "ContentA", kind: "NODE (children)", label: "from ParentA" },
+          { source: "ParentB", target: "ContentB", kind: "NODE (children)", label: "from ParentB" },
         ]);
       },
     );
@@ -1335,7 +1373,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Content", kind: "node-prop", label: "Node prop · children" },
+          { source: "App", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
     );

@@ -58,14 +58,23 @@ type ComponentTarget = Readonly<{
   definition?: ComponentDefinition;
 }>;
 
-type Relationship = Readonly<{
+type SuppliedValueKind = Exclude<ReactComponentRelationshipKind, "direct-render">;
+
+type DirectRenderRelationship = Readonly<{
   source: string;
   target: string;
-  kind: ReactComponentRelationshipKind;
-  propName?: string;
+  kind: "direct-render";
 }>;
 
-type SuppliedValueKind = Exclude<ReactComponentRelationshipKind, "direct-render">;
+type SuppliedRenderRelationship = Readonly<{
+  source: string;
+  target: string;
+  kind: SuppliedValueKind;
+  propName: string;
+  supplierIds: readonly string[];
+}>;
+
+type Relationship = DirectRenderRelationship | SuppliedRenderRelationship;
 
 type SuppliedValue = Readonly<{
   propName: string;
@@ -1275,7 +1284,12 @@ function analyzeConsumerRules(
 }
 
 function relationshipKey(relationship: Relationship): string {
-  return [relationship.source, relationship.target, relationship.kind, relationship.propName ?? ""].join("\0");
+  return [
+    relationship.source,
+    relationship.target,
+    relationship.kind,
+    relationship.kind === "direct-render" ? "" : relationship.propName,
+  ].join("\0");
 }
 
 function returnedUses(
@@ -1633,15 +1647,22 @@ function resolveConsumerRoutes(
   return [...routes.values()];
 }
 
-function relationshipLabel(relationship: Relationship): string | undefined {
-  if (relationship.kind === "direct-render") return undefined;
+function relationshipKindLabel(relationship: Relationship): string {
+  if (relationship.kind === "direct-render") return relationship.kind;
   const category =
-    relationship.kind === "node-prop"
-      ? "Node prop"
-      : relationship.kind === "render-prop"
-        ? "Render prop"
-        : "Component prop";
-  return `${category} · ${relationship.propName}`;
+    relationship.kind === "node-prop" ? "NODE" : relationship.kind === "render-prop" ? "RENDER" : "COMPONENT";
+  return `${category} (${relationship.propName})`;
+}
+
+function relationshipLabel(
+  relationship: Relationship,
+  definitionsById: ReadonlyMap<string, ComponentDefinition>,
+): string | undefined {
+  if (relationship.kind === "direct-render") return undefined;
+  const supplierNames = relationship.supplierIds
+    .map((supplierId) => definitionsById.get(supplierId)?.name ?? supplierId)
+    .toSorted();
+  return `from ${supplierNames.join(", ")}`;
 }
 
 function edgeId(relationship: Relationship): string {
@@ -1764,7 +1785,16 @@ function collapseComponentStructure(
   }
 
   function addFinalRelationship(relationship: Relationship): void {
-    relationships.set(relationshipKey(relationship), relationship);
+    const key = relationshipKey(relationship);
+    const existing = relationships.get(key);
+    if (!existing || existing.kind === "direct-render" || relationship.kind === "direct-render") {
+      relationships.set(key, relationship);
+      return;
+    }
+    relationships.set(key, {
+      ...relationship,
+      supplierIds: [...new Set([...existing.supplierIds, ...relationship.supplierIds])].toSorted(),
+    });
   }
 
   function makeVisible(target: ComponentTarget): void {
@@ -1799,7 +1829,13 @@ function collapseComponentStructure(
     }
 
     makeVisible(targetUse.target);
-    addFinalRelationship({ source: sourceId, target: targetUse.target.id, kind, propName });
+    addFinalRelationship({
+      source: sourceId,
+      target: targetUse.target.id,
+      kind,
+      propName,
+      supplierIds: [targetUse.ownerId],
+    });
     processUseSupplies(targetUse, targetUse.target.id, nextTrail);
   }
 
@@ -1882,6 +1918,7 @@ function createGraph(
   visibleNodeIds: ReadonlySet<string>,
   relationships: readonly Relationship[],
 ): DiagramGraph {
+  const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
   const localNodes = definitions
     .filter(({ id }) => visibleNodeIds.has(id))
     .map((definition): DefaultDiagramNode => ({
@@ -1906,14 +1943,17 @@ function createGraph(
   const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
   const edges: DefaultDiagramEdge[] = relationships
     .filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target))
-    .map((relationship): DefaultDiagramEdge => ({
-      type: "default",
-      id: edgeId(relationship),
-      source: relationship.source,
-      target: relationship.target,
-      kind: relationship.kind,
-      ...(relationshipLabel(relationship) ? { label: relationshipLabel(relationship) } : {}),
-    }))
+    .map((relationship): DefaultDiagramEdge => {
+      const label = relationshipLabel(relationship, definitionsById);
+      return {
+        type: "default",
+        id: edgeId(relationship),
+        source: relationship.source,
+        target: relationship.target,
+        kind: relationshipKindLabel(relationship),
+        ...(label ? { label } : {}),
+      };
+    })
     .toSorted((left, right) => left.id.localeCompare(right.id));
   const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
 
