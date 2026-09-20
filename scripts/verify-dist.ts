@@ -407,7 +407,13 @@ async function verifyInstalledReactComponentGenerator(
   environment: NodeJS.ProcessEnv,
 ): Promise<void> {
   const sourceRoot = join(scopePath, "src");
-  await mkdir(sourceRoot, { recursive: true });
+  const externalSourceRoot = join(scopePath, "external-src");
+  const externalPackageRoot = join(scopePath, "node_modules", "ui-kit");
+  await Promise.all([
+    mkdir(sourceRoot, { recursive: true }),
+    mkdir(externalSourceRoot, { recursive: true }),
+    mkdir(externalPackageRoot, { recursive: true }),
+  ]);
   await Promise.all([
     writeFile(
       join(sourceRoot, "app.tsx"),
@@ -418,6 +424,16 @@ async function verifyInstalledReactComponentGenerator(
       join(sourceRoot, "layout.tsx"),
       `export function Header() { return <header />; }\nexport function Layout({ children }: { children: unknown }) { return <section><Header />{children}</section>; }\n`,
     ),
+    writeFile(
+      join(externalSourceRoot, "app.tsx"),
+      `import { ActionButton } from "./barrel";\nconst Alias = ActionButton;\nexport function App() { return <Alias />; }\n`,
+    ),
+    writeFile(join(externalSourceRoot, "barrel.ts"), `export { Button as ActionButton } from "ui-kit";\n`),
+    writeFile(join(externalPackageRoot, "index.d.ts"), `export declare function Button(props: unknown): unknown;\n`),
+    writeFile(
+      join(externalPackageRoot, "package.json"),
+      JSON.stringify({ name: "ui-kit", type: "module", exports: { ".": { types: "./index.d.ts" } } }),
+    ),
   ]);
 
   type InstalledGraph = Readonly<{
@@ -427,10 +443,10 @@ async function verifyInstalledReactComponentGenerator(
   }>;
 
   const scriptPath = join(skillRoot, reactComponentGeneratorRelativePath);
-  async function generateGraph(extraArguments: readonly string[] = []): Promise<InstalledGraph> {
+  async function generateGraph(extraArguments: readonly string[] = [], sourcePath = "src"): Promise<InstalledGraph> {
     const result = await runInstalledScript(
       scriptPath,
-      ["--scope", scopePath, "--source", "src", ...extraArguments],
+      ["--scope", scopePath, "--source", sourcePath, ...extraArguments],
       environment,
       skillRoot,
     );
@@ -467,6 +483,15 @@ async function verifyInstalledReactComponentGenerator(
     { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
     { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
     { kind: "NODE (children)", label: "from App", source: "Layout", target: "Content" },
+  ]);
+
+  const externalAliasGraph = await generateGraph([], "external-src");
+  assert.deepEqual(
+    externalAliasGraph.nodes.map(({ id }) => id),
+    ["component:external-src/app.tsx#App", "external:ui-kit#Button"],
+  );
+  assert.deepEqual(edgeFacts(externalAliasGraph), [
+    { kind: "direct-render", label: undefined, source: "App", target: "Button" },
   ]);
 
   for (const filtered of [
