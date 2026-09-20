@@ -36,13 +36,12 @@ jobs:
             "pnpm type-check" \
             "pnpm test" \
             "pnpm build"
-      - name: Check generated skill files
+      - name: Check skill files
         run: |
           changes="$(git status --porcelain --untracked-files=all -- \
-            skills/architecture-companion/schemas \
-            skills/architecture-companion/runtime)"
+            skills/architecture-companion)"
           if [ -n "$changes" ]; then
-            printf '%s\n' 'Generated skill files are missing or stale. Run `pnpm build` and commit the result.'
+            printf '%s\n' 'The checked-in skill does not match the build result. Run `pnpm build` and commit the result.'
             printf '%s\n' "$changes"
             exit 1
           fi
