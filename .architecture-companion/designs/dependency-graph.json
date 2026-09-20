@@ -4,10 +4,7 @@
   "generator": "built-in:js-module-dependency-graph",
   "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/generate.js\" \\\n  --scope \".\" \\\n  --ts-config \"tsconfig.json\" \\\n  --exclude \"src/plugins/diagram-generators/js-module-dependency-graph/tooling/**\" \\\n  \"src\"",
   "layout": {
-    "id": "elk-layered",
-    "options": {
-      "direction": "RIGHT"
-    }
+    "id": "prototype-group-rows"
   },
   "graph": {
     "groups": [
