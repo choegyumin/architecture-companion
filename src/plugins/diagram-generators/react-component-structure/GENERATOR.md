@@ -21,7 +21,7 @@ The installed distribution contains this guide and the bundled `cli/run.js` exec
 ## Analysis tools
 
 - TypeScript Compiler API parses JS, JSX, TS, and TSX, creates the project `Program`, and supplies lexical symbols, alias resolution, and module resolution.
-- `micromatch` applies generation-time file-path and component-name glob exclusions.
+- `micromatch` applies generation-time file-path and component title/identity glob exclusions.
 - The analyzer adds the four React relationship rules and supplied-value consumption analysis. It does not infer runtime behavior from types alone.
 
 Run the executable adjacent to this guide. In an installed distribution:
@@ -46,7 +46,7 @@ Arguments are generator-specific:
 - `--source <path>`: required and repeatable file or directory, absolute or relative to the scope;
 - `--tsconfig <path>`: optional TypeScript configuration, absolute or relative to the scope; otherwise the nearest scope `tsconfig.json` is used;
 - `--exclude-file <glob>`: optional and repeatable scope-relative file-path exclusion;
-- `--exclude-component <glob>`: optional and repeatable component-title exclusion.
+- `--exclude-component <glob>`: optional and repeatable component-title or stable component-ID exclusion. For example, `external:@base-ui/react#*` hides every boundary from that package without hiding same-named local wrappers.
 
 Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded from analysis by default. Explicit file and component globs are applied after the selected local source is analyzed. Both selectors use the same transparent collapse: a matching component boundary and the implementation-created components beneath it are omitted, while statically confirmed values supplied by its parent pass through to the nearest visible owner. For example, filtering `Layout` from `App → Layout → Content` produces `App → Content`; `Layout` and components created inside `Layout` do not remain in the graph candidate. Hidden elements are never written to the output JSON. Generation fails if filtering leaves no visible local component because the current `Diagram.graph` schema requires at least one node.
 

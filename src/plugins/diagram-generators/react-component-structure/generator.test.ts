@@ -1380,6 +1380,39 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("filters an external package by stable component identity without hiding same-named local components", async () => {
+    await withFixture(
+      {
+        "node_modules/@base-ui/react/index.d.ts": `export declare function Button(props: unknown): unknown;`,
+        "node_modules/@base-ui/react/package.json": JSON.stringify({
+          name: "@base-ui/react",
+          type: "module",
+          exports: { ".": { types: "./index.d.ts" } },
+        }),
+        "src/app.tsx": `
+          import { Button as BaseButton } from "@base-ui/react";
+          export function Content() { return <main />; }
+          export function Button({ children }: { children: unknown }) { return <section>{children}</section>; }
+          export function App() { return <Button><BaseButton><Content /></BaseButton></Button>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["external:@base-ui/react#*"],
+        });
+
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button", "Content"]);
+        expect(graph.nodes.some(({ description }) => description === "@base-ui/react boundary")).toBe(false);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "Button", target: "Content", kind: "NODE (children)", label: "from App" },
+        ]);
+      },
+    );
+  });
+
   it("keeps a shared definition when a visible path still reaches it", async () => {
     await withFixture(
       {

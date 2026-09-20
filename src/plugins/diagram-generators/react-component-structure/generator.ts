@@ -1673,6 +1673,10 @@ function sourceHref(relativePath: string): string {
   return `source:///${relativePath.split("/").map(encodeURIComponent).join("/")}`;
 }
 
+function matchesComponentPattern(id: string, title: string, patterns: readonly string[]): boolean {
+  return matchesAny(title, patterns) || matchesAny(id, patterns);
+}
+
 function createVisibilityByTarget(
   definitions: readonly ComponentDefinition[],
   externalTargets: ReadonlyMap<string, ComponentTarget>,
@@ -1682,7 +1686,8 @@ function createVisibilityByTarget(
   const visibility = new Map<string, ComponentVisibility>();
   for (const definition of definitions) {
     const hidden =
-      matchesAny(definition.relativePath, excludeFilePatterns) || matchesAny(definition.name, excludeComponentPatterns);
+      matchesAny(definition.relativePath, excludeFilePatterns) ||
+      matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
     visibility.set(definition.id, {
       boundaryVisible: !hidden,
       implementationAnalyzed: !hidden,
@@ -1690,7 +1695,7 @@ function createVisibilityByTarget(
   }
   for (const target of externalTargets.values()) {
     visibility.set(target.id, {
-      boundaryVisible: !matchesAny(target.title, excludeComponentPatterns),
+      boundaryVisible: !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
       implementationAnalyzed: false,
     });
   }
