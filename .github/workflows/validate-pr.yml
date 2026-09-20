@@ -25,7 +25,7 @@ jobs:
         run: |
           pnpm exec concurrently \
             --names format,lint,type-check,test,build \
-            "pnpm exec prettier --check --no-error-on-unmatched-pattern ." \
+            "pnpm format:check" \
             "pnpm lint" \
             "pnpm type-check" \
             "pnpm test" \

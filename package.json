@@ -22,6 +22,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write --no-error-on-unmatched-pattern .",
+    "format:check": "prettier --check --no-error-on-unmatched-pattern .",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "type-check": "tsc --noEmit"
