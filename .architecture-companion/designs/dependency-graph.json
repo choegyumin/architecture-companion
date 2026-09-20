@@ -1,7 +1,8 @@
 {
   "id": "dependency-graph",
-  "title": "Dependency graph",
-  "generatorId": "freeform",
+  "title": "JavaScript module dependency graph",
+  "generatorId": "js-module-dependency-graph",
+  "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/generate.js\" \\\n  --scope \".\" \\\n  --ts-config \"tsconfig.json\" \\\n  --exclude \"src/plugins/diagram-generators/js-module-dependency-graph/tooling/**\" \\\n  \"src\"",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -11,972 +12,2952 @@
   "graph": {
     "groups": [
       {
-        "id": "dep-cli",
-        "title": "src/cli",
-        "description": "Execution entry points and consumer scope resolution"
+        "id": "group:directory:src/cli",
+        "title": "cli"
       },
       {
-        "id": "dep-features",
-        "title": "src/features",
-        "description": "Product artifact and domain contracts"
+        "id": "group:directory:src/client",
+        "title": "client"
       },
       {
-        "id": "dep-diagram",
-        "title": "diagram",
-        "description": "Common Diagram artifact and built-in layouts",
-        "parentId": "dep-features"
-      },
-      {
-        "id": "dep-artifact",
-        "title": "artifact",
-        "description": "Artifact composition and revision boundaries",
-        "parentId": "dep-features"
-      },
-      {
-        "id": "dep-annotation",
-        "title": "annotation",
-        "description": "Spatial Annotation data and behavior",
-        "parentId": "dep-features"
-      },
-      {
-        "id": "dep-server",
-        "title": "src/server",
-        "description": "Hono API, file storage, and update polling"
-      },
-      {
-        "id": "dep-plugins",
-        "title": "src/plugins",
-        "description": "Built-in Diagram generator resources and contract"
-      },
-      {
-        "id": "dep-generator",
-        "title": "diagram-generators",
-        "parentId": "dep-plugins"
-      },
-      {
-        "id": "dep-shared",
-        "title": "src/shared",
-        "description": "Lower layers unaware of product context"
-      },
-      {
-        "id": "dep-shared-react",
-        "title": "react",
-        "parentId": "dep-shared"
-      },
-      {
-        "id": "dep-shared-react-ui",
-        "title": "react-ui",
-        "parentId": "dep-shared"
-      },
-      {
-        "id": "dep-shared-react-flow",
-        "title": "react-flow",
-        "parentId": "dep-shared"
-      },
-      {
-        "id": "dep-shared-universal",
-        "title": "universal",
-        "parentId": "dep-shared"
-      },
-      {
-        "id": "dep-shared-node",
-        "title": "node",
-        "parentId": "dep-shared"
-      },
-      {
-        "id": "dep-client",
-        "title": "src/client",
-        "description": "Browser data adapter and React UI"
-      },
-      {
-        "id": "dep-client-entry",
-        "title": "entry",
-        "parentId": "dep-client"
-      },
-      {
-        "id": "dep-client-data",
-        "title": "data-client.ts",
-        "parentId": "dep-client"
-      },
-      {
-        "id": "dep-client-pages",
+        "id": "group:directory:src/client/pages",
         "title": "pages",
-        "parentId": "dep-client"
+        "parentId": "group:directory:src/client"
       },
       {
-        "id": "dep-client-parts",
+        "id": "group:directory:src/client/parts",
         "title": "parts",
-        "parentId": "dep-client"
+        "parentId": "group:directory:src/client"
       },
       {
-        "id": "dep-client-widgets",
+        "id": "group:directory:src/client/widgets",
         "title": "widgets",
-        "parentId": "dep-client"
+        "parentId": "group:directory:src/client"
+      },
+      {
+        "id": "group:directory:src/features",
+        "title": "features"
+      },
+      {
+        "id": "group:directory:src/features/annotation",
+        "title": "annotation",
+        "parentId": "group:directory:src/features"
+      },
+      {
+        "id": "group:directory:src/features/artifact",
+        "title": "artifact",
+        "parentId": "group:directory:src/features"
+      },
+      {
+        "id": "group:directory:src/features/diagram",
+        "title": "diagram",
+        "parentId": "group:directory:src/features"
+      },
+      {
+        "id": "group:directory:src/features/diagram-generator",
+        "title": "diagram-generator",
+        "parentId": "group:directory:src/features"
+      },
+      {
+        "id": "group:directory:src/features/diagram/_layout",
+        "title": "_layout",
+        "parentId": "group:directory:src/features/diagram"
+      },
+      {
+        "id": "group:directory:src/plugins",
+        "title": "plugins"
+      },
+      {
+        "id": "group:directory:src/plugins/diagram-generators",
+        "title": "diagram-generators",
+        "parentId": "group:directory:src/plugins"
+      },
+      {
+        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "title": "js-module-dependency-graph",
+        "parentId": "group:directory:src/plugins/diagram-generators"
+      },
+      {
+        "id": "group:directory:src/server",
+        "title": "server"
+      },
+      {
+        "id": "group:directory:src/shared",
+        "title": "shared"
+      },
+      {
+        "id": "group:directory:src/shared/node",
+        "title": "node",
+        "parentId": "group:directory:src/shared"
+      },
+      {
+        "id": "group:directory:src/shared/react",
+        "title": "react",
+        "parentId": "group:directory:src/shared"
+      },
+      {
+        "id": "group:directory:src/shared/react-flow",
+        "title": "react-flow",
+        "parentId": "group:directory:src/shared"
+      },
+      {
+        "id": "group:directory:src/shared/react-ui",
+        "title": "react-ui",
+        "parentId": "group:directory:src/shared"
+      },
+      {
+        "id": "group:directory:src/shared/universal",
+        "title": "universal",
+        "parentId": "group:directory:src/shared"
+      },
+      {
+        "id": "group:external-packages",
+        "title": "External packages"
       }
     ],
     "nodes": [
       {
+        "id": "external:@base-ui/react",
+        "kind": "External package",
+        "title": "@base-ui/react",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:@base-ui/utils",
+        "kind": "External package",
+        "title": "@base-ui/utils",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:@hono/node-server",
+        "kind": "External package",
+        "title": "@hono/node-server",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:@xyflow/react",
+        "kind": "External package",
+        "title": "@xyflow/react",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:class-variance-authority",
+        "kind": "External package",
+        "title": "class-variance-authority",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:clsx",
+        "kind": "External package",
+        "title": "clsx",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:dependency-cruiser",
+        "kind": "External package",
+        "title": "dependency-cruiser",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:elkjs",
+        "kind": "External package",
+        "title": "elkjs",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:hono",
+        "kind": "External package",
+        "title": "hono",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:lucide-react",
+        "kind": "External package",
+        "title": "lucide-react",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:micromatch",
+        "kind": "External package",
+        "title": "micromatch",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:overlay-kit",
+        "kind": "External package",
+        "title": "overlay-kit",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:react",
+        "kind": "External package",
+        "title": "react",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:react-dom",
+        "kind": "External package",
+        "title": "react-dom",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:tailwind-merge",
+        "kind": "External package",
+        "title": "tailwind-merge",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:zod",
+        "kind": "External package",
+        "title": "zod",
+        "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "file:src/cli/serve.command.ts",
+        "title": "serve.command.ts",
+        "groupId": "group:directory:src/cli",
         "type": "default",
-        "id": "dep-cli-runner",
-        "kind": "entry",
-        "title": "CLI commands",
-        "description": "Lists generators and annotations for the designated scope, validates the artifact, starts the server, and provides the stdout contract",
         "links": [
           {
+            "text": "source",
             "href": "source:///src/cli/serve.command.ts"
-          },
+          }
+        ]
+      },
+      {
+        "id": "file:src/cli/serve.ts",
+        "title": "serve.ts",
+        "groupId": "group:directory:src/cli",
+        "type": "default",
+        "links": [
           {
-            "href": "source:///src/cli/view-generators.command.ts"
-          },
+            "text": "source",
+            "href": "source:///src/cli/serve.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/cli/validate-schemas.command.ts",
+        "title": "validate-schemas.command.ts",
+        "groupId": "group:directory:src/cli",
+        "type": "default",
+        "links": [
           {
-            "href": "source:///src/cli/view-annotations.command.ts"
-          },
-          {
+            "text": "source",
             "href": "source:///src/cli/validate-schemas.command.ts"
           }
-        ],
-        "groupId": "dep-cli"
+        ]
       },
       {
+        "id": "file:src/cli/validate-schemas.ts",
+        "title": "validate-schemas.ts",
+        "groupId": "group:directory:src/cli",
         "type": "default",
-        "id": "dep-consumer-scope",
-        "kind": "data",
-        "title": "ConsumerScope",
-        "description": "Resolves the canonical path and Git membership of the scope input",
         "links": [
           {
-            "href": "source:///src/server/consumer-scope.ts"
-          },
-          {
-            "href": "source:///src/server/resolve-consumer-scope.ts"
+            "text": "source",
+            "href": "source:///src/cli/validate-schemas.ts"
           }
-        ],
-        "groupId": "dep-server"
+        ]
       },
       {
+        "id": "file:src/cli/view-annotations.command.ts",
+        "title": "view-annotations.command.ts",
+        "groupId": "group:directory:src/cli",
         "type": "default",
-        "id": "dep-artifact-schema",
-        "kind": "schema",
-        "title": "Artifact",
-        "description": "Validates the assembled behavior and design diagram lists with unique diagram IDs",
         "links": [
           {
-            "href": "source:///src/features/artifact/artifact.ts"
+            "text": "source",
+            "href": "source:///src/cli/view-annotations.command.ts"
           }
-        ],
-        "groupId": "dep-artifact"
+        ]
       },
       {
+        "id": "file:src/cli/view-annotations.ts",
+        "title": "view-annotations.ts",
+        "groupId": "group:directory:src/cli",
         "type": "default",
-        "id": "dep-diagram-artifact",
-        "kind": "schema",
-        "title": "Diagram artifact",
-        "description": "DiagramElements with the complete Diagram schema, layout config, and semantic validation",
         "links": [
           {
-            "href": "source:///src/features/diagram/diagram-graph.ts"
-          },
-          {
-            "href": "source:///src/features/diagram/diagram.ts"
+            "text": "source",
+            "href": "source:///src/cli/view-annotations.ts"
           }
-        ],
-        "groupId": "dep-diagram"
+        ]
       },
       {
+        "id": "file:src/cli/view-generators.command.ts",
+        "title": "view-generators.command.ts",
+        "groupId": "group:directory:src/cli",
         "type": "default",
-        "id": "dep-diagram-layout",
-        "kind": "layout",
-        "title": "Diagram layout",
-        "description": "Built-in config union and the closed layoutDiagram dispatcher",
         "links": [
           {
-            "href": "source:///src/features/diagram/diagram-layout.ts"
-          }
-        ],
-        "groupId": "dep-diagram"
-      },
-      {
-        "type": "default",
-        "id": "dep-diagram-spatial",
-        "kind": "spatial contract",
-        "title": "Diagram spatial contracts",
-        "description": "DiagramNodeSizes and the DiagramLayout geometry result",
-        "links": [
-          {
-            "href": "source:///src/features/diagram/diagram-spatial.ts"
-          }
-        ],
-        "groupId": "dep-diagram"
-      },
-      {
-        "type": "default",
-        "id": "dep-diagram-link-policy",
-        "kind": "link policy",
-        "title": "Diagram link policy",
-        "description": "Source link detection and link label policy",
-        "links": [
-          {
-            "href": "source:///src/features/diagram/diagram-link.ts"
-          }
-        ],
-        "groupId": "dep-diagram"
-      },
-      {
-        "type": "default",
-        "id": "dep-layout-strategies",
-        "kind": "layout strategy",
-        "title": "Built-in layout strategies",
-        "description": "ELK layered and sequence layout computation with strategy config schemas",
-        "links": [
-          {
-            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
-          },
-          {
-            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
-          }
-        ],
-        "groupId": "dep-diagram"
-      },
-      {
-        "type": "default",
-        "id": "dep-annotation-domain",
-        "kind": "domain",
-        "title": "Annotation model and actions",
-        "description": "Annotation document, draft, update, move, and remove operations, revision annotation lookup, and the repository contract",
-        "links": [
-          {
-            "href": "source:///src/features/annotation/annotation-document.ts"
-          },
-          {
-            "href": "source:///src/features/annotation/create-annotation-draft.ts"
-          },
-          {
-            "href": "source:///src/features/annotation/manage-annotations.ts"
-          },
-          {
-            "href": "source:///src/features/annotation/revision-annotations.ts"
-          }
-        ],
-        "groupId": "dep-annotation"
-      },
-      {
-        "type": "default",
-        "id": "dep-server-runtime",
-        "kind": "runtime",
-        "title": "startServer",
-        "description": "Combines the Hono server, static client, and artifact polling lifecycle",
-        "links": [
-          {
-            "href": "source:///src/server/start-server.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-server-api",
-        "kind": "api",
-        "title": "createApp",
-        "description": "Defines the review, SSE, annotations, and source-open endpoints",
-        "links": [
-          {
-            "href": "source:///src/server/create-app.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-artifact-io",
-        "kind": "repository",
-        "title": "Artifact read and validation",
-        "description": "Reads per-diagram files from behaviors and designs directories, checks file names against diagram IDs, and validates every diagram",
-        "links": [
-          {
-            "href": "source:///src/server/read-artifact.ts"
-          },
-          {
-            "href": "source:///src/server/validate-artifact.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-annotation-io",
-        "kind": "repository",
-        "title": "FileAnnotationRepository",
-        "description": "Reads and stores Annotation documents isolated per Artifact revision, providing active revision lookup and ETags",
-        "links": [
-          {
-            "href": "source:///src/server/file-annotation-repository.ts"
-          },
-          {
-            "href": "source:///src/server/read-active-revision-annotations.ts"
-          },
-          {
-            "href": "source:///src/server/create-annotation-etag.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-source-open",
-        "kind": "source flow",
-        "title": "Source reference opening",
-        "description": "Source link validation, local path opening, and request guard decisions",
-        "links": [
-          {
-            "href": "source:///src/server/open-source-reference.ts"
-          },
-          {
-            "href": "source:///src/server/source-open-request.ts"
-          },
-          {
-            "href": "source:///src/server/local-app-action-request.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-revision-id",
-        "kind": "identity",
-        "title": "Artifact revision identity",
-        "description": "Computes the revision ID from the artifact contents",
-        "links": [
-          {
-            "href": "source:///src/server/create-artifact-revision-id.ts"
-          },
-          {
-            "href": "source:///src/features/artifact/artifact-revision-id.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-review-updates",
-        "kind": "poller",
-        "title": "ReviewUpdates",
-        "description": "Compares fingerprints of the active Artifact revision and its Annotation document and notifies SSE listeners",
-        "links": [
-          {
-            "href": "source:///src/server/review-updates.ts"
-          }
-        ],
-        "groupId": "dep-server"
-      },
-      {
-        "type": "default",
-        "id": "dep-generator-contract",
-        "kind": "extension contract",
-        "title": "Generator manifest contract",
-        "description": "Lowercase kebab-case IDs and the strict GENERATOR.md metadata and prompt contract",
-        "links": [
-          {
-            "href": "source:///src/features/diagram-generator/diagram-generator-id.ts"
-          },
-          {
-            "href": "source:///src/features/diagram-generator/diagram-generator-manifest.ts"
-          }
-        ],
-        "groupId": "dep-generator"
-      },
-      {
-        "type": "default",
-        "id": "dep-freeform-generator",
-        "kind": "extension discovery",
-        "title": "Diagram generator discovery",
-        "description": "Discovers and sorts direct-child manifests of the built-in, global, and project roots",
-        "links": [
-          {
+            "text": "source",
             "href": "source:///src/cli/view-generators.command.ts"
-          },
+          }
+        ]
+      },
+      {
+        "id": "file:src/cli/view-generators.ts",
+        "title": "view-generators.ts",
+        "groupId": "group:directory:src/cli",
+        "type": "default",
+        "links": [
           {
+            "text": "source",
             "href": "source:///src/cli/view-generators.ts"
           }
-        ],
-        "groupId": "dep-generator"
+        ]
       },
       {
+        "id": "file:src/client/data-client.ts",
+        "title": "data-client.ts",
+        "groupId": "group:directory:src/client",
         "type": "default",
-        "id": "dep-main-entry",
-        "kind": "entry",
-        "title": "render",
-        "description": "Assembles ThemeProvider, WorkspacePage, and Toaster",
         "links": [
           {
-            "href": "source:///src/client/main.tsx"
-          }
-        ],
-        "groupId": "dep-client-entry"
-      },
-      {
-        "type": "default",
-        "id": "dep-data-client",
-        "kind": "client adapter",
-        "title": "DataClient",
-        "description": "Combines Hono RPC, annotation ETags, and SSE parsing into the browser adapter",
-        "links": [
-          {
+            "text": "source",
             "href": "source:///src/client/data-client.ts"
           }
-        ],
-        "groupId": "dep-client-data"
+        ]
       },
       {
+        "id": "file:src/client/main.tsx",
+        "title": "main.tsx",
+        "groupId": "group:directory:src/client",
         "type": "default",
-        "id": "dep-workspace-page",
-        "kind": "page",
-        "title": "WorkspacePage",
-        "description": "Coordinates review state with Diagram selection, rendering, and Annotations",
         "links": [
           {
+            "text": "source",
+            "href": "source:///src/client/main.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/pages/workspace-page.tsx",
+        "title": "workspace-page.tsx",
+        "groupId": "group:directory:src/client/pages",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
             "href": "source:///src/client/pages/workspace-page.tsx"
           }
-        ],
-        "groupId": "dep-client-pages"
+        ]
       },
       {
+        "id": "file:src/client/parts/annotation-layer.composer-placement.ts",
+        "title": "annotation-layer.composer-placement.ts",
+        "groupId": "group:directory:src/client/parts",
         "type": "default",
-        "id": "dep-diagram-renderer",
-        "kind": "widget",
-        "title": "DiagramRenderer",
-        "description": "Coordinates the measurement lifecycle, layout execution, render model application, and annotation overlay",
         "links": [
           {
-            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+            "text": "source",
+            "href": "source:///src/client/parts/annotation-layer.composer-placement.ts"
           }
-        ],
-        "groupId": "dep-client-widgets"
+        ]
       },
       {
+        "id": "file:src/client/parts/annotation-layer.pin-drag.ts",
+        "title": "annotation-layer.pin-drag.ts",
+        "groupId": "group:directory:src/client/parts",
         "type": "default",
-        "id": "dep-react-flow-adapter",
-        "kind": "adapter",
-        "title": "Diagram React Flow adapter",
-        "description": "Converts artifact and layout into React Flow nodes and edges with primitive data",
         "links": [
           {
-            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
+            "text": "source",
+            "href": "source:///src/client/parts/annotation-layer.pin-drag.ts"
           }
-        ],
-        "groupId": "dep-client-widgets"
+        ]
       },
       {
+        "id": "file:src/client/parts/annotation-layer.tsx",
+        "title": "annotation-layer.tsx",
+        "groupId": "group:directory:src/client/parts",
         "type": "default",
-        "id": "dep-links-panel",
-        "kind": "widget",
-        "title": "DiagramLinksPanel",
-        "description": "Lists diagram links and delegates source link opening",
         "links": [
           {
-            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
-          }
-        ],
-        "groupId": "dep-client-widgets"
-      },
-      {
-        "type": "default",
-        "id": "dep-annotation-layer",
-        "kind": "part",
-        "title": "AnnotationLayer",
-        "description": "Provides pins, composer, and edit, delete, and conflict UI",
-        "links": [
-          {
+            "text": "source",
             "href": "source:///src/client/parts/annotation-layer.tsx"
           }
-        ],
-        "groupId": "dep-client-parts"
+        ]
       },
       {
+        "id": "file:src/client/parts/diagram-canvas.tsx",
+        "title": "diagram-canvas.tsx",
+        "groupId": "group:directory:src/client/parts",
         "type": "default",
-        "id": "dep-diagram-canvas",
-        "kind": "part",
-        "title": "DiagramCanvas",
-        "description": "Owns the React Flow host, canvas-owned registry, and pan, zoom, and viewport",
         "links": [
           {
+            "text": "source",
             "href": "source:///src/client/parts/diagram-canvas.tsx"
-          },
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/parts/diagram-canvas.viewport.ts",
+        "title": "diagram-canvas.viewport.ts",
+        "groupId": "group:directory:src/client/parts",
+        "type": "default",
+        "links": [
           {
+            "text": "source",
             "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
           }
-        ],
-        "groupId": "dep-client-parts"
+        ]
       },
       {
+        "id": "file:src/client/parts/diagram-list.tsx",
+        "title": "diagram-list.tsx",
+        "groupId": "group:directory:src/client/parts",
         "type": "default",
-        "id": "dep-shared-flow-primitives",
-        "kind": "shared React Flow",
-        "title": "React Flow primitives",
-        "description": "artifact-agnostic custom nodes, edges, labels, overlay panel",
         "links": [
           {
-            "href": "source:///src/shared/react-flow/card-node.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/lifeline-node.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/fragment-node.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/message-edge.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
-          },
-          {
-            "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
-          },
-          {
-            "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+            "text": "source",
+            "href": "source:///src/client/parts/diagram-list.tsx"
           }
-        ],
-        "groupId": "dep-shared-react-flow"
+        ]
       },
       {
+        "id": "file:src/client/widgets/diagram-links-panel.tsx",
+        "title": "diagram-links-panel.tsx",
+        "groupId": "group:directory:src/client/widgets",
         "type": "default",
-        "id": "dep-shared-react-ui-foundation",
-        "kind": "shared React UI",
-        "title": "React UI primitives and theme",
-        "description": "Base UI controls, shell, drawer, toast, theme context",
         "links": [
           {
-            "href": "source:///src/shared/react-ui/button.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-ui/theme-provider.tsx"
-          },
-          {
-            "href": "source:///src/shared/react-ui/drawer.tsx"
+            "text": "source",
+            "href": "source:///src/client/widgets/diagram-links-panel.tsx"
           }
-        ],
-        "groupId": "dep-shared-react-ui"
+        ]
       },
       {
+        "id": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "title": "diagram-renderer.react-flow.tsx",
+        "groupId": "group:directory:src/client/widgets",
         "type": "default",
-        "id": "dep-react-utilities",
-        "kind": "utility",
-        "title": "React utilities",
-        "description": "cn class merging and safe context creation",
         "links": [
           {
-            "href": "source:///src/shared/react/class-name.ts"
-          },
-          {
-            "href": "source:///src/shared/react/safe-context.ts"
+            "text": "source",
+            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
           }
-        ],
-        "groupId": "dep-shared-react"
+        ]
       },
       {
+        "id": "file:src/client/widgets/diagram-renderer.tsx",
+        "title": "diagram-renderer.tsx",
+        "groupId": "group:directory:src/client/widgets",
         "type": "default",
-        "id": "dep-open-local-path",
-        "kind": "utility",
-        "title": "openLocalPath",
-        "description": "Per-platform local path opening launcher",
         "links": [
           {
+            "text": "source",
+            "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/annotation/annotation-document.ts",
+        "title": "annotation-document.ts",
+        "groupId": "group:directory:src/features/annotation",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/annotation/annotation-document.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/annotation/create-annotation-draft.ts",
+        "title": "create-annotation-draft.ts",
+        "groupId": "group:directory:src/features/annotation",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/annotation/create-annotation-draft.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/annotation/manage-annotations.ts",
+        "title": "manage-annotations.ts",
+        "groupId": "group:directory:src/features/annotation",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/annotation/manage-annotations.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/annotation/revision-annotations.ts",
+        "title": "revision-annotations.ts",
+        "groupId": "group:directory:src/features/annotation",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/annotation/revision-annotations.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/artifact/artifact-revision-id.ts",
+        "title": "artifact-revision-id.ts",
+        "groupId": "group:directory:src/features/artifact",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/artifact/artifact-revision-id.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/artifact/artifact.ts",
+        "title": "artifact.ts",
+        "groupId": "group:directory:src/features/artifact",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/artifact/artifact.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram-generator/diagram-generator-id.ts",
+        "title": "diagram-generator-id.ts",
+        "groupId": "group:directory:src/features/diagram-generator",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram-generator/diagram-generator-id.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram-generator/diagram-generator-manifest.ts",
+        "title": "diagram-generator-manifest.ts",
+        "groupId": "group:directory:src/features/diagram-generator",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram-generator/diagram-generator-manifest.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "title": "elk-layered-diagram-layout.ts",
+        "groupId": "group:directory:src/features/diagram/_layout",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/_layout/sequence-diagram-layout.ts",
+        "title": "sequence-diagram-layout.ts",
+        "groupId": "group:directory:src/features/diagram/_layout",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram-graph.ts",
+        "title": "diagram-graph.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram-graph.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram-layout.ts",
+        "title": "diagram-layout.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram-link.ts",
+        "title": "diagram-link.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram-link.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram-spatial.ts",
+        "title": "diagram-spatial.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram-spatial.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram.ts",
+        "title": "diagram.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "title": "analyze-module-dependencies.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "title": "build-graph.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "title": "discover-source-files.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts",
+        "title": "generate.command.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
+        "title": "generate.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generate.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "title": "generator.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generator.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/consumer-scope.ts",
+        "title": "consumer-scope.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/consumer-scope.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/create-annotation-etag.ts",
+        "title": "create-annotation-etag.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/create-annotation-etag.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/create-app.ts",
+        "title": "create-app.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/create-app.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/create-artifact-revision-id.ts",
+        "title": "create-artifact-revision-id.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/create-artifact-revision-id.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/file-annotation-repository.ts",
+        "title": "file-annotation-repository.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/file-annotation-repository.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/local-app-action-request.ts",
+        "title": "local-app-action-request.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/local-app-action-request.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/open-source-reference.ts",
+        "title": "open-source-reference.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/open-source-reference.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/read-active-revision-annotations.ts",
+        "title": "read-active-revision-annotations.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/read-active-revision-annotations.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/read-artifact.ts",
+        "title": "read-artifact.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/read-artifact.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/resolve-consumer-scope.ts",
+        "title": "resolve-consumer-scope.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/resolve-consumer-scope.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/review-updates.ts",
+        "title": "review-updates.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/review-updates.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/source-open-request.ts",
+        "title": "source-open-request.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/source-open-request.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/start-server.ts",
+        "title": "start-server.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/start-server.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/validate-artifact.ts",
+        "title": "validate-artifact.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/validate-artifact.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/server/write-artifact.ts",
+        "title": "write-artifact.ts",
+        "groupId": "group:directory:src/server",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/server/write-artifact.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/node/open-local-path.ts",
+        "title": "open-local-path.ts",
+        "groupId": "group:directory:src/shared/node",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
             "href": "source:///src/shared/node/open-local-path.ts"
           }
-        ],
-        "groupId": "dep-shared-node"
+        ]
       },
       {
+        "id": "file:src/shared/node/path.ts",
+        "title": "path.ts",
+        "groupId": "group:directory:src/shared/node",
         "type": "default",
-        "id": "dep-get-or-throw",
-        "kind": "utility",
-        "title": "getOrThrow",
-        "description": "Shared utility that checks the required-value lookup invariant",
         "links": [
           {
+            "text": "source",
+            "href": "source:///src/shared/node/path.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/base-edge-label.tsx",
+        "title": "base-edge-label.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/base-overlay-panel.tsx",
+        "title": "base-overlay-panel.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/card-node.tsx",
+        "title": "card-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/card-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/fragment-node.tsx",
+        "title": "fragment-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/fragment-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/labeled-group-node.tsx",
+        "title": "labeled-group-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/lifeline-node.tsx",
+        "title": "lifeline-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/lifeline-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/message-edge-label-placement.ts",
+        "title": "message-edge-label-placement.ts",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/message-edge.tsx",
+        "title": "message-edge.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/message-edge.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/polyline-edge-label-placement.ts",
+        "title": "polyline-edge-label-placement.ts",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/polyline-edge.tsx",
+        "title": "polyline-edge.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/alert-dialog.tsx",
+        "title": "alert-dialog.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/alert-dialog.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/button.tsx",
+        "title": "button.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/button.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/card.tsx",
+        "title": "card.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/card.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/drawer.tsx",
+        "title": "drawer.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/drawer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/empty.tsx",
+        "title": "empty.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/empty.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/field.tsx",
+        "title": "field.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/field.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/form.tsx",
+        "title": "form.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/form.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/item.tsx",
+        "title": "item.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/item.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/label.tsx",
+        "title": "label.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/label.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/separator.tsx",
+        "title": "separator.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/separator.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/tabs.tsx",
+        "title": "tabs.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/tabs.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/textarea.tsx",
+        "title": "textarea.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/textarea.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/theme-context.ts",
+        "title": "theme-context.ts",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/theme-context.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/theme-provider.tsx",
+        "title": "theme-provider.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/theme-provider.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/theme-toggle.tsx",
+        "title": "theme-toggle.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/theme-toggle.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/toast.tsx",
+        "title": "toast.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/toast.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/toggle.tsx",
+        "title": "toggle.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/toggle.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react/class-name.ts",
+        "title": "class-name.ts",
+        "groupId": "group:directory:src/shared/react",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react/class-name.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react/safe-context.ts",
+        "title": "safe-context.ts",
+        "groupId": "group:directory:src/shared/react",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react/safe-context.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/universal/get-or-throw.ts",
+        "title": "get-or-throw.ts",
+        "groupId": "group:directory:src/shared/universal",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
             "href": "source:///src/shared/universal/get-or-throw.ts"
           }
-        ],
-        "groupId": "dep-shared-universal"
+        ]
       }
     ],
     "edges": [
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
         "type": "default",
-        "id": "dep-e01",
-        "source": "dep-cli-runner",
-        "target": "dep-consumer-scope",
-        "kind": "imports",
-        "label": "resolve"
+        "source": "file:src/cli/serve.command.ts",
+        "target": "file:src/server/resolve-consumer-scope.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fstart-server.ts:runtime",
         "type": "default",
-        "id": "dep-e02",
-        "source": "dep-cli-runner",
-        "target": "dep-server-runtime",
-        "kind": "imports",
-        "label": "start server"
+        "source": "file:src/cli/serve.command.ts",
+        "target": "file:src/server/start-server.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fserve.ts:file%3Asrc%2Fcli%2Fserve.command.ts:runtime",
         "type": "default",
-        "id": "dep-e03",
-        "source": "dep-server-runtime",
-        "target": "dep-server-api",
-        "kind": "imports",
-        "label": "create app"
+        "source": "file:src/cli/serve.ts",
+        "target": "file:src/cli/serve.command.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
         "type": "default",
-        "id": "dep-e04",
-        "source": "dep-server-runtime",
-        "target": "dep-review-updates",
-        "kind": "owns",
-        "label": "polling lifecycle"
+        "source": "file:src/cli/validate-schemas.command.ts",
+        "target": "file:src/server/read-artifact.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
         "type": "default",
-        "id": "dep-e05",
-        "source": "dep-server-api",
-        "target": "dep-artifact-io",
-        "kind": "imports",
-        "label": "read review"
+        "source": "file:src/cli/validate-schemas.command.ts",
+        "target": "file:src/server/resolve-consumer-scope.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.ts:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:runtime",
         "type": "default",
-        "id": "dep-e06",
-        "source": "dep-server-api",
-        "target": "dep-annotation-io",
-        "kind": "assembles",
-        "label": "default repository"
+        "source": "file:src/cli/validate-schemas.ts",
+        "target": "file:src/cli/validate-schemas.command.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.command.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:runtime",
         "type": "default",
-        "id": "dep-e08",
-        "source": "dep-artifact-io",
-        "target": "dep-artifact-schema",
-        "kind": "imports",
-        "label": "parse"
+        "source": "file:src/cli/view-annotations.command.ts",
+        "target": "file:src/server/file-annotation-repository.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.command.ts:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:runtime",
         "type": "default",
-        "id": "dep-e09",
-        "source": "dep-artifact-schema",
-        "target": "dep-diagram-artifact",
-        "kind": "imports",
-        "label": "shared Diagram schema"
+        "source": "file:src/cli/view-annotations.command.ts",
+        "target": "file:src/server/read-active-revision-annotations.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
         "type": "default",
-        "id": "dep-e10",
-        "source": "dep-diagram-artifact",
-        "target": "dep-diagram-layout",
-        "kind": "imports",
-        "label": "layout config schema"
+        "source": "file:src/cli/view-annotations.command.ts",
+        "target": "file:src/server/resolve-consumer-scope.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.ts:file%3Asrc%2Fcli%2Fview-annotations.command.ts:runtime",
         "type": "default",
-        "id": "dep-e11",
-        "source": "dep-diagram-layout",
-        "target": "dep-diagram-spatial",
-        "kind": "imports",
-        "label": "spatial types"
+        "source": "file:src/cli/view-annotations.ts",
+        "target": "file:src/cli/view-annotations.command.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:type-only",
         "type": "default",
-        "id": "dep-e12",
-        "source": "dep-diagram-layout",
-        "target": "dep-layout-strategies",
-        "kind": "dispatches",
-        "label": "closed built-ins"
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-id.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-manifest.ts:runtime",
         "type": "default",
-        "id": "dep-e13",
-        "source": "dep-layout-strategies",
-        "target": "dep-diagram-artifact",
-        "kind": "type imports",
-        "label": "DiagramElements"
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-manifest.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
         "type": "default",
-        "id": "dep-e14",
-        "source": "dep-layout-strategies",
-        "target": "dep-diagram-spatial",
-        "kind": "type imports",
-        "label": "spatial contracts"
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/server/resolve-consumer-scope.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "id": "dep-e15",
-        "source": "dep-layout-strategies",
-        "target": "dep-get-or-throw",
-        "kind": "imports",
-        "label": "required size lookup"
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/shared/node/path.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.ts:file%3Asrc%2Fcli%2Fview-generators.command.ts:runtime",
         "type": "default",
-        "id": "dep-e16",
-        "source": "dep-diagram-artifact",
-        "target": "dep-generator-contract",
-        "kind": "imports",
-        "label": "generator ID schema"
+        "source": "file:src/cli/view-generators.ts",
+        "target": "file:src/cli/view-generators.command.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:external%3Ahono:runtime",
         "type": "default",
-        "id": "dep-e17",
-        "source": "dep-freeform-generator",
-        "target": "dep-generator-contract",
-        "kind": "imports",
-        "label": "parse manifest"
+        "source": "file:src/client/data-client.ts",
+        "target": "external:hono"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
         "type": "default",
-        "id": "dep-e18",
-        "source": "dep-main-entry",
-        "target": "dep-data-client",
-        "kind": "imports",
-        "label": "create client"
+        "source": "file:src/client/data-client.ts",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:runtime",
         "type": "default",
-        "id": "dep-e19",
-        "source": "dep-main-entry",
-        "target": "dep-workspace-page",
-        "kind": "renders",
-        "label": "app page"
+        "source": "file:src/client/data-client.ts",
+        "target": "file:src/features/annotation/revision-annotations.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
         "type": "default",
-        "id": "dep-e20",
-        "source": "dep-workspace-page",
-        "target": "dep-data-client",
-        "kind": "imports",
-        "label": "server actions"
+        "source": "file:src/client/data-client.ts",
+        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
         "type": "default",
-        "id": "dep-e21",
-        "source": "dep-workspace-page",
-        "target": "dep-diagram-renderer",
-        "kind": "renders",
-        "label": "active Diagram"
+        "source": "file:src/client/data-client.ts",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Fserver%2Fcreate-app.ts:type-only",
         "type": "default",
-        "id": "dep-e22",
-        "source": "dep-workspace-page",
-        "target": "dep-annotation-domain",
-        "kind": "imports",
-        "label": "annotation controller"
+        "source": "file:src/client/data-client.ts",
+        "target": "file:src/server/create-app.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
-        "id": "dep-e24",
-        "source": "dep-diagram-renderer",
-        "target": "dep-react-flow-adapter",
-        "kind": "imports",
-        "label": "conversion"
+        "source": "file:src/client/main.tsx",
+        "target": "external:@xyflow/react"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3Aoverlay-kit:runtime",
         "type": "default",
-        "id": "dep-e25",
-        "source": "dep-diagram-renderer",
-        "target": "dep-diagram-layout",
-        "kind": "imports",
-        "label": "layoutDiagram"
+        "source": "file:src/client/main.tsx",
+        "target": "external:overlay-kit"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3Areact-dom:runtime",
         "type": "default",
-        "id": "dep-e26",
-        "source": "dep-diagram-renderer",
-        "target": "dep-diagram-canvas",
-        "kind": "renders",
-        "label": "render model"
+        "source": "file:src/client/main.tsx",
+        "target": "external:react-dom"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3Areact:runtime",
         "type": "default",
-        "id": "dep-e27",
-        "source": "dep-diagram-renderer",
-        "target": "dep-annotation-layer",
-        "kind": "composes",
-        "label": "annotation overlay"
+        "source": "file:src/client/main.tsx",
+        "target": "external:react"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Fdata-client.ts:runtime",
         "type": "default",
-        "id": "dep-e28",
-        "source": "dep-react-flow-adapter",
-        "target": "dep-diagram-artifact",
-        "kind": "imports",
-        "label": "artifact types"
+        "source": "file:src/client/main.tsx",
+        "target": "file:src/client/data-client.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:runtime",
         "type": "default",
-        "id": "dep-e29",
-        "source": "dep-react-flow-adapter",
-        "target": "dep-diagram-spatial",
-        "kind": "imports",
-        "label": "layout types"
+        "source": "file:src/client/main.tsx",
+        "target": "file:src/client/pages/workspace-page.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-provider.tsx:runtime",
         "type": "default",
-        "id": "dep-e30",
-        "source": "dep-react-flow-adapter",
-        "target": "dep-shared-flow-primitives",
-        "kind": "imports",
-        "label": "presentation types"
+        "source": "file:src/client/main.tsx",
+        "target": "file:src/shared/react-ui/theme-provider.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:runtime",
         "type": "default",
-        "id": "dep-e31",
-        "source": "dep-diagram-canvas",
-        "target": "dep-shared-flow-primitives",
-        "kind": "registers",
-        "label": "runtime components"
+        "source": "file:src/client/main.tsx",
+        "target": "file:src/shared/react-ui/toast.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3A%40base-ui%2Futils:runtime",
         "type": "default",
-        "id": "dep-e32",
-        "source": "dep-diagram-canvas",
-        "target": "dep-diagram-spatial",
-        "kind": "type imports",
-        "label": "viewport point"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "external:@base-ui/utils"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3Alucide-react:runtime",
         "type": "default",
-        "id": "dep-e33",
-        "source": "dep-annotation-layer",
-        "target": "dep-annotation-domain",
-        "kind": "imports",
-        "label": "annotation types"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "external:lucide-react"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3Areact:runtime",
         "type": "default",
-        "id": "dep-e34",
-        "source": "dep-annotation-layer",
-        "target": "dep-shared-react-ui-foundation",
-        "kind": "imports",
-        "label": "UI primitives"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "external:react"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fdata-client.ts:type-only",
         "type": "default",
-        "id": "dep-e35",
-        "source": "dep-workspace-page",
-        "target": "dep-shared-react-ui-foundation",
-        "kind": "imports",
-        "label": "shell UI"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/client/data-client.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:type-only",
         "type": "default",
-        "id": "dep-e36",
-        "source": "dep-server-api",
-        "target": "dep-source-open",
-        "kind": "imports",
-        "label": "source open"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/client/parts/annotation-layer.tsx",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:runtime",
         "type": "default",
-        "id": "dep-e37",
-        "source": "dep-server-api",
-        "target": "dep-revision-id",
-        "kind": "imports",
-        "label": "revision id"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/client/parts/diagram-list.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:runtime",
         "type": "default",
-        "id": "dep-e38",
-        "source": "dep-review-updates",
-        "target": "dep-revision-id",
-        "kind": "imports",
-        "label": "revision id"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/client/widgets/diagram-renderer.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
         "type": "default",
-        "id": "dep-e39",
-        "source": "dep-cli-runner",
-        "target": "dep-annotation-io",
-        "kind": "imports",
-        "label": "view annotations"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fcreate-annotation-draft.ts:runtime",
         "type": "default",
-        "id": "dep-e40",
-        "source": "dep-react-flow-adapter",
-        "target": "dep-diagram-link-policy",
-        "kind": "imports",
-        "label": "link policy"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/features/annotation/create-annotation-draft.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fmanage-annotations.ts:runtime",
         "type": "default",
-        "id": "dep-e41",
-        "source": "dep-diagram-renderer",
-        "target": "dep-links-panel",
-        "kind": "renders",
-        "label": "diagram links"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/features/annotation/manage-annotations.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
         "type": "default",
-        "id": "dep-e42",
-        "source": "dep-links-panel",
-        "target": "dep-shared-react-ui-foundation",
-        "kind": "imports",
-        "label": "button"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/features/annotation/revision-annotations.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
         "type": "default",
-        "id": "dep-e43",
-        "source": "dep-links-panel",
-        "target": "dep-diagram-link-policy",
-        "kind": "imports",
-        "label": "link policy"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:runtime",
         "type": "default",
-        "id": "dep-e44",
-        "source": "dep-shared-react-ui-foundation",
-        "target": "dep-react-utilities",
-        "kind": "imports",
-        "label": "cn, safe context"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/shared/react-ui/alert-dialog.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fempty.tsx:runtime",
         "type": "default",
-        "id": "dep-e45",
-        "source": "dep-diagram-renderer",
-        "target": "dep-react-utilities",
-        "kind": "imports",
-        "label": "cn"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/shared/react-ui/empty.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:runtime",
         "type": "default",
-        "id": "dep-e46",
-        "source": "dep-server-api",
-        "target": "dep-open-local-path",
-        "kind": "imports",
-        "label": "default open path"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/shared/react-ui/tabs.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:runtime",
         "type": "default",
-        "id": "dep-e47",
-        "source": "dep-data-client",
-        "target": "dep-server-api",
-        "kind": "type imports",
-        "label": "AppType RPC"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/shared/react-ui/theme-toggle.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:runtime",
         "type": "default",
-        "id": "dep-e48",
-        "source": "dep-data-client",
-        "target": "dep-annotation-domain",
-        "kind": "imports",
-        "label": "revision annotations"
+        "source": "file:src/client/pages/workspace-page.tsx",
+        "target": "file:src/shared/react-ui/toggle.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.pin-drag.ts:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.pin-drag.ts",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.composer-placement.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/client/parts/annotation-layer.composer-placement.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.pin-drag.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/client/parts/annotation-layer.pin-drag.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fcreate-annotation-draft.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/features/annotation/create-annotation-draft.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/shared/react-ui/card.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/shared/react-ui/field.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/shared/react-ui/form.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftextarea.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/annotation-layer.tsx",
+        "target": "file:src/shared/react-ui/textarea.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/client/parts/diagram-canvas.viewport.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/card-node.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/fragment-node.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/labeled-group-node.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/lifeline-node.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/message-edge.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/polyline-edge.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-ui/theme-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:external%3A%40xyflow%2Freact:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.viewport.ts",
+        "target": "external:@xyflow/react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.viewport.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-list.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-list.tsx",
+        "target": "file:src/shared/react-ui/card.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-list.tsx",
+        "target": "file:src/shared/react-ui/item.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-link.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "file:src/features/diagram/diagram-link.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-links-panel.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/parts/diagram-canvas.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-link.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram-link.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/card-node.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/labeled-group-node.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/lifeline-node.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/parts/annotation-layer.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/parts/diagram-canvas.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-links-panel.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/shared/react-flow/base-overlay-panel.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/annotation/annotation-document.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fcreate-annotation-draft.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/annotation/create-annotation-draft.ts",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fmanage-annotations.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/annotation/manage-annotations.ts",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fmanage-annotations.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fcreate-annotation-draft.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/annotation/manage-annotations.ts",
+        "target": "file:src/features/annotation/create-annotation-draft.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/annotation/revision-annotations.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/annotation/revision-annotations.ts",
+        "target": "file:src/features/annotation/annotation-document.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/annotation/revision-annotations.ts",
+        "target": "file:src/features/artifact/artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact-revision-id.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:external%3Aelkjs:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "external:elkjs"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:external%3Aelkjs:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "external:elkjs",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/sequence-diagram-layout.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/sequence-diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/sequence-diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/sequence-diagram-layout.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-graph.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/sequence-diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-link.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-link.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram.ts",
+        "target": "file:src/features/diagram/diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram-generator/diagram-generator-id.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-manifest.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram-generator/diagram-generator-manifest.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "target": "external:dependency-cruiser"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:external%3Amicromatch:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "target": "external:micromatch"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.command.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.command.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-annotation-etag.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/create-annotation-etag.ts",
+        "target": "file:src/features/annotation/revision-annotations.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:external%3Ahono:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "external:hono"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/features/annotation/revision-annotations.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/consumer-scope.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcreate-annotation-etag.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/create-annotation-etag.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/create-artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/file-annotation-repository.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Flocal-app-action-request.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/local-app-action-request.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fopen-source-reference.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/open-source-reference.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/read-active-revision-annotations.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/read-artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Freview-updates.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/review-updates.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fsource-open-request.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/server/source-open-request.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fshared%2Fnode%2Fopen-local-path.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-app.ts",
+        "target": "file:src/shared/node/open-local-path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-artifact-revision-id.ts",
+        "target": "file:src/features/artifact/artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/create-artifact-revision-id.ts",
+        "target": "file:src/features/artifact/artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/file-annotation-repository.ts",
+        "target": "file:src/features/annotation/annotation-document.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/file-annotation-repository.ts",
+        "target": "file:src/features/artifact/artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fopen-source-reference.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/open-source-reference.ts",
+        "target": "file:src/server/consumer-scope.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fopen-source-reference.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/open-source-reference.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/read-active-revision-annotations.ts",
+        "target": "file:src/features/annotation/revision-annotations.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/read-active-revision-annotations.ts",
+        "target": "file:src/server/create-artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/read-active-revision-annotations.ts",
+        "target": "file:src/server/file-annotation-repository.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/read-active-revision-annotations.ts",
+        "target": "file:src/server/read-artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/read-artifact.ts",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/read-artifact.ts",
+        "target": "file:src/features/diagram/diagram.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Fserver%2Fvalidate-artifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/read-artifact.ts",
+        "target": "file:src/server/validate-artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/resolve-consumer-scope.ts",
+        "target": "file:src/server/consumer-scope.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/review-updates.ts",
+        "target": "file:src/server/create-artifact-revision-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/review-updates.ts",
+        "target": "file:src/server/file-annotation-repository.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/review-updates.ts",
+        "target": "file:src/server/read-artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fsource-open-request.ts:file%3Asrc%2Fserver%2Flocal-app-action-request.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/source-open-request.ts",
+        "target": "file:src/server/local-app-action-request.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:external%3A%40hono%2Fnode-server:runtime",
+        "type": "default",
+        "source": "file:src/server/start-server.ts",
+        "target": "external:@hono/node-server"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/start-server.ts",
+        "target": "file:src/server/consumer-scope.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:file%3Asrc%2Fserver%2Fcreate-app.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/start-server.ts",
+        "target": "file:src/server/create-app.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:file%3Asrc%2Fserver%2Freview-updates.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/start-server.ts",
+        "target": "file:src/server/review-updates.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fvalidate-artifact.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/validate-artifact.ts",
+        "target": "file:src/features/artifact/artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fwrite-artifact.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/write-artifact.ts",
+        "target": "file:src/server/read-artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Aclsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/class-name.ts",
+        "target": "external:clsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Atailwind-merge:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/class-name.ts",
+        "target": "external:tailwind-merge"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/safe-context.ts",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/base-edge-label.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/base-overlay-panel.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/base-overlay-panel.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:external%3A%40xyflow%2Freact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/fragment-node.tsx",
+        "target": "external:@xyflow/react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3A%40xyflow%2Freact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/labeled-group-node.tsx",
+        "target": "external:@xyflow/react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/labeled-group-node.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/lifeline-node.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/lifeline-node.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/lifeline-node.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/lifeline-node.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/message-edge.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/message-edge.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/message-edge.tsx",
+        "target": "file:src/shared/react-flow/base-edge-label.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge-label-placement.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/message-edge.tsx",
+        "target": "file:src/shared/react-flow/message-edge-label-placement.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "target": "file:src/shared/react-flow/base-edge-label.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge-label-placement.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "target": "file:src/shared/react-flow/polyline-edge-label-placement.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:external%3Aoverlay-kit:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "external:overlay-kit"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/button.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/button.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/button.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/card.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/card.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fdrawer.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/drawer.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fdrawer.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/drawer.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fdrawer.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/drawer.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fdrawer.tsx:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/drawer.tsx",
+        "target": "file:src/shared/react/safe-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fempty.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/empty.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fempty.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/empty.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "file:src/shared/react-ui/label.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "file:src/shared/react-ui/separator.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:external%3A%40base-ui%2Futils:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/form.tsx",
+        "target": "external:@base-ui/utils"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/form.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/form.tsx",
+        "target": "file:src/shared/react/safe-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/item.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/item.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/item.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/item.tsx",
+        "target": "file:src/shared/react-ui/separator.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/label.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/label.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/separator.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/separator.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/tabs.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/tabs.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/tabs.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftextarea.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/textarea.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftextarea.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/textarea.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-context.ts:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-context.ts",
+        "target": "file:src/shared/react/safe-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-provider.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-provider.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-provider.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-provider.tsx",
+        "target": "file:src/shared/react-ui/theme-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-toggle.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-toggle.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-toggle.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-context.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-toggle.tsx",
+        "target": "file:src/shared/react-ui/theme-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toast.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toast.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toast.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toast.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toggle.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toggle.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toggle.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       }
     ]
   }
