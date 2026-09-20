@@ -170,7 +170,7 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
     await assertCopiedVerbatim(sourceManifestPath, join(rootPath, "diagram-generators", entry.name, "GENERATOR.md"));
   }
 
-  await readRequiredText(join(rootPath, "diagram-generators", "file-dependency-graph", "generate.js"));
+  await readRequiredText(join(rootPath, "diagram-generators", "js-module-dependency-graph", "generate.js"));
 }
 
 async function verifyDistributionResources(rootPath: string): Promise<void> {
@@ -379,7 +379,7 @@ async function verifyInstalledGeneratorEntry(
   assert.deepEqual(JSON.parse(outputLine), await readExpectedBuiltInGeneratorDescriptors(skillRoot));
 }
 
-async function verifyInstalledFileDependencyGenerator(
+async function verifyInstalledJsModuleDependencyGenerator(
   skillRoot: string,
   scopePath: string,
   environment: NodeJS.ProcessEnv,
@@ -403,7 +403,7 @@ async function verifyInstalledFileDependencyGenerator(
   );
   await writeFixtureFile(scopePath, "node_modules/installed-package/feature.js", "export default true;\n");
 
-  const scriptPath = join(skillRoot, "diagram-generators", "file-dependency-graph", "generate.js");
+  const scriptPath = join(skillRoot, "diagram-generators", "js-module-dependency-graph", "generate.js");
   const result = await runInstalledScript(
     scriptPath,
     ["--scope", scopePath, "--ts-config", "tsconfig.json", "src"],
@@ -412,7 +412,7 @@ async function verifyInstalledFileDependencyGenerator(
   );
   assertSuccessfulCompletion(result, scriptPath);
   const outputLine = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
-  assert.ok(outputLine, "Installed file dependency generator must print one JSON line.");
+  assert.ok(outputLine, "Installed JavaScript module dependency generator must print one JSON line.");
   const output = JSON.parse(outputLine) as Readonly<{ graphPath?: unknown }>;
   assert.equal(typeof output.graphPath, "string");
   assert.ok(isAbsolute(output.graphPath as string));
@@ -521,7 +521,7 @@ try {
 
   const environment = createInstalledEnvironment(skillRoot, homeDirectory, spawnGuardReadyPath, openerMarkerPath);
   await verifyInstalledGeneratorEntry(skillRoot, scopePath, environment);
-  await verifyInstalledFileDependencyGenerator(skillRoot, scopePath, environment);
+  await verifyInstalledJsModuleDependencyGenerator(skillRoot, scopePath, environment);
   await verifyInstalledAnnotationEntry(skillRoot, scopePath, environment);
   await verifyInstalledValidationEntry(skillRoot, scopePath, environment);
   serverProcess = startInstalledServer(skillRoot, scopePath, environment, spawnGuardPath);

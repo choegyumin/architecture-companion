@@ -1,17 +1,17 @@
 import { parseArgs } from "node:util";
 
-import type { FileDependencyGraphOptions } from "@/features/file-dependency-graph/file-dependency-graph";
+import type { JsModuleDependencyGraphOptions } from "@/features/js-module-dependency-graph/js-module-dependency-graph";
 
-export type GenerateFileDependencyGraphCommandEnvironment = Readonly<{
-  writeGraph: (options: FileDependencyGraphOptions) => Promise<string>;
+export type GenerateJsModuleDependencyGraphCommandEnvironment = Readonly<{
+  writeGraph: (options: JsModuleDependencyGraphOptions) => Promise<string>;
   writeStdout: (output: string) => void;
 }>;
 
 const usage = "Usage: node generate.js --scope <scope> [--ts-config <path>] [--exclude <glob> ...] <source-path>...";
 
-export async function executeGenerateFileDependencyGraphCommand(
+export async function executeGenerateJsModuleDependencyGraphCommand(
   args: readonly string[],
-  environment: GenerateFileDependencyGraphCommandEnvironment,
+  environment: GenerateJsModuleDependencyGraphCommandEnvironment,
 ): Promise<void> {
   const { positionals, values } = parseArgs({
     args: [...args],

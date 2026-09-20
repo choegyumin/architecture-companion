@@ -166,16 +166,16 @@ describe("diagram generator discovery command", () => {
 
       expect(JSON.parse(outputs.at(0) as string)).toEqual([
         {
-          id: "file-dependency-graph",
-          description: expect.any(String),
-          source: "built-in",
-          path: resolve(builtInRoot, "file-dependency-graph"),
-        },
-        {
           id: "freeform",
           description: expect.any(String),
           source: "built-in",
           path: resolve(builtInRoot, "freeform"),
+        },
+        {
+          id: "js-module-dependency-graph",
+          description: expect.any(String),
+          source: "built-in",
+          path: resolve(builtInRoot, "js-module-dependency-graph"),
         },
       ]);
     } finally {

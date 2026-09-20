@@ -9,7 +9,7 @@ import micromatch from "micromatch";
 
 import { type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
 
-export type FileDependencyGraphOptions = Readonly<{
+export type JsModuleDependencyGraphOptions = Readonly<{
   scopePath: string;
   sourcePaths: readonly string[];
   exclude?: readonly string[];
@@ -608,7 +608,7 @@ async function buildGraph(
   });
 }
 
-export async function generateFileDependencyGraph(options: FileDependencyGraphOptions): Promise<DiagramGraph> {
+export async function generateJsModuleDependencyGraph(options: JsModuleDependencyGraphOptions): Promise<DiagramGraph> {
   const scopePath = await resolveScopePath(options.scopePath);
   const excludeGlobs = [...defaultExcludeGlobs, ...(options.exclude ?? [])];
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
@@ -626,9 +626,9 @@ export async function generateFileDependencyGraph(options: FileDependencyGraphOp
   return buildGraph(scopePath, discoveredSources, modules);
 }
 
-export async function writeFileDependencyGraph(options: FileDependencyGraphOptions): Promise<string> {
-  const graph = await generateFileDependencyGraph(options);
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "architecture-companion-file-dependency-graph-"));
+export async function writeJsModuleDependencyGraph(options: JsModuleDependencyGraphOptions): Promise<string> {
+  const graph = await generateJsModuleDependencyGraph(options);
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "architecture-companion-js-module-dependency-graph-"));
   const graphPath = join(temporaryDirectory, "graph.json");
   await writeFile(graphPath, `${JSON.stringify(graph, null, 2)}\n`);
   return graphPath;

@@ -1,7 +1,7 @@
 {
   "id": "dependency-graph",
-  "title": "File dependency graph",
-  "generatorId": "file-dependency-graph",
+  "title": "JavaScript module dependency graph",
+  "generatorId": "js-module-dependency-graph",
   "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/generate.js\" \\\n  --scope \".\" \\\n  --ts-config \"tsconfig.json\" \\\n  \"src\"",
   "layout": {
     "id": "elk-layered",
@@ -64,8 +64,8 @@
         "parentId": "group:directory:src/features/diagram"
       },
       {
-        "id": "group:directory:src/features/file-dependency-graph",
-        "title": "file-dependency-graph",
+        "id": "group:directory:src/features/js-module-dependency-graph",
+        "title": "js-module-dependency-graph",
         "parentId": "group:directory:src/features"
       },
       {
@@ -220,26 +220,26 @@
         "type": "default"
       },
       {
-        "id": "file:src/cli/generate-file-dependency-graph.command.ts",
-        "title": "generate-file-dependency-graph.command.ts",
+        "id": "file:src/cli/generate-js-module-dependency-graph.command.ts",
+        "title": "generate-js-module-dependency-graph.command.ts",
         "groupId": "group:directory:src/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/cli/generate-file-dependency-graph.command.ts"
+            "href": "source:///src/cli/generate-js-module-dependency-graph.command.ts"
           }
         ]
       },
       {
-        "id": "file:src/cli/generate-file-dependency-graph.ts",
-        "title": "generate-file-dependency-graph.ts",
+        "id": "file:src/cli/generate-js-module-dependency-graph.ts",
+        "title": "generate-js-module-dependency-graph.ts",
         "groupId": "group:directory:src/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/cli/generate-file-dependency-graph.ts"
+            "href": "source:///src/cli/generate-js-module-dependency-graph.ts"
           }
         ]
       },
@@ -664,14 +664,14 @@
         ]
       },
       {
-        "id": "file:src/features/file-dependency-graph/file-dependency-graph.ts",
-        "title": "file-dependency-graph.ts",
-        "groupId": "group:directory:src/features/file-dependency-graph",
+        "id": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts",
+        "title": "js-module-dependency-graph.ts",
+        "groupId": "group:directory:src/features/js-module-dependency-graph",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/features/file-dependency-graph/file-dependency-graph.ts"
+            "href": "source:///src/features/js-module-dependency-graph/js-module-dependency-graph.ts"
           }
         ]
       },
@@ -1230,23 +1230,23 @@
     ],
     "edges": [
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-file-dependency-graph.command.ts:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-js-module-dependency-graph.command.ts:file%3Asrc%2Ffeatures%2Fjs-module-dependency-graph%2Fjs-module-dependency-graph.ts:type-only",
         "type": "default",
-        "source": "file:src/cli/generate-file-dependency-graph.command.ts",
-        "target": "file:src/features/file-dependency-graph/file-dependency-graph.ts",
+        "source": "file:src/cli/generate-js-module-dependency-graph.command.ts",
+        "target": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-file-dependency-graph.ts:file%3Asrc%2Fcli%2Fgenerate-file-dependency-graph.command.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-js-module-dependency-graph.ts:file%3Asrc%2Fcli%2Fgenerate-js-module-dependency-graph.command.ts:runtime",
         "type": "default",
-        "source": "file:src/cli/generate-file-dependency-graph.ts",
-        "target": "file:src/cli/generate-file-dependency-graph.command.ts"
+        "source": "file:src/cli/generate-js-module-dependency-graph.ts",
+        "target": "file:src/cli/generate-js-module-dependency-graph.command.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-file-dependency-graph.ts:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fgenerate-js-module-dependency-graph.ts:file%3Asrc%2Ffeatures%2Fjs-module-dependency-graph%2Fjs-module-dependency-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/cli/generate-file-dependency-graph.ts",
-        "target": "file:src/features/file-dependency-graph/file-dependency-graph.ts"
+        "source": "file:src/cli/generate-js-module-dependency-graph.ts",
+        "target": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
@@ -2106,21 +2106,21 @@
         "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:external%3Adependency-cruiser:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fjs-module-dependency-graph%2Fjs-module-dependency-graph.ts:external%3Adependency-cruiser:runtime",
         "type": "default",
-        "source": "file:src/features/file-dependency-graph/file-dependency-graph.ts",
+        "source": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts",
         "target": "external:dependency-cruiser"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:external%3Amicromatch:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fjs-module-dependency-graph%2Fjs-module-dependency-graph.ts:external%3Amicromatch:runtime",
         "type": "default",
-        "source": "file:src/features/file-dependency-graph/file-dependency-graph.ts",
+        "source": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts",
         "target": "external:micromatch"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Ffile-dependency-graph%2Ffile-dependency-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fjs-module-dependency-graph%2Fjs-module-dependency-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/features/file-dependency-graph/file-dependency-graph.ts",
+        "source": "file:src/features/js-module-dependency-graph/js-module-dependency-graph.ts",
         "target": "file:src/features/diagram/diagram-graph.ts"
       },
       {
