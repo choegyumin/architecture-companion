@@ -2,6 +2,7 @@
   "id": "component-structure",
   "title": "Component structure",
   "generatorId": "react-component-structure",
+  "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identity external:@base-ui/react#* and preserve existing graph element IDs when merging.",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -299,42 +300,6 @@
       },
       {
         "type": "default",
-        "id": "external:@base-ui/react#Button",
-        "title": "Button",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:@base-ui/react#Tabs.List",
-        "title": "Tabs.List",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:@base-ui/react#Tabs.Panel",
-        "title": "Tabs.Panel",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:@base-ui/react#Tabs.Root",
-        "title": "Tabs.Root",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:@base-ui/react#Tabs.Tab",
-        "title": "Tabs.Tab",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
-        "id": "external:@base-ui/react#Toggle",
-        "title": "Toggle",
-        "description": "@base-ui/react boundary"
-      },
-      {
-        "type": "default",
         "id": "external:@xyflow/react#Background",
         "title": "Background",
         "description": "@xyflow/react boundary"
@@ -409,6 +374,14 @@
     "edges": [
       {
         "type": "default",
+        "id": "cmp-e08",
+        "source": "cmp-base-overlay",
+        "target": "cmp-annotation-layer",
+        "kind": "RENDER (children)",
+        "label": "from DiagramRendererContent"
+      },
+      {
+        "type": "default",
         "id": "edge:00c8650c385175f9",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
@@ -448,23 +421,17 @@
       },
       {
         "type": "default",
-        "id": "edge:1ace24e13428df74",
-        "source": "component:src/shared/react-ui/button.tsx#Button",
-        "target": "external:@base-ui/react#Button",
-        "kind": "direct-render"
+        "id": "edge:1a6150dfbd550b5b",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "component:src/shared/react-ui/empty.tsx#Empty",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
-        "id": "edge:1e508198b7da1135",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "target": "external:@base-ui/react#Tabs.List",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:28c73f5ad942c972",
-        "source": "external:@base-ui/react#Tabs.Root",
-        "target": "cmp-workspace-shell",
+        "id": "edge:1ef26ab03fed13b9",
+        "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "target": "external:lucide-react#MessageSquarePlus",
         "kind": "NODE (children)",
         "label": "from WorkspacePage"
       },
@@ -484,6 +451,14 @@
       },
       {
         "type": "default",
+        "id": "edge:2a4926f2250b6d13",
+        "source": "component:src/shared/react-ui/tabs.tsx#Tabs",
+        "target": "cmp-workspace-shell",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
         "id": "edge:2aaf33424abb7979",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-message-edge",
@@ -492,35 +467,11 @@
       },
       {
         "type": "default",
-        "id": "edge:2d3438944c89fb16",
-        "source": "external:@base-ui/react#Toggle",
-        "target": "external:lucide-react#MessageSquarePlus",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
-      },
-      {
-        "type": "default",
-        "id": "edge:2fb646a1b2e47547",
-        "source": "external:@base-ui/react#Tabs.List",
-        "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
-      },
-      {
-        "type": "default",
         "id": "edge:3130c691aefd02af",
         "source": "external:@xyflow/react#Controls",
         "target": "external:@xyflow/react#ControlButton",
         "kind": "NODE (children)",
         "label": "from DiagramCanvas"
-      },
-      {
-        "type": "default",
-        "id": "edge:3d5eb0413d1e2567",
-        "source": "external:@base-ui/react#Tabs.Panel",
-        "target": "cmp-diagram-renderer",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
       },
       {
         "type": "default",
@@ -585,24 +536,17 @@
       },
       {
         "type": "default",
+        "id": "edge:5e04e6cb2a266383",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
         "id": "edge:63ed758cd3c032d7",
         "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
         "target": "component:src/shared/react-ui/button.tsx#Button",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:697c03368db0bf6c",
-        "source": "external:@base-ui/react#Button",
-        "target": "external:lucide-react#ExternalLink",
-        "kind": "NODE (children)",
-        "label": "from CardNode, LifelineNode"
-      },
-      {
-        "type": "default",
-        "id": "edge:6bdc062ce1ef0e33",
-        "source": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "target": "external:@base-ui/react#Toggle",
         "kind": "direct-render"
       },
       {
@@ -615,10 +559,19 @@
       },
       {
         "type": "default",
-        "id": "edge:7478ccb0b882c093",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "target": "external:@base-ui/react#Tabs.Tab",
-        "kind": "direct-render"
+        "id": "edge:77a29b8be7bad746",
+        "source": "component:src/shared/react-ui/button.tsx#Button",
+        "target": "external:lucide-react#ExternalLink",
+        "kind": "NODE (children)",
+        "label": "from CardNode, LifelineNode"
+      },
+      {
+        "type": "default",
+        "id": "edge:7868e57b4694d57e",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "cmp-diagram-list",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
@@ -652,20 +605,6 @@
       },
       {
         "type": "default",
-        "id": "edge:95a78290cab78567",
-        "source": "component:src/shared/react-ui/tabs.tsx#Tabs",
-        "target": "external:@base-ui/react#Tabs.Root",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:9665a62724b477a5",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
-        "target": "external:@base-ui/react#Tabs.Panel",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
         "id": "edge:9d882f8de2de5e0f",
         "source": "cmp-card-node",
         "target": "external:@xyflow/react#Handle",
@@ -673,11 +612,11 @@
       },
       {
         "type": "default",
-        "id": "cmp-e08",
-        "source": "cmp-base-overlay",
-        "target": "cmp-annotation-layer",
-        "kind": "RENDER (children)",
-        "label": "from DiagramRendererContent"
+        "id": "edge:a1356542ff2147a3",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent",
+        "target": "cmp-diagram-renderer",
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
@@ -739,14 +678,6 @@
       },
       {
         "type": "default",
-        "id": "edge:eb4f646dcc8e13a9",
-        "source": "external:@base-ui/react#Tabs.Panel",
-        "target": "cmp-diagram-list",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
-      },
-      {
-        "type": "default",
         "id": "edge:f0758c6cf6625543",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent",
@@ -767,14 +698,6 @@
         "source": "cmp-diagram-canvas",
         "target": "external:@xyflow/react#ReactFlow",
         "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:f7fc2fe87cbc13bb",
-        "source": "external:@base-ui/react#Tabs.Panel",
-        "target": "component:src/shared/react-ui/empty.tsx#Empty",
-        "kind": "NODE (children)",
-        "label": "from WorkspacePage"
       },
       {
         "type": "default",
