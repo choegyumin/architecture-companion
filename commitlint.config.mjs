@@ -29,7 +29,7 @@ const config = {
         "plugins", // `src/plugins/`
         "server", // `src/server/`
         "shared", // `src/shared/`
-        "artifacts", // `.architecture-companion/` (Dogfooding), `SKILL.md`, `references/`
+        "artifacts", // `.architecture-companion/` (Dogfooding), `skills/architecture-companion/`
         "notes", // Changes to documentation (examples: `README.md`, `.agents/skills/`)
         "build", // Changes that affect the build system (examples: `vite.config.ts`, `scripts/`)
         "ci", // Changes to our CI configuration files and scripts (examples: GitHub Actions)
