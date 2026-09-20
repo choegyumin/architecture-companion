@@ -193,7 +193,9 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
       `${installedGeneratorPath} must contain only its distributable resources.`,
     );
     await assertCopiedVerbatim(sourceManifestPath, join(installedGeneratorPath, "GENERATOR.md"));
-    if (expectedEntries.includes("generate.js")) await readRequiredText(join(installedGeneratorPath, "generate.js"));
+    if (expectedEntries.some((entry) => entry === "generate.js")) {
+      await readRequiredText(join(installedGeneratorPath, "generate.js"));
+    }
   }
 }
 
