@@ -363,8 +363,8 @@ function defaultExportName(sourceFile: ts.SourceFile): string {
   return name || "DefaultExport";
 }
 
-function createComponentId(relativePath: string, name: string): string {
-  return `component:${relativePath}#${name}`;
+function createComponentId(relativePath: string, identityName: string): string {
+  return `component:${relativePath}#${identityName}`;
 }
 
 function collectComponentDefinitions(
@@ -373,6 +373,7 @@ function collectComponentDefinitions(
   checker: ts.TypeChecker,
 ): readonly ComponentDefinition[] {
   const definitions: ComponentDefinition[] = [];
+  const definitionIds = new Set<string>();
 
   function addDefinition(
     sourceFile: ts.SourceFile,
@@ -383,12 +384,16 @@ function collectComponentDefinitions(
     renderRoots: readonly ts.Expression[],
     body: ts.ConciseBody | undefined,
     classComponent: boolean,
+    identityName = name,
   ): void {
     if (!isComponentName(name)) return;
     if (renderRoots.length === 0 || !renderRoots.some((root) => containsReactOutput(root, checker))) return;
     const relativePath = toPosixPath(relative(scopePath, sourceFile.fileName));
+    const id = createComponentId(relativePath, identityName);
+    if (definitionIds.has(id)) throw new Error(`Duplicate React component identity: ${id}`);
+    definitionIds.add(id);
     definitions.push({
-      id: createComponentId(relativePath, name),
+      id,
       name,
       filePath: sourceFile.fileName,
       relativePath,
@@ -476,6 +481,7 @@ function collectComponentDefinitions(
           collectReturnExpressions(functionLike.body),
           functionLike.body,
           false,
+          "default",
         );
       }
     }

@@ -915,6 +915,84 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("keeps an anonymous default expression distinct from a same-named component", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import DefaultButton, { Button } from "./button";
+          export function App() { return <><DefaultButton /><Button /></>; }
+        `,
+        "src/button.tsx": `
+          import { Panel } from "./panel";
+          export function Button() { return <button />; }
+          export default () => <Panel />;
+        `,
+        "src/panel.tsx": `export function Panel() { return <section />; }`,
+      },
+      async (scopePath) => {
+        const first = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const second = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const appId = "component:src/app.tsx#App";
+        const defaultButtonId = "component:src/button.tsx#default";
+        const namedButtonId = "component:src/button.tsx#Button";
+        const panelId = "component:src/panel.tsx#Panel";
+
+        expect(second).toEqual(first);
+        expect(first.nodes.map(({ id }) => id)).toEqual([appId, namedButtonId, defaultButtonId, panelId]);
+        expect(first.nodes.filter(({ title }) => title === "Button")).toHaveLength(2);
+        expect(
+          first.edges
+            .map(({ source, target }) => ({ source, target }))
+            .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+        ).toEqual(
+          [
+            { source: appId, target: defaultButtonId },
+            { source: appId, target: namedButtonId },
+            { source: defaultButtonId, target: panelId },
+          ].toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+        );
+      },
+    );
+  });
+
+  it("filters an anonymous default expression by its stable identity only", async () => {
+    await withFixture(
+      {
+        "src/button.tsx": `
+          export function Button() { return <button />; }
+          export default () => <div />;
+        `,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["component:src/button.tsx#default"],
+        });
+
+        expect(graph.nodes).toEqual([
+          expect.objectContaining({ id: "component:src/button.tsx#Button", title: "Button" }),
+        ]);
+      },
+    );
+  });
+
+  it("rejects duplicate local component identities", async () => {
+    await withFixture(
+      {
+        "src/card.tsx": `
+          export const Card = () => <article />;
+          export const Card = () => <section />;
+        `,
+      },
+      async (scopePath) => {
+        await expect(generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+          "Duplicate React component identity: component:src/card.tsx#Card",
+        );
+      },
+    );
+  });
+
   it("follows shorthand and quoted createElement props to the final renderer", async () => {
     await withFixture(
       {

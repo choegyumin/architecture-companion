@@ -62,7 +62,7 @@ Successful execution creates an untracked operating-system temporary directory a
 }
 ```
 
-React component nodes omit `kind` because every node in this graph has the same category. External boundaries remain identifiable through their package-boundary descriptions.
+React component nodes omit `kind` because every node in this graph has the same category. External boundaries remain identifiable through their package-boundary descriptions. Named local components use `component:<scope-relative-file>#<name>` identities. Anonymous default expressions use the independent `#default` identity while retaining a file-derived display title.
 
 It never writes an Architecture Companion artifact. Read the existing diagram files first, read this temporary graph, then decide how to preserve or revise the existing diagram. Preserve unrelated diagrams and stable IDs for unchanged concepts. Set `generatorId` to `react-component-structure` when this generator is used to create or regenerate a diagram, then validate the complete artifact through the Architecture Companion validation flow.
 
