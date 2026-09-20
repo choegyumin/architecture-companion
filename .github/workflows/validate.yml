@@ -1,8 +1,14 @@
-name: Validate pull request
+name: Validate
 
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,3 +36,13 @@ jobs:
             "pnpm type-check" \
             "pnpm test" \
             "pnpm build"
+      - name: Check generated skill files
+        run: |
+          changes="$(git status --porcelain --untracked-files=all -- \
+            skills/architecture-companion/schemas \
+            skills/architecture-companion/runtime)"
+          if [ -n "$changes" ]; then
+            printf '%s\n' 'Generated skill files are missing or stale. Run `pnpm build` and commit the result.'
+            printf '%s\n' "$changes"
+            exit 1
+          fi
