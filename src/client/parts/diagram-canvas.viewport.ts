@@ -5,7 +5,7 @@ import type { DiagramViewFramingOptions } from "@/features/diagram/diagram-spati
 export const DIAGRAM_MIN_ZOOM = 0.01;
 
 const ROOT_VIEWPORT_PADDING = 24;
-const FIT_VIEW_OPTIONS = { maxZoom: 1, minZoom: DIAGRAM_MIN_ZOOM, padding: `${ROOT_VIEWPORT_PADDING}px` } as const;
+const FIT_VIEW_OPTIONS = { minZoom: DIAGRAM_MIN_ZOOM, maxZoom: 1, padding: `${ROOT_VIEWPORT_PADDING}px` } as const;
 
 function getOverflowingAxisOffset(start: number, end: number, viewportSize: number): number {
   const availableSize = viewportSize - ROOT_VIEWPORT_PADDING * 2;

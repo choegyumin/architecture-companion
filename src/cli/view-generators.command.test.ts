@@ -150,7 +150,7 @@ describe("diagram generator discovery command", () => {
     }
   });
 
-  it("discovers the built-in generators from the source root", async () => {
+  it("discovers the generators from the source built-in root", async () => {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-generators-"));
     const scopePath = join(temporaryRoot, "scope");
     const builtInRoot = resolve("src/plugins/diagram-generators");
@@ -170,6 +170,12 @@ describe("diagram generator discovery command", () => {
           description: expect.any(String),
           source: "built-in",
           path: resolve(builtInRoot, "freeform"),
+        },
+        {
+          id: "js-module-dependency-graph",
+          description: expect.any(String),
+          source: "built-in",
+          path: resolve(builtInRoot, "js-module-dependency-graph"),
         },
         {
           id: "react-component-structure",

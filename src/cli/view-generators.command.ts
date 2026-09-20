@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import type { DiagramGeneratorId } from "@/features/diagram-generator/diagram-generator-id";
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { isMissingPathError } from "@/shared/node/path";
 
 export type DiagramGeneratorSource = "built-in" | "global" | "project";
 
@@ -42,10 +43,6 @@ function compareGenerators(left: DiagramGeneratorDescriptor, right: DiagramGener
   return compareText(left.path, right.path);
 }
 
-function isMissingPath(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
-}
-
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
@@ -59,7 +56,7 @@ async function readGenerator(
   try {
     await lstat(manifestPath);
   } catch (error) {
-    if (isMissingPath(error)) return null;
+    if (isMissingPathError(error)) return null;
     throw new Error(`Failed to inspect diagram generator manifest at ${manifestPath}: ${errorMessage(error)}`, {
       cause: error,
     });
@@ -84,7 +81,7 @@ async function listGeneratorRoot(
   try {
     entries = await readdir(rootPath, { withFileTypes: true });
   } catch (error) {
-    if (isMissingPath(error)) return [];
+    if (isMissingPathError(error)) return [];
     throw new Error(`Failed to read diagram generator root at ${rootPath}: ${errorMessage(error)}`, { cause: error });
   }
 

@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { readdir, realpath, stat } from "node:fs/promises";
-import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, extname, isAbsolute, join, relative, resolve } from "node:path";
 
 import micromatch from "micromatch";
 import ts from "typescript";
 
 import type { DefaultDiagramEdge, DefaultDiagramNode, DiagramGraph } from "@/features/diagram/diagram-graph";
+import { isPathInside, toPosixPath } from "@/shared/node/path";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
@@ -139,15 +140,6 @@ type AnalysisContext = Readonly<{
   directUseIdsByOwner: Map<string, string[]>;
   analyzedUseIds: Set<string>;
 }>;
-
-function toPosixPath(path: string): string {
-  return path.split(sep).join("/");
-}
-
-function isPathInside(parentPath: string, candidatePath: string): boolean {
-  const childPath = relative(parentPath, candidatePath);
-  return childPath === "" || (childPath !== ".." && !childPath.startsWith(`..${sep}`) && !isAbsolute(childPath));
-}
 
 function matchesAny(value: string, patterns: readonly string[]): boolean {
   return patterns.length > 0 && micromatch.isMatch(value, patterns, { dot: true });
