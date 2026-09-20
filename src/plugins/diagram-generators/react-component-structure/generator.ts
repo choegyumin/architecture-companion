@@ -678,7 +678,8 @@ function externalSymbolOrigin(symbol: ts.Symbol, checker: ts.TypeChecker): Exter
 
   for (const candidate of chain) {
     const binding = moduleBinding(candidate);
-    const packageName = binding ? externalPackageName(binding.moduleSpecifier) : undefined;
+    if (!binding) continue;
+    const packageName = externalPackageName(binding.moduleSpecifier);
     if (packageName) {
       return { packageName, importedName: binding.importedName, symbol: externalSymbol };
     }
