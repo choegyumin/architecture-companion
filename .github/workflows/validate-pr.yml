@@ -23,10 +23,40 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run validation checks
         run: |
+          mkdir -p "$RUNNER_TEMP/validation-results"
+
+          cat > "$RUNNER_TEMP/run-validation-check" <<'SCRIPT'
+          #!/usr/bin/env bash
+          name="$1"
+          shift
+          "$@"
+          status=$?
+          printf '%s\n' "$status" > "$RUNNER_TEMP/validation-results/$name"
+          exit "$status"
+          SCRIPT
+
           pnpm exec concurrently \
             --names format,lint,type-check,test,build \
-            "pnpm format:check" \
-            "pnpm lint" \
-            "pnpm type-check" \
-            "pnpm test" \
-            "pnpm build"
+            "bash \"$RUNNER_TEMP/run-validation-check\" format pnpm format:check" \
+            "bash \"$RUNNER_TEMP/run-validation-check\" lint pnpm lint" \
+            "bash \"$RUNNER_TEMP/run-validation-check\" type-check pnpm type-check" \
+            "bash \"$RUNNER_TEMP/run-validation-check\" test pnpm test" \
+            "bash \"$RUNNER_TEMP/run-validation-check\" build pnpm build"
+      - name: Write validation summary
+        if: always()
+        run: |
+          printf '## Validation results\n\n' >> "$GITHUB_STEP_SUMMARY"
+          printf '| Check | Result |\n' >> "$GITHUB_STEP_SUMMARY"
+          printf '| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+
+          for check in "Format:format" "Lint:lint" "Type check:type-check" "Test:test" "Build:build"; do
+            label="${check%%:*}"
+            name="${check#*:}"
+            status=$(<"$RUNNER_TEMP/validation-results/$name")
+            if [ "$status" -eq 0 ]; then
+              result=PASS
+            else
+              result="FAIL (exit $status)"
+            fi
+            printf '| %s | %s |\n' "$label" "$result" >> "$GITHUB_STEP_SUMMARY"
+          done
