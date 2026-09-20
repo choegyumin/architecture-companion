@@ -44,6 +44,10 @@ const copiedProjections = [
   { source: join(packageRoot, "references"), destination: "references" },
 ] as const;
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
+const expectedBuiltInGeneratorEntries = {
+  freeform: ["GENERATOR.md"],
+  "js-module-dependency-graph": ["GENERATOR.md", "generate.js"],
+} as const;
 
 type CompletedProcess = Readonly<{
   exitCode: number | null;
@@ -163,14 +167,40 @@ async function assertCopiedVerbatim(sourcePath: string, destinationPath: string)
 
 async function verifyGeneratorResources(rootPath: string): Promise<void> {
   const sourceEntries = await readdir(sourceGeneratorsRoot, { withFileTypes: true });
+  const sourceGeneratorNames = sourceEntries
+    .filter((entry) => entry.isDirectory())
+    .map(({ name }) => name)
+    .toSorted();
+  const expectedGeneratorNames = Object.keys(expectedBuiltInGeneratorEntries).toSorted();
+  assert.deepEqual(
+    sourceGeneratorNames,
+    expectedGeneratorNames,
+    "Built-in generator source directories must be explicit.",
+  );
 
-  for (const entry of sourceEntries.filter((candidate) => candidate.isDirectory())) {
-    const sourceManifestPath = join(sourceGeneratorsRoot, entry.name, "GENERATOR.md");
-    if (!(await pathExists(sourceManifestPath))) continue;
-    await assertCopiedVerbatim(sourceManifestPath, join(rootPath, "diagram-generators", entry.name, "GENERATOR.md"));
+  const installedGeneratorsRoot = join(rootPath, "diagram-generators");
+  const installedEntries = await readdir(installedGeneratorsRoot, { withFileTypes: true });
+  assert.ok(
+    installedEntries.every((entry) => entry.isDirectory()),
+    "Installed generator entries must be directories.",
+  );
+  assert.deepEqual(
+    installedEntries.map(({ name }) => name).toSorted(),
+    expectedGeneratorNames,
+    "Installed generator directories must match the built-in source generators.",
+  );
+
+  for (const [generatorName, expectedEntries] of Object.entries(expectedBuiltInGeneratorEntries)) {
+    const sourceManifestPath = join(sourceGeneratorsRoot, generatorName, "GENERATOR.md");
+    const installedGeneratorPath = join(installedGeneratorsRoot, generatorName);
+    assert.deepEqual(
+      (await readdir(installedGeneratorPath)).toSorted(),
+      [...expectedEntries].toSorted(),
+      `${installedGeneratorPath} must contain only its distributable resources.`,
+    );
+    await assertCopiedVerbatim(sourceManifestPath, join(installedGeneratorPath, "GENERATOR.md"));
+    if (expectedEntries.includes("generate.js")) await readRequiredText(join(installedGeneratorPath, "generate.js"));
   }
-
-  await readRequiredText(join(rootPath, "diagram-generators", "js-module-dependency-graph", "generate.js"));
 }
 
 async function verifyDistributionResources(rootPath: string): Promise<void> {
