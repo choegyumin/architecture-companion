@@ -14,7 +14,6 @@
       {
         "type": "default",
         "id": "cmp-workspace-page",
-        "kind": "React component",
         "title": "WorkspacePage",
         "description": "src/client/pages/workspace-page.tsx",
         "links": [
@@ -26,7 +25,6 @@
       {
         "type": "default",
         "id": "cmp-workspace-shell",
-        "kind": "React component",
         "title": "WorkspaceShell",
         "description": "src/client/pages/workspace-page.tsx",
         "links": [
@@ -38,7 +36,6 @@
       {
         "type": "default",
         "id": "cmp-annotation-layer",
-        "kind": "React component",
         "title": "AnnotationLayer",
         "description": "src/client/parts/annotation-layer.tsx",
         "links": [
@@ -50,7 +47,6 @@
       {
         "type": "default",
         "id": "cmp-diagram-canvas",
-        "kind": "React component",
         "title": "DiagramCanvas",
         "description": "src/client/parts/diagram-canvas.tsx",
         "links": [
@@ -62,7 +58,6 @@
       {
         "type": "default",
         "id": "cmp-diagram-list",
-        "kind": "React component",
         "title": "DiagramList",
         "description": "src/client/parts/diagram-list.tsx",
         "links": [
@@ -74,7 +69,6 @@
       {
         "type": "default",
         "id": "cmp-diagram-links-panel",
-        "kind": "React component",
         "title": "DiagramLinksPanel",
         "description": "src/client/widgets/diagram-links-panel.tsx",
         "links": [
@@ -86,7 +80,6 @@
       {
         "type": "default",
         "id": "cmp-diagram-renderer",
-        "kind": "React component",
         "title": "DiagramRenderer",
         "description": "src/client/widgets/diagram-renderer.tsx",
         "links": [
@@ -98,7 +91,6 @@
       {
         "type": "default",
         "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
-        "kind": "React component",
         "title": "DiagramRendererContent",
         "description": "src/client/widgets/diagram-renderer.tsx",
         "links": [
@@ -110,7 +102,6 @@
       {
         "type": "default",
         "id": "cmp-base-edge-label",
-        "kind": "React component",
         "title": "BaseEdgeLabel",
         "description": "src/shared/react-flow/base-edge-label.tsx",
         "links": [
@@ -122,7 +113,6 @@
       {
         "type": "default",
         "id": "cmp-base-overlay",
-        "kind": "React component",
         "title": "BaseOverlayPanel",
         "description": "src/shared/react-flow/base-overlay-panel.tsx",
         "links": [
@@ -134,7 +124,6 @@
       {
         "type": "default",
         "id": "cmp-card-node",
-        "kind": "React component",
         "title": "CardNode",
         "description": "src/shared/react-flow/card-node.tsx",
         "links": [
@@ -146,7 +135,6 @@
       {
         "type": "default",
         "id": "cmp-fragment-node",
-        "kind": "React component",
         "title": "FragmentNode",
         "description": "src/shared/react-flow/fragment-node.tsx",
         "links": [
@@ -158,7 +146,6 @@
       {
         "type": "default",
         "id": "cmp-labeled-group-node",
-        "kind": "React component",
         "title": "LabeledGroupNode",
         "description": "src/shared/react-flow/labeled-group-node.tsx",
         "links": [
@@ -170,7 +157,6 @@
       {
         "type": "default",
         "id": "cmp-lifeline-node",
-        "kind": "React component",
         "title": "LifelineNode",
         "description": "src/shared/react-flow/lifeline-node.tsx",
         "links": [
@@ -182,7 +168,6 @@
       {
         "type": "default",
         "id": "cmp-message-edge",
-        "kind": "React component",
         "title": "MessageEdge",
         "description": "src/shared/react-flow/message-edge.tsx",
         "links": [
@@ -194,7 +179,6 @@
       {
         "type": "default",
         "id": "cmp-polyline-edge",
-        "kind": "React component",
         "title": "PolylineEdge",
         "description": "src/shared/react-flow/polyline-edge.tsx",
         "links": [
@@ -206,7 +190,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/button.tsx#Button",
-        "kind": "React component",
         "title": "Button",
         "description": "src/shared/react-ui/button.tsx",
         "links": [
@@ -218,7 +201,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/card.tsx#Card",
-        "kind": "React component",
         "title": "Card",
         "description": "src/shared/react-ui/card.tsx",
         "links": [
@@ -230,7 +212,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#Empty",
-        "kind": "React component",
         "title": "Empty",
         "description": "src/shared/react-ui/empty.tsx",
         "links": [
@@ -242,7 +223,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/form.tsx#Form",
-        "kind": "React component",
         "title": "Form",
         "description": "src/shared/react-ui/form.tsx",
         "links": [
@@ -254,7 +234,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#Tabs",
-        "kind": "React component",
         "title": "Tabs",
         "description": "src/shared/react-ui/tabs.tsx",
         "links": [
@@ -266,7 +245,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#TabsContent",
-        "kind": "React component",
         "title": "TabsContent",
         "description": "src/shared/react-ui/tabs.tsx",
         "links": [
@@ -278,7 +256,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "kind": "React component",
         "title": "TabsList",
         "description": "src/shared/react-ui/tabs.tsx",
         "links": [
@@ -290,7 +267,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "kind": "React component",
         "title": "TabsTrigger",
         "description": "src/shared/react-ui/tabs.tsx",
         "links": [
@@ -302,7 +278,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-        "kind": "React component",
         "title": "ThemeToggle",
         "description": "src/shared/react-ui/theme-toggle.tsx",
         "links": [
@@ -314,7 +289,6 @@
       {
         "type": "default",
         "id": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "kind": "React component",
         "title": "Toggle",
         "description": "src/shared/react-ui/toggle.tsx",
         "links": [
@@ -326,126 +300,108 @@
       {
         "type": "default",
         "id": "external:@base-ui/react#Button",
-        "kind": "External React component",
         "title": "Button",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@base-ui/react#Tabs.List",
-        "kind": "External React component",
         "title": "Tabs.List",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@base-ui/react#Tabs.Panel",
-        "kind": "External React component",
         "title": "Tabs.Panel",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@base-ui/react#Tabs.Root",
-        "kind": "External React component",
         "title": "Tabs.Root",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@base-ui/react#Tabs.Tab",
-        "kind": "External React component",
         "title": "Tabs.Tab",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@base-ui/react#Toggle",
-        "kind": "External React component",
         "title": "Toggle",
         "description": "@base-ui/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#Background",
-        "kind": "External React component",
         "title": "Background",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#BaseEdge",
-        "kind": "External React component",
         "title": "BaseEdge",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#ControlButton",
-        "kind": "External React component",
         "title": "ControlButton",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#Controls",
-        "kind": "External React component",
         "title": "Controls",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#EdgeLabelRenderer",
-        "kind": "External React component",
         "title": "EdgeLabelRenderer",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#Handle",
-        "kind": "External React component",
         "title": "Handle",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#Panel",
-        "kind": "External React component",
         "title": "Panel",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#ReactFlow",
-        "kind": "External React component",
         "title": "ReactFlow",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:@xyflow/react#ReactFlowProvider",
-        "kind": "External React component",
         "title": "ReactFlowProvider",
         "description": "@xyflow/react boundary"
       },
       {
         "type": "default",
         "id": "external:lucide-react#ExternalLink",
-        "kind": "External React component",
         "title": "ExternalLink",
         "description": "lucide-react boundary"
       },
       {
         "type": "default",
         "id": "external:lucide-react#Maximize",
-        "kind": "External React component",
         "title": "Maximize",
         "description": "lucide-react boundary"
       },
       {
         "type": "default",
         "id": "external:lucide-react#MessageSquarePlus",
-        "kind": "External React component",
         "title": "MessageSquarePlus",
         "description": "lucide-react boundary"
       }
@@ -456,16 +412,16 @@
         "id": "edge:00c8650c385175f9",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "kind": "node-prop",
-        "label": "Node prop · navigation"
+        "kind": "NODE (navigation)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:08d79761eeec9741",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "kind": "node-prop",
-        "label": "Node prop · actions"
+        "kind": "NODE (actions)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
@@ -479,16 +435,16 @@
         "id": "edge:12e3b6613c1792c3",
         "source": "external:@xyflow/react#ReactFlowProvider",
         "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRendererContent",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramRenderer"
       },
       {
         "type": "default",
         "id": "edge:1787ddb425783566",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-fragment-node",
-        "kind": "component-prop",
-        "label": "Component prop · nodeTypes"
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -509,8 +465,8 @@
         "id": "edge:28c73f5ad942c972",
         "source": "external:@base-ui/react#Tabs.Root",
         "target": "cmp-workspace-shell",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
@@ -531,56 +487,56 @@
         "id": "edge:2aaf33424abb7979",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-message-edge",
-        "kind": "component-prop",
-        "label": "Component prop · edgeTypes"
+        "kind": "COMPONENT (edgeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
         "id": "edge:2d3438944c89fb16",
         "source": "external:@base-ui/react#Toggle",
         "target": "external:lucide-react#MessageSquarePlus",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:2fb646a1b2e47547",
         "source": "external:@base-ui/react#Tabs.List",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:3130c691aefd02af",
         "source": "external:@xyflow/react#Controls",
         "target": "external:@xyflow/react#ControlButton",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
         "id": "edge:3d5eb0413d1e2567",
         "source": "external:@base-ui/react#Tabs.Panel",
         "target": "cmp-diagram-renderer",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:3e9b431e381689aa",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-diagram-links-panel",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramRendererContent"
       },
       {
         "type": "default",
         "id": "edge:4188d47db729f7b7",
         "source": "external:@xyflow/react#ControlButton",
         "target": "external:lucide-react#Maximize",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -594,16 +550,16 @@
         "id": "edge:4dd0b6db457f1e4b",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "external:@xyflow/react#Controls",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
         "id": "edge:4dd2e60bc8bad453",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-polyline-edge",
-        "kind": "component-prop",
-        "label": "Component prop · edgeTypes"
+        "kind": "COMPONENT (edgeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -617,8 +573,8 @@
         "id": "edge:596ff3c7acded20e",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-lifeline-node",
-        "kind": "component-prop",
-        "label": "Component prop · nodeTypes"
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -639,8 +595,8 @@
         "id": "edge:697c03368db0bf6c",
         "source": "external:@base-ui/react#Button",
         "target": "external:lucide-react#ExternalLink",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from CardNode, LifelineNode"
       },
       {
         "type": "default",
@@ -654,8 +610,8 @@
         "id": "edge:6bdff7a307692d3b",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-card-node",
-        "kind": "component-prop",
-        "label": "Component prop · nodeTypes"
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -676,8 +632,8 @@
         "id": "edge:89264d08c4aad65e",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-base-overlay",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramRendererContent"
       },
       {
         "type": "default",
@@ -691,8 +647,8 @@
         "id": "edge:94218d539464a34f",
         "source": "component:src/shared/react-ui/form.tsx#Form",
         "target": "component:src/shared/react-ui/card.tsx#Card",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from AnnotationLayer"
       },
       {
         "type": "default",
@@ -720,8 +676,8 @@
         "id": "cmp-e08",
         "source": "cmp-base-overlay",
         "target": "cmp-annotation-layer",
-        "kind": "render-prop",
-        "label": "Render prop · children"
+        "kind": "RENDER (children)",
+        "label": "from DiagramRendererContent"
       },
       {
         "type": "default",
@@ -749,8 +705,8 @@
         "id": "edge:b8f8e808ddb48449",
         "source": "external:@xyflow/react#EdgeLabelRenderer",
         "target": "cmp-base-edge-label",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from MessageEdge, PolylineEdge"
       },
       {
         "type": "default",
@@ -778,32 +734,32 @@
         "id": "edge:e87d0d70334104f6",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "cmp-labeled-group-node",
-        "kind": "component-prop",
-        "label": "Component prop · nodeTypes"
+        "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
         "id": "edge:eb4f646dcc8e13a9",
         "source": "external:@base-ui/react#Tabs.Panel",
         "target": "cmp-diagram-list",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:f0758c6cf6625543",
         "source": "cmp-workspace-shell",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
         "id": "edge:f6c94b6522fee768",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "external:@xyflow/react#Background",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -817,8 +773,8 @@
         "id": "edge:f7fc2fe87cbc13bb",
         "source": "external:@base-ui/react#Tabs.Panel",
         "target": "component:src/shared/react-ui/empty.tsx#Empty",
-        "kind": "node-prop",
-        "label": "Node prop · children"
+        "kind": "NODE (children)",
+        "label": "from WorkspacePage"
       },
       {
         "type": "default",
