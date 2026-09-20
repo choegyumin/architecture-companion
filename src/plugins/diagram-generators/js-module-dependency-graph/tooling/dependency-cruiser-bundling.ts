@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { Options } from "tsup";
 
 const expectedDependencyCruiserVersion = "18.3.1";
-const packageRoot = fileURLToPath(new URL("..", import.meta.url));
+const packageRoot = fileURLToPath(new URL("../../../../../", import.meta.url));
 const dependencyCruiserManifest = JSON.parse(
   readFileSync(join(packageRoot, "node_modules", "dependency-cruiser", "package.json"), "utf8"),
 ) as Readonly<{ version?: unknown }>;

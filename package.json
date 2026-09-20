@@ -15,7 +15,7 @@
     "dev": "concurrently --no-color --kill-others --success first --names server,client \"pnpm dev.server\" \"pnpm dev.client\"",
     "dev.server": "tsx watch --clear-screen=false --exclude \"src/client/**\" --exclude \"src/**/*.tsx\" scripts/start-dev-server.ts",
     "dev.client": "wait-on tcp:127.0.0.1:4318 && vite --open",
-    "build": "tsx scripts/generate-schemas.ts --check && tsx scripts/clean-dist.ts && tsup && vite build && tsx scripts/compose-dist.ts && tsx scripts/verify-dist.ts",
+    "build": "tsx scripts/generate-schemas.ts --check && tsx scripts/clean-dist.ts && tsup && tsup --config src/plugins/diagram-generators/js-module-dependency-graph/tooling/tsup.config.ts && vite build && tsx scripts/compose-dist.ts && tsx scripts/verify-dist.ts",
     "schema-gen": "tsx scripts/generate-schemas.ts",
     "start": "node dist/serve.js",
     "test": "vitest run",
