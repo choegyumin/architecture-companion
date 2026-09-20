@@ -721,18 +721,6 @@
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/path-safety.ts",
-        "title": "path-safety.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/path-safety.ts"
-          }
-        ]
-      },
-      {
         "id": "file:src/server/consumer-scope.ts",
         "title": "consumer-scope.ts",
         "groupId": "group:directory:src/server",
@@ -921,6 +909,18 @@
           {
             "text": "source",
             "href": "source:///src/shared/node/open-local-path.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/node/path.ts",
+        "title": "path.ts",
+        "groupId": "group:directory:src/shared/node",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/node/path.ts"
           }
         ]
       },
@@ -1364,6 +1364,12 @@
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
         "target": "file:src/server/resolve-consumer-scope.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.ts:file%3Asrc%2Fcli%2Fview-generators.command.ts:runtime",
@@ -2157,10 +2163,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fpath-safety.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
         "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/path-safety.ts"
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
@@ -2183,10 +2189,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fpath-safety.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
         "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/path-safety.ts"
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:external%3Amicromatch:runtime",
@@ -2195,10 +2201,10 @@
         "target": "external:micromatch"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fpath-safety.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
         "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/path-safety.ts"
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.command.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:type-only",
@@ -2368,6 +2374,12 @@
         "source": "file:src/server/open-source-reference.ts",
         "target": "file:src/server/consumer-scope.ts",
         "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fopen-source-reference.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/server/open-source-reference.ts",
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
