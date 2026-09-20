@@ -4,7 +4,8 @@ import { dependencyCruiserBundleBanner, dependencyCruiserBundlingPlugin } from "
 
 export default defineConfig({
   entry: {
-    "diagram-generators/js-module-dependency-graph/generate": "src/cli/generate-js-module-dependency-graph.ts",
+    "diagram-generators/js-module-dependency-graph/generate":
+      "src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
     serve: "src/cli/serve.ts",
     "validate-schemas": "src/cli/validate-schemas.ts",
     "view-annotations": "src/cli/view-annotations.ts",

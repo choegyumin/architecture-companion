@@ -1,4 +1,4 @@
-import { executeGenerateJsModuleDependencyGraphCommand } from "@/cli/generate-js-module-dependency-graph.command";
+import { executeGenerateJsModuleDependencyGraphCommand } from "./generate.command";
 
 function createEnvironment() {
   const outputs: string[] = [];

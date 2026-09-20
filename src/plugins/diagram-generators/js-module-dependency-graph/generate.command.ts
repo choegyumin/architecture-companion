@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 
-import type { JsModuleDependencyGraphOptions } from "@/features/js-module-dependency-graph/js-module-dependency-graph";
+import type { JsModuleDependencyGraphOptions } from "./generator";
 
 export type GenerateJsModuleDependencyGraphCommandEnvironment = Readonly<{
   writeGraph: (options: JsModuleDependencyGraphOptions) => Promise<string>;

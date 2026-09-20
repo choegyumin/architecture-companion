@@ -22,7 +22,7 @@ export default defineConfig({
         "**/*.spec.ts",
         "**/*.spec.tsx",
         "src/client/main.tsx",
-        "src/cli/generate-js-module-dependency-graph.ts",
+        "src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
         "src/cli/serve.ts",
         "src/cli/validate-schemas.ts",
         "src/cli/view-annotations.ts",

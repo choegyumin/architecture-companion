@@ -1,5 +1,5 @@
-import { executeGenerateJsModuleDependencyGraphCommand } from "@/cli/generate-js-module-dependency-graph.command";
-import { writeJsModuleDependencyGraph } from "@/features/js-module-dependency-graph/js-module-dependency-graph";
+import { executeGenerateJsModuleDependencyGraphCommand } from "./generate.command";
+import { writeJsModuleDependencyGraph } from "./generator";
 
 try {
   await executeGenerateJsModuleDependencyGraphCommand(process.argv.slice(2), {

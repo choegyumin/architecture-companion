@@ -2,10 +2,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import {
-  generateJsModuleDependencyGraph,
-  writeJsModuleDependencyGraph,
-} from "@/features/js-module-dependency-graph/js-module-dependency-graph";
+import { generateJsModuleDependencyGraph, writeJsModuleDependencyGraph } from "./generator";
 
 async function writeFixtureFile(rootPath: string, relativePath: string, content: string): Promise<void> {
   const filePath = join(rootPath, relativePath);
