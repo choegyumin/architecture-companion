@@ -76,6 +76,7 @@ describe("React component structure generator", () => {
         const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
+        expect(graph.nodes.every((node) => !("kind" in node))).toBe(true);
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
           { source: "Layout", target: "Content", kind: "NODE (children)", label: "from App" },
@@ -298,10 +299,9 @@ describe("React component structure generator", () => {
           "ExternalLeaf",
           "Header",
         ]);
-        expect(graph.nodes.find(({ title }) => title === "ExternalFrame")).toMatchObject({
-          kind: "External React component",
-          description: "ui-kit boundary",
-        });
+        const externalFrame = graph.nodes.find(({ title }) => title === "ExternalFrame");
+        expect(externalFrame).toMatchObject({ description: "ui-kit boundary" });
+        expect(externalFrame).not.toHaveProperty("kind");
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
           {
@@ -1000,9 +1000,10 @@ describe("React component structure generator", () => {
       },
       async (scopePath) => {
         const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
-        const external = graph.nodes.find(({ kind }) => kind === "External React component");
+        const external = graph.nodes.find(({ title }) => title === "Button");
 
         expect(external).toMatchObject({ id: "external:ui-kit#Button", title: "Button" });
+        expect(external).not.toHaveProperty("kind");
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Button", kind: "direct-render", label: undefined },
         ]);
@@ -1465,12 +1466,14 @@ describe("React component structure generator", () => {
       });
 
       try {
+        const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
         expect(outputs).toEqual([`${graphPath}\n`]);
-        expect(JSON.parse(await readFile(graphPath, "utf8"))).toEqual({
+        expect(graph).toEqual({
           groups: [],
-          nodes: [expect.objectContaining({ type: "default", kind: "React component", title: "App" })],
+          nodes: [expect.objectContaining({ type: "default", title: "App" })],
           edges: [],
         });
+        expect(graph.nodes.at(0)).not.toHaveProperty("kind");
       } finally {
         await rm(dirname(graphPath), { recursive: true });
       }

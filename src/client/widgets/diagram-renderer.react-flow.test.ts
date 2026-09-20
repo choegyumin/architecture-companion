@@ -122,6 +122,22 @@ describe("diagram renderer React Flow adapter", () => {
     });
   });
 
+  it("omits the card eyebrow when a default node has no kind", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      graph: {
+        groups: [],
+        nodes: [{ id: "component", type: "default", title: "Component" }],
+        edges: [],
+      },
+    } satisfies Diagram;
+
+    const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
+
+    expect(measurementNode?.data).toMatchObject({ label: "Component" });
+    expect(measurementNode?.data).not.toHaveProperty("eyebrow");
+  });
+
   it("keeps direct render edges unlabeled", () => {
     const diagram = {
       ...sequenceDiagram,

@@ -1924,7 +1924,6 @@ function createGraph(
     .map((definition): DefaultDiagramNode => ({
       type: "default",
       id: definition.id,
-      kind: "React component",
       title: definition.name,
       description: definition.relativePath,
       links: [{ href: sourceHref(definition.relativePath) }],
@@ -1936,7 +1935,6 @@ function createGraph(
     .map((target): DefaultDiagramNode => ({
       type: "default",
       id: target.id,
-      kind: "External React component",
       title: target.title,
       description: `${target.externalPackage} boundary`,
     }));

@@ -28,7 +28,7 @@ Make each diagram answer one central review question. Do not express the same me
 
 Place the explanation a review needs in the fields the Review UI displays.
 
-- `default` nodes display `kind`, `title`, `description`, and `details`.
+- `default` nodes display `title`, optional `kind`, `description`, and `details`. Omit `kind` when it would repeat the same category on every node.
 - `lifeline` nodes display `kind`, `title`, and `description`, but not `details`.
 - `fragment` nodes display `operator` and each branch's `guard`. Do not put the only on-screen explanation in the schema-required `kind` and `title` or in the optional `description` and `details`.
 - `default` edges display `kind` and `label`.

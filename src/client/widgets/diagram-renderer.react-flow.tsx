@@ -37,7 +37,7 @@ function toCardNodeData(
 ): CardReactFlowNode["data"] {
   return {
     label: node.title,
-    eyebrow: node.kind,
+    ...(node.kind ? { eyebrow: node.kind } : {}),
     ...(node.description ? { description: node.description } : {}),
     ...(node.details ? { details: node.details } : {}),
     ...(node.links
