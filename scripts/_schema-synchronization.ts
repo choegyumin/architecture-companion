@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { generatedSchemaFileNames, generateSchemaSources } from "./_schema-generation";
@@ -9,6 +9,7 @@ function isMissingFileError(error: unknown): boolean {
 
 export async function writeSchemaFiles(outputRoot: string): Promise<void> {
   const generatedSchemaSources = generateSchemaSources();
+  await rm(outputRoot, { force: true, recursive: true });
   await mkdir(outputRoot, { recursive: true });
   await Promise.all(
     generatedSchemaFileNames.map((fileName) => writeFile(join(outputRoot, fileName), generatedSchemaSources[fileName])),

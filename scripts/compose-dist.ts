@@ -2,34 +2,16 @@ import { cp, mkdir, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { writeSchemaFiles } from "./_schema-synchronization";
+
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-const distributionRoot = join(packageRoot, "dist");
+const distributionRoot = join(packageRoot, "skills", "architecture-companion");
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
-const distributionGeneratorsRoot = join(distributionRoot, "diagram-generators");
+const distributionGeneratorsRoot = join(distributionRoot, "runtime", "diagram-generators");
 
-const expectedTopLevelEntries = [
-  "README.md",
-  "SKILL.md",
-  "client",
-  "diagram-generators",
-  "references",
-  "serve.js",
-  "validate-schemas.js",
-  "view-annotations.js",
-  "view-generators.js",
-] as const;
-
-const projections = [
-  { source: join(packageRoot, "README.md"), destination: join(distributionRoot, "README.md") },
-  { source: join(packageRoot, "SKILL.md"), destination: join(distributionRoot, "SKILL.md") },
-  { source: join(packageRoot, "references"), destination: join(distributionRoot, "references") },
-] as const;
-
-await Promise.all(
-  projections.map(({ source, destination }) => cp(source, destination, { recursive: true, force: true })),
-);
-
+await writeSchemaFiles(join(distributionRoot, "schemas"));
 await mkdir(distributionGeneratorsRoot, { recursive: true });
+
 const sourceGeneratorEntries = await readdir(sourceGeneratorsRoot, { withFileTypes: true });
 await Promise.all(
   sourceGeneratorEntries
@@ -42,10 +24,3 @@ await Promise.all(
       });
     }),
 );
-
-const actualTopLevelEntries = (await readdir(distributionRoot)).toSorted();
-if (JSON.stringify(actualTopLevelEntries) !== JSON.stringify(expectedTopLevelEntries)) {
-  throw new Error(
-    `Unexpected distribution entries. Expected ${JSON.stringify(expectedTopLevelEntries)}, received ${JSON.stringify(actualTopLevelEntries)}.`,
-  );
-}

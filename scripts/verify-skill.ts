@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
 import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
+import { generatedSchemaFileNames } from "./_schema-generation";
 import { assertSchemaFilesCurrent } from "./_schema-synchronization";
 
 const processTimeoutMs = 10_000;
@@ -25,25 +26,17 @@ const forbiddenEntryNames = [
   "yarn.lock",
 ] as const;
 const expectedTopLevelEntries = [
-  "README.md",
   "SKILL.md",
-  "client",
-  "diagram-generators",
-  "references",
-  "serve.js",
-  "validate-schemas.js",
-  "view-annotations.js",
-  "view-generators.js",
+  "artifact-writing.md",
+  "review-follow-up.md",
+  "runtime",
+  "schemas",
 ] as const;
+const expectedRuntimeEntries = ["cli", "client", "diagram-generators"] as const;
+const expectedCliFiles = ["serve.js", "validate-schemas.js", "view-annotations.js", "view-generators.js"] as const;
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const distributionRoot = join(packageRoot, "dist");
-// Mirrors the static projections in compose-dist.ts. Generator bundles are verified separately.
-const copiedProjections = [
-  { source: join(packageRoot, "README.md"), destination: "README.md" },
-  { source: join(packageRoot, "SKILL.md"), destination: "SKILL.md" },
-  { source: join(packageRoot, "references"), destination: "references" },
-] as const;
+const repositoryRoot = packageRoot;
+const skillSourceRoot = join(packageRoot, "skills", "architecture-companion");
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
 const expectedBuiltInGeneratorFiles = {
   freeform: ["GENERATOR.md"],
@@ -185,7 +178,7 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
     "Built-in generator source directories must be explicit.",
   );
 
-  const installedGeneratorsRoot = join(rootPath, "diagram-generators");
+  const installedGeneratorsRoot = join(rootPath, "runtime", "diagram-generators");
   const installedEntries = await readdir(installedGeneratorsRoot, { withFileTypes: true });
   assert.ok(
     installedEntries.every((entry) => entry.isDirectory()),
@@ -212,18 +205,55 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
   }
 }
 
-async function verifyDistributionResources(rootPath: string): Promise<void> {
+async function verifyClientResources(rootPath: string): Promise<void> {
+  const clientRoot = join(rootPath, "runtime", "client");
+  assert.deepEqual((await readdir(clientRoot)).toSorted(), ["assets", "index.html"]);
+  await readRequiredText(join(clientRoot, "index.html"));
+
+  const assetsRoot = join(clientRoot, "assets");
+  const assetEntries = await readdir(assetsRoot, { withFileTypes: true });
+  assert.ok(assetEntries.length > 0, "Built client must contain assets.");
+  assert.ok(
+    assetEntries.every((entry) => entry.isFile()),
+    "Built client assets must be files.",
+  );
+
+  const assetNames = assetEntries.map(({ name }) => name).toSorted();
+  assert.ok(
+    assetNames.every((name) => /\.(?:css(?:\.map)?|js(?:\.map)?|woff2)$/.test(name)),
+    "Built client assets must contain only distributable files.",
+  );
+  assert.ok(
+    assetNames.some((name) => name.endsWith(".css")),
+    "Built client must contain CSS.",
+  );
+  const scriptNames = assetNames.filter((name) => name.endsWith(".js"));
+  assert.ok(scriptNames.length > 0, "Built client must contain JavaScript.");
+  for (const scriptName of scriptNames) {
+    assert.ok(assetNames.includes(`${scriptName}.map`), `${scriptName} must include its source map.`);
+  }
+  await Promise.all(assetNames.map((name) => readRequiredText(join(assetsRoot, name))));
+}
+
+async function verifySkillResources(rootPath: string): Promise<void> {
   assert.deepEqual((await readdir(rootPath)).toSorted(), expectedTopLevelEntries);
   assert.deepEqual(await findForbiddenEntries(rootPath), []);
 
-  await readRequiredText(join(rootPath, "README.md"));
   assert.match(await readRequiredText(join(rootPath, "SKILL.md")), /^---\nname: architecture-companion\n/);
-  await readRequiredText(join(rootPath, "references", "artifact-writing.md"));
-  await readRequiredText(join(rootPath, "references", "review-follow-up.md"));
-  await assertSchemaFilesCurrent(join(rootPath, "references"));
-  for (const { source, destination } of copiedProjections) {
-    await assertCopiedVerbatim(source, join(rootPath, destination));
-  }
+  await readRequiredText(join(rootPath, "artifact-writing.md"));
+  await readRequiredText(join(rootPath, "review-follow-up.md"));
+
+  const schemasRoot = join(rootPath, "schemas");
+  assert.deepEqual((await readdir(schemasRoot)).toSorted(), [...generatedSchemaFileNames].toSorted());
+  await assertSchemaFilesCurrent(schemasRoot);
+
+  const runtimeRoot = join(rootPath, "runtime");
+  assert.deepEqual((await readdir(runtimeRoot)).toSorted(), expectedRuntimeEntries);
+  const cliRoot = join(runtimeRoot, "cli");
+  assert.deepEqual((await readdir(cliRoot)).toSorted(), expectedCliFiles);
+  await Promise.all(expectedCliFiles.map((fileName) => readRequiredText(join(cliRoot, fileName))));
+
+  await verifyClientResources(rootPath);
   await verifyGeneratorResources(rootPath);
 }
 
@@ -394,7 +424,7 @@ async function readExpectedBuiltInGeneratorDescriptors(skillRoot: string): Promi
     descriptors.push({
       description: manifest.description,
       id: manifest.id,
-      path: await realpath(join(skillRoot, "diagram-generators", name)),
+      path: await realpath(join(skillRoot, "runtime", "diagram-generators", name)),
       source: "built-in",
     });
   }
@@ -409,7 +439,7 @@ async function verifyInstalledGeneratorEntry(
   scopePath: string,
   environment: NodeJS.ProcessEnv,
 ): Promise<void> {
-  const scriptPath = join(skillRoot, "view-generators.js");
+  const scriptPath = join(skillRoot, "runtime", "cli", "view-generators.js");
   const viewResult = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
 
   assertSuccessfulCompletion(viewResult, scriptPath);
@@ -459,7 +489,7 @@ async function verifyInstalledReactComponentGenerator(
     nodes: ReadonlyArray<{ id: string; title: string }>;
   }>;
 
-  const scriptPath = join(skillRoot, "diagram-generators", "react-component-structure", "cli", "run.js");
+  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "react-component-structure", "cli", "run.js");
   async function generateGraph(extraArguments: readonly string[] = [], sourcePath = "src"): Promise<InstalledGraph> {
     const result = await runInstalledScript(
       scriptPath,
@@ -546,7 +576,7 @@ async function verifyInstalledJsModuleDependencyGenerator(
   );
   await writeFixtureFile(scopePath, "node_modules/installed-package/feature.js", "export default true;\n");
 
-  const scriptPath = join(skillRoot, "diagram-generators", "js-module-dependency-graph", "generate.js");
+  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "js-module-dependency-graph", "generate.js");
   const result = await runInstalledScript(
     scriptPath,
     ["--scope", scopePath, "--ts-config", "tsconfig.json", "src"],
@@ -580,7 +610,7 @@ async function verifyInstalledAnnotationEntry(
   scopePath: string,
   environment: NodeJS.ProcessEnv,
 ): Promise<void> {
-  const scriptPath = join(skillRoot, "view-annotations.js");
+  const scriptPath = join(skillRoot, "runtime", "cli", "view-annotations.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
 
   assertSuccessfulCompletion(result, scriptPath);
@@ -595,7 +625,7 @@ async function verifyInstalledValidationEntry(
   await mkdir(join(artifactDirectory, "behaviors"), { recursive: true });
   await mkdir(join(artifactDirectory, "designs"), { recursive: true });
 
-  const scriptPath = join(skillRoot, "validate-schemas.js");
+  const scriptPath = join(skillRoot, "runtime", "cli", "validate-schemas.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
   assertSuccessfulCompletion(result, scriptPath);
 
@@ -608,10 +638,13 @@ function startInstalledServer(
   environment: NodeJS.ProcessEnv,
   spawnGuardPath: string,
 ): Readonly<{ child: InstalledProcess; observed: ObservedProcess; url: Promise<string> }> {
-  const child = spawnInstalledScript(join(skillRoot, "serve.js"), [scopePath], environment, skillRoot, [
-    "--require",
-    spawnGuardPath,
-  ]);
+  const child = spawnInstalledScript(
+    join(skillRoot, "runtime", "cli", "serve.js"),
+    [scopePath],
+    environment,
+    skillRoot,
+    ["--require", spawnGuardPath],
+  );
   const observed = observeProcess(child);
   return { child, observed, url: waitForServerUrl(child, observed) };
 }
@@ -641,7 +674,7 @@ async function verifyInstalledClient(
   assert.equal(await pathExists(openerMarkerPath), false);
 }
 
-const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-dist-"));
+const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-skill-"));
 const skillRoot = join(temporaryRoot, "skill");
 const scopePath = join(temporaryRoot, "scope");
 const homeDirectory = join(temporaryRoot, "home");
@@ -655,12 +688,12 @@ try {
   assert.equal(
     isPathInside(await realpath(repositoryRoot), await realpath(temporaryRoot)),
     false,
-    "Distribution verification must run outside the repository.",
+    "Skill verification must run outside the repository.",
   );
-  await verifyDistributionResources(distributionRoot);
-  await cp(distributionRoot, skillRoot, { recursive: true });
+  await verifySkillResources(skillSourceRoot);
+  await cp(skillSourceRoot, skillRoot, { recursive: true });
   await Promise.all([mkdir(scopePath), mkdir(homeDirectory), writeSpawnGuard(spawnGuardPath)]);
-  await verifyDistributionResources(skillRoot);
+  await verifySkillResources(skillRoot);
 
   const environment = createInstalledEnvironment(skillRoot, homeDirectory, spawnGuardReadyPath, openerMarkerPath);
   await verifyInstalledGeneratorEntry(skillRoot, scopePath, environment);
@@ -683,10 +716,7 @@ const cleanupFailures = [...processCleanupResults, ...filesystemCleanupResults].
 );
 
 if (verificationFailure && cleanupFailures.length > 0) {
-  throw new AggregateError(
-    [verificationFailure.reason, ...cleanupFailures],
-    "Distribution verification and cleanup failed.",
-  );
+  throw new AggregateError([verificationFailure.reason, ...cleanupFailures], "Skill verification and cleanup failed.");
 }
 if (verificationFailure) throw verificationFailure.reason;
-if (cleanupFailures.length > 0) throw new AggregateError(cleanupFailures, "Distribution verification cleanup failed.");
+if (cleanupFailures.length > 0) throw new AggregateError(cleanupFailures, "Skill verification cleanup failed.");

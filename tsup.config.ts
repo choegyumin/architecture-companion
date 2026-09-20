@@ -10,7 +10,7 @@ const nodeBundleOptions = {
   clean: false,
   format: "esm",
   noExternal: [/.*/],
-  outDir: "dist",
+  outDir: "skills/architecture-companion",
   platform: "node",
   sourcemap: false,
   splitting: false,
@@ -21,11 +21,11 @@ export default defineConfig([
   {
     ...nodeBundleOptions,
     entry: {
-      serve: "src/cli/serve.ts",
-      "validate-schemas": "src/cli/validate-schemas.ts",
-      "view-annotations": "src/cli/view-annotations.ts",
-      "view-generators": "src/cli/view-generators.ts",
-      "diagram-generators/react-component-structure/cli/run":
+      "runtime/cli/serve": "src/cli/serve.ts",
+      "runtime/cli/validate-schemas": "src/cli/validate-schemas.ts",
+      "runtime/cli/view-annotations": "src/cli/view-annotations.ts",
+      "runtime/cli/view-generators": "src/cli/view-generators.ts",
+      "runtime/diagram-generators/react-component-structure/cli/run":
         "src/plugins/diagram-generators/react-component-structure/cli/run.ts",
     },
     banner: {
@@ -42,7 +42,7 @@ export default defineConfig([
   {
     ...nodeBundleOptions,
     entry: {
-      "diagram-generators/js-module-dependency-graph/generate":
+      "runtime/diagram-generators/js-module-dependency-graph/generate":
         "src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
     },
     banner: { js: dependencyCruiserBundleBanner },

@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+@source not "../../skills/architecture-companion/runtime";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
