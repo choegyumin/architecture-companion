@@ -2,5 +2,6 @@ import { z } from "zod";
 
 export const diagramGeneratorIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
-export type BuiltInDiagramGeneratorId = "freeform" | "js-module-dependency-graph" | "react-component-structure";
+export type BuiltInDiagramGeneratorId =
+  "freeform" | "js-module-dependency-graph" | "react-component-structure" | "sequence";
 export type DiagramGeneratorId = BuiltInDiagramGeneratorId | (string & Record<never, never>);
