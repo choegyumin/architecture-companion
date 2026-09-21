@@ -14,7 +14,7 @@ function behavior(title: string): Artifact["behaviors"][number] {
   return {
     id: "checkout",
     title: "Workflow",
-    generatorId: "freeform",
+    generator: "built-in:freeform",
     layout: { id: "elk-layered", options: { direction: "RIGHT" } },
     graph: {
       groups: [],

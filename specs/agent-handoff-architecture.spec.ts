@@ -55,13 +55,13 @@ async function writeGenerator(
   return pluginPath;
 }
 
-function reviewArtifact(generatorId: string) {
+function reviewArtifact(generator: string) {
   return {
     behaviors: [
       {
         id: "checkout",
         title: "Checkout workflow",
-        generatorId,
+        generator,
         layout: { id: "elk-layered" },
         graph: {
           groups: [],
@@ -134,7 +134,7 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
       ).rejects.toThrow("Artifact is invalid");
 
-      await writeArtifact(scopePath, reviewArtifact("dependency-graph"));
+      await writeArtifact(scopePath, reviewArtifact("project:dependency-graph"));
       await executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput });
       expect(validationOutputs).toEqual(["Artifact is valid.\n"]);
 
@@ -148,7 +148,7 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
       const reviewResponse = await getJson(`${server.url}/api/review`);
       expect(reviewResponse.status).toBe(200);
       expect(reviewResponse.body).toMatchObject({
-        artifact: { behaviors: [{ generatorId: "dependency-graph" }] },
+        artifact: { behaviors: [{ generator: "project:dependency-graph" }] },
       });
       expect(serverOutputs).toEqual([`${server.url}\n`]);
       expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);

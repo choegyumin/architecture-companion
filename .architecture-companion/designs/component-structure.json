@@ -1,7 +1,7 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "generatorId": "react-component-structure",
+  "generator": "built-in:react-component-structure",
   "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identities external:@base-ui/react#* and external:lucide-react#*, then preserve existing graph element IDs when merging.",
   "layout": {
     "id": "elk-layered",

@@ -22,7 +22,7 @@ function artifact(label: string): Artifact {
     behaviors: [
       {
         title: "Workflow",
-        generatorId: "freeform",
+        generator: "built-in:freeform",
         layout: { id: "elk-layered", options: { direction: "RIGHT" } },
         graph: {
           groups: [],
@@ -36,7 +36,7 @@ function artifact(label: string): Artifact {
       {
         id: "checkout-structure",
         title: "Checkout structure",
-        generatorId: "freeform",
+        generator: "built-in:freeform",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

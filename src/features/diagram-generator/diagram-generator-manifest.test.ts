@@ -55,6 +55,7 @@ Inspect source files and produce an artifact.
 
   it.each([
     ["an invalid id", "id: Dependency_Graph\ndescription: Builds a graph."],
+    ["a scoped id", "id: project:dependency-graph\ndescription: Builds a graph."],
     ["an empty description", "id: dependency-graph\ndescription:   "],
     ["a malformed line", "id dependency-graph\ndescription: Builds a graph."],
     ["a multiline description", "id: dependency-graph\ndescription: Builds a graph.\n  From source files."],

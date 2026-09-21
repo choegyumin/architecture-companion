@@ -23,7 +23,7 @@ function artifact(title: string): Artifact {
       {
         id: "checkout",
         title,
-        generatorId: "freeform",
+        generator: "built-in:freeform",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

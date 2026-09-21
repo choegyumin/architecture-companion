@@ -1,7 +1,7 @@
 {
   "id": "review-journey",
   "title": "Architecture review journey",
-  "generatorId": "freeform",
+  "generator": "built-in:freeform",
   "layout": {
     "id": "elk-layered",
     "options": {

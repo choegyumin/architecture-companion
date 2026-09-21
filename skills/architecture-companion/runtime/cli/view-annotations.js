@@ -20068,15 +20068,15 @@ var diagramLayoutConfigSchema = external_exports.discriminatedUnion("id", [
   sequenceDiagramLayoutConfigSchema
 ]);
 
-// src/features/diagram-generator/diagram-generator-id.ts
-var diagramGeneratorIdSchema = external_exports.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+// src/features/diagram-generator/diagram-generator-reference.ts
+var diagramGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 // src/features/diagram/diagram.ts
 var artifactDiagramIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Diagram ID must be lowercase kebab-case (letters, digits, hyphens)");
 var diagramSchema = external_exports.object({
   id: artifactDiagramIdSchema,
   title: external_exports.string().min(1),
-  generatorId: diagramGeneratorIdSchema,
+  generator: diagramGeneratorReferenceSchema,
   generatorInstructions: external_exports.string().min(1).optional(),
   layout: diagramLayoutConfigSchema,
   links: external_exports.array(diagramLinkSchema).readonly().optional(),

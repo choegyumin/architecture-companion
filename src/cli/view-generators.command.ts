@@ -3,10 +3,9 @@ import { join, resolve } from "node:path";
 
 import type { DiagramGeneratorId } from "@/features/diagram-generator/diagram-generator-id";
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
+import type { DiagramGeneratorSource } from "@/features/diagram-generator/diagram-generator-reference";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { isMissingPathError } from "@/shared/node/path";
-
-export type DiagramGeneratorSource = "built-in" | "global" | "project";
 
 export type DiagramGeneratorDescriptor = Readonly<{
   id: DiagramGeneratorId;
