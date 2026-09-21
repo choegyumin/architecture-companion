@@ -7,7 +7,7 @@ function createDiagram(id: string, title: string): Diagram {
   return {
     id,
     title,
-    generatorId: "freeform",
+    generator: "freeform",
     layout: { id: "elk-layered" },
     graph: {
       groups: [],

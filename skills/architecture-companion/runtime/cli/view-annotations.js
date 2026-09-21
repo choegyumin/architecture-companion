@@ -20076,7 +20076,7 @@ var artifactDiagramIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-
 var diagramSchema = external_exports.object({
   id: artifactDiagramIdSchema,
   title: external_exports.string().min(1),
-  generatorId: diagramGeneratorIdSchema,
+  generator: diagramGeneratorIdSchema,
   generatorInstructions: external_exports.string().min(1).optional(),
   layout: diagramLayoutConfigSchema,
   links: external_exports.array(diagramLinkSchema).readonly().optional(),

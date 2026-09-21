@@ -565,7 +565,7 @@ describe("JavaScript module dependency graph generator", () => {
       });
       expect(writtenGraph).not.toHaveProperty("id");
       expect(writtenGraph).not.toHaveProperty("title");
-      expect(writtenGraph).not.toHaveProperty("generatorId");
+      expect(writtenGraph).not.toHaveProperty("generator");
       expect(writtenGraph).not.toHaveProperty("layout");
     });
   });

@@ -8,7 +8,7 @@ import { writeArtifact } from "@/server/write-artifact";
 const checkoutBehavior = {
   id: "checkout",
   title: "Checkout workflow",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],

@@ -45,7 +45,7 @@ describe("generateSchemaSources", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./diagram.schema.json",
       type: "object",
-      required: ["id", "title", "generatorId", "layout", "graph"],
+      required: ["id", "title", "generator", "layout", "graph"],
       additionalProperties: false,
       properties: {
         generatorInstructions: { type: "string", minLength: 1 },

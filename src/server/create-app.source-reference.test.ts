@@ -15,7 +15,7 @@ function artifact() {
       {
         id: "checkout",
         title: "Checkout workflow",
-        generatorId: "freeform",
+        generator: "freeform",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],
@@ -28,7 +28,7 @@ function artifact() {
       {
         id: "structure",
         title: "Checkout structure",
-        generatorId: "freeform",
+        generator: "freeform",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

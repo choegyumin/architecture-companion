@@ -3,7 +3,7 @@ import { parseDiagram } from "@/features/diagram/diagram";
 const validDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [{ id: "checkout", title: "Checkout" }],
@@ -202,15 +202,15 @@ describe("diagram parsing", () => {
   });
 
   it("allows custom generator IDs", () => {
-    const diagram = { ...validDiagram, generatorId: "dependency-graph" } as const;
+    const diagram = { ...validDiagram, generator: "dependency-graph" } as const;
 
     expect(parseDiagram(diagram)).toEqual(diagram);
   });
 
   it.each(["", "Dependency-Graph", "dependency_graph", "-dependency-graph", "dependency-graph-", "dependency--graph"])(
     "rejects invalid generator ID %j",
-    (generatorId) => {
-      expect(() => parseDiagram({ ...validDiagram, generatorId })).toThrow("Invalid diagram");
+    (generator) => {
+      expect(() => parseDiagram({ ...validDiagram, generator })).toThrow("Invalid diagram");
     },
   );
 

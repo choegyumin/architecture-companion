@@ -11,7 +11,7 @@ import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 const sequenceDiagram = {
   id: "sequence",
   title: "Sequence",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "sequence" },
   graph: {
     groups: [],

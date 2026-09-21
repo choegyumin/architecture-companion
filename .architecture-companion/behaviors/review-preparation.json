@@ -1,7 +1,7 @@
 {
   "id": "review-preparation",
   "title": "Prepare Review URL (Skill trigger)",
-  "generatorId": "freeform",
+  "generator": "freeform",
   "layout": {
     "id": "elk-layered",
     "options": {

@@ -33,7 +33,7 @@ Use the absolute path of the consumer directory the user designates as `<scope>`
 
 4. Read `<selected path>/GENERATOR.md` at the chosen absolute path and follow its additional investigation guidance, references, supporting files, and execution instructions. Generator guidance does not replace the common artifact-writing rules, and do not assume every generator provides the same files or entrypoint.
 
-5. Investigate the source code, tests, configuration, and documentation you need, and edit the diagram files under `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` directly. Architecture Companion commands do not generate or merge the artifact. The artifact is the complete set of diagram files: one JSON file per diagram, named after its diagram `id` (lowercase kebab-case). Preserve unrelated diagram files and keep diagram and graph element IDs for the same concepts. Record the chosen logical `id` as `generatorId` on every diagram you create or regenerate.
+5. Investigate the source code, tests, configuration, and documentation you need, and edit the diagram files under `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` directly. Architecture Companion commands do not generate or merge the artifact. The artifact is the complete set of diagram files: one JSON file per diagram, named after its diagram `id` (lowercase kebab-case). Preserve unrelated diagram files and keep diagram and graph element IDs for the same concepts. Record the chosen logical `id` as `generator` on every diagram you create or regenerate.
 
 6. Validate the candidate once it covers the full request scope.
 

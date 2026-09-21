@@ -9,7 +9,7 @@ import { writeArtifact } from "@/server/write-artifact";
 const checkoutBehavior = {
   id: "checkout",
   title: "Checkout",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],

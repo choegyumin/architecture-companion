@@ -12,7 +12,7 @@ export const diagramSchema = z
   .object({
     id: artifactDiagramIdSchema,
     title: z.string().min(1),
-    generatorId: diagramGeneratorIdSchema,
+    generator: diagramGeneratorIdSchema,
     generatorInstructions: z.string().min(1).optional(),
     layout: diagramLayoutConfigSchema,
     links: z.array(diagramLinkSchema).readonly().optional(),
@@ -245,8 +245,8 @@ export const diagramSchema = z
   });
 
 type ParsedDiagram = z.infer<typeof diagramSchema>;
-export type Diagram = Omit<ParsedDiagram, "generatorId"> & {
-  generatorId: DiagramGeneratorId;
+export type Diagram = Omit<ParsedDiagram, "generator"> & {
+  generator: DiagramGeneratorId;
 };
 
 export function parseDiagram(input: unknown): Diagram {

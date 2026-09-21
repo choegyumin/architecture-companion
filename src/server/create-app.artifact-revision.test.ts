@@ -13,7 +13,7 @@ function artifact(title: string) {
     behaviors: [
       {
         title: "Workflow",
-        generatorId: "freeform",
+        generator: "freeform",
         layout: { id: "elk-layered", options: { direction: "RIGHT" } },
         graph: {
           groups: [],

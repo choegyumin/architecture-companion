@@ -21,7 +21,7 @@ const artifact: Artifact = {
     {
       id: "checkout",
       title: "Workflow",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -34,7 +34,7 @@ const artifact: Artifact = {
     {
       id: "catalog-structure",
       title: "Catalog structure",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -45,7 +45,7 @@ const artifact: Artifact = {
     {
       id: "checkout-structure",
       title: "Checkout structure",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

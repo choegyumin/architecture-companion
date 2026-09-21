@@ -15,7 +15,7 @@ import { writeArtifact } from "@/server/write-artifact";
 const checkoutDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [{ id: "checkout-feature", title: "Checkout feature" }],
@@ -71,7 +71,7 @@ const checkoutDiagram = {
 const catalogDiagram = {
   id: "catalog-structure",
   title: "Catalog structure",
-  generatorId: "freeform",
+  generator: "freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],
@@ -92,7 +92,7 @@ const designArtifact = {
   behaviors: [
     {
       title: "Workflow",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered", options: { direction: "RIGHT" } },
       graph: {
         groups: [],
@@ -113,7 +113,7 @@ const processArtifact = {
     {
       id: "invite-member",
       title: "Invite member",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered", options: { direction: "RIGHT" } },
       graph: {
         groups: [],
@@ -133,7 +133,7 @@ const processArtifact = {
     {
       id: "remove-member",
       title: "Remove member",
-      generatorId: "freeform",
+      generator: "freeform",
       layout: { id: "elk-layered", options: { direction: "RIGHT" } },
       graph: {
         groups: [],
