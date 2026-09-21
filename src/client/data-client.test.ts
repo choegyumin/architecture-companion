@@ -117,7 +117,7 @@ describe("DataClient", () => {
     const diagram = (id: string, title: string) => ({
       id,
       title,
-      generator: "freeform",
+      generator: "built-in:freeform",
       layout: { id: "elk-layered" },
       graph: { groups: [], nodes: [], edges: [] },
     });

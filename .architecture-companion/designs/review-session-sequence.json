@@ -1,7 +1,7 @@
 {
   "id": "review-session-sequence",
   "title": "Review session sequence",
-  "generator": "freeform",
+  "generator": "built-in:freeform",
   "layout": {
     "id": "sequence"
   },

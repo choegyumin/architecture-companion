@@ -3,7 +3,7 @@ import { parseArtifact } from "@/features/artifact/artifact";
 const validBehavior = {
   id: "checkout",
   title: "Checkout workflow",
-  generator: "freeform",
+  generator: "built-in:freeform",
   layout: { id: "elk-layered", options: { direction: "RIGHT" } },
   graph: {
     groups: [],
@@ -38,7 +38,7 @@ describe("artifact parsing", () => {
   });
 
   it("preserves custom generator IDs regardless of installation", () => {
-    const behavior = { ...validBehavior, generator: "dependency-graph" } as const;
+    const behavior = { ...validBehavior, generator: "project:dependency-graph" } as const;
     const artifact = { ...validArtifact, behaviors: [behavior] } as const;
 
     expect(parseArtifact(artifact)).toEqual(artifact);
@@ -120,7 +120,7 @@ describe("artifact parsing", () => {
     const diagram = {
       id: "structure",
       title: "Structure",
-      generator: "freeform",
+      generator: "built-in:freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -138,7 +138,7 @@ describe("artifact parsing", () => {
     const diagram = {
       id: "structure",
       title: "Structure",
-      generator: "freeform",
+      generator: "built-in:freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

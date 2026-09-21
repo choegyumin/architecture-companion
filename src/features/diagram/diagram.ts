@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import { diagramGraphSchema, diagramLinkSchema } from "@/features/diagram/diagram-graph";
 import { diagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
-import { type DiagramGeneratorId, diagramGeneratorIdSchema } from "@/features/diagram-generator/diagram-generator-id";
+import {
+  type DiagramGeneratorReference,
+  diagramGeneratorReferenceSchema,
+} from "@/features/diagram-generator/diagram-generator-reference";
 
 export const artifactDiagramIdSchema = z
   .string()
@@ -12,7 +15,7 @@ export const diagramSchema = z
   .object({
     id: artifactDiagramIdSchema,
     title: z.string().min(1),
-    generator: diagramGeneratorIdSchema,
+    generator: diagramGeneratorReferenceSchema,
     generatorInstructions: z.string().min(1).optional(),
     layout: diagramLayoutConfigSchema,
     links: z.array(diagramLinkSchema).readonly().optional(),
@@ -246,7 +249,7 @@ export const diagramSchema = z
 
 type ParsedDiagram = z.infer<typeof diagramSchema>;
 export type Diagram = Omit<ParsedDiagram, "generator"> & {
-  generator: DiagramGeneratorId;
+  generator: DiagramGeneratorReference;
 };
 
 export function parseDiagram(input: unknown): Diagram {
@@ -257,5 +260,5 @@ export function parseDiagram(input: unknown): Diagram {
     throw new Error(`Invalid diagram: ${messages}`, { cause: result.error });
   }
 
-  return result.data;
+  return result.data as Diagram;
 }

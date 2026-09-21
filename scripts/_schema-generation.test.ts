@@ -48,6 +48,10 @@ describe("generateSchemaSources", () => {
       required: ["id", "title", "generator", "layout", "graph"],
       additionalProperties: false,
       properties: {
+        generator: {
+          type: "string",
+          pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
+        },
         generatorInstructions: { type: "string", minLength: 1 },
         links: {
           type: "array",

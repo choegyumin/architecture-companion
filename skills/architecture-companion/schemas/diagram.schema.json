@@ -13,7 +13,7 @@
     },
     "generator": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      "pattern": "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "generatorInstructions": {
       "type": "string",

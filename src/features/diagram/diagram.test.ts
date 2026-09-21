@@ -3,7 +3,7 @@ import { parseDiagram } from "@/features/diagram/diagram";
 const validDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
-  generator: "freeform",
+  generator: "built-in:freeform",
   layout: { id: "elk-layered" },
   graph: {
     groups: [{ id: "checkout", title: "Checkout" }],
@@ -201,18 +201,28 @@ describe("diagram parsing", () => {
     ).toThrow("Diagram group hierarchy contains a cycle");
   });
 
-  it("allows custom generator IDs", () => {
-    const diagram = { ...validDiagram, generator: "dependency-graph" } as const;
-
-    expect(parseDiagram(diagram)).toEqual(diagram);
-  });
-
-  it.each(["", "Dependency-Graph", "dependency_graph", "-dependency-graph", "dependency-graph-", "dependency--graph"])(
-    "rejects invalid generator ID %j",
+  it.each(["built-in:freeform", "project:dependency-graph", "global:dependency-graph"])(
+    "allows generator reference %j",
     (generator) => {
-      expect(() => parseDiagram({ ...validDiagram, generator })).toThrow("Invalid diagram");
+      const diagram = { ...validDiagram, generator } as const;
+
+      expect(parseDiagram(diagram)).toEqual(diagram);
     },
   );
+
+  it.each([
+    "",
+    "freeform",
+    "workspace:freeform",
+    "built-in:",
+    "built-in:Dependency-Graph",
+    "built-in:dependency_graph",
+    "built-in:-dependency-graph",
+    "built-in:dependency-graph-",
+    "built-in:dependency--graph",
+  ])("rejects invalid generator reference %j", (generator) => {
+    expect(() => parseDiagram({ ...validDiagram, generator })).toThrow("Invalid diagram");
+  });
 
   it("rejects unknown renderer types", () => {
     expect(() =>

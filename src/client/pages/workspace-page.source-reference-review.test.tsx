@@ -15,7 +15,7 @@ const artifact = {
     {
       id: "checkout",
       title: "Checkout workflow",
-      generator: "freeform",
+      generator: "built-in:freeform",
       layout: { id: "elk-layered" },
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
       graph: {
@@ -38,7 +38,7 @@ const artifact = {
     {
       id: "structure",
       title: "Checkout structure",
-      generator: "freeform",
+      generator: "built-in:freeform",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
