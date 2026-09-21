@@ -183,6 +183,12 @@ describe("diagram generator discovery command", () => {
           source: "built-in",
           path: resolve(builtInRoot, "react-component-structure"),
         },
+        {
+          id: "sequence",
+          description: expect.any(String),
+          source: "built-in",
+          path: resolve(builtInRoot, "sequence"),
+        },
       ]);
     } finally {
       await rm(temporaryRoot, { recursive: true });

@@ -42,6 +42,7 @@ const expectedBuiltInGeneratorFiles = {
   freeform: ["GENERATOR.md"],
   "js-module-dependency-graph": ["GENERATOR.md", "generate.js"],
   "react-component-structure": ["GENERATOR.md", join("cli", "run.js")],
+  sequence: ["GENERATOR.md"],
 } as const;
 
 type CompletedProcess = Readonly<{
