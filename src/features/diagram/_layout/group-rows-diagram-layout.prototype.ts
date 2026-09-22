@@ -14,11 +14,12 @@ import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 export const groupRowsDiagramLayoutConfigSchema = z.object({ id: z.literal("prototype-group-rows") }).strict();
 
-const GROUP_PADDING = { top: 80, right: 32, bottom: 32, left: 32 } as const;
+const GROUP_PADDING = { top: 80, right: 64, bottom: 64, left: 64 } as const;
 const MIN_GROUP_WIDTH = 352;
-const MAX_NODE_ROW_WIDTH = 1_280;
-const NODE_COLUMN_GAP = 32;
-const NODE_ROW_GAP = 32;
+const MAX_NODE_ROW_WIDTH = 1_408;
+const NODE_COLUMN_GAP = 64;
+const NODE_ROW_GAP = 64;
+const NODE_LAYER_GAP = 96;
 const GROUP_COLUMN_GAP = 64;
 const GROUP_ROW_GAP = 64;
 const GROUP_LAYER_GAP = 128;
@@ -68,37 +69,6 @@ type SiblingItemsLayout = Readonly<{
   placements: readonly Readonly<{ item: SiblingLayoutItem; position: DiagramLayoutPoint }>[];
   size: DiagramLayoutSize;
 }>;
-
-function layoutNodeRows(nodes: readonly DiagramNode[], nodeSizes: DiagramNodeSizes): NodeRowsLayout {
-  let x = 0;
-  let y = 0;
-  let rowHeight = 0;
-  let width = 0;
-
-  const placements = nodes.map<NodeRowPlacement>((node) => {
-    const size = getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`);
-    if (x > 0 && x + size.width > MAX_NODE_ROW_WIDTH) {
-      x = 0;
-      y += rowHeight + NODE_ROW_GAP;
-      rowHeight = 0;
-    }
-
-    const position = { x, y };
-    x += size.width + NODE_COLUMN_GAP;
-    rowHeight = Math.max(rowHeight, size.height);
-    width = Math.max(width, position.x + size.width);
-
-    return { node, position, size };
-  });
-
-  return {
-    placements,
-    size: {
-      width,
-      height: placements.length === 0 ? 0 : y + rowHeight,
-    },
-  };
-}
 
 function materializeGroup(
   layout: LocalGroupLayout,
@@ -199,6 +169,202 @@ function findStronglyConnectedComponents(
   }
 
   return components;
+}
+
+function layoutNodeRows(
+  nodes: readonly DiagramNode[],
+  diagram: DiagramGraph,
+  nodeSizes: DiagramNodeSizes,
+): NodeRowsLayout {
+  if (nodes.length === 0) return { placements: [], size: { width: 0, height: 0 } };
+
+  const nodeIds = nodes.map(({ id }) => id);
+  const nodeIdSet = new Set(nodeIds);
+  const nodeIndexById = new Map(nodeIds.map((id, index) => [id, index]));
+  const outgoingByNode = new Map(nodeIds.map((id) => [id, new Set<string>()]));
+  const incomingByNode = new Map(nodeIds.map((id) => [id, new Set<string>()]));
+
+  for (const edge of diagram.edges) {
+    if (!nodeIdSet.has(edge.source) || !nodeIdSet.has(edge.target) || edge.source === edge.target) continue;
+    getOrThrow(outgoingByNode.get(edge.source), `Missing node: ${edge.source}`).add(edge.target);
+    getOrThrow(incomingByNode.get(edge.target), `Missing node: ${edge.target}`).add(edge.source);
+  }
+
+  const components = findStronglyConnectedComponents(nodeIds, outgoingByNode).map((component) =>
+    [...component].sort(
+      (first, second) =>
+        getOrThrow(nodeIndexById.get(first), `Missing node index: ${first}`) -
+        getOrThrow(nodeIndexById.get(second), `Missing node index: ${second}`),
+    ),
+  );
+  const componentByNode = new Map<string, number>();
+  components.forEach((component, componentIndex) => {
+    component.forEach((nodeId) => componentByNode.set(nodeId, componentIndex));
+  });
+
+  const outgoingByComponent = components.map(() => new Set<number>());
+  const incomingByComponent = components.map(() => new Set<number>());
+  for (const [sourceNodeId, targetNodeIds] of outgoingByNode) {
+    const sourceComponent = getOrThrow(componentByNode.get(sourceNodeId), `Missing node component: ${sourceNodeId}`);
+    for (const targetNodeId of targetNodeIds) {
+      const targetComponent = getOrThrow(componentByNode.get(targetNodeId), `Missing node component: ${targetNodeId}`);
+      if (sourceComponent === targetComponent) continue;
+      getOrThrow(outgoingByComponent[sourceComponent], `Missing outgoing component: ${sourceComponent}`).add(
+        targetComponent,
+      );
+      getOrThrow(incomingByComponent[targetComponent], `Missing incoming component: ${targetComponent}`).add(
+        sourceComponent,
+      );
+    }
+  }
+
+  const layerByComponent = components.map(() => 0);
+  const incomingCountByComponent = incomingByComponent.map((incoming) => incoming.size);
+  const queue = components
+    .map((_, componentIndex) => componentIndex)
+    .filter((componentIndex) => incomingCountByComponent[componentIndex] === 0);
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const sourceComponent = getOrThrow(queue[queueIndex], `Missing node component: ${queueIndex}`);
+    for (const targetComponent of getOrThrow(
+      outgoingByComponent[sourceComponent],
+      `Missing outgoing component: ${sourceComponent}`,
+    )) {
+      layerByComponent[targetComponent] = Math.max(
+        getOrThrow(layerByComponent[targetComponent], `Missing node layer: ${targetComponent}`),
+        getOrThrow(layerByComponent[sourceComponent], `Missing node layer: ${sourceComponent}`) + 1,
+      );
+      incomingCountByComponent[targetComponent] =
+        getOrThrow(incomingCountByComponent[targetComponent], `Missing node component count: ${targetComponent}`) - 1;
+      if (incomingCountByComponent[targetComponent] === 0) queue.push(targetComponent);
+    }
+  }
+
+  const declarationOrderByComponent = components.map((component) =>
+    Math.min(...component.map((nodeId) => getOrThrow(nodeIndexById.get(nodeId), `Missing node index: ${nodeId}`))),
+  );
+  const maxLayer = Math.max(...layerByComponent);
+  const componentOrderByLayer = Array.from({ length: maxLayer + 1 }, (_, layer) =>
+    components
+      .map((_, componentIndex) => componentIndex)
+      .filter((componentIndex) => layerByComponent[componentIndex] === layer)
+      .sort(
+        (first, second) =>
+          getOrThrow(declarationOrderByComponent[first], `Missing component order: ${first}`) -
+          getOrThrow(declarationOrderByComponent[second], `Missing component order: ${second}`),
+      ),
+  );
+
+  function reorderLayer(layer: number, neighborsByComponent: readonly ReadonlySet<number>[]): void {
+    const order = getOrThrow(componentOrderByLayer[layer], `Missing node layer: ${layer}`);
+    const neighborPositions = new Map<number, number>();
+    const adjacentOrder = componentOrderByLayer[layer + (neighborsByComponent === incomingByComponent ? -1 : 1)];
+    adjacentOrder?.forEach((componentIndex, index) => neighborPositions.set(componentIndex, index));
+    const currentPosition = new Map(order.map((componentIndex, index) => [componentIndex, index]));
+
+    order.sort((first, second) => {
+      const firstNeighbors = [...getOrThrow(neighborsByComponent[first], `Missing node component: ${first}`)].filter(
+        (componentIndex) => neighborPositions.has(componentIndex),
+      );
+      const secondNeighbors = [...getOrThrow(neighborsByComponent[second], `Missing node component: ${second}`)].filter(
+        (componentIndex) => neighborPositions.has(componentIndex),
+      );
+      const firstBarycenter = firstNeighbors.length
+        ? firstNeighbors.reduce(
+            (sum, componentIndex) =>
+              sum + getOrThrow(neighborPositions.get(componentIndex), `Missing neighbor position: ${componentIndex}`),
+            0,
+          ) / firstNeighbors.length
+        : getOrThrow(currentPosition.get(first), `Missing current component position: ${first}`);
+      const secondBarycenter = secondNeighbors.length
+        ? secondNeighbors.reduce(
+            (sum, componentIndex) =>
+              sum + getOrThrow(neighborPositions.get(componentIndex), `Missing neighbor position: ${componentIndex}`),
+            0,
+          ) / secondNeighbors.length
+        : getOrThrow(currentPosition.get(second), `Missing current component position: ${second}`);
+      return (
+        firstBarycenter - secondBarycenter ||
+        getOrThrow(declarationOrderByComponent[first], `Missing component order: ${first}`) -
+          getOrThrow(declarationOrderByComponent[second], `Missing component order: ${second}`)
+      );
+    });
+  }
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (let layer = 1; layer <= maxLayer; layer += 1) reorderLayer(layer, incomingByComponent);
+    for (let layer = maxLayer - 1; layer >= 0; layer -= 1) reorderLayer(layer, outgoingByComponent);
+  }
+
+  const componentSizes = components.map((component) => {
+    const sizes = component.map((nodeId) => getOrThrow(nodeSizes[nodeId], `Missing measured node size: ${nodeId}`));
+    return {
+      width: sizes.reduce((width, size) => width + size.width, 0) + Math.max(0, sizes.length - 1) * NODE_COLUMN_GAP,
+      height: Math.max(...sizes.map(({ height }) => height)),
+    };
+  });
+  const bandsByLayer = componentOrderByLayer.map((componentOrder) => {
+    const bands: { componentIndices: number[]; width: number; height: number }[] = [];
+    let current: { componentIndices: number[]; width: number; height: number } | undefined;
+    for (const componentIndex of componentOrder) {
+      const size = getOrThrow(componentSizes[componentIndex], `Missing component size: ${componentIndex}`);
+      const nextWidth = current ? current.width + NODE_COLUMN_GAP + size.width : size.width;
+      if (current && nextWidth > MAX_NODE_ROW_WIDTH) {
+        bands.push(current);
+        current = undefined;
+      }
+      current ??= { componentIndices: [], width: 0, height: 0 };
+      current.componentIndices.push(componentIndex);
+      current.width = current.width === 0 ? size.width : current.width + NODE_COLUMN_GAP + size.width;
+      current.height = Math.max(current.height, size.height);
+    }
+    if (current) bands.push(current);
+    return bands;
+  });
+
+  const componentPositions = new Map<number, DiagramLayoutPoint>();
+  const contentWidth = Math.max(...bandsByLayer.flatMap((bands) => bands.map(({ width }) => width)), 0);
+  let contentHeight = 0;
+  bandsByLayer.forEach((bands) => {
+    const layerWidth = Math.max(...bands.map(({ width }) => width), 0);
+    let layerY = contentHeight;
+    bands.forEach((band, bandIndex) => {
+      let x = (contentWidth - layerWidth) / 2 + (layerWidth - band.width) / 2;
+      band.componentIndices.forEach((componentIndex) => {
+        componentPositions.set(componentIndex, { x, y: layerY });
+        x +=
+          getOrThrow(componentSizes[componentIndex], `Missing component size: ${componentIndex}`).width +
+          NODE_COLUMN_GAP;
+      });
+      layerY += band.height + (bandIndex < bands.length - 1 ? NODE_ROW_GAP : 0);
+    });
+    contentHeight = layerY + (bands.length > 0 ? NODE_LAYER_GAP : 0);
+  });
+  if (contentHeight > 0) contentHeight -= NODE_LAYER_GAP;
+
+  const placements = components.flatMap<NodeRowPlacement>((component, componentIndex) => {
+    const position = getOrThrow(
+      componentPositions.get(componentIndex),
+      `Missing component position: ${componentIndex}`,
+    );
+    const componentSize = getOrThrow(componentSizes[componentIndex], `Missing component size: ${componentIndex}`);
+    let x = position.x;
+    return component.map((nodeId) => {
+      const node = getOrThrow(
+        nodes.find(({ id }) => id === nodeId),
+        `Missing layout node: ${nodeId}`,
+      );
+      const size = getOrThrow(nodeSizes[nodeId], `Missing measured node size: ${nodeId}`);
+      const placement = {
+        node,
+        position: { x, y: position.y + (componentSize.height - size.height) / 2 },
+        size,
+      };
+      x += size.width + NODE_COLUMN_GAP;
+      return placement;
+    });
+  });
+
+  return { placements, size: { width: contentWidth, height: contentHeight } };
 }
 
 function findContainingSiblingGroupId(
@@ -354,6 +520,7 @@ function layoutSiblingItems(
 function layoutGroup(group: DiagramGroup, diagram: DiagramGraph, nodeSizes: DiagramNodeSizes): LocalGroupLayout {
   const nodeRows = layoutNodeRows(
     diagram.nodes.filter(({ groupId }) => groupId === group.id),
+    diagram,
     nodeSizes,
   );
   const childLayouts = diagram.groups
@@ -441,6 +608,7 @@ function layoutEdges(
 export function layoutGroupRowsDiagram(diagram: DiagramGraph, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {
   const ungroupedRows = layoutNodeRows(
     diagram.nodes.filter(({ groupId }) => !groupId),
+    diagram,
     nodeSizes,
   );
   const rootGroups = diagram.groups
