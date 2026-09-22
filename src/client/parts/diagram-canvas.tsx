@@ -58,13 +58,17 @@ const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
 const isMacOS = navigator.userAgent.includes("Macintosh");
 
+type DiagramModuleTarget = Readonly<{ type: "group" | "node"; id: string }>;
+
 type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
+  onModuleClick?: (target: DiagramModuleTarget) => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
+  onPaneClick?: () => void;
   initialView?: DiagramViewFramingOptions;
 }>;
 
@@ -74,7 +78,9 @@ export function DiagramCanvas({
   edges,
   nodes,
   onCanvasClick,
+  onModuleClick,
   onNodesChange,
+  onPaneClick,
   initialView,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
@@ -97,15 +103,37 @@ export function DiagramCanvas({
     };
   }, [fitView]);
 
-  function handleCanvasClick(event: MouseEvent, target?: AnnotationTarget): void {
-    if (!onCanvasClick || !flowInstance) return;
-    const eventTarget = event.target;
-    if (eventTarget instanceof Element && eventTarget.closest(interactiveElementSelector)) return;
+  function isInteractiveClick(event: MouseEvent): boolean {
+    if (!(event.target instanceof Element)) return false;
+    const interactiveElement = event.target.closest(interactiveElementSelector);
+    return interactiveElement !== null && interactiveElement !== event.currentTarget;
+  }
 
+  function handleCanvasClick(event: MouseEvent, target?: AnnotationTarget): void {
+    if (!onCanvasClick || !flowInstance || isInteractiveClick(event)) return;
     event.preventDefault();
     event.stopPropagation();
     const point = flowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
     onCanvasClick(point, target);
+  }
+
+  function handleModuleClick(event: MouseEvent, target: DiagramModuleTarget): void {
+    if (isInteractiveClick(event)) return;
+    if (onModuleClick) {
+      event.preventDefault();
+      event.stopPropagation();
+      onModuleClick(target);
+    }
+    handleCanvasClick(event, target);
+  }
+
+  function handlePaneClick(event: MouseEvent): void {
+    if (onPaneClick) {
+      event.preventDefault();
+      event.stopPropagation();
+      onPaneClick();
+    }
+    handleCanvasClick(event);
   }
 
   return (
@@ -113,7 +141,7 @@ export function DiagramCanvas({
       aria-label="Diagram canvas"
       className="h-full min-h-0"
       onClick={(event) => {
-        if (event.target === event.currentTarget) handleCanvasClick(event);
+        if (event.target === event.currentTarget) handlePaneClick(event);
       }}
       ref={canvasRef}
       role="group"
@@ -135,13 +163,13 @@ export function DiagramCanvas({
         onEdgeClick={(event, edge) => handleCanvasClick(event, { type: "edge", id: edge.id })}
         onInit={setFlowInstance}
         onNodeClick={(event, node) =>
-          handleCanvasClick(event, {
+          handleModuleClick(event, {
             type: node.type === "labeled-group" ? "group" : "node",
             id: node.id,
           })
         }
         onNodesChange={onNodesChange}
-        onPaneClick={(event) => handleCanvasClick(event)}
+        onPaneClick={handlePaneClick}
         panOnDrag
         // WheelEvent cannot distinguish a trackpad from a mouse, so use macOS as the proxy.
         panOnScroll={isMacOS}

@@ -123,6 +123,42 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
   });
 
+  it("forwards module selection and pane reset separately from annotations", async () => {
+    const onModuleClick = vi.fn();
+    const onPaneClick = vi.fn();
+    render(
+      <DiagramCanvas
+        edges={[]}
+        nodes={[
+          {
+            id: "checkout-page",
+            type: "card",
+            position: { x: 0, y: 0 },
+            data: { label: "Checkout page" },
+          },
+          {
+            id: "checkout-boundary",
+            type: "labeled-group",
+            position: { x: 0, y: 0 },
+            data: { label: "Checkout boundary" },
+          },
+        ]}
+        onModuleClick={onModuleClick}
+        onPaneClick={onPaneClick}
+      />,
+    );
+    const pane = await screen.findByLabelText("React Flow pane");
+    await act(async () => undefined);
+
+    fireEvent.click(screen.getByLabelText("React Flow node checkout-page"));
+    fireEvent.click(screen.getByLabelText("React Flow node checkout-boundary"));
+    fireEvent.click(pane);
+
+    expect(onModuleClick).toHaveBeenNthCalledWith(1, { type: "node", id: "checkout-page" });
+    expect(onModuleClick).toHaveBeenNthCalledWith(2, { type: "group", id: "checkout-boundary" });
+    expect(onPaneClick).toHaveBeenCalledOnce();
+  });
+
   it("does not forward clicks on interactive elements as canvas clicks", async () => {
     const onCanvasClick = vi.fn();
     render(

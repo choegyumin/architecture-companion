@@ -2,6 +2,7 @@ import { MarkerType } from "@xyflow/react";
 
 import {
   buildDiagramMeasurementNodes,
+  buildDiagramReactFlowEdges,
   buildDiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
@@ -119,6 +120,76 @@ describe("diagram renderer React Flow adapter", () => {
         eyebrow: "result",
         href: "https://example.com/review",
       },
+    });
+  });
+
+  it("renders top-level dependency aggregates for the grouped row layout", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      layout: { id: "prototype-group-rows" },
+      graph: {
+        groups: [
+          { id: "source-group", title: "Source" },
+          { id: "target-group", title: "Target" },
+        ],
+        nodes: [
+          { id: "source", type: "default", title: "Source", groupId: "source-group" },
+          { id: "target", type: "default", title: "Target", groupId: "target-group" },
+        ],
+        edges: [
+          { id: "first", type: "default", source: "source", target: "target" },
+          { id: "second", type: "default", source: "source", target: "target" },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [
+        { id: "source-group", position: { x: 0, y: 0 }, size: { width: 400, height: 300 } },
+        { id: "target-group", position: { x: 0, y: 500 }, size: { width: 400, height: 300 } },
+      ],
+      nodes: [
+        {
+          id: "source",
+          parentId: "source-group",
+          position: { x: 40, y: 60 },
+          size: { width: 288, height: 144 },
+        },
+        {
+          id: "target",
+          parentId: "target-group",
+          position: { x: 40, y: 60 },
+          size: { width: 288, height: 144 },
+        },
+      ],
+      edges: [
+        {
+          id: "first",
+          points: [
+            { x: 328, y: 132 },
+            { x: 40, y: 632 },
+          ],
+        },
+        {
+          id: "second",
+          points: [
+            { x: 328, y: 132 },
+            { x: 40, y: 632 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const edges = buildDiagramReactFlowEdges(diagram, layout, vi.fn());
+
+    expect(edges).toHaveLength(1);
+    expect(edges.at(0)).toMatchObject({
+      id: "aggregate:source-group->target-group",
+      source: "source-group",
+      target: "target-group",
+      type: "polyline",
+      label: "×2",
+      data: { points: expect.any(Array) },
     });
   });
 

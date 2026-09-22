@@ -7,13 +7,15 @@ import { DiagramCanvas, type DiagramReactFlowEdge, type DiagramReactFlowNode } f
 import { DiagramLinksPanel } from "@/client/widgets/diagram-links-panel";
 import {
   buildDiagramMeasurementNodes,
+  buildDiagramReactFlowEdges,
   buildDiagramReactFlowRenderModel,
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
+import type { DiagramDependencyFocus } from "@/features/diagram/dependency-edge-projection";
 import type { Diagram } from "@/features/diagram/diagram";
 import { layoutDiagram } from "@/features/diagram/diagram-layout";
-import type { DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
 
@@ -28,8 +30,7 @@ type DiagramLayoutState =
   | Readonly<{ status: "measuring" | "layouting" }>
   | Readonly<{
       status: "ready";
-      edges: readonly DiagramReactFlowEdge[];
-      initialView: DiagramViewFramingOptions;
+      layout: DiagramLayout;
     }>
   | Readonly<{ status: "error"; message: string }>;
 
@@ -44,9 +45,18 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
   const measurementNodes = useMemo(() => buildDiagramMeasurementNodes(diagram, onOpenSource), [diagram, onOpenSource]);
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
+  const [dependencyFocus, setDependencyFocus] = useState<DiagramDependencyFocus>();
   const hasStartedLayout = useRef(false);
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
   const latestLayoutInputs = useRef({ diagram, getNodes, onOpenSource, setNodes });
+  const supportsDependencyFocus = diagram.layout.id === "prototype-group-rows";
+  const edges = useMemo(
+    () =>
+      state.status === "ready"
+        ? [...buildDiagramReactFlowEdges(diagram, state.layout, onOpenSource, dependencyFocus)]
+        : [],
+    [dependencyFocus, diagram, onOpenSource, state],
+  );
 
   useEffect(() => {
     latestLayoutInputs.current = { diagram, getNodes, onOpenSource, setNodes };
@@ -76,7 +86,7 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
           if (cancelled) return;
           const flow: DiagramReactFlowRenderModel = buildDiagramReactFlowRenderModel(diagram, layout, onOpenSource);
           setNodes([...flow.nodes]);
-          setState({ status: "ready", edges: flow.edges, initialView: layout.initialView });
+          setState({ status: "ready", layout });
         })
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : "Diagram layout failed.";
@@ -117,7 +127,7 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
       </ul>
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
-        edges={state.status === "ready" ? [...state.edges] : []}
+        edges={edges}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
@@ -130,8 +140,12 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
               }
             : undefined
         }
+        onModuleClick={!annotations.isCommentMode && supportsDependencyFocus ? setDependencyFocus : undefined}
         onNodesChange={onNodesChange}
-        initialView={state.status === "ready" ? state.initialView : undefined}
+        onPaneClick={
+          !annotations.isCommentMode && supportsDependencyFocus ? () => setDependencyFocus(undefined) : undefined
+        }
+        initialView={state.status === "ready" ? state.layout.initialView : undefined}
       >
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
         <DiagramLinksPanel links={diagram.links ?? []} onOpenSource={onOpenSource} />
