@@ -81,9 +81,9 @@ const DEFAULT_ROUTING_TRACK_GAP = 16;
 const DEFAULT_ROUTING_TRACK_COUNT = 2;
 const PORT_PADDING = 48;
 const PORT_GAP = 32;
-const BEND_COST = 96;
-const CROSSING_COST = 640;
-const OVERLAP_COST = 960;
+const BEND_COST = 256;
+const CROSSING_COST = 4_000;
+const OVERLAP_COST = 6_000;
 const EPSILON = 0.001;
 
 function getCenter(rectangle: Rectangle): DiagramLayoutPoint {

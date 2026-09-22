@@ -38,8 +38,8 @@ const ROOT_SCOPE_KEY = "root";
 const GROUP_HEADER_HEIGHT = 56;
 const GROUP_SCOPE_INSET = 4;
 const ROOT_SCOPE_PADDING = 64;
-const INTERNAL_EDGE_CLEARANCE = 12;
-const AGGREGATE_EDGE_CLEARANCE = 20;
+const INTERNAL_EDGE_CLEARANCE = 32;
+const AGGREGATE_EDGE_CLEARANCE = 32;
 
 function isGroupWithin(
   groupId: string,
