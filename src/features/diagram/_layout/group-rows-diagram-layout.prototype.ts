@@ -22,7 +22,6 @@ const NODE_ROW_GAP = 32;
 const GROUP_COLUMN_GAP = 64;
 const GROUP_ROW_GAP = 64;
 const GROUP_LAYER_GAP = 128;
-const GROUP_SECTION_GAP = 48;
 const EDGE_CORRIDOR_GAP = 96;
 const EDGE_LANE_GAP = 10;
 const EDGE_LANE_COUNT = 12;
@@ -51,8 +50,22 @@ type MaterializedLayout = Readonly<{
   absoluteNodePositions: Readonly<Record<string, DiagramLayoutPoint>>;
 }>;
 
-type SiblingGroupsLayout = Readonly<{
-  placements: readonly Readonly<{ layout: LocalGroupLayout; position: DiagramLayoutPoint }>[];
+type SiblingLayoutItem =
+  | Readonly<{
+      id: string;
+      type: "group";
+      layout: LocalGroupLayout;
+      size: DiagramLayoutSize;
+    }>
+  | Readonly<{
+      id: string;
+      type: "nodes";
+      layout: NodeRowsLayout;
+      size: DiagramLayoutSize;
+    }>;
+
+type SiblingItemsLayout = Readonly<{
+  placements: readonly Readonly<{ item: SiblingLayoutItem; position: DiagramLayoutPoint }>[];
   size: DiagramLayoutSize;
 }>;
 
@@ -201,44 +214,58 @@ function findContainingSiblingGroupId(
   return undefined;
 }
 
-function assignSiblingGroupLayers(
+function assignSiblingItemLayers(
   diagram: DiagramGraph,
-  siblingGroups: readonly LocalGroupLayout[],
+  items: readonly SiblingLayoutItem[],
 ): ReadonlyMap<string, number> {
-  const siblingGroupIds = siblingGroups.map(({ group }) => group.id);
-  const siblingGroupIdSet = new Set(siblingGroupIds);
+  const itemIds = items.map(({ id }) => id);
   const groupById = new Map(diagram.groups.map((group) => [group.id, group]));
   const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
-  const outgoingByGroup = new Map(siblingGroupIds.map((groupId) => [groupId, new Set<string>()]));
+  const itemIdBySiblingGroupId = new Map(
+    items.filter((item) => item.type === "group").map((item) => [item.layout.group.id, item.id]),
+  );
+  const siblingGroupIds = new Set(itemIdBySiblingGroupId.keys());
+  const itemIdByDirectNodeId = new Map(
+    items
+      .filter((item) => item.type === "nodes")
+      .flatMap((item) => item.layout.placements.map(({ node }) => [node.id, item.id] as const)),
+  );
+  const outgoingByItem = new Map(itemIds.map((itemId) => [itemId, new Set<string>()]));
+
+  function resolveItemId(node: DiagramNode): string | undefined {
+    const directNodeItemId = itemIdByDirectNodeId.get(node.id);
+    if (directNodeItemId) return directNodeItemId;
+    if (!node.groupId) return undefined;
+    const siblingGroupId = findContainingSiblingGroupId(node.groupId, siblingGroupIds, groupById);
+    return siblingGroupId ? itemIdBySiblingGroupId.get(siblingGroupId) : undefined;
+  }
 
   for (const edge of diagram.edges) {
     const sourceNode = getOrThrow(nodeById.get(edge.source), `Missing edge source node: ${edge.source}`);
     const targetNode = getOrThrow(nodeById.get(edge.target), `Missing edge target node: ${edge.target}`);
-    if (!sourceNode.groupId || !targetNode.groupId) continue;
-
-    const sourceGroupId = findContainingSiblingGroupId(sourceNode.groupId, siblingGroupIdSet, groupById);
-    const targetGroupId = findContainingSiblingGroupId(targetNode.groupId, siblingGroupIdSet, groupById);
-    if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) continue;
-    getOrThrow(outgoingByGroup.get(sourceGroupId), `Missing sibling group: ${sourceGroupId}`).add(targetGroupId);
+    const sourceItemId = resolveItemId(sourceNode);
+    const targetItemId = resolveItemId(targetNode);
+    if (!sourceItemId || !targetItemId || sourceItemId === targetItemId) continue;
+    getOrThrow(outgoingByItem.get(sourceItemId), `Missing sibling item: ${sourceItemId}`).add(targetItemId);
   }
 
-  const components = findStronglyConnectedComponents(siblingGroupIds, outgoingByGroup);
-  const componentByGroup = new Map<string, number>();
+  const components = findStronglyConnectedComponents(itemIds, outgoingByItem);
+  const componentByItem = new Map<string, number>();
   components.forEach((component, componentIndex) => {
-    component.forEach((groupId) => componentByGroup.set(groupId, componentIndex));
+    component.forEach((itemId) => componentByItem.set(itemId, componentIndex));
   });
 
   const outgoingByComponent = components.map(() => new Set<number>());
   const incomingCountByComponent = components.map(() => 0);
-  for (const [sourceGroupId, targetGroupIds] of outgoingByGroup) {
+  for (const [sourceItemId, targetItemIds] of outgoingByItem) {
     const sourceComponent = getOrThrow(
-      componentByGroup.get(sourceGroupId),
-      `Missing dependency component: ${sourceGroupId}`,
+      componentByItem.get(sourceItemId),
+      `Missing dependency component: ${sourceItemId}`,
     );
-    for (const targetGroupId of targetGroupIds) {
+    for (const targetItemId of targetItemIds) {
       const targetComponent = getOrThrow(
-        componentByGroup.get(targetGroupId),
-        `Missing dependency component: ${targetGroupId}`,
+        componentByItem.get(targetItemId),
+        `Missing dependency component: ${targetItemId}`,
       );
       if (sourceComponent === targetComponent || outgoingByComponent[sourceComponent]?.has(targetComponent)) continue;
       getOrThrow(outgoingByComponent[sourceComponent], `Missing dependency component: ${sourceComponent}`).add(
@@ -272,40 +299,49 @@ function assignSiblingGroupLayers(
   }
 
   return new Map(
-    siblingGroupIds.map((groupId) => {
-      const component = getOrThrow(componentByGroup.get(groupId), `Missing dependency component: ${groupId}`);
-      return [groupId, getOrThrow(layerByComponent[component], `Missing dependency layer: ${component}`)];
+    itemIds.map((itemId) => {
+      const component = getOrThrow(componentByItem.get(itemId), `Missing dependency component: ${itemId}`);
+      return [itemId, getOrThrow(layerByComponent[component], `Missing dependency layer: ${component}`)];
     }),
   );
 }
 
-function layoutSiblingGroups(
+function layoutSiblingItems(
   groups: readonly LocalGroupLayout[],
+  nodes: NodeRowsLayout,
   diagram: DiagramGraph,
   layerGap: number,
-): SiblingGroupsLayout {
-  const layerByGroup = assignSiblingGroupLayers(diagram, groups);
+): SiblingItemsLayout {
+  const items: SiblingLayoutItem[] = [];
+  if (nodes.placements.length > 0) {
+    items.push({ id: "nodes", type: "nodes", layout: nodes, size: nodes.size });
+  }
+  groups.forEach((layout, index) => {
+    items.push({ id: `group:${index}`, type: "group", layout, size: layout.size });
+  });
+
+  const layerByItem = assignSiblingItemLayers(diagram, items);
   const layers = Array.from({
-    length: Math.max(...layerByGroup.values(), -1) + 1,
-  }).map((_, layer) => groups.filter(({ group }) => layerByGroup.get(group.id) === layer));
+    length: Math.max(...layerByItem.values(), -1) + 1,
+  }).map((_, layer) => items.filter(({ id }) => layerByItem.get(id) === layer));
   const layerWidths = layers.map(
-    (layerGroups) =>
-      layerGroups.reduce((width, { size }) => width + size.width, 0) +
-      Math.max(0, layerGroups.length - 1) * GROUP_COLUMN_GAP,
+    (layerItems) =>
+      layerItems.reduce((width, { size }) => width + size.width, 0) +
+      Math.max(0, layerItems.length - 1) * GROUP_COLUMN_GAP,
   );
   const width = Math.max(...layerWidths, 0);
-  const placements: { layout: LocalGroupLayout; position: DiagramLayoutPoint }[] = [];
+  const placements: { item: SiblingLayoutItem; position: DiagramLayoutPoint }[] = [];
   let y = 0;
 
-  layers.forEach((layerGroups, layer) => {
-    const layerWidth = getOrThrow(layerWidths[layer], `Missing group layer width: ${layer}`);
+  layers.forEach((layerItems, layer) => {
+    const layerWidth = getOrThrow(layerWidths[layer], `Missing sibling layer width: ${layer}`);
     let x = (width - layerWidth) / 2;
     let layerHeight = 0;
 
-    for (const layout of layerGroups) {
-      placements.push({ layout, position: { x, y } });
-      layerHeight = Math.max(layerHeight, layout.size.height);
-      x += layout.size.width + GROUP_COLUMN_GAP;
+    for (const item of layerItems) {
+      placements.push({ item, position: { x, y } });
+      layerHeight = Math.max(layerHeight, item.size.height);
+      x += item.size.width + GROUP_COLUMN_GAP;
     }
 
     y += layerHeight;
@@ -323,37 +359,39 @@ function layoutGroup(group: DiagramGroup, diagram: DiagramGraph, nodeSizes: Diag
   const childLayouts = diagram.groups
     .filter(({ parentId }) => parentId === group.id)
     .map((child) => layoutGroup(child, diagram, nodeSizes));
-  const childGroups = layoutSiblingGroups(childLayouts, diagram, GROUP_ROW_GAP);
-
-  let contentY = GROUP_PADDING.top;
-  const nodes = nodeRows.placements.map((placement) => ({
-    ...placement,
-    position: {
-      x: GROUP_PADDING.left + placement.position.x,
-      y: contentY + placement.position.y,
-    },
-  }));
-  if (nodeRows.size.height > 0) contentY += nodeRows.size.height;
-  if (nodeRows.size.height > 0 && childLayouts.length > 0) contentY += GROUP_SECTION_GAP;
-
-  const children = childGroups.placements.map(({ layout, position }) => ({
-    layout,
-    position: {
-      x: GROUP_PADDING.left + position.x,
-      y: contentY + position.y,
-    },
-  }));
-  contentY += childGroups.size.height;
-
-  const contentWidth = Math.max(nodeRows.size.width, childGroups.size.width);
+  const content = layoutSiblingItems(childLayouts, nodeRows, diagram, GROUP_ROW_GAP);
+  const nodes = content.placements.flatMap(({ item, position }) =>
+    item.type === "nodes"
+      ? item.layout.placements.map((placement) => ({
+          ...placement,
+          position: {
+            x: GROUP_PADDING.left + position.x + placement.position.x,
+            y: GROUP_PADDING.top + position.y + placement.position.y,
+          },
+        }))
+      : [],
+  );
+  const children = content.placements.flatMap(({ item, position }) =>
+    item.type === "group"
+      ? [
+          {
+            layout: item.layout,
+            position: {
+              x: GROUP_PADDING.left + position.x,
+              y: GROUP_PADDING.top + position.y,
+            },
+          },
+        ]
+      : [],
+  );
 
   return {
     group,
     nodes,
     children,
     size: {
-      width: Math.max(MIN_GROUP_WIDTH, GROUP_PADDING.left + contentWidth + GROUP_PADDING.right),
-      height: contentY + GROUP_PADDING.bottom,
+      width: Math.max(MIN_GROUP_WIDTH, GROUP_PADDING.left + content.size.width + GROUP_PADDING.right),
+      height: GROUP_PADDING.top + content.size.height + GROUP_PADDING.bottom,
     },
   };
 }
@@ -408,30 +446,29 @@ export function layoutGroupRowsDiagram(diagram: DiagramGraph, nodeSizes: Diagram
   const rootGroups = diagram.groups
     .filter(({ parentId }) => !parentId)
     .map((group) => layoutGroup(group, diagram, nodeSizes));
-  const rootGroupLayout = layoutSiblingGroups(rootGroups, diagram, GROUP_LAYER_GAP);
-  const canvasWidth = Math.max(ungroupedRows.size.width, rootGroupLayout.size.width);
-
-  let y = 0;
-  const ungroupedNodes = ungroupedRows.placements.map<DiagramLayoutNode>(({ node, position, size }) => ({
-    id: node.id,
-    position,
-    size,
-  }));
-  const absoluteNodePositions: Record<string, DiagramLayoutPoint> = Object.fromEntries(
-    ungroupedRows.placements.map(({ node, position }) => [node.id, position]),
+  const rootContent = layoutSiblingItems(rootGroups, ungroupedRows, diagram, GROUP_LAYER_GAP);
+  const ungroupedNodes = rootContent.placements.flatMap<DiagramLayoutNode>(({ item, position }) =>
+    item.type === "nodes"
+      ? item.layout.placements.map((placement) => ({
+          id: placement.node.id,
+          position: {
+            x: position.x + placement.position.x,
+            y: position.y + placement.position.y,
+          },
+          size: placement.size,
+        }))
+      : [],
   );
-  if (ungroupedRows.size.height > 0) y += ungroupedRows.size.height + GROUP_LAYER_GAP;
-
-  const materializedGroups: MaterializedLayout[] = [];
-  let canvasRight = ungroupedRows.size.width;
-  const rootGroupX = (canvasWidth - rootGroupLayout.size.width) / 2;
-  for (const { layout, position: relativePosition } of rootGroupLayout.placements) {
-    const position = { x: rootGroupX + relativePosition.x, y: y + relativePosition.y };
-    const materialized = materializeGroup(layout, position, position);
-    materializedGroups.push(materialized);
+  const absoluteNodePositions: Record<string, DiagramLayoutPoint> = Object.fromEntries(
+    ungroupedNodes.map(({ id, position }) => [id, position]),
+  );
+  const materializedGroups = rootContent.placements.flatMap(({ item, position }) => {
+    if (item.type !== "group") return [];
+    const materialized = materializeGroup(item.layout, position, position);
     Object.assign(absoluteNodePositions, materialized.absoluteNodePositions);
-    canvasRight = Math.max(canvasRight, position.x + layout.size.width);
-  }
+    return [materialized];
+  });
+  const canvasRight = Math.max(...rootContent.placements.map(({ item, position }) => position.x + item.size.width), 0);
 
   return Promise.resolve({
     nodes: [...ungroupedNodes, ...materializedGroups.flatMap(({ nodes }) => nodes)],
