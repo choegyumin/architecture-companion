@@ -1,4 +1,7 @@
-import { routeGroupFocusedDependencyEdges } from "@/features/diagram/_layout/group-focused-dependency-edge-routing.prototype";
+import {
+  routeGroupFocusedDependencyEdges,
+  routeNodeFocusedDependencyEdges,
+} from "@/features/diagram/_layout/group-focused-dependency-edge-routing.prototype";
 
 function expectOrthogonal(points: readonly Readonly<{ x: number; y: number }>[]): void {
   for (let index = 1; index < points.length; index += 1) {
@@ -89,6 +92,38 @@ describe("group-focused dependency edge routing prototype", () => {
 
     expect(points.at(0)).toEqual({ x: 400, y: 150 });
     expect(points.at(-1)).toEqual({ x: 700, y: 200 });
+    expectOrthogonal(points);
+  });
+
+  it("routes a node-focused dependency across top-level groups", () => {
+    const groups = [
+      { id: "source-group", position: { x: 0, y: 0 }, size: { width: 400, height: 300 } },
+      { id: "blocker", position: { x: 450, y: 0 }, size: { width: 300, height: 300 } },
+      { id: "target-group", position: { x: 800, y: 0 }, size: { width: 400, height: 300 } },
+    ];
+    const nodes = [
+      {
+        id: "source",
+        groupId: "source-group",
+        position: { x: 100, y: 100 },
+        size: { width: 100, height: 60 },
+      },
+      {
+        id: "target",
+        groupId: "target-group",
+        position: { x: 900, y: 100 },
+        size: { width: 100, height: 60 },
+      },
+    ];
+
+    const [route] = routeNodeFocusedDependencyEdges(groups, nodes, [
+      { id: "cross-group", source: "source", target: "target" },
+    ]);
+    const points = route?.points ?? [];
+
+    expect(points.at(0)).toEqual({ x: 200, y: 130 });
+    expect(points.at(-1)).toEqual({ x: 900, y: 130 });
+    expect(points.some(({ y }) => y <= -12 || y >= 312)).toBe(true);
     expectOrthogonal(points);
   });
 });

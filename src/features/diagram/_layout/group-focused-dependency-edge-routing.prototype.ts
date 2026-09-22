@@ -217,35 +217,43 @@ function routeOriginalEdges(
   groupById: ReadonlyMap<string, GroupFocusedRoutingGroup>,
   nodeById: ReadonlyMap<string, GroupFocusedRoutingNode>,
 ): readonly RoutedTopLevelDependencyEdge[] {
+  const rootScope = getRootScope(groups, nodes);
   const edgesByScope = new Map<string, TopLevelDependencyRoutingEdge[]>();
 
   for (const edge of edges) {
     const source = getOrThrow(nodeById.get(edge.source), `Missing original edge source: ${edge.source}`);
     const target = getOrThrow(nodeById.get(edge.target), `Missing original edge target: ${edge.target}`);
-    const scopeId = getOrThrow(
-      getLowestCommonGroupId(source.groupId, target.groupId, groupById),
-      `Missing original edge group scope: ${edge.id}`,
-    );
-    const scopedEdges = edgesByScope.get(scopeId) ?? [];
+    const scopeId = getLowestCommonGroupId(source.groupId, target.groupId, groupById);
+    const scopeKey = scopeId ?? ROOT_SCOPE_KEY;
+    const scopedEdges = edgesByScope.get(scopeKey) ?? [];
     scopedEdges.push(edge);
-    edgesByScope.set(scopeId, scopedEdges);
+    edgesByScope.set(scopeKey, scopedEdges);
   }
 
   const routeById = new Map<string, RoutedTopLevelDependencyEdge>();
-  for (const [scopeId, scopedEdges] of edgesByScope) {
-    const scopeGroup = getOrThrow(groupById.get(scopeId), `Missing routing scope: ${scopeId}`);
-    const scopeGroups = getGroupsInScope(groups, scopeId, groupById);
-    const scopeNodes = getNodesInScope(nodes, scopeId, groupById);
+  for (const [scopeKey, scopedEdges] of edgesByScope) {
+    const scopeId = scopeKey === ROOT_SCOPE_KEY ? undefined : scopeKey;
+    const scope = scopeId
+      ? {
+          id: scopeId,
+          bounds: getScopeBounds(getOrThrow(groupById.get(scopeId), `Missing routing scope: ${scopeId}`)),
+        }
+      : rootScope;
+    const scopeGroups = getGroupsInScope(groups, scope.id, groupById);
+    const scopeNodes = getNodesInScope(nodes, scope.id, groupById);
     const routes = routeDependencyEdges(scopeNodes, scopedEdges, {
-      bounds: getScopeBounds(scopeGroup),
+      bounds: scope.bounds,
       clearance: INTERNAL_EDGE_CLEARANCE,
       trackGap: 8,
       trackCount: 1,
       getObstacles: (edge) => {
         const source = getOrThrow(nodeById.get(edge.source), `Missing original edge source: ${edge.source}`);
         const target = getOrThrow(nodeById.get(edge.target), `Missing original edge target: ${edge.target}`);
-        const allowedGroupIds = getAllowedGroupIds(source.groupId, target.groupId, scopeId, groupById);
-        return [...scopeNodes, ...getGroupObstacles(scopeGroups, allowedGroupIds, new Set(), scopeId, groupById)];
+        const allowedGroupIds = getAllowedGroupIds(source.groupId, target.groupId, scope.id, groupById);
+        const nodeObstacles = scopeNodes.filter((node) =>
+          node.groupId ? allowedGroupIds.has(node.groupId) : scope.id === undefined,
+        );
+        return [...nodeObstacles, ...getGroupObstacles(scopeGroups, allowedGroupIds, new Set(), scope.id, groupById)];
       },
     });
     routes.forEach((route) => routeById.set(route.id, route));
@@ -337,4 +345,14 @@ export function routeGroupFocusedDependencyEdges(
     original: routeOriginalEdges(groups, nodes, originalEdges, groupById, nodeById),
     aggregate: routeAggregateEdges(groups, nodes, aggregateEdges, groupById, nodeById),
   };
+}
+
+export function routeNodeFocusedDependencyEdges(
+  groups: readonly GroupFocusedRoutingGroup[],
+  nodes: readonly GroupFocusedRoutingNode[],
+  edges: readonly TopLevelDependencyRoutingEdge[],
+): readonly RoutedTopLevelDependencyEdge[] {
+  const groupById = new Map(groups.map((group) => [group.id, group]));
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  return routeOriginalEdges(groups, nodes, edges, groupById, nodeById);
 }

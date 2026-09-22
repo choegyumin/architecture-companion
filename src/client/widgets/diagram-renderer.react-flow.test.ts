@@ -262,6 +262,17 @@ describe("diagram renderer React Flow adapter", () => {
       style: { stroke: "var(--foreground)", strokeWidth: 2 },
       data: { cornerRadius: 12, points: expect.any(Array) },
     });
+
+    const nodeEdges = buildDiagramReactFlowEdges(diagram, layout, vi.fn(), { type: "node", id: "target" });
+    expect(nodeEdges).toHaveLength(2);
+    expect(nodeEdges.map(({ id }) => id)).toEqual(["internal", "boundary"]);
+    nodeEdges.forEach((edge) => {
+      expect(edge).toMatchObject({
+        style: { stroke: "var(--foreground)", strokeWidth: 2 },
+        data: { cornerRadius: 12, points: expect.any(Array) },
+      });
+      expect(edge).not.toHaveProperty("label");
+    });
   });
 
   it("omits the card eyebrow when a default node has no kind", () => {

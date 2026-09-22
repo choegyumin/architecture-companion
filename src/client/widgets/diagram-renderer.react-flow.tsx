@@ -3,7 +3,10 @@ import { ExternalLink, FileCode2 } from "lucide-react";
 import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
-import { routeGroupFocusedDependencyEdges } from "@/features/diagram/_layout/group-focused-dependency-edge-routing.prototype";
+import {
+  routeGroupFocusedDependencyEdges,
+  routeNodeFocusedDependencyEdges,
+} from "@/features/diagram/_layout/group-focused-dependency-edge-routing.prototype";
 import { routeTopLevelDependencyEdges } from "@/features/diagram/_layout/top-level-dependency-edge-routing.prototype";
 import {
   type DiagramDependencyEdgeProjection,
@@ -417,6 +420,17 @@ export function buildDiagramReactFlowEdges(
     0,
   );
 
+  const routingGroups = diagram.graph.groups.map(({ id, parentId }) => ({
+    id,
+    ...(parentId ? { parentId } : {}),
+    ...getOrThrow(modulePlacementById.get(id), `Missing routing group: ${id}`),
+  }));
+  const routingNodes = diagram.graph.nodes.map(({ id, groupId }) => ({
+    id,
+    ...(groupId ? { groupId } : {}),
+    ...getOrThrow(modulePlacementById.get(id), `Missing routing node: ${id}`),
+  }));
+
   if (focus.type === "group") {
     const originalProjections = projections.filter(
       (projection): projection is OriginalDependencyEdgeProjection => projection.type === "original",
@@ -424,16 +438,6 @@ export function buildDiagramReactFlowEdges(
     const aggregateProjections = projections.filter(
       (projection): projection is AggregateDependencyEdgeProjection => projection.type === "aggregate",
     );
-    const routingGroups = diagram.graph.groups.map(({ id, parentId }) => ({
-      id,
-      ...(parentId ? { parentId } : {}),
-      ...getOrThrow(modulePlacementById.get(id), `Missing routing group: ${id}`),
-    }));
-    const routingNodes = diagram.graph.nodes.map(({ id, groupId }) => ({
-      id,
-      ...(groupId ? { groupId } : {}),
-      ...getOrThrow(modulePlacementById.get(id), `Missing routing node: ${id}`),
-    }));
     const routes = routeGroupFocusedDependencyEdges(
       routingGroups,
       routingNodes,
@@ -472,25 +476,26 @@ export function buildDiagramReactFlowEdges(
     });
   }
 
-  return projections.map((projection, index) => {
-    if (projection.type === "original") {
-      const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
-      return buildOriginalReactFlowEdge(
-        edge,
-        getOrThrow(placementByEdgeId.get(edge.id), `Missing edge placement: ${edge.id}`),
-        onLinkActivate,
-      );
+  const focusedEdges = projections.map((projection) => {
+    if (projection.type !== "original") {
+      throw new Error(`Node dependency projection must be original: ${projection.id}`);
     }
+    const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
+    return { id: edge.id, source: edge.source, target: edge.target };
+  });
+  const routeById = new Map(
+    routeNodeFocusedDependencyEdges(routingGroups, routingNodes, focusedEdges).map((route) => [route.id, route]),
+  );
 
-    return buildAggregateReactFlowEdge(
-      projection,
-      buildAggregateEdgePoints(
-        getOrThrow(modulePlacementById.get(projection.source), `Missing source module: ${projection.source}`),
-        getOrThrow(modulePlacementById.get(projection.target), `Missing target module: ${projection.target}`),
-        canvasRight,
-        index,
-      ),
-    );
+  return projections.map((projection) => {
+    if (projection.type !== "original") {
+      throw new Error(`Node dependency projection must be original: ${projection.id}`);
+    }
+    const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
+    const route = getOrThrow(routeById.get(edge.id), `Missing node-focused edge route: ${edge.id}`);
+    return buildOriginalReactFlowEdge(edge, { id: edge.id, points: route.points }, onLinkActivate, {
+      cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS,
+    });
   });
 }
 
