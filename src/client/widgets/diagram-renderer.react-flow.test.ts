@@ -189,7 +189,13 @@ describe("diagram renderer React Flow adapter", () => {
       target: "target-group",
       type: "polyline",
       label: "×2",
-      data: { points: expect.any(Array) },
+      data: {
+        cornerRadius: 12,
+        points: [
+          { x: 200, y: 300 },
+          { x: 200, y: 500 },
+        ],
+      },
     });
   });
 

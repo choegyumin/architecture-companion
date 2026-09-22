@@ -3,7 +3,9 @@ import { ExternalLink, FileCode2 } from "lucide-react";
 import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
+import { routeTopLevelDependencyEdges } from "@/features/diagram/_layout/top-level-dependency-edge-routing.prototype";
 import {
+  type DiagramDependencyEdgeProjection,
   type DiagramDependencyFocus,
   projectDiagramDependencyEdges,
 } from "@/features/diagram/dependency-edge-projection";
@@ -38,6 +40,7 @@ const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
 const AGGREGATE_EDGE_CORRIDOR_GAP = 96;
 const AGGREGATE_EDGE_LANE_GAP = 10;
 const AGGREGATE_EDGE_LANE_COUNT = 12;
+const AGGREGATE_EDGE_CORNER_RADIUS = 12;
 
 export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
@@ -318,6 +321,30 @@ function buildAggregateEdgePoints(
   ]);
 }
 
+type AggregateDependencyEdgeProjection = Extract<DiagramDependencyEdgeProjection, { type: "aggregate" }>;
+
+function buildAggregateReactFlowEdge(
+  projection: AggregateDependencyEdgeProjection,
+  points: readonly DiagramLayoutPoint[],
+  rounded = false,
+): DiagramReactFlowEdge {
+  return {
+    id: projection.id,
+    source: projection.source,
+    target: projection.target,
+    type: "polyline",
+    label: `×${projection.count}`,
+    focusable: false,
+    selectable: false,
+    markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLOR },
+    style: { stroke: EDGE_COLOR, strokeWidth: 2 },
+    data: {
+      points,
+      ...(rounded ? { cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS } : {}),
+    },
+  };
+}
+
 export function buildDiagramReactFlowEdges(
   diagram: Diagram,
   layout: DiagramLayout,
@@ -343,12 +370,44 @@ export function buildDiagramReactFlowEdges(
   }
 
   const modulePlacementById = getAbsoluteModulePlacements(layout);
+  const projections = projectDiagramDependencyEdges(diagram.graph, focus);
+
+  if (!focus) {
+    const aggregateProjections = projections.map((projection) => {
+      if (projection.type !== "aggregate") {
+        throw new Error(`Top-level dependency projection must be aggregate: ${projection.edgeId}`);
+      }
+      return projection;
+    });
+    const topLevelModules = [
+      ...diagram.graph.groups.filter(({ parentId }) => !parentId),
+      ...diagram.graph.nodes.filter(({ groupId }) => !groupId),
+    ].map(({ id }) => ({
+      id,
+      ...getOrThrow(modulePlacementById.get(id), `Missing top-level module: ${id}`),
+    }));
+    const routeById = new Map(
+      routeTopLevelDependencyEdges(
+        topLevelModules,
+        aggregateProjections.map(({ id, source, target }) => ({ id, source, target })),
+      ).map((route) => [route.id, route]),
+    );
+
+    return aggregateProjections.map((projection) =>
+      buildAggregateReactFlowEdge(
+        projection,
+        getOrThrow(routeById.get(projection.id), `Missing aggregate edge route: ${projection.id}`).points,
+        true,
+      ),
+    );
+  }
+
   const canvasRight = Math.max(
     ...[...modulePlacementById.values()].map(({ position, size }) => position.x + size.width),
     0,
   );
 
-  return projectDiagramDependencyEdges(diagram.graph, focus).map((projection, index) => {
+  return projections.map((projection, index) => {
     if (projection.type === "original") {
       const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
       return buildOriginalReactFlowEdge(
@@ -358,25 +417,15 @@ export function buildDiagramReactFlowEdges(
       );
     }
 
-    return {
-      id: projection.id,
-      source: projection.source,
-      target: projection.target,
-      type: "polyline",
-      label: `×${projection.count}`,
-      focusable: false,
-      selectable: false,
-      markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLOR },
-      style: { stroke: EDGE_COLOR, strokeWidth: 2 },
-      data: {
-        points: buildAggregateEdgePoints(
-          getOrThrow(modulePlacementById.get(projection.source), `Missing source module: ${projection.source}`),
-          getOrThrow(modulePlacementById.get(projection.target), `Missing target module: ${projection.target}`),
-          canvasRight,
-          index,
-        ),
-      },
-    };
+    return buildAggregateReactFlowEdge(
+      projection,
+      buildAggregateEdgePoints(
+        getOrThrow(modulePlacementById.get(projection.source), `Missing source module: ${projection.source}`),
+        getOrThrow(modulePlacementById.get(projection.target), `Missing target module: ${projection.target}`),
+        canvasRight,
+        index,
+      ),
+    );
   });
 }
 

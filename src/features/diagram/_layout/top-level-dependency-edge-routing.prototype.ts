@@ -1,0 +1,532 @@
+import type { DiagramLayoutPoint, DiagramLayoutSize } from "@/features/diagram/diagram-spatial";
+import { getOrThrow } from "@/shared/universal/get-or-throw";
+
+export type TopLevelDependencyRoutingModule = Readonly<{
+  id: string;
+  position: DiagramLayoutPoint;
+  size: DiagramLayoutSize;
+}>;
+
+export type TopLevelDependencyRoutingEdge = Readonly<{
+  id: string;
+  source: string;
+  target: string;
+}>;
+
+export type RoutedTopLevelDependencyEdge = Readonly<{
+  id: string;
+  points: readonly DiagramLayoutPoint[];
+}>;
+
+type Side = "top" | "right" | "bottom" | "left";
+type Axis = "horizontal" | "vertical";
+
+type Rectangle = Readonly<{
+  id: string;
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}>;
+
+type RoutingEdge = {
+  id: string;
+  source: string;
+  target: string;
+  sourceRectangle: Rectangle;
+  targetRectangle: Rectangle;
+  sourceSide: Side;
+  targetSide: Side;
+  sourcePoint?: DiagramLayoutPoint;
+  targetPoint?: DiagramLayoutPoint;
+};
+
+type Segment = Readonly<{
+  start: DiagramLayoutPoint;
+  end: DiagramLayoutPoint;
+  axis: Axis;
+}>;
+
+type GraphConnection = Readonly<{
+  target: number;
+  segment: Segment;
+}>;
+
+type QueueEntry = Readonly<{
+  key: string;
+  cost: number;
+}>;
+
+const MODULE_CLEARANCE = 32;
+const ROUTING_TRACK_GAP = 16;
+const ROUTING_TRACK_COUNT = 2;
+const PORT_PADDING = 48;
+const BEND_COST = 96;
+const CROSSING_COST = 640;
+const OVERLAP_COST = 960;
+const EPSILON = 0.001;
+
+function getCenter(rectangle: Rectangle): DiagramLayoutPoint {
+  return {
+    x: (rectangle.left + rectangle.right) / 2,
+    y: (rectangle.top + rectangle.bottom) / 2,
+  };
+}
+
+function toRectangle(module: TopLevelDependencyRoutingModule): Rectangle {
+  return {
+    id: module.id,
+    left: module.position.x,
+    top: module.position.y,
+    right: module.position.x + module.size.width,
+    bottom: module.position.y + module.size.height,
+  };
+}
+
+function inflateRectangle(rectangle: Rectangle, amount: number): Rectangle {
+  return {
+    id: rectangle.id,
+    left: rectangle.left - amount,
+    top: rectangle.top - amount,
+    right: rectangle.right + amount,
+    bottom: rectangle.bottom + amount,
+  };
+}
+
+function getPreferredSides(source: Rectangle, target: Rectangle): Readonly<{ source: Side; target: Side }> {
+  if (target.top >= source.bottom) return { source: "bottom", target: "top" };
+  if (target.bottom <= source.top) return { source: "top", target: "bottom" };
+  if (target.left >= source.right) return { source: "right", target: "left" };
+  return { source: "left", target: "right" };
+}
+
+function getPortPoint(rectangle: Rectangle, side: Side, rank: number, count: number): DiagramLayoutPoint {
+  if (side === "top" || side === "bottom") {
+    const width = rectangle.right - rectangle.left;
+    const padding = Math.min(PORT_PADDING, width / 4);
+    return {
+      x: rectangle.left + padding + ((width - padding * 2) * (rank + 1)) / (count + 1),
+      y: side === "top" ? rectangle.top : rectangle.bottom,
+    };
+  }
+
+  const height = rectangle.bottom - rectangle.top;
+  const padding = Math.min(PORT_PADDING, height / 4);
+  return {
+    x: side === "left" ? rectangle.left : rectangle.right,
+    y: rectangle.top + padding + ((height - padding * 2) * (rank + 1)) / (count + 1),
+  };
+}
+
+function getPortSortValue(edge: RoutingEdge, endpoint: "source" | "target"): number {
+  const side = endpoint === "source" ? edge.sourceSide : edge.targetSide;
+  const opposite = endpoint === "source" ? edge.targetRectangle : edge.sourceRectangle;
+  const center = getCenter(opposite);
+  return side === "top" || side === "bottom" ? center.x : center.y;
+}
+
+function assignPortPoints(edges: RoutingEdge[]): void {
+  const endpointGroups = new Map<string, { edge: RoutingEdge; endpoint: "source" | "target" }[]>();
+
+  for (const edge of edges) {
+    for (const endpoint of ["source", "target"] as const) {
+      const moduleId = endpoint === "source" ? edge.source : edge.target;
+      const side = endpoint === "source" ? edge.sourceSide : edge.targetSide;
+      const key = `${moduleId}:${side}`;
+      const group = endpointGroups.get(key) ?? [];
+      group.push({ edge, endpoint });
+      endpointGroups.set(key, group);
+    }
+  }
+
+  for (const group of endpointGroups.values()) {
+    group.sort(
+      (first, second) =>
+        getPortSortValue(first.edge, first.endpoint) - getPortSortValue(second.edge, second.endpoint) ||
+        first.edge.id.localeCompare(second.edge.id),
+    );
+    group.forEach(({ edge, endpoint }, rank) => {
+      const rectangle = endpoint === "source" ? edge.sourceRectangle : edge.targetRectangle;
+      const side = endpoint === "source" ? edge.sourceSide : edge.targetSide;
+      const point = getPortPoint(rectangle, side, rank, group.length);
+      if (endpoint === "source") edge.sourcePoint = point;
+      else edge.targetPoint = point;
+    });
+  }
+}
+
+function movePointOutward(point: DiagramLayoutPoint, side: Side, distance: number): DiagramLayoutPoint {
+  switch (side) {
+    case "top":
+      return { x: point.x, y: point.y - distance };
+    case "right":
+      return { x: point.x + distance, y: point.y };
+    case "bottom":
+      return { x: point.x, y: point.y + distance };
+    case "left":
+      return { x: point.x - distance, y: point.y };
+  }
+}
+
+function getSideAxis(side: Side): Axis {
+  return side === "top" || side === "bottom" ? "vertical" : "horizontal";
+}
+
+function isInsideRectangle(point: DiagramLayoutPoint, rectangle: Rectangle): boolean {
+  return (
+    point.x > rectangle.left + EPSILON &&
+    point.x < rectangle.right - EPSILON &&
+    point.y > rectangle.top + EPSILON &&
+    point.y < rectangle.bottom - EPSILON
+  );
+}
+
+function toSegment(start: DiagramLayoutPoint, end: DiagramLayoutPoint): Segment {
+  return {
+    start,
+    end,
+    axis: start.y === end.y ? "horizontal" : "vertical",
+  };
+}
+
+function segmentCrossesRectangle(segment: Segment, rectangle: Rectangle): boolean {
+  if (segment.axis === "horizontal") {
+    if (segment.start.y <= rectangle.top + EPSILON || segment.start.y >= rectangle.bottom - EPSILON) return false;
+    const start = Math.min(segment.start.x, segment.end.x);
+    const end = Math.max(segment.start.x, segment.end.x);
+    return start < rectangle.right - EPSILON && end > rectangle.left + EPSILON;
+  }
+
+  if (segment.start.x <= rectangle.left + EPSILON || segment.start.x >= rectangle.right - EPSILON) return false;
+  const start = Math.min(segment.start.y, segment.end.y);
+  const end = Math.max(segment.start.y, segment.end.y);
+  return start < rectangle.bottom - EPSILON && end > rectangle.top + EPSILON;
+}
+
+function isSegmentClear(segment: Segment, obstacles: readonly Rectangle[]): boolean {
+  return !obstacles.some((obstacle) => segmentCrossesRectangle(segment, obstacle));
+}
+
+function uniqueSorted(values: readonly number[]): number[] {
+  return [...new Set(values)].sort((first, second) => first - second);
+}
+
+function getRoutingCoordinates(
+  start: DiagramLayoutPoint,
+  end: DiagramLayoutPoint,
+  obstacles: readonly Rectangle[],
+): Readonly<{ x: readonly number[]; y: readonly number[] }> {
+  const x = [start.x, end.x];
+  const y = [start.y, end.y];
+
+  for (const obstacle of obstacles) {
+    x.push(obstacle.left, obstacle.right);
+    y.push(obstacle.top, obstacle.bottom);
+    for (let lane = 1; lane <= ROUTING_TRACK_COUNT; lane += 1) {
+      const offset = ROUTING_TRACK_GAP * lane;
+      x.push(obstacle.left - offset, obstacle.right + offset);
+      y.push(obstacle.top - offset, obstacle.bottom + offset);
+    }
+  }
+
+  const minLeft = Math.min(...obstacles.map(({ left }) => left), start.x, end.x);
+  const maxRight = Math.max(...obstacles.map(({ right }) => right), start.x, end.x);
+  const minTop = Math.min(...obstacles.map(({ top }) => top), start.y, end.y);
+  const maxBottom = Math.max(...obstacles.map(({ bottom }) => bottom), start.y, end.y);
+  x.push(minLeft - ROUTING_TRACK_GAP, maxRight + ROUTING_TRACK_GAP);
+  y.push(minTop - ROUTING_TRACK_GAP, maxBottom + ROUTING_TRACK_GAP);
+
+  return { x: uniqueSorted(x), y: uniqueSorted(y) };
+}
+
+function getPointKey(point: DiagramLayoutPoint): string {
+  return `${point.x}:${point.y}`;
+}
+
+function buildRoutingGraph(
+  start: DiagramLayoutPoint,
+  end: DiagramLayoutPoint,
+  obstacles: readonly Rectangle[],
+): Readonly<{
+  points: readonly DiagramLayoutPoint[];
+  connections: ReadonlyMap<number, readonly GraphConnection[]>;
+  startIndex: number;
+  endIndex: number;
+}> {
+  const coordinates = getRoutingCoordinates(start, end, obstacles);
+  const points: DiagramLayoutPoint[] = [];
+  const pointIndexByKey = new Map<string, number>();
+
+  for (const y of coordinates.y) {
+    for (const x of coordinates.x) {
+      const point = { x, y };
+      if (obstacles.some((obstacle) => isInsideRectangle(point, obstacle))) continue;
+      pointIndexByKey.set(getPointKey(point), points.length);
+      points.push(point);
+    }
+  }
+
+  const connections = new Map<number, GraphConnection[]>();
+  const connect = (first: number, second: number): void => {
+    const segment = toSegment(
+      getOrThrow(points[first], `Missing routing point: ${first}`),
+      getOrThrow(points[second], `Missing routing point: ${second}`),
+    );
+    if (!isSegmentClear(segment, obstacles)) return;
+    const firstConnections = connections.get(first) ?? [];
+    const secondConnections = connections.get(second) ?? [];
+    firstConnections.push({ target: second, segment });
+    secondConnections.push({ target: first, segment: toSegment(segment.end, segment.start) });
+    connections.set(first, firstConnections);
+    connections.set(second, secondConnections);
+  };
+
+  for (const y of coordinates.y) {
+    const row = coordinates.x
+      .map((x) => pointIndexByKey.get(getPointKey({ x, y })))
+      .filter((index): index is number => index !== undefined);
+    for (let index = 1; index < row.length; index += 1) connect(row[index - 1]!, row[index]!);
+  }
+  for (const x of coordinates.x) {
+    const column = coordinates.y
+      .map((y) => pointIndexByKey.get(getPointKey({ x, y })))
+      .filter((index): index is number => index !== undefined);
+    for (let index = 1; index < column.length; index += 1) connect(column[index - 1]!, column[index]!);
+  }
+
+  return {
+    points,
+    connections,
+    startIndex: getOrThrow(pointIndexByKey.get(getPointKey(start)), "Missing routing start point."),
+    endIndex: getOrThrow(pointIndexByKey.get(getPointKey(end)), "Missing routing end point."),
+  };
+}
+
+function getSegmentLength(segment: Segment): number {
+  return Math.abs(segment.end.x - segment.start.x) + Math.abs(segment.end.y - segment.start.y);
+}
+
+function getOverlapLength(first: Segment, second: Segment): number {
+  if (first.axis !== second.axis) return 0;
+  if (first.axis === "horizontal") {
+    if (Math.abs(first.start.y - second.start.y) > EPSILON) return 0;
+    return Math.max(
+      0,
+      Math.min(Math.max(first.start.x, first.end.x), Math.max(second.start.x, second.end.x)) -
+        Math.max(Math.min(first.start.x, first.end.x), Math.min(second.start.x, second.end.x)),
+    );
+  }
+  if (Math.abs(first.start.x - second.start.x) > EPSILON) return 0;
+  return Math.max(
+    0,
+    Math.min(Math.max(first.start.y, first.end.y), Math.max(second.start.y, second.end.y)) -
+      Math.max(Math.min(first.start.y, first.end.y), Math.min(second.start.y, second.end.y)),
+  );
+}
+
+function segmentsCross(first: Segment, second: Segment): boolean {
+  if (first.axis === second.axis) return false;
+  const horizontal = first.axis === "horizontal" ? first : second;
+  const vertical = first.axis === "vertical" ? first : second;
+  const horizontalStart = Math.min(horizontal.start.x, horizontal.end.x);
+  const horizontalEnd = Math.max(horizontal.start.x, horizontal.end.x);
+  const verticalStart = Math.min(vertical.start.y, vertical.end.y);
+  const verticalEnd = Math.max(vertical.start.y, vertical.end.y);
+  return (
+    vertical.start.x > horizontalStart + EPSILON &&
+    vertical.start.x < horizontalEnd - EPSILON &&
+    horizontal.start.y > verticalStart + EPSILON &&
+    horizontal.start.y < verticalEnd - EPSILON
+  );
+}
+
+function getCongestionCost(segment: Segment, usedSegments: readonly Segment[]): number {
+  return usedSegments.reduce((cost, usedSegment) => {
+    const overlap = getOverlapLength(segment, usedSegment);
+    if (overlap > EPSILON) return cost + OVERLAP_COST + overlap;
+    return cost + (segmentsCross(segment, usedSegment) ? CROSSING_COST : 0);
+  }, 0);
+}
+
+class MinQueue {
+  readonly #entries: QueueEntry[] = [];
+
+  push(entry: QueueEntry): void {
+    this.#entries.push(entry);
+    let index = this.#entries.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (this.#entries[parent]!.cost <= entry.cost) break;
+      this.#entries[index] = this.#entries[parent]!;
+      index = parent;
+    }
+    this.#entries[index] = entry;
+  }
+
+  pop(): QueueEntry | undefined {
+    const first = this.#entries.at(0);
+    const last = this.#entries.pop();
+    if (!first || !last || this.#entries.length === 0) return first;
+    let index = 0;
+    this.#entries[0] = last;
+    while (true) {
+      const left = index * 2 + 1;
+      const right = left + 1;
+      if (left >= this.#entries.length) break;
+      const child =
+        right < this.#entries.length && this.#entries[right]!.cost < this.#entries[left]!.cost ? right : left;
+      if (this.#entries[child]!.cost >= this.#entries[index]!.cost) break;
+      [this.#entries[index], this.#entries[child]] = [this.#entries[child]!, this.#entries[index]!];
+      index = child;
+    }
+    return first;
+  }
+}
+
+function getStateKey(pointIndex: number, axis: Axis): string {
+  return `${pointIndex}:${axis}`;
+}
+
+function parseStateKey(key: string): Readonly<{ pointIndex: number; axis: Axis }> {
+  const separator = key.lastIndexOf(":");
+  return {
+    pointIndex: Number(key.slice(0, separator)),
+    axis: key.slice(separator + 1) as Axis,
+  };
+}
+
+function findRoute(
+  start: DiagramLayoutPoint,
+  end: DiagramLayoutPoint,
+  startAxis: Axis,
+  endAxis: Axis,
+  obstacles: readonly Rectangle[],
+  usedSegments: readonly Segment[],
+): readonly DiagramLayoutPoint[] {
+  const graph = buildRoutingGraph(start, end, obstacles);
+  const queue = new MinQueue();
+  const costs = new Map<string, number>();
+  const previous = new Map<string, string>();
+  const startKey = getStateKey(graph.startIndex, startAxis);
+  costs.set(startKey, 0);
+  queue.push({ key: startKey, cost: 0 });
+
+  while (true) {
+    const current = queue.pop();
+    if (!current) break;
+    if (current.cost !== costs.get(current.key)) continue;
+    const state = parseStateKey(current.key);
+
+    for (const connection of graph.connections.get(state.pointIndex) ?? []) {
+      const nextKey = getStateKey(connection.target, connection.segment.axis);
+      const nextCost =
+        current.cost +
+        getSegmentLength(connection.segment) +
+        getCongestionCost(connection.segment, usedSegments) +
+        (state.axis === connection.segment.axis ? 0 : BEND_COST);
+      if (nextCost >= (costs.get(nextKey) ?? Number.POSITIVE_INFINITY)) continue;
+      costs.set(nextKey, nextCost);
+      previous.set(nextKey, current.key);
+      queue.push({ key: nextKey, cost: nextCost });
+    }
+  }
+
+  const endStates = (["horizontal", "vertical"] as const)
+    .map((axis) => {
+      const key = getStateKey(graph.endIndex, axis);
+      const cost = costs.get(key);
+      return cost === undefined ? undefined : { key, cost: cost + (axis === endAxis ? 0 : BEND_COST) };
+    })
+    .filter((state): state is QueueEntry => state !== undefined)
+    .sort((first, second) => first.cost - second.cost);
+  const best = endStates.at(0);
+  if (!best) return [start, end];
+
+  const pointIndexes: number[] = [];
+  let key: string | undefined = best.key;
+  while (key) {
+    pointIndexes.push(parseStateKey(key).pointIndex);
+    key = previous.get(key);
+  }
+
+  return pointIndexes
+    .reverse()
+    .map((pointIndex) => getOrThrow(graph.points[pointIndex], `Missing routed point: ${pointIndex}`));
+}
+
+function compactPoints(points: readonly DiagramLayoutPoint[]): readonly DiagramLayoutPoint[] {
+  const unique = points.filter((point, index) => {
+    const previous = points[index - 1];
+    return !previous || previous.x !== point.x || previous.y !== point.y;
+  });
+
+  return unique.filter((point, index) => {
+    const previous = unique[index - 1];
+    const next = unique.at(index + 1);
+    if (!previous || !next) return true;
+    return !((previous.x === point.x && point.x === next.x) || (previous.y === point.y && point.y === next.y));
+  });
+}
+
+function toSegments(points: readonly DiagramLayoutPoint[]): Segment[] {
+  const segments: Segment[] = [];
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    if (start && end) segments.push(toSegment(start, end));
+  }
+  return segments;
+}
+
+export function routeTopLevelDependencyEdges(
+  modules: readonly TopLevelDependencyRoutingModule[],
+  edges: readonly TopLevelDependencyRoutingEdge[],
+): readonly RoutedTopLevelDependencyEdge[] {
+  const rectangleById = new Map(modules.map((module) => [module.id, toRectangle(module)]));
+  const routingEdges = edges.map((edge): RoutingEdge => {
+    const sourceRectangle = getOrThrow(rectangleById.get(edge.source), `Missing routing source: ${edge.source}`);
+    const targetRectangle = getOrThrow(rectangleById.get(edge.target), `Missing routing target: ${edge.target}`);
+    const sides = getPreferredSides(sourceRectangle, targetRectangle);
+    return {
+      ...edge,
+      sourceRectangle,
+      targetRectangle,
+      sourceSide: sides.source,
+      targetSide: sides.target,
+    };
+  });
+  assignPortPoints(routingEdges);
+  const obstacles = [...rectangleById.values()].map((rectangle) => inflateRectangle(rectangle, MODULE_CLEARANCE));
+  const usedSegments: Segment[] = [];
+  const routedById = new Map<string, RoutedTopLevelDependencyEdge>();
+
+  const orderedEdges = [...routingEdges].sort((first, second) => {
+    const firstSource = getOrThrow(first.sourcePoint, `Missing source port: ${first.id}`);
+    const firstTarget = getOrThrow(first.targetPoint, `Missing target port: ${first.id}`);
+    const secondSource = getOrThrow(second.sourcePoint, `Missing source port: ${second.id}`);
+    const secondTarget = getOrThrow(second.targetPoint, `Missing target port: ${second.id}`);
+    const firstLength = Math.abs(firstSource.x - firstTarget.x) + Math.abs(firstSource.y - firstTarget.y);
+    const secondLength = Math.abs(secondSource.x - secondTarget.x) + Math.abs(secondSource.y - secondTarget.y);
+    return firstLength - secondLength || first.id.localeCompare(second.id);
+  });
+
+  for (const edge of orderedEdges) {
+    const sourcePoint = getOrThrow(edge.sourcePoint, `Missing source port: ${edge.id}`);
+    const targetPoint = getOrThrow(edge.targetPoint, `Missing target port: ${edge.id}`);
+    const start = movePointOutward(sourcePoint, edge.sourceSide, MODULE_CLEARANCE);
+    const end = movePointOutward(targetPoint, edge.targetSide, MODULE_CLEARANCE);
+    const route = findRoute(
+      start,
+      end,
+      getSideAxis(edge.sourceSide),
+      getSideAxis(edge.targetSide),
+      obstacles,
+      usedSegments,
+    );
+    const points = compactPoints([sourcePoint, ...route, targetPoint]);
+    usedSegments.push(...toSegments(points));
+    routedById.set(edge.id, { id: edge.id, points });
+  }
+
+  return edges.map(({ id }) => getOrThrow(routedById.get(id), `Missing routed dependency edge: ${id}`));
+}
