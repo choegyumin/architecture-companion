@@ -19,7 +19,9 @@ const MIN_GROUP_WIDTH = 352;
 const MAX_NODE_ROW_WIDTH = 1_280;
 const NODE_COLUMN_GAP = 32;
 const NODE_ROW_GAP = 32;
+const GROUP_COLUMN_GAP = 64;
 const GROUP_ROW_GAP = 64;
+const GROUP_LAYER_GAP = 128;
 const GROUP_SECTION_GAP = 48;
 const EDGE_CORRIDOR_GAP = 96;
 const EDGE_LANE_GAP = 10;
@@ -163,6 +165,153 @@ function materializeGroup(
   };
 }
 
+function findStronglyConnectedComponents(
+  nodeIds: readonly string[],
+  outgoingByNode: ReadonlyMap<string, ReadonlySet<string>>,
+): readonly (readonly string[])[] {
+  let nextIndex = 0;
+  const indexByNode = new Map<string, number>();
+  const lowLinkByNode = new Map<string, number>();
+  const stack: string[] = [];
+  const nodesOnStack = new Set<string>();
+  const components: string[][] = [];
+
+  function visit(nodeId: string): void {
+    const index = nextIndex++;
+    indexByNode.set(nodeId, index);
+    lowLinkByNode.set(nodeId, index);
+    stack.push(nodeId);
+    nodesOnStack.add(nodeId);
+
+    for (const targetId of outgoingByNode.get(nodeId) ?? []) {
+      if (!indexByNode.has(targetId)) {
+        visit(targetId);
+        lowLinkByNode.set(
+          nodeId,
+          Math.min(
+            getOrThrow(lowLinkByNode.get(nodeId), `Missing low-link index: ${nodeId}`),
+            getOrThrow(lowLinkByNode.get(targetId), `Missing low-link index: ${targetId}`),
+          ),
+        );
+      } else if (nodesOnStack.has(targetId)) {
+        lowLinkByNode.set(
+          nodeId,
+          Math.min(
+            getOrThrow(lowLinkByNode.get(nodeId), `Missing low-link index: ${nodeId}`),
+            getOrThrow(indexByNode.get(targetId), `Missing dependency index: ${targetId}`),
+          ),
+        );
+      }
+    }
+
+    if (lowLinkByNode.get(nodeId) !== indexByNode.get(nodeId)) return;
+
+    const component: string[] = [];
+    while (stack.length > 0) {
+      const memberId = getOrThrow(stack.pop(), `Missing dependency component member: ${nodeId}`);
+      nodesOnStack.delete(memberId);
+      component.push(memberId);
+      if (memberId === nodeId) break;
+    }
+    components.push(component);
+  }
+
+  for (const nodeId of nodeIds) {
+    if (!indexByNode.has(nodeId)) visit(nodeId);
+  }
+
+  return components;
+}
+
+function getRootGroupId(groupId: string, groupById: ReadonlyMap<string, DiagramGroup>): string {
+  let currentId = groupId;
+  while (true) {
+    const group = getOrThrow(groupById.get(currentId), `Missing diagram group: ${currentId}`);
+    if (!group.parentId) return currentId;
+    currentId = group.parentId;
+  }
+}
+
+function assignRootGroupLayers(
+  diagram: DiagramGraph,
+  rootGroups: readonly LocalGroupLayout[],
+): ReadonlyMap<string, number> {
+  const rootGroupIds = rootGroups.map(({ group }) => group.id);
+  const rootGroupIdSet = new Set(rootGroupIds);
+  const groupById = new Map(diagram.groups.map((group) => [group.id, group]));
+  const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
+  const outgoingByGroup = new Map(rootGroupIds.map((groupId) => [groupId, new Set<string>()]));
+
+  for (const edge of diagram.edges) {
+    const sourceNode = getOrThrow(nodeById.get(edge.source), `Missing edge source node: ${edge.source}`);
+    const targetNode = getOrThrow(nodeById.get(edge.target), `Missing edge target node: ${edge.target}`);
+    if (!sourceNode.groupId || !targetNode.groupId) continue;
+
+    const sourceGroupId = getRootGroupId(sourceNode.groupId, groupById);
+    const targetGroupId = getRootGroupId(targetNode.groupId, groupById);
+    if (sourceGroupId === targetGroupId || !rootGroupIdSet.has(sourceGroupId) || !rootGroupIdSet.has(targetGroupId)) {
+      continue;
+    }
+    getOrThrow(outgoingByGroup.get(sourceGroupId), `Missing root group: ${sourceGroupId}`).add(targetGroupId);
+  }
+
+  const components = findStronglyConnectedComponents(rootGroupIds, outgoingByGroup);
+  const componentByGroup = new Map<string, number>();
+  components.forEach((component, componentIndex) => {
+    component.forEach((groupId) => componentByGroup.set(groupId, componentIndex));
+  });
+
+  const outgoingByComponent = components.map(() => new Set<number>());
+  const incomingCountByComponent = components.map(() => 0);
+  for (const [sourceGroupId, targetGroupIds] of outgoingByGroup) {
+    const sourceComponent = getOrThrow(
+      componentByGroup.get(sourceGroupId),
+      `Missing dependency component: ${sourceGroupId}`,
+    );
+    for (const targetGroupId of targetGroupIds) {
+      const targetComponent = getOrThrow(
+        componentByGroup.get(targetGroupId),
+        `Missing dependency component: ${targetGroupId}`,
+      );
+      if (sourceComponent === targetComponent || outgoingByComponent[sourceComponent]?.has(targetComponent)) continue;
+      getOrThrow(outgoingByComponent[sourceComponent], `Missing dependency component: ${sourceComponent}`).add(
+        targetComponent,
+      );
+      incomingCountByComponent[targetComponent] =
+        getOrThrow(incomingCountByComponent[targetComponent], `Missing incoming dependency count: ${targetComponent}`) +
+        1;
+    }
+  }
+
+  const layerByComponent = components.map(() => 0);
+  const queue = components
+    .map((_, componentIndex) => componentIndex)
+    .filter((componentIndex) => incomingCountByComponent[componentIndex] === 0);
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const sourceComponent = getOrThrow(queue[queueIndex], `Missing queued dependency component: ${queueIndex}`);
+    for (const targetComponent of getOrThrow(
+      outgoingByComponent[sourceComponent],
+      `Missing dependency component: ${sourceComponent}`,
+    )) {
+      layerByComponent[targetComponent] = Math.max(
+        getOrThrow(layerByComponent[targetComponent], `Missing dependency layer: ${targetComponent}`),
+        getOrThrow(layerByComponent[sourceComponent], `Missing dependency layer: ${sourceComponent}`) + 1,
+      );
+      incomingCountByComponent[targetComponent] =
+        getOrThrow(incomingCountByComponent[targetComponent], `Missing incoming dependency count: ${targetComponent}`) -
+        1;
+      if (incomingCountByComponent[targetComponent] === 0) queue.push(targetComponent);
+    }
+  }
+
+  return new Map(
+    rootGroupIds.map((groupId) => {
+      const component = getOrThrow(componentByGroup.get(groupId), `Missing dependency component: ${groupId}`);
+      return [groupId, getOrThrow(layerByComponent[component], `Missing dependency layer: ${component}`)];
+    }),
+  );
+}
+
 function compactPoints(points: readonly DiagramLayoutPoint[]): readonly DiagramLayoutPoint[] {
   return points.filter((point, index) => {
     const previous = points[index - 1];
@@ -213,6 +362,15 @@ export function layoutGroupRowsDiagram(diagram: DiagramGraph, nodeSizes: Diagram
   const rootGroups = diagram.groups
     .filter(({ parentId }) => !parentId)
     .map((group) => layoutGroup(group, diagram, nodeSizes));
+  const layerByRootGroup = assignRootGroupLayers(diagram, rootGroups);
+  const rootGroupLayers = Array.from({
+    length: Math.max(...layerByRootGroup.values(), -1) + 1,
+  }).map((_, layer) => rootGroups.filter(({ group }) => layerByRootGroup.get(group.id) === layer));
+  const layerWidths = rootGroupLayers.map(
+    (groups) =>
+      groups.reduce((width, { size }) => width + size.width, 0) + Math.max(0, groups.length - 1) * GROUP_COLUMN_GAP,
+  );
+  const canvasWidth = Math.max(ungroupedRows.size.width, ...layerWidths, 0);
 
   let y = 0;
   const ungroupedNodes = ungroupedRows.placements.map<DiagramLayoutNode>(({ node, position, size }) => ({
@@ -223,16 +381,27 @@ export function layoutGroupRowsDiagram(diagram: DiagramGraph, nodeSizes: Diagram
   const absoluteNodePositions: Record<string, DiagramLayoutPoint> = Object.fromEntries(
     ungroupedRows.placements.map(({ node, position }) => [node.id, position]),
   );
-  if (ungroupedRows.size.height > 0) y += ungroupedRows.size.height + GROUP_ROW_GAP;
+  if (ungroupedRows.size.height > 0) y += ungroupedRows.size.height + GROUP_LAYER_GAP;
 
-  const materializedGroups = rootGroups.map((layout) => {
-    const position = { x: 0, y };
-    const materialized = materializeGroup(layout, position, position);
-    y += layout.size.height + GROUP_ROW_GAP;
-    Object.assign(absoluteNodePositions, materialized.absoluteNodePositions);
-    return materialized;
+  const materializedGroups: MaterializedLayout[] = [];
+  let canvasRight = ungroupedRows.size.width;
+  rootGroupLayers.forEach((groups, layer) => {
+    const layerWidth = getOrThrow(layerWidths[layer], `Missing group layer width: ${layer}`);
+    let x = (canvasWidth - layerWidth) / 2;
+    let layerHeight = 0;
+
+    for (const layout of groups) {
+      const position = { x, y };
+      const materialized = materializeGroup(layout, position, position);
+      materializedGroups.push(materialized);
+      Object.assign(absoluteNodePositions, materialized.absoluteNodePositions);
+      canvasRight = Math.max(canvasRight, x + layout.size.width);
+      layerHeight = Math.max(layerHeight, layout.size.height);
+      x += layout.size.width + GROUP_COLUMN_GAP;
+    }
+
+    y += layerHeight + GROUP_LAYER_GAP;
   });
-  const canvasRight = Math.max(ungroupedRows.size.width, ...rootGroups.map(({ size }) => size.width), 0);
 
   return Promise.resolve({
     nodes: [...ungroupedNodes, ...materializedGroups.flatMap(({ nodes }) => nodes)],
