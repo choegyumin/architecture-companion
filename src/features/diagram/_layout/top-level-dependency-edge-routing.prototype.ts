@@ -127,11 +127,25 @@ function inflateRectangle(rectangle: Rectangle, amount: number): Rectangle {
   };
 }
 
+function getPreferredSide(rectangle: Rectangle, opposite: Rectangle): Side {
+  const center = getCenter(rectangle);
+  const oppositeCenter = getCenter(opposite);
+  const horizontalDistance = oppositeCenter.x - center.x;
+  const verticalDistance = oppositeCenter.y - center.y;
+  const horizontalScale = Math.max((rectangle.right - rectangle.left) / 2, EPSILON);
+  const verticalScale = Math.max((rectangle.bottom - rectangle.top) / 2, EPSILON);
+
+  if (Math.abs(horizontalDistance) / horizontalScale >= Math.abs(verticalDistance) / verticalScale) {
+    return horizontalDistance >= 0 ? "right" : "left";
+  }
+  return verticalDistance >= 0 ? "bottom" : "top";
+}
+
 function getPreferredSides(source: Rectangle, target: Rectangle): Readonly<{ source: Side; target: Side }> {
-  if (target.top >= source.bottom) return { source: "bottom", target: "top" };
-  if (target.bottom <= source.top) return { source: "top", target: "bottom" };
-  if (target.left >= source.right) return { source: "right", target: "left" };
-  return { source: "left", target: "right" };
+  return {
+    source: getPreferredSide(source, target),
+    target: getPreferredSide(target, source),
+  };
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {

@@ -40,6 +40,21 @@ describe("top-level dependency edge routing prototype", () => {
     ]);
   });
 
+  it("uses the perimeter sides intersected by a diagonal dependency", () => {
+    const [route] = routeTopLevelDependencyEdges(
+      [
+        { id: "source", position: { x: 0, y: 0 }, size: { width: 200, height: 100 } },
+        { id: "target", position: { x: 500, y: 200 }, size: { width: 200, height: 100 } },
+      ],
+      [{ id: "dependency", source: "source", target: "target" }],
+    );
+
+    expect(route?.points.at(0)?.x).toBe(200);
+    expect(route?.points.at(0)?.y).toBe(75);
+    expect(route?.points.at(-1)?.x).toBe(500);
+    expect(route?.points.at(-1)?.y).toBe(225);
+  });
+
   it("spreads multiple dependencies across distinct module ports", () => {
     const routes = routeTopLevelDependencyEdges(
       [
