@@ -7,9 +7,12 @@ import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 type LabelActivationHandler = (event: MouseEvent<HTMLButtonElement>) => void;
 
+const CURVED_EDGE_RADIUS = 96;
+
 type PolylineEdgeData = Readonly<{
   points: readonly XYPosition[];
   cornerRadius?: number;
+  curved?: boolean;
   eyebrow?: ReactNode;
   href?: string;
   labelAriaLabel?: string;
@@ -56,6 +59,10 @@ function toPath(points: readonly XYPosition[], cornerRadius = 0): string {
   return commands.join(" ");
 }
 
+function toCurvedPath(points: readonly XYPosition[]): string {
+  return toPath(points, CURVED_EDGE_RADIUS);
+}
+
 export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }: EdgeProps<PolylineReactFlowEdge>) {
   if (!data) return null;
   const first = data.points.at(0);
@@ -70,7 +77,7 @@ export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }:
         id={id}
         markerEnd={markerEnd}
         markerStart={markerStart}
-        path={toPath(data.points, data.cornerRadius)}
+        path={data.curved ? toCurvedPath(data.points) : toPath(data.points, data.cornerRadius)}
         style={style}
       />
       {data.eyebrow != null || label != null || data.href ? (

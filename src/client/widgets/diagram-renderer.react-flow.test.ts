@@ -191,7 +191,7 @@ describe("diagram renderer React Flow adapter", () => {
       type: "polyline",
       label: "×2",
       data: {
-        cornerRadius: 12,
+        curved: true,
         labelAriaLabel: "Show 2 underlying dependencies",
         onLabelActivate: expect.any(Function),
         points: [
@@ -266,13 +266,13 @@ describe("diagram renderer React Flow adapter", () => {
     expect(edges.at(0)).toMatchObject({
       id: "internal",
       style: { stroke: "var(--muted-foreground)", strokeWidth: 1.5 },
-      data: { cornerRadius: 12, points: expect.any(Array) },
+      data: { curved: true, points: expect.any(Array) },
     });
     expect(edges.at(1)).toMatchObject({
       id: "aggregate:focused->external",
       label: "×1",
       style: { stroke: "var(--foreground)", strokeWidth: 2 },
-      data: { cornerRadius: 12, points: expect.any(Array) },
+      data: { curved: true, points: expect.any(Array) },
     });
 
     const nodeEdges = buildDiagramReactFlowEdges(diagram, layout, vi.fn(), { type: "node", id: "target" });
@@ -281,7 +281,7 @@ describe("diagram renderer React Flow adapter", () => {
     nodeEdges.forEach((edge) => {
       expect(edge).toMatchObject({
         style: { stroke: "var(--foreground)", strokeWidth: 2 },
-        data: { cornerRadius: 12, points: expect.any(Array) },
+        data: { curved: true, points: expect.any(Array) },
       });
       expect(edge).not.toHaveProperty("label");
     });
@@ -294,7 +294,7 @@ describe("diagram renderer React Flow adapter", () => {
     expect(aggregateEdges.at(0)).toMatchObject({
       id: "boundary",
       style: { stroke: "var(--foreground)", strokeWidth: 2 },
-      data: { cornerRadius: 12, points: expect.any(Array) },
+      data: { curved: true, points: expect.any(Array) },
     });
     expect(aggregateEdges.at(0)).not.toHaveProperty("label");
   });

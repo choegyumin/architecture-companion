@@ -90,8 +90,10 @@ describe("group-focused dependency edge routing prototype", () => {
     );
     const points = routes.aggregate.at(0)?.points ?? [];
 
-    expect(points.at(0)).toEqual({ x: 400, y: 150 });
-    expect(points.at(-1)).toEqual({ x: 700, y: 200 });
+    expect(points.at(0)?.x).toBe(400);
+    expect(points.at(0)?.y).toBeCloseTo(165.38, 2);
+    expect(points.at(-1)?.x).toBe(700);
+    expect(points.at(-1)?.y).toBeCloseTo(188.46, 2);
     expectOrthogonal(points);
   });
 

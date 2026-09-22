@@ -53,8 +53,8 @@ describe("top-level dependency edge routing prototype", () => {
       ],
     );
 
-    expect(routes.at(0)?.points.at(0)?.x).toBeCloseTo(149 + 1 / 3);
-    expect(routes.at(1)?.points.at(0)?.x).toBeCloseTo(250 + 2 / 3);
+    expect(routes.at(0)?.points.at(0)?.x).toBeCloseTo(180);
+    expect(routes.at(1)?.points.at(0)?.x).toBeCloseTo(220);
     routes.forEach(({ points }) => expectOrthogonal(points));
   });
 });

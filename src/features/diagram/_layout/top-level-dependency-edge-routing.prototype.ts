@@ -80,6 +80,7 @@ const DEFAULT_MODULE_CLEARANCE = 32;
 const DEFAULT_ROUTING_TRACK_GAP = 16;
 const DEFAULT_ROUTING_TRACK_COUNT = 2;
 const PORT_PADDING = 48;
+const PORT_GAP = 32;
 const BEND_COST = 96;
 const CROSSING_COST = 640;
 const OVERLAP_COST = 960;
@@ -133,29 +134,85 @@ function getPreferredSides(source: Rectangle, target: Rectangle): Readonly<{ sou
   return { source: "left", target: "right" };
 }
 
-function getPortPoint(rectangle: Rectangle, side: Side, rank: number, count: number): DiagramLayoutPoint {
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+function getPortRange(rectangle: Rectangle, side: Side): Readonly<{ minimum: number; maximum: number }> {
+  const vertical = side === "left" || side === "right";
+  const minimum = vertical ? rectangle.top : rectangle.left;
+  const maximum = vertical ? rectangle.bottom : rectangle.right;
+  const padding = Math.min(PORT_PADDING, (maximum - minimum) / 4);
+  return { minimum: minimum + padding, maximum: maximum - padding };
+}
+
+function getPreferredPortCoordinate(rectangle: Rectangle, side: Side, opposite: Rectangle): number {
+  const center = getCenter(rectangle);
+  const oppositeCenter = getCenter(opposite);
+  const range = getPortRange(rectangle, side);
+
   if (side === "top" || side === "bottom") {
-    const width = rectangle.right - rectangle.left;
-    const padding = Math.min(PORT_PADDING, width / 4);
-    return {
-      x: rectangle.left + padding + ((width - padding * 2) * (rank + 1)) / (count + 1),
-      y: side === "top" ? rectangle.top : rectangle.bottom,
-    };
+    const boundary = side === "top" ? rectangle.top : rectangle.bottom;
+    const delta = oppositeCenter.y - center.y;
+    const coordinate =
+      Math.abs(delta) <= EPSILON
+        ? center.x
+        : center.x + (oppositeCenter.x - center.x) * ((boundary - center.y) / delta);
+    return clamp(coordinate, range.minimum, range.maximum);
   }
 
-  const height = rectangle.bottom - rectangle.top;
-  const padding = Math.min(PORT_PADDING, height / 4);
-  return {
-    x: side === "left" ? rectangle.left : rectangle.right,
-    y: rectangle.top + padding + ((height - padding * 2) * (rank + 1)) / (count + 1),
-  };
+  const boundary = side === "left" ? rectangle.left : rectangle.right;
+  const delta = oppositeCenter.x - center.x;
+  const coordinate =
+    Math.abs(delta) <= EPSILON ? center.y : center.y + (oppositeCenter.y - center.y) * ((boundary - center.x) / delta);
+  return clamp(coordinate, range.minimum, range.maximum);
+}
+
+function fitPortCoordinates(coordinates: readonly number[], minimum: number, maximum: number): number[] {
+  const fitted = [...coordinates];
+  const first = fitted.at(0);
+  const last = fitted.at(-1);
+  if (first === undefined || last === undefined) return fitted;
+  const offset = last > maximum ? maximum - last : first < minimum ? minimum - first : 0;
+  return fitted.map((coordinate) => coordinate + offset);
+}
+
+function spreadPortCoordinates(
+  preferredCoordinates: readonly number[],
+  minimum: number,
+  maximum: number,
+): readonly number[] {
+  if (preferredCoordinates.length <= 1) {
+    return preferredCoordinates.map((coordinate) => clamp(coordinate, minimum, maximum));
+  }
+
+  const gap = Math.min(PORT_GAP, (maximum - minimum) / (preferredCoordinates.length - 1));
+  const forward = preferredCoordinates.map((coordinate) => clamp(coordinate, minimum, maximum));
+  for (let index = 1; index < forward.length; index += 1) {
+    forward[index] = Math.max(forward[index]!, forward[index - 1]! + gap);
+  }
+  const fittedForward = fitPortCoordinates(forward, minimum, maximum);
+
+  const backward = preferredCoordinates.map((coordinate) => clamp(coordinate, minimum, maximum));
+  for (let index = backward.length - 2; index >= 0; index -= 1) {
+    backward[index] = Math.min(backward[index]!, backward.at(index + 1)! - gap);
+  }
+  const fittedBackward = fitPortCoordinates(backward, minimum, maximum);
+
+  return fittedForward.map((coordinate, index) => (coordinate + fittedBackward[index]!) / 2);
+}
+
+function getPortPoint(rectangle: Rectangle, side: Side, coordinate: number): DiagramLayoutPoint {
+  return side === "top" || side === "bottom"
+    ? { x: coordinate, y: side === "top" ? rectangle.top : rectangle.bottom }
+    : { x: side === "left" ? rectangle.left : rectangle.right, y: coordinate };
 }
 
 function getPortSortValue(edge: RoutingEdge, endpoint: "source" | "target"): number {
+  const rectangle = endpoint === "source" ? edge.sourceRectangle : edge.targetRectangle;
   const side = endpoint === "source" ? edge.sourceSide : edge.targetSide;
   const opposite = endpoint === "source" ? edge.targetRectangle : edge.sourceRectangle;
-  const center = getCenter(opposite);
-  return side === "top" || side === "bottom" ? center.x : center.y;
+  return getPreferredPortCoordinate(rectangle, side, opposite);
 }
 
 function assignPortPoints(edges: RoutingEdge[]): void {
@@ -178,10 +235,23 @@ function assignPortPoints(edges: RoutingEdge[]): void {
         getPortSortValue(first.edge, first.endpoint) - getPortSortValue(second.edge, second.endpoint) ||
         first.edge.id.localeCompare(second.edge.id),
     );
-    group.forEach(({ edge, endpoint }, rank) => {
-      const rectangle = endpoint === "source" ? edge.sourceRectangle : edge.targetRectangle;
-      const side = endpoint === "source" ? edge.sourceSide : edge.targetSide;
-      const point = getPortPoint(rectangle, side, rank, group.length);
+    const first = group.at(0);
+    if (!first) continue;
+    const rectangle = first.endpoint === "source" ? first.edge.sourceRectangle : first.edge.targetRectangle;
+    const side = first.endpoint === "source" ? first.edge.sourceSide : first.edge.targetSide;
+    const range = getPortRange(rectangle, side);
+    const coordinates = spreadPortCoordinates(
+      group.map(({ edge, endpoint }) => getPortSortValue(edge, endpoint)),
+      range.minimum,
+      range.maximum,
+    );
+
+    group.forEach(({ edge, endpoint }, index) => {
+      const point = getPortPoint(
+        rectangle,
+        side,
+        getOrThrow(coordinates[index], `Missing port coordinate: ${edge.id}`),
+      );
       if (endpoint === "source") edge.sourcePoint = point;
       else edge.targetPoint = point;
     });

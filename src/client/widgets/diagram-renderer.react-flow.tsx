@@ -46,7 +46,6 @@ const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
 const AGGREGATE_EDGE_CORRIDOR_GAP = 96;
 const AGGREGATE_EDGE_LANE_GAP = 10;
 const AGGREGATE_EDGE_LANE_COUNT = 12;
-const AGGREGATE_EDGE_CORNER_RADIUS = 12;
 
 export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
@@ -201,6 +200,7 @@ function buildOriginalReactFlowEdge(
   presentation?: Readonly<{
     color?: string;
     cornerRadius?: number;
+    curved?: boolean;
     strokeWidth?: number;
   }>,
 ): DiagramReactFlowEdge {
@@ -230,6 +230,7 @@ function buildOriginalReactFlowEdge(
       data: {
         points: placement.points,
         ...(presentation?.cornerRadius ? { cornerRadius: presentation.cornerRadius } : {}),
+        ...(presentation?.curved ? { curved: true } : {}),
         ...(edge.kind && edge.kind !== "direct-render" ? { eyebrow: edge.kind } : {}),
         ...(edge.href ? { href: edge.href } : {}),
         onLinkActivate,
@@ -340,7 +341,7 @@ type OriginalDependencyEdgeProjection = Extract<DiagramDependencyEdgeProjection,
 function buildAggregateReactFlowEdge(
   projection: AggregateDependencyEdgeProjection,
   points: readonly DiagramLayoutPoint[],
-  rounded = false,
+  curved = false,
   onDependencyBundleFocus?: DependencyBundleFocusHandler,
 ): DiagramReactFlowEdge {
   return {
@@ -355,7 +356,7 @@ function buildAggregateReactFlowEdge(
     style: { stroke: EDGE_COLOR, strokeWidth: 2 },
     data: {
       points,
-      ...(rounded ? { cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS } : {}),
+      ...(curved ? { curved: true } : {}),
       ...(onDependencyBundleFocus
         ? {
             labelAriaLabel: `Show ${projection.count} underlying ${
@@ -472,7 +473,7 @@ export function buildDiagramReactFlowEdges(
         const route = getOrThrow(originalRouteById.get(edge.id), `Missing original edge route: ${edge.id}`);
         return buildOriginalReactFlowEdge(edge, { id: edge.id, points: route.points }, onLinkActivate, {
           color: INTERNAL_DEPENDENCY_EDGE_COLOR,
-          cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS,
+          curved: true,
           strokeWidth: 1.5,
         });
       }
@@ -511,7 +512,7 @@ export function buildDiagramReactFlowEdges(
     const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
     const route = getOrThrow(routeById.get(edge.id), `Missing focused edge route: ${edge.id}`);
     return buildOriginalReactFlowEdge(edge, { id: edge.id, points: route.points }, onLinkActivate, {
-      cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS,
+      curved: true,
     });
   });
 }
