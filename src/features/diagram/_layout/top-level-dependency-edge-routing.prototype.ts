@@ -18,6 +18,17 @@ export type RoutedTopLevelDependencyEdge = Readonly<{
   points: readonly DiagramLayoutPoint[];
 }>;
 
+export type DependencyEdgeRoutingOptions = Readonly<{
+  bounds?: Readonly<{
+    position: DiagramLayoutPoint;
+    size: DiagramLayoutSize;
+  }>;
+  clearance?: number;
+  trackGap?: number;
+  trackCount?: number;
+  getObstacles?: (edge: TopLevelDependencyRoutingEdge) => readonly TopLevelDependencyRoutingModule[];
+}>;
+
 type Side = "top" | "right" | "bottom" | "left";
 type Axis = "horizontal" | "vertical";
 
@@ -57,9 +68,17 @@ type QueueEntry = Readonly<{
   cost: number;
 }>;
 
-const MODULE_CLEARANCE = 32;
-const ROUTING_TRACK_GAP = 16;
-const ROUTING_TRACK_COUNT = 2;
+type ResolvedRoutingOptions = Readonly<{
+  bounds?: Rectangle;
+  clearance: number;
+  trackGap: number;
+  trackCount: number;
+  getObstacles?: DependencyEdgeRoutingOptions["getObstacles"];
+}>;
+
+const DEFAULT_MODULE_CLEARANCE = 32;
+const DEFAULT_ROUTING_TRACK_GAP = 16;
+const DEFAULT_ROUTING_TRACK_COUNT = 2;
 const PORT_PADDING = 48;
 const BEND_COST = 96;
 const CROSSING_COST = 640;
@@ -80,6 +99,20 @@ function toRectangle(module: TopLevelDependencyRoutingModule): Rectangle {
     top: module.position.y,
     right: module.position.x + module.size.width,
     bottom: module.position.y + module.size.height,
+  };
+}
+
+function resolveRoutingOptions(options?: DependencyEdgeRoutingOptions): ResolvedRoutingOptions {
+  return {
+    ...(options?.bounds
+      ? {
+          bounds: toRectangle({ id: "routing-bounds", ...options.bounds }),
+        }
+      : {}),
+    clearance: options?.clearance ?? DEFAULT_MODULE_CLEARANCE,
+    trackGap: options?.trackGap ?? DEFAULT_ROUTING_TRACK_GAP,
+    trackCount: options?.trackCount ?? DEFAULT_ROUTING_TRACK_COUNT,
+    ...(options?.getObstacles ? { getObstacles: options.getObstacles } : {}),
   };
 }
 
@@ -215,6 +248,7 @@ function getRoutingCoordinates(
   start: DiagramLayoutPoint,
   end: DiagramLayoutPoint,
   obstacles: readonly Rectangle[],
+  options: ResolvedRoutingOptions,
 ): Readonly<{ x: readonly number[]; y: readonly number[] }> {
   const x = [start.x, end.x];
   const y = [start.y, end.y];
@@ -222,21 +256,33 @@ function getRoutingCoordinates(
   for (const obstacle of obstacles) {
     x.push(obstacle.left, obstacle.right);
     y.push(obstacle.top, obstacle.bottom);
-    for (let lane = 1; lane <= ROUTING_TRACK_COUNT; lane += 1) {
-      const offset = ROUTING_TRACK_GAP * lane;
+    for (let lane = 1; lane <= options.trackCount; lane += 1) {
+      const offset = options.trackGap * lane;
       x.push(obstacle.left - offset, obstacle.right + offset);
       y.push(obstacle.top - offset, obstacle.bottom + offset);
     }
   }
 
-  const minLeft = Math.min(...obstacles.map(({ left }) => left), start.x, end.x);
-  const maxRight = Math.max(...obstacles.map(({ right }) => right), start.x, end.x);
-  const minTop = Math.min(...obstacles.map(({ top }) => top), start.y, end.y);
-  const maxBottom = Math.max(...obstacles.map(({ bottom }) => bottom), start.y, end.y);
-  x.push(minLeft - ROUTING_TRACK_GAP, maxRight + ROUTING_TRACK_GAP);
-  y.push(minTop - ROUTING_TRACK_GAP, maxBottom + ROUTING_TRACK_GAP);
+  if (options.bounds) {
+    x.push(options.bounds.left, options.bounds.right);
+    y.push(options.bounds.top, options.bounds.bottom);
+  } else {
+    const minLeft = Math.min(...obstacles.map(({ left }) => left), start.x, end.x);
+    const maxRight = Math.max(...obstacles.map(({ right }) => right), start.x, end.x);
+    const minTop = Math.min(...obstacles.map(({ top }) => top), start.y, end.y);
+    const maxBottom = Math.max(...obstacles.map(({ bottom }) => bottom), start.y, end.y);
+    x.push(minLeft - options.trackGap, maxRight + options.trackGap);
+    y.push(minTop - options.trackGap, maxBottom + options.trackGap);
+  }
 
-  return { x: uniqueSorted(x), y: uniqueSorted(y) };
+  return {
+    x: uniqueSorted(x).filter(
+      (value) => !options.bounds || (value >= options.bounds.left && value <= options.bounds.right),
+    ),
+    y: uniqueSorted(y).filter(
+      (value) => !options.bounds || (value >= options.bounds.top && value <= options.bounds.bottom),
+    ),
+  };
 }
 
 function getPointKey(point: DiagramLayoutPoint): string {
@@ -247,13 +293,14 @@ function buildRoutingGraph(
   start: DiagramLayoutPoint,
   end: DiagramLayoutPoint,
   obstacles: readonly Rectangle[],
+  options: ResolvedRoutingOptions,
 ): Readonly<{
   points: readonly DiagramLayoutPoint[];
   connections: ReadonlyMap<number, readonly GraphConnection[]>;
   startIndex: number;
   endIndex: number;
 }> {
-  const coordinates = getRoutingCoordinates(start, end, obstacles);
+  const coordinates = getRoutingCoordinates(start, end, obstacles, options);
   const points: DiagramLayoutPoint[] = [];
   const pointIndexByKey = new Map<string, number>();
 
@@ -402,8 +449,9 @@ function findRoute(
   endAxis: Axis,
   obstacles: readonly Rectangle[],
   usedSegments: readonly Segment[],
+  options: ResolvedRoutingOptions,
 ): readonly DiagramLayoutPoint[] {
-  const graph = buildRoutingGraph(start, end, obstacles);
+  const graph = buildRoutingGraph(start, end, obstacles, options);
   const queue = new MinQueue();
   const costs = new Map<string, number>();
   const previous = new Map<string, string>();
@@ -478,10 +526,13 @@ function toSegments(points: readonly DiagramLayoutPoint[]): Segment[] {
   return segments;
 }
 
-export function routeTopLevelDependencyEdges(
+export function routeDependencyEdges(
   modules: readonly TopLevelDependencyRoutingModule[],
   edges: readonly TopLevelDependencyRoutingEdge[],
+  options?: DependencyEdgeRoutingOptions,
 ): readonly RoutedTopLevelDependencyEdge[] {
+  const resolvedOptions = resolveRoutingOptions(options);
+  const moduleById = new Map(modules.map((module) => [module.id, module]));
   const rectangleById = new Map(modules.map((module) => [module.id, toRectangle(module)]));
   const routingEdges = edges.map((edge): RoutingEdge => {
     const sourceRectangle = getOrThrow(rectangleById.get(edge.source), `Missing routing source: ${edge.source}`);
@@ -496,7 +547,6 @@ export function routeTopLevelDependencyEdges(
     };
   });
   assignPortPoints(routingEdges);
-  const obstacles = [...rectangleById.values()].map((rectangle) => inflateRectangle(rectangle, MODULE_CLEARANCE));
   const usedSegments: Segment[] = [];
   const routedById = new Map<string, RoutedTopLevelDependencyEdge>();
 
@@ -513,8 +563,20 @@ export function routeTopLevelDependencyEdges(
   for (const edge of orderedEdges) {
     const sourcePoint = getOrThrow(edge.sourcePoint, `Missing source port: ${edge.id}`);
     const targetPoint = getOrThrow(edge.targetPoint, `Missing target port: ${edge.id}`);
-    const start = movePointOutward(sourcePoint, edge.sourceSide, MODULE_CLEARANCE);
-    const end = movePointOutward(targetPoint, edge.targetSide, MODULE_CLEARANCE);
+    const start = movePointOutward(sourcePoint, edge.sourceSide, resolvedOptions.clearance);
+    const end = movePointOutward(targetPoint, edge.targetSide, resolvedOptions.clearance);
+    const projectedEdge = { id: edge.id, source: edge.source, target: edge.target };
+    const obstacleModules = resolvedOptions.getObstacles?.(projectedEdge) ?? modules;
+    const obstacleById = new Map(
+      [
+        getOrThrow(moduleById.get(edge.source), `Missing source module: ${edge.source}`),
+        getOrThrow(moduleById.get(edge.target), `Missing target module: ${edge.target}`),
+        ...obstacleModules,
+      ].map((module) => [module.id, module]),
+    );
+    const obstacles = [...obstacleById.values()]
+      .map((module) => inflateRectangle(toRectangle(module), resolvedOptions.clearance))
+      .filter((obstacle) => !isInsideRectangle(start, obstacle) && !isInsideRectangle(end, obstacle));
     const route = findRoute(
       start,
       end,
@@ -522,6 +584,7 @@ export function routeTopLevelDependencyEdges(
       getSideAxis(edge.targetSide),
       obstacles,
       usedSegments,
+      resolvedOptions,
     );
     const points = compactPoints([sourcePoint, ...route, targetPoint]);
     usedSegments.push(...toSegments(points));
@@ -529,4 +592,11 @@ export function routeTopLevelDependencyEdges(
   }
 
   return edges.map(({ id }) => getOrThrow(routedById.get(id), `Missing routed dependency edge: ${id}`));
+}
+
+export function routeTopLevelDependencyEdges(
+  modules: readonly TopLevelDependencyRoutingModule[],
+  edges: readonly TopLevelDependencyRoutingEdge[],
+): readonly RoutedTopLevelDependencyEdge[] {
+  return routeDependencyEdges(modules, edges);
 }

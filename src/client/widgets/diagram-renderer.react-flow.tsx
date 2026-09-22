@@ -3,6 +3,7 @@ import { ExternalLink, FileCode2 } from "lucide-react";
 import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
+import { routeGroupFocusedDependencyEdges } from "@/features/diagram/_layout/group-focused-dependency-edge-routing.prototype";
 import { routeTopLevelDependencyEdges } from "@/features/diagram/_layout/top-level-dependency-edge-routing.prototype";
 import {
   type DiagramDependencyEdgeProjection,
@@ -34,6 +35,7 @@ function createDiagramLinkActivationHandler(onOpenSource: (href: string) => void
 }
 
 const EDGE_COLOR = "var(--foreground)";
+const INTERNAL_DEPENDENCY_EDGE_COLOR = "var(--muted-foreground)";
 const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
@@ -192,7 +194,13 @@ function buildOriginalReactFlowEdge(
   edge: DiagramEdge,
   placement: DiagramLayout["edges"][number],
   onLinkActivate: DiagramLinkActivationHandler,
+  presentation?: Readonly<{
+    color?: string;
+    cornerRadius?: number;
+    strokeWidth?: number;
+  }>,
 ): DiagramReactFlowEdge {
+  const color = presentation?.color ?? EDGE_COLOR;
   const common = {
     id: edge.id,
     source: edge.source,
@@ -201,11 +209,11 @@ function buildOriginalReactFlowEdge(
     selectable: false,
     markerEnd: {
       type: edge.type === "default" || edge.messageType === "sync" ? MarkerType.ArrowClosed : MarkerType.Arrow,
-      color: EDGE_COLOR,
+      color,
     },
     style: {
-      stroke: EDGE_COLOR,
-      strokeWidth: 2,
+      stroke: color,
+      strokeWidth: presentation?.strokeWidth ?? 2,
       ...(edge.type === "message" && edge.messageType === "return" ? { strokeDasharray: "6 4" } : {}),
     },
   } as const;
@@ -217,6 +225,7 @@ function buildOriginalReactFlowEdge(
       ...(edge.label ? { label: edge.label } : {}),
       data: {
         points: placement.points,
+        ...(presentation?.cornerRadius ? { cornerRadius: presentation.cornerRadius } : {}),
         ...(edge.kind && edge.kind !== "direct-render" ? { eyebrow: edge.kind } : {}),
         ...(edge.href ? { href: edge.href } : {}),
         onLinkActivate,
@@ -322,6 +331,7 @@ function buildAggregateEdgePoints(
 }
 
 type AggregateDependencyEdgeProjection = Extract<DiagramDependencyEdgeProjection, { type: "aggregate" }>;
+type OriginalDependencyEdgeProjection = Extract<DiagramDependencyEdgeProjection, { type: "original" }>;
 
 function buildAggregateReactFlowEdge(
   projection: AggregateDependencyEdgeProjection,
@@ -406,6 +416,61 @@ export function buildDiagramReactFlowEdges(
     ...[...modulePlacementById.values()].map(({ position, size }) => position.x + size.width),
     0,
   );
+
+  if (focus.type === "group") {
+    const originalProjections = projections.filter(
+      (projection): projection is OriginalDependencyEdgeProjection => projection.type === "original",
+    );
+    const aggregateProjections = projections.filter(
+      (projection): projection is AggregateDependencyEdgeProjection => projection.type === "aggregate",
+    );
+    const routingGroups = diagram.graph.groups.map(({ id, parentId }) => ({
+      id,
+      ...(parentId ? { parentId } : {}),
+      ...getOrThrow(modulePlacementById.get(id), `Missing routing group: ${id}`),
+    }));
+    const routingNodes = diagram.graph.nodes.map(({ id, groupId }) => ({
+      id,
+      ...(groupId ? { groupId } : {}),
+      ...getOrThrow(modulePlacementById.get(id), `Missing routing node: ${id}`),
+    }));
+    const routes = routeGroupFocusedDependencyEdges(
+      routingGroups,
+      routingNodes,
+      originalProjections.map(({ edgeId }) => {
+        const edge = getOrThrow(edgeById.get(edgeId), `Missing projected edge: ${edgeId}`);
+        return { id: edge.id, source: edge.source, target: edge.target };
+      }),
+      aggregateProjections.map(({ id, source, target }) => ({ id, source, target })),
+    );
+    const originalRouteById = new Map(routes.original.map((route) => [route.id, route]));
+    const aggregateRouteById = new Map(routes.aggregate.map((route) => [route.id, route]));
+
+    return projections.map((projection, index) => {
+      if (projection.type === "original") {
+        const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
+        const route = getOrThrow(originalRouteById.get(edge.id), `Missing original edge route: ${edge.id}`);
+        return buildOriginalReactFlowEdge(edge, { id: edge.id, points: route.points }, onLinkActivate, {
+          color: INTERNAL_DEPENDENCY_EDGE_COLOR,
+          cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS,
+          strokeWidth: 1.5,
+        });
+      }
+
+      const route = aggregateRouteById.get(projection.id);
+      return buildAggregateReactFlowEdge(
+        projection,
+        route?.points ??
+          buildAggregateEdgePoints(
+            getOrThrow(modulePlacementById.get(projection.source), `Missing source module: ${projection.source}`),
+            getOrThrow(modulePlacementById.get(projection.target), `Missing target module: ${projection.target}`),
+            canvasRight,
+            index,
+          ),
+        true,
+      );
+    });
+  }
 
   return projections.map((projection, index) => {
     if (projection.type === "original") {

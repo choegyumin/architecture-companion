@@ -199,6 +199,71 @@ describe("diagram renderer React Flow adapter", () => {
     });
   });
 
+  it("routes and distinguishes group-focused internal and boundary dependencies", () => {
+    const diagram = {
+      ...sequenceDiagram,
+      layout: { id: "prototype-group-rows" },
+      graph: {
+        groups: [
+          { id: "focused", title: "Focused" },
+          { id: "external", title: "External" },
+        ],
+        nodes: [
+          { id: "source", type: "default", title: "Source", groupId: "focused" },
+          { id: "target", type: "default", title: "Target", groupId: "focused" },
+          { id: "outside", type: "default", title: "Outside", groupId: "external" },
+        ],
+        edges: [
+          { id: "internal", type: "default", source: "source", target: "target" },
+          { id: "boundary", type: "default", source: "target", target: "outside" },
+        ],
+      },
+    } satisfies Diagram;
+    const layout = {
+      groups: [
+        { id: "focused", position: { x: 0, y: 0 }, size: { width: 800, height: 500 } },
+        { id: "external", position: { x: 0, y: 700 }, size: { width: 400, height: 300 } },
+      ],
+      nodes: [
+        { id: "source", parentId: "focused", position: { x: 40, y: 80 }, size: { width: 200, height: 100 } },
+        { id: "target", parentId: "focused", position: { x: 400, y: 300 }, size: { width: 200, height: 100 } },
+        { id: "outside", parentId: "external", position: { x: 40, y: 80 }, size: { width: 200, height: 100 } },
+      ],
+      edges: [
+        {
+          id: "internal",
+          points: [
+            { x: 240, y: 130 },
+            { x: 400, y: 350 },
+          ],
+        },
+        {
+          id: "boundary",
+          points: [
+            { x: 600, y: 350 },
+            { x: 40, y: 830 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    } satisfies DiagramLayout;
+
+    const edges = buildDiagramReactFlowEdges(diagram, layout, vi.fn(), { type: "group", id: "focused" });
+
+    expect(edges).toHaveLength(2);
+    expect(edges.at(0)).toMatchObject({
+      id: "internal",
+      style: { stroke: "var(--muted-foreground)", strokeWidth: 1.5 },
+      data: { cornerRadius: 12, points: expect.any(Array) },
+    });
+    expect(edges.at(1)).toMatchObject({
+      id: "aggregate:focused->external",
+      label: "×1",
+      style: { stroke: "var(--foreground)", strokeWidth: 2 },
+      data: { cornerRadius: 12, points: expect.any(Array) },
+    });
+  });
+
   it("omits the card eyebrow when a default node has no kind", () => {
     const diagram = {
       ...sequenceDiagram,
