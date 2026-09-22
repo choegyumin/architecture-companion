@@ -180,7 +180,8 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    const edges = buildDiagramReactFlowEdges(diagram, layout, vi.fn());
+    const onDependencyBundleFocus = vi.fn();
+    const edges = buildDiagramReactFlowEdges(diagram, layout, vi.fn(), undefined, onDependencyBundleFocus);
 
     expect(edges).toHaveLength(1);
     expect(edges.at(0)).toMatchObject({
@@ -191,12 +192,23 @@ describe("diagram renderer React Flow adapter", () => {
       label: "×2",
       data: {
         cornerRadius: 12,
+        labelAriaLabel: "Show 2 underlying dependencies",
+        onLabelActivate: expect.any(Function),
         points: [
           { x: 200, y: 300 },
           { x: 200, y: 500 },
         ],
       },
     });
+    const aggregateEdge = edges.at(0);
+    if (aggregateEdge?.type !== "polyline" || !aggregateEdge.data?.onLabelActivate) {
+      throw new Error("Expected an interactive aggregate edge label.");
+    }
+    const event = { preventDefault: vi.fn(), stopPropagation: vi.fn() };
+    aggregateEdge.data.onLabelActivate(event as never);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
+    expect(onDependencyBundleFocus).toHaveBeenCalledWith(["first", "second"]);
   });
 
   it("routes and distinguishes group-focused internal and boundary dependencies", () => {
@@ -273,6 +285,18 @@ describe("diagram renderer React Flow adapter", () => {
       });
       expect(edge).not.toHaveProperty("label");
     });
+
+    const aggregateEdges = buildDiagramReactFlowEdges(diagram, layout, vi.fn(), {
+      type: "aggregate",
+      edgeIds: ["boundary"],
+    });
+    expect(aggregateEdges).toHaveLength(1);
+    expect(aggregateEdges.at(0)).toMatchObject({
+      id: "boundary",
+      style: { stroke: "var(--foreground)", strokeWidth: 2 },
+      data: { cornerRadius: 12, points: expect.any(Array) },
+    });
+    expect(aggregateEdges.at(0)).not.toHaveProperty("label");
   });
 
   it("omits the card eyebrow when a default node has no kind", () => {

@@ -28,6 +28,7 @@ import type { LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DiagramLinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
+type DependencyBundleFocusHandler = (edgeIds: readonly string[]) => void;
 
 function createDiagramLinkActivationHandler(onOpenSource: (href: string) => void): DiagramLinkActivationHandler {
   return (event, href) => {
@@ -340,6 +341,7 @@ function buildAggregateReactFlowEdge(
   projection: AggregateDependencyEdgeProjection,
   points: readonly DiagramLayoutPoint[],
   rounded = false,
+  onDependencyBundleFocus?: DependencyBundleFocusHandler,
 ): DiagramReactFlowEdge {
   return {
     id: projection.id,
@@ -354,6 +356,18 @@ function buildAggregateReactFlowEdge(
     data: {
       points,
       ...(rounded ? { cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS } : {}),
+      ...(onDependencyBundleFocus
+        ? {
+            labelAriaLabel: `Show ${projection.count} underlying ${
+              projection.count === 1 ? "dependency" : "dependencies"
+            }`,
+            onLabelActivate: (event: MouseEvent<HTMLButtonElement>) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDependencyBundleFocus(projection.edgeIds);
+            },
+          }
+        : {}),
     },
   };
 }
@@ -363,6 +377,7 @@ export function buildDiagramReactFlowEdges(
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   focus?: DiagramDependencyFocus,
+  onDependencyBundleFocus?: DependencyBundleFocusHandler,
 ): readonly DiagramReactFlowEdge[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeById = new Map(diagram.graph.edges.map((edge) => [edge.id, edge]));
@@ -411,6 +426,7 @@ export function buildDiagramReactFlowEdges(
         projection,
         getOrThrow(routeById.get(projection.id), `Missing aggregate edge route: ${projection.id}`).points,
         true,
+        onDependencyBundleFocus,
       ),
     );
   }
@@ -472,13 +488,14 @@ export function buildDiagramReactFlowEdges(
             index,
           ),
         true,
+        onDependencyBundleFocus,
       );
     });
   }
 
   const focusedEdges = projections.map((projection) => {
     if (projection.type !== "original") {
-      throw new Error(`Node dependency projection must be original: ${projection.id}`);
+      throw new Error(`Focused dependency projection must be original: ${projection.id}`);
     }
     const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
     return { id: edge.id, source: edge.source, target: edge.target };
@@ -489,10 +506,10 @@ export function buildDiagramReactFlowEdges(
 
   return projections.map((projection) => {
     if (projection.type !== "original") {
-      throw new Error(`Node dependency projection must be original: ${projection.id}`);
+      throw new Error(`Focused dependency projection must be original: ${projection.id}`);
     }
     const edge = getOrThrow(edgeById.get(projection.edgeId), `Missing projected edge: ${projection.edgeId}`);
-    const route = getOrThrow(routeById.get(edge.id), `Missing node-focused edge route: ${edge.id}`);
+    const route = getOrThrow(routeById.get(edge.id), `Missing focused edge route: ${edge.id}`);
     return buildOriginalReactFlowEdge(edge, { id: edge.id, points: route.points }, onLinkActivate, {
       cornerRadius: AGGREGATE_EDGE_CORNER_RADIUS,
     });

@@ -1,7 +1,10 @@
 import type { DiagramGraph, DiagramGroup, DiagramNode } from "@/features/diagram/diagram-graph";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-export type DiagramDependencyFocus = Readonly<{ type: "group" | "node"; id: string }>;
+export type DiagramDependencyFocus =
+  | Readonly<{ type: "group"; id: string }>
+  | Readonly<{ type: "node"; id: string }>
+  | Readonly<{ type: "aggregate"; edgeIds: readonly string[] }>;
 
 export type DiagramDependencyEdgeProjection =
   | Readonly<{ type: "original"; edgeId: string }>
@@ -11,6 +14,7 @@ export type DiagramDependencyEdgeProjection =
       source: string;
       target: string;
       count: number;
+      edgeIds: readonly string[];
     }>;
 
 function getRootGroupId(groupId: string, groupById: ReadonlyMap<string, DiagramGroup>): string {
@@ -33,27 +37,28 @@ function getContainingGroupIds(groupId: string, groupById: ReadonlyMap<string, D
 }
 
 function aggregateEdges(
-  edges: readonly Readonly<{ source: string; target: string }>[],
+  edges: readonly Readonly<{ edgeId: string; source: string; target: string }>[],
 ): readonly DiagramDependencyEdgeProjection[] {
-  const aggregateByEndpoints = new Map<string, { source: string; target: string; count: number }>();
+  const aggregateByEndpoints = new Map<string, { source: string; target: string; edgeIds: string[] }>();
 
   for (const edge of edges) {
     if (edge.source === edge.target) continue;
     const key = JSON.stringify([edge.source, edge.target]);
     const aggregate = aggregateByEndpoints.get(key);
     if (aggregate) {
-      aggregate.count += 1;
+      aggregate.edgeIds.push(edge.edgeId);
     } else {
-      aggregateByEndpoints.set(key, { source: edge.source, target: edge.target, count: 1 });
+      aggregateByEndpoints.set(key, { source: edge.source, target: edge.target, edgeIds: [edge.edgeId] });
     }
   }
 
-  return [...aggregateByEndpoints.values()].map(({ source, target, count }) => ({
+  return [...aggregateByEndpoints.values()].map(({ source, target, edgeIds }) => ({
     type: "aggregate",
     id: `aggregate:${source}->${target}`,
     source,
     target,
-    count,
+    count: edgeIds.length,
+    edgeIds,
   }));
 }
 
@@ -67,6 +72,7 @@ function projectTopLevelEdges(diagram: DiagramGraph): readonly DiagramDependency
 
   return aggregateEdges(
     diagram.edges.map((edge) => ({
+      edgeId: edge.id,
       source: getTopLevelModuleId(
         getOrThrow(nodeById.get(edge.source), `Missing edge source node: ${edge.source}`),
         groupById,
@@ -89,7 +95,7 @@ function projectGroupEdges(diagram: DiagramGraph, groupId: string): readonly Dia
       .map(({ id }) => id),
   );
   const originalEdges: DiagramDependencyEdgeProjection[] = [];
-  const boundaryEdges: { source: string; target: string }[] = [];
+  const boundaryEdges: { edgeId: string; source: string; target: string }[] = [];
 
   for (const edge of diagram.edges) {
     const sourceInside = insideNodeIds.has(edge.source);
@@ -106,7 +112,9 @@ function projectGroupEdges(diagram: DiagramGraph, groupId: string): readonly Dia
     );
     const outsideModuleId = outsideNode.groupId ?? outsideNode.id;
     boundaryEdges.push(
-      sourceInside ? { source: groupId, target: outsideModuleId } : { source: outsideModuleId, target: groupId },
+      sourceInside
+        ? { edgeId: edge.id, source: groupId, target: outsideModuleId }
+        : { edgeId: edge.id, source: outsideModuleId, target: groupId },
     );
   }
 
@@ -123,10 +131,23 @@ function projectNodeEdges(diagram: DiagramGraph, nodeId: string): readonly Diagr
     .map(({ id }) => ({ type: "original", edgeId: id }));
 }
 
+function projectAggregateEdges(
+  diagram: DiagramGraph,
+  edgeIds: readonly string[],
+): readonly DiagramDependencyEdgeProjection[] {
+  const diagramEdgeIds = new Set(diagram.edges.map(({ id }) => id));
+  return edgeIds.map((edgeId) => {
+    if (!diagramEdgeIds.has(edgeId)) throw new Error(`Missing focused aggregate edge: ${edgeId}`);
+    return { type: "original", edgeId };
+  });
+}
+
 export function projectDiagramDependencyEdges(
   diagram: DiagramGraph,
   focus?: DiagramDependencyFocus,
 ): readonly DiagramDependencyEdgeProjection[] {
   if (!focus) return projectTopLevelEdges(diagram);
-  return focus.type === "group" ? projectGroupEdges(diagram, focus.id) : projectNodeEdges(diagram, focus.id);
+  if (focus.type === "group") return projectGroupEdges(diagram, focus.id);
+  if (focus.type === "node") return projectNodeEdges(diagram, focus.id);
+  return projectAggregateEdges(diagram, focus.edgeIds);
 }

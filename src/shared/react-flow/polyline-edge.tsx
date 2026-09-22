@@ -5,12 +5,15 @@ import { BaseEdgeLabel, EDGE_LABEL_Z_INDEX } from "@/shared/react-flow/base-edge
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
+type LabelActivationHandler = (event: MouseEvent<HTMLButtonElement>) => void;
 
 type PolylineEdgeData = Readonly<{
   points: readonly XYPosition[];
   cornerRadius?: number;
   eyebrow?: ReactNode;
   href?: string;
+  labelAriaLabel?: string;
+  onLabelActivate?: LabelActivationHandler;
   onLinkActivate?: LinkActivationHandler;
 }>;
 
@@ -59,6 +62,7 @@ export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }:
   const last = data.points.at(-1);
   if (!first || !last) return null;
   const labelPoint = getPolylineEdgeLabelPlacement(data.points);
+  const hasInteractiveLabel = data.onLabelActivate && label != null && data.eyebrow == null && !data.href;
 
   return (
     <>
@@ -72,7 +76,9 @@ export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }:
       {data.eyebrow != null || label != null || data.href ? (
         <EdgeLabelRenderer>
           <div
-            className="nodrag nopan absolute w-max rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm"
+            className={`nodrag nopan absolute w-max rounded-md border bg-background text-center text-xs shadow-sm ${
+              hasInteractiveLabel ? "p-0" : "px-2 py-1"
+            }`}
             style={{
               left: labelPoint.x,
               pointerEvents: "all",
@@ -84,7 +90,18 @@ export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }:
             {data.eyebrow != null ? (
               <p className="text-[10px] font-semibold tracking-wide text-muted-foreground">{data.eyebrow}</p>
             ) : null}
-            <BaseEdgeLabel href={data.href} onActivate={data.onLinkActivate} text={label} />
+            {hasInteractiveLabel ? (
+              <button
+                aria-label={data.labelAriaLabel}
+                className="cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                onClick={data.onLabelActivate}
+                type="button"
+              >
+                {label}
+              </button>
+            ) : (
+              <BaseEdgeLabel href={data.href} onActivate={data.onLinkActivate} text={label} />
+            )}
           </div>
         </EdgeLabelRenderer>
       ) : null}

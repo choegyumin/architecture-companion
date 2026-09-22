@@ -1,5 +1,5 @@
 import { ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
@@ -50,12 +50,17 @@ function DiagramRendererContent({ ariaLabel, annotations, diagram, onOpenSource 
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
   const latestLayoutInputs = useRef({ diagram, getNodes, onOpenSource, setNodes });
   const supportsDependencyFocus = diagram.layout.id === "prototype-group-rows";
+  const focusDependencyBundle = useCallback((edgeIds: readonly string[]) => {
+    setDependencyFocus({ type: "aggregate", edgeIds });
+  }, []);
+  const onDependencyBundleFocus =
+    !annotations.isCommentMode && supportsDependencyFocus ? focusDependencyBundle : undefined;
   const edges = useMemo(
     () =>
       state.status === "ready"
-        ? [...buildDiagramReactFlowEdges(diagram, state.layout, onOpenSource, dependencyFocus)]
+        ? [...buildDiagramReactFlowEdges(diagram, state.layout, onOpenSource, dependencyFocus, onDependencyBundleFocus)]
         : [],
-    [dependencyFocus, diagram, onOpenSource, state],
+    [dependencyFocus, diagram, onDependencyBundleFocus, onOpenSource, state],
   );
 
   useEffect(() => {

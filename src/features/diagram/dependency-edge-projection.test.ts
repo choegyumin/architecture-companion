@@ -31,6 +31,7 @@ describe("dependency edge projection", () => {
         source: "group-a",
         target: "group-b",
         count: 2,
+        edgeIds: ["a-child-to-b", "a-direct-to-b"],
       },
       {
         type: "aggregate",
@@ -38,6 +39,7 @@ describe("dependency edge projection", () => {
         source: "group-b",
         target: "group-a",
         count: 1,
+        edgeIds: ["b-to-a-child"],
       },
       {
         type: "aggregate",
@@ -45,6 +47,7 @@ describe("dependency edge projection", () => {
         source: "loose",
         target: "group-b",
         count: 1,
+        edgeIds: ["loose-to-b"],
       },
     ]);
   });
@@ -58,6 +61,7 @@ describe("dependency edge projection", () => {
         source: "group-a",
         target: "group-b",
         count: 2,
+        edgeIds: ["a-child-to-b", "a-direct-to-b"],
       },
       {
         type: "aggregate",
@@ -65,6 +69,7 @@ describe("dependency edge projection", () => {
         source: "group-b",
         target: "group-a",
         count: 1,
+        edgeIds: ["b-to-a-child"],
       },
     ]);
   });
@@ -74,6 +79,18 @@ describe("dependency edge projection", () => {
       { type: "original", edgeId: "a-internal" },
       { type: "original", edgeId: "a-child-to-b" },
       { type: "original", edgeId: "b-to-a-child" },
+    ]);
+  });
+
+  it("shows the original edges represented by a focused aggregate", () => {
+    expect(
+      projectDiagramDependencyEdges(graph, {
+        type: "aggregate",
+        edgeIds: ["a-child-to-b", "a-direct-to-b"],
+      }),
+    ).toEqual([
+      { type: "original", edgeId: "a-child-to-b" },
+      { type: "original", edgeId: "a-direct-to-b" },
     ]);
   });
 });
