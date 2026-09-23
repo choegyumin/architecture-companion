@@ -58,6 +58,27 @@ export const diagramSchema = z
       });
     }
 
+    if (diagram.layout.id === "dependency-graph") {
+      diagram.graph.nodes.forEach((node, index) => {
+        if (node.type !== "default") {
+          context.addIssue({
+            code: "custom",
+            path: ["graph", "nodes", index, "type"],
+            message: "Dependency graph layout supports only default nodes",
+          });
+        }
+      });
+      diagram.graph.edges.forEach((edge, index) => {
+        if (edge.type !== "default") {
+          context.addIssue({
+            code: "custom",
+            path: ["graph", "edges", index, "type"],
+            message: "Dependency graph layout supports only default edges",
+          });
+        }
+      });
+    }
+
     const graphElements = [
       ...diagram.graph.groups.map((element, index) => ({
         element,

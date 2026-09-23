@@ -123,6 +123,30 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
   });
 
+  it("forwards ordinary node and blank-pane clicks as focus actions without treating group backgrounds as titles", async () => {
+    const onNodeActivate = vi.fn();
+    const onPaneActivate = vi.fn();
+    render(
+      <DiagramCanvas
+        edges={[]}
+        nodes={[
+          { id: "file", type: "card", position: { x: 0, y: 0 }, data: { label: "File" } },
+          { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Group" } },
+        ]}
+        onNodeActivate={onNodeActivate}
+        onPaneActivate={onPaneActivate}
+      />,
+    );
+    const pane = await screen.findByLabelText("React Flow pane");
+
+    fireEvent.click(screen.getByLabelText("React Flow node file"));
+    fireEvent.click(screen.getByLabelText("React Flow node group"));
+    fireEvent.click(pane);
+
+    expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
+    expect(onPaneActivate).toHaveBeenCalledOnce();
+  });
+
   it("does not forward clicks on interactive elements as canvas clicks", async () => {
     const onCanvasClick = vi.fn();
     render(

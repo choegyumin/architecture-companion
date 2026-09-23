@@ -1,5 +1,5 @@
 import { ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
@@ -10,8 +10,9 @@ import {
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
+import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Diagram } from "@/features/diagram/diagram";
-import type { DiagramLayout, DiagramNodeSizes, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
+import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
 
@@ -20,6 +21,7 @@ export type DiagramRendererProps = Readonly<{
   annotations: AnnotationCanvasController;
   diagram: Diagram;
   onOpenSource: (href: string) => void;
+  commentEnabled?: boolean;
 }>;
 
 type DiagramRendererBaseProps = DiagramRendererProps &
@@ -30,14 +32,15 @@ type DiagramRendererBaseProps = DiagramRendererProps &
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => DiagramReactFlowRenderModel;
+    onNodeActivate?: (nodeId: string) => void;
+    onPaneActivate?: () => void;
   }>;
 
 type DiagramLayoutState =
   | Readonly<{ status: "measuring" | "layouting" }>
   | Readonly<{
       status: "ready";
-      edges: readonly DiagramReactFlowEdge[];
-      initialView: DiagramViewFramingOptions;
+      layout: DiagramLayout;
     }>
   | Readonly<{ status: "error"; message: string }>;
 
@@ -50,17 +53,19 @@ function DiagramRendererContent({
   onOpenSource,
   calculateLayout,
   buildRenderModel,
+  onNodeActivate,
+  onPaneActivate,
 }: DiagramContentProps) {
   const measurementNodes = useMemo(() => buildDiagramMeasurementNodes(diagram, onOpenSource), [diagram, onOpenSource]);
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
-  const latestLayoutInputs = useRef({ diagram, getNodes, onOpenSource, setNodes, calculateLayout, buildRenderModel });
+  const latestLayoutInputs = useRef({ diagram, getNodes, calculateLayout });
 
   useEffect(() => {
-    latestLayoutInputs.current = { diagram, getNodes, onOpenSource, setNodes, calculateLayout, buildRenderModel };
-  }, [diagram, getNodes, onOpenSource, setNodes, calculateLayout, buildRenderModel]);
+    latestLayoutInputs.current = { diagram, getNodes, calculateLayout };
+  }, [diagram, getNodes, calculateLayout]);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,8 +75,7 @@ function DiagramRendererContent({
     const runLayout = () => {
       if (cancelled || hasStartedLayout.current) return;
       hasStartedLayout.current = true;
-      const { diagram, getNodes, onOpenSource, setNodes, calculateLayout, buildRenderModel } =
-        latestLayoutInputs.current;
+      const { diagram, getNodes, calculateLayout } = latestLayoutInputs.current;
       let measuredNodeSizes: ReturnType<typeof resolveDiagramNodeSizes>;
       try {
         measuredNodeSizes = resolveDiagramNodeSizes(diagram, getNodes());
@@ -84,10 +88,7 @@ function DiagramRendererContent({
       setState({ status: "layouting" });
       void calculateLayout(diagram, measuredNodeSizes)
         .then((layout) => {
-          if (cancelled) return;
-          const flow = buildRenderModel(diagram, layout, onOpenSource);
-          setNodes([...flow.nodes]);
-          setState({ status: "ready", edges: flow.edges, initialView: layout.initialView });
+          if (!cancelled) setState({ status: "ready", layout });
         })
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : "Diagram layout failed.";
@@ -105,6 +106,22 @@ function DiagramRendererContent({
       cancelAnimationFrame(secondFrame);
     };
   }, []);
+
+  const rendered = useMemo(() => {
+    if (state.status !== "ready") return undefined;
+    try {
+      return { status: "ready", model: buildRenderModel(diagram, state.layout, onOpenSource) } as const;
+    } catch (error: unknown) {
+      return {
+        status: "error",
+        message: error instanceof Error ? error.message : "Diagram rendering failed.",
+      } as const;
+    }
+  }, [state, diagram, onOpenSource, buildRenderModel]);
+
+  useLayoutEffect(() => {
+    if (rendered?.status === "ready") setNodes([...rendered.model.nodes]);
+  }, [rendered, setNodes]);
 
   return (
     <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
@@ -128,21 +145,27 @@ function DiagramRendererContent({
       </ul>
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
-        edges={state.status === "ready" ? [...state.edges] : []}
+        edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
             ? (point, target) => {
+                const selected: AnnotationTarget | undefined =
+                  target?.type === "edge" && rendered?.status === "ready"
+                    ? (rendered.model.edgeTargets?.get(target.id) ?? target)
+                    : target;
                 annotations.begin({
                   ...annotations.surface,
-                  ...(target ? { target } : {}),
+                  ...(selected ? { target: selected } : {}),
                   point,
                 });
               }
             : undefined
         }
+        onNodeActivate={onNodeActivate}
+        onPaneActivate={onPaneActivate}
         onNodesChange={onNodesChange}
-        initialView={state.status === "ready" ? state.initialView : undefined}
+        initialView={state.status === "ready" ? state.layout.initialView : undefined}
       >
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
         <DiagramLinksPanel links={diagram.links ?? []} onOpenSource={onOpenSource} />
@@ -152,12 +175,12 @@ function DiagramRendererContent({
           Laying out…
         </div>
       ) : null}
-      {state.status === "error" ? (
+      {state.status === "error" || rendered?.status === "error" ? (
         <p
           className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-destructive"
           role="alert"
         >
-          {state.message}
+          {state.status === "error" ? state.message : rendered?.status === "error" ? rendered.message : null}
         </p>
       ) : null}
     </div>
@@ -171,6 +194,8 @@ export function DiagramRendererBase({
   onOpenSource,
   calculateLayout,
   buildRenderModel,
+  onNodeActivate,
+  onPaneActivate,
 }: DiagramRendererBaseProps) {
   const measurementKey = JSON.stringify(diagram);
 
@@ -183,6 +208,8 @@ export function DiagramRendererBase({
         onOpenSource={onOpenSource}
         calculateLayout={calculateLayout}
         buildRenderModel={buildRenderModel}
+        onNodeActivate={onNodeActivate}
+        onPaneActivate={onPaneActivate}
       />
     </ReactFlowProvider>
   );

@@ -90,6 +90,33 @@ describe("diagram parsing", () => {
 
   it("parses supported layout configurations", () => {
     expect(parseDiagram(validSequenceDiagram).layout).toEqual({ id: "sequence" });
+    expect(parseDiagram({ ...validDiagram, layout: { id: "dependency-graph" } }).layout).toEqual({
+      id: "dependency-graph",
+    });
+  });
+
+  it("restricts dependency graphs to default nodes and edges", () => {
+    const dependencyDiagram = { ...validDiagram, layout: { id: "dependency-graph" } } as const;
+    expect(parseDiagram(dependencyDiagram).graph).toEqual(validDiagram.graph);
+    const fragment = {
+      id: "fragment",
+      type: "fragment",
+      title: "Alternative",
+      kind: "frame",
+      operator: "alt",
+      branches: [{ id: "branch", guard: "valid", startMessageId: "request", endMessageId: "request" }],
+    } as const;
+    for (const node of [...validSequenceDiagram.graph.nodes, fragment]) {
+      expect(() =>
+        parseDiagram({ ...dependencyDiagram, graph: { ...dependencyDiagram.graph, nodes: [node] } }),
+      ).toThrow("Dependency graph layout supports only default nodes");
+    }
+    expect(() =>
+      parseDiagram({
+        ...dependencyDiagram,
+        graph: { ...dependencyDiagram.graph, edges: [validSequenceDiagram.graph.edges.at(0)] },
+      }),
+    ).toThrow("Dependency graph layout supports only default edges");
   });
 
   it("rejects unsupported layout configurations", () => {

@@ -25,6 +25,17 @@ const sequenceDiagram = {
 } satisfies Parameters<typeof layoutDiagram>[0];
 
 describe("diagram layout dispatcher", () => {
+  test("routes a dependency graph layout to the nested dependency strategy", async () => {
+    const result = await layoutDiagram(
+      { ...elkDiagram, layout: { id: "dependency-graph" } },
+      { source: { width: 160, height: 120 }, target: { width: 160, height: 120 } },
+    );
+
+    expect(result.nodes.map(({ id }) => id)).toEqual(["source", "target"]);
+    expect(result.edges.map(({ id }) => id)).toEqual(["source-target"]);
+    expect(result.initialView).toEqual({ mode: "fit" });
+  });
+
   test("routes an ELK layout configuration to the built-in ELK strategy", async () => {
     const result = await layoutDiagram(elkDiagram, {
       source: { width: 160, height: 120 },

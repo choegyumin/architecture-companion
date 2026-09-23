@@ -61,6 +61,19 @@
             "id"
           ],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "const": "dependency-graph"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
         }
       ]
     },
