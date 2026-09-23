@@ -30,12 +30,12 @@ import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fr
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import { MessageEdge, type MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
-import { PolylineEdge, type PolylineReactFlowEdge } from "@/shared/react-flow/polyline-edge";
+import { RouteEdge, type RouteReactFlowEdge } from "@/shared/react-flow/route-edge";
 import { useTheme } from "@/shared/react-ui/theme-context";
 
 export type DiagramReactFlowNode =
   CardReactFlowNode | LabeledGroupReactFlowNode | LifelineReactFlowNode | FragmentReactFlowNode;
-export type DiagramReactFlowEdge = PolylineReactFlowEdge | MessageReactFlowEdge;
+export type DiagramReactFlowEdge = RouteReactFlowEdge | MessageReactFlowEdge;
 
 type NodeRendererRegistry<NodeType extends Node> = {
   [Type in Extract<NodeType["type"], string>]: ComponentType<NodeProps<Extract<NodeType, { type: Type }>>>;
@@ -52,7 +52,7 @@ const diagramNodeTypes = {
 } satisfies NodeRendererRegistry<DiagramReactFlowNode>;
 const diagramEdgeTypes = {
   message: MessageEdge,
-  polyline: PolylineEdge,
+  route: RouteEdge,
 } satisfies EdgeRendererRegistry<DiagramReactFlowEdge>;
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";

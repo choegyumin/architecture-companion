@@ -112,7 +112,7 @@ describe("diagram renderer React Flow adapter", () => {
       id: "next",
       source: "step",
       target: "step",
-      type: "polyline",
+      type: "route",
       label: "Continue",
       data: {
         points: layout.edges.at(0)?.points,

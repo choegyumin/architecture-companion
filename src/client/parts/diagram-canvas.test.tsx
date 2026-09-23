@@ -90,7 +90,7 @@ describe("diagram canvas", () => {
             id: "checkout-edge",
             source: "checkout-page",
             target: "checkout-page",
-            type: "polyline",
+            type: "route",
             data: { points: [] },
           },
         ]}

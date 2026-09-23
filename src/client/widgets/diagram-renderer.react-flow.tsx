@@ -266,7 +266,7 @@ export function buildDiagramReactFlowRenderModel(
     if (edge.type === "default") {
       return {
         ...common,
-        type: "polyline",
+        type: "route",
         ...(edge.label ? { label: edge.label } : {}),
         data: {
           points: placement.points,

@@ -6,20 +6,20 @@ import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
-type PolylineEdgeData = Readonly<{
+type RouteEdgeData = Readonly<{
   points: readonly XYPosition[];
   eyebrow?: ReactNode;
   href?: string;
   onLinkActivate?: LinkActivationHandler;
 }>;
 
-export type PolylineReactFlowEdge = Edge<PolylineEdgeData, "polyline">;
+export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
 
 function toPath(points: readonly XYPosition[]): string {
   return points.map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 }
 
-export function PolylineEdge({ id, data, label, markerEnd, markerStart, style }: EdgeProps<PolylineReactFlowEdge>) {
+export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: EdgeProps<RouteReactFlowEdge>) {
   if (!data) return null;
   const first = data.points.at(0);
   const last = data.points.at(-1);
