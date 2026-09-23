@@ -28,7 +28,7 @@ vi.mock("@xyflow/react", () => ({
   }: {
     children: ReactNode;
     edges: readonly { id: string }[];
-    nodes: readonly { id: string; type: string }[];
+    nodes: readonly { id: string; type: string; parentId?: string }[];
     onEdgeClick?: (event: MouseEvent<Element>, edge: { id: string }) => void;
     onInit: (instance: unknown) => void;
     onNodeClick?: (event: MouseEvent<Element>, node: { id: string; type: string }) => void;
@@ -37,6 +37,17 @@ vi.mock("@xyflow/react", () => ({
     useEffect(() => {
       onInit(mocks.flowInstance);
     }, [onInit]);
+    const renderNode = (node: { id: string; type: string; parentId?: string }): ReactNode => (
+      <span
+        aria-label={`React Flow node ${node.id}`}
+        className="react-flow__node"
+        data-id={node.id}
+        key={node.id}
+        onClick={(event) => onNodeClick?.(event, node)}
+      >
+        {nodes.filter((child) => child.parentId === node.id).map(renderNode)}
+      </span>
+    );
     return (
       <div
         aria-label="React Flow pane"
@@ -44,13 +55,7 @@ vi.mock("@xyflow/react", () => ({
           if (event.target === event.currentTarget) onPaneClick?.(event);
         }}
       >
-        {nodes.map((node) => (
-          <span
-            aria-label={`React Flow node ${node.id}`}
-            key={node.id}
-            onClick={(event) => onNodeClick?.(event, node)}
-          />
-        ))}
+        {nodes.filter((node) => !node.parentId).map(renderNode)}
         {edges.map((edge) => (
           <span
             aria-label={`React Flow edge ${edge.id}`}
@@ -123,8 +128,9 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
   });
 
-  it("forwards ordinary node and blank-pane clicks as focus actions without treating group backgrounds as titles", async () => {
+  it("focuses node and group shapes, and clears focus on the blank pane", async () => {
     const onNodeActivate = vi.fn();
+    const onGroupActivate = vi.fn();
     const onPaneActivate = vi.fn();
     render(
       <DiagramCanvas
@@ -133,6 +139,7 @@ describe("diagram canvas", () => {
           { id: "file", type: "card", position: { x: 0, y: 0 }, data: { label: "File" } },
           { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Group" } },
         ]}
+        onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
       />,
@@ -144,7 +151,44 @@ describe("diagram canvas", () => {
     fireEvent.click(pane);
 
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
+    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
     expect(onPaneActivate).toHaveBeenCalledOnce();
+  });
+
+  it("lets child nodes and child groups take precedence over their parent group", async () => {
+    const onGroupActivate = vi.fn();
+    const onNodeActivate = vi.fn();
+    render(
+      <DiagramCanvas
+        edges={[]}
+        nodes={[
+          { id: "parent", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Parent" } },
+          {
+            id: "child-group",
+            type: "labeled-group",
+            parentId: "parent",
+            position: { x: 0, y: 0 },
+            data: { label: "Child group" },
+          },
+          {
+            id: "child-node",
+            type: "card",
+            parentId: "parent",
+            position: { x: 0, y: 0 },
+            data: { label: "Child node" },
+          },
+        ]}
+        onGroupActivate={onGroupActivate}
+        onNodeActivate={onNodeActivate}
+      />,
+    );
+    await screen.findByLabelText("React Flow pane");
+
+    fireEvent.click(screen.getByLabelText("React Flow node child-node"));
+    fireEvent.click(screen.getByLabelText("React Flow node child-group"));
+
+    expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("child-node");
+    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("child-group");
   });
 
   it("does not forward clicks on interactive elements as canvas clicks", async () => {

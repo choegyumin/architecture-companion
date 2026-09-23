@@ -1,6 +1,3 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-
 import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import type { Diagram } from "@/features/diagram/diagram";
@@ -36,13 +33,12 @@ const sizes = {
 };
 
 describe("dependency graph React Flow adapter", () => {
-  it("renders directed aggregates with original membership, title focus and comment snapshots", async () => {
+  it("renders directed aggregates with original membership, shape focus and comment snapshots", async () => {
     const layout = await layoutDependencyGraph(diagram.graph, sizes);
     const onAggregateActivate = vi.fn();
-    const onGroupTitleActivate = vi.fn();
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
       onAggregateActivate,
-      onGroupTitleActivate,
+      groupActivatable: true,
     });
     const aggregate = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
     if (aggregate?.type !== "route") throw new Error("Missing aggregate route");
@@ -57,17 +53,19 @@ describe("dependency graph React Flow adapter", () => {
       targetId: "library",
       edgeIds: ["a-c", "b-c"],
     });
-    app.data.onTitleActivate?.();
-    expect(onGroupTitleActivate).toHaveBeenCalledWith("app");
-    render(<>{aggregate.data?.eyebrow}</>);
-    await userEvent.click(screen.getByRole("button", { name: "Show 2 edges from app to library" }));
+    expect(app.data.activatable).toBe(true);
+    expect(app.data).not.toHaveProperty("onTitleActivate");
+    expect(aggregate.data?.eyebrow).toBe("×2");
+    expect(aggregate.data?.labelAction?.ariaLabel).toBe("Show 2 edges from app to library");
+    aggregate.data?.labelAction?.onActivate();
     expect(onAggregateActivate).toHaveBeenCalledWith(["a-c", "b-c"]);
 
     const commentModel = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn());
     const commentAggregate = commentModel.edges.at(0);
     if (commentAggregate?.type !== "route") throw new Error("Missing comment aggregate");
     expect(commentAggregate.data?.eyebrow).toBe("×2");
-    expect(commentModel.nodes.find((node) => node.id === "app")?.data).not.toHaveProperty("onTitleActivate");
+    expect(commentAggregate.data?.labelAction).toBeUndefined();
+    expect(commentModel.nodes.find((node) => node.id === "app")?.data).not.toHaveProperty("activatable");
   });
 
   it("renders only selected original edges and preserves their individual targets", async () => {

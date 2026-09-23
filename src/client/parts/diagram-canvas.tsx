@@ -64,6 +64,7 @@ type DiagramCanvasProps = Readonly<{
   edges: DiagramReactFlowEdge[];
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
+  onGroupActivate?: (groupId: string) => void;
   onNodeActivate?: (nodeId: string) => void;
   onPaneActivate?: () => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
@@ -76,6 +77,7 @@ export function DiagramCanvas({
   edges,
   nodes,
   onCanvasClick,
+  onGroupActivate,
   onNodeActivate,
   onPaneActivate,
   onNodesChange,
@@ -120,10 +122,14 @@ export function DiagramCanvas({
   }
 
   function handleNodeClick(event: MouseEvent, node: DiagramReactFlowNode): void {
+    const clickedNode = event.target instanceof Element ? event.target.closest(".react-flow__node") : null;
+    const clickedNodeId = clickedNode?.getAttribute("data-id");
+    if (clickedNodeId && clickedNodeId !== node.id) return;
     if (onCanvasClick) {
       handleCanvasClick(event, { type: node.type === "labeled-group" ? "group" : "node", id: node.id });
-    } else if (node.type === "card" && onNodeActivate && !isInteractiveClick(event)) {
-      onNodeActivate(node.id);
+    } else if (!isInteractiveClick(event)) {
+      if (node.type === "card") onNodeActivate?.(node.id);
+      if (node.type === "labeled-group") onGroupActivate?.(node.id);
     }
   }
 

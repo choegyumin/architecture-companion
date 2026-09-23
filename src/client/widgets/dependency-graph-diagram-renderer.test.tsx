@@ -71,6 +71,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
     buildRenderModel,
     diagram,
     onOpenSource,
+    onGroupActivate,
     onNodeActivate,
     onPaneActivate,
   }: {
@@ -83,6 +84,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
     >;
     diagram: Diagram;
     onOpenSource: (href: string) => void;
+    onGroupActivate?: (id: string) => void;
     onNodeActivate?: (id: string) => void;
     onPaneActivate?: () => void;
   }) => {
@@ -92,12 +94,15 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
     return (
       <div>
         <output data-testid="visible-edges">{model.edges.map(({ id }) => id).join("|")}</output>
-        <button onClick={() => (group?.type === "labeled-group" ? group.data.onTitleActivate?.() : undefined)}>
-          Select group
-        </button>
+        <button onClick={() => onGroupActivate?.("source")}>Select group area</button>
+        <output data-testid="group-activatable">
+          {group?.type === "labeled-group" ? String(Boolean(group.data.activatable)) : "false"}
+        </output>
         <button onClick={() => onNodeActivate?.("one")}>Select node</button>
         <button onClick={() => onPaneActivate?.()}>Clear focus</button>
-        {aggregate?.type === "route" ? aggregate.data?.eyebrow : null}
+        {aggregate?.type === "route" && aggregate.data?.labelAction ? (
+          <button onClick={aggregate.data.labelAction.onActivate}>{aggregate.data.labelAction.ariaLabel}</button>
+        ) : null}
       </div>
     );
   },
@@ -112,7 +117,8 @@ describe("dependency graph focus", () => {
     const visible = screen.getByTestId("visible-edges");
 
     expect(visible.textContent?.split("|")).toHaveLength(1);
-    await userEvent.click(screen.getByRole("button", { name: "Select group" }));
+    expect(screen.getByTestId("group-activatable")).toHaveTextContent("true");
+    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
     expect(visible.textContent?.split("|")).toHaveLength(2);
     expect(visible).toHaveTextContent("one-two");
 
@@ -132,7 +138,9 @@ describe("dependency graph focus", () => {
       />,
     );
     expect(visible).toHaveTextContent("one-other|two-other");
+    expect(screen.getByTestId("group-activatable")).toHaveTextContent("false");
     expect(screen.queryByRole("button", { name: "Show 2 edges from source to target" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
     await userEvent.click(screen.getByRole("button", { name: "Select node" }));
     await userEvent.click(screen.getByRole("button", { name: "Clear focus" }));
     expect(visible).toHaveTextContent("one-other|two-other");
@@ -149,7 +157,7 @@ describe("dependency graph focus", () => {
     );
     const visible = screen.getByTestId("visible-edges");
 
-    await userEvent.click(screen.getByRole("button", { name: "Select group" }));
+    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
     await userEvent.click(screen.getByRole("button", { name: "Select node" }));
     expect(visible.textContent?.split("|")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Show 2 edges from source to target" })).not.toBeInTheDocument();

@@ -32,6 +32,7 @@ type DiagramRendererBaseProps = DiagramRendererProps &
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => DiagramReactFlowRenderModel;
+    onGroupActivate?: (groupId: string) => void;
     onNodeActivate?: (nodeId: string) => void;
     onPaneActivate?: () => void;
   }>;
@@ -53,6 +54,7 @@ function DiagramRendererContent({
   onOpenSource,
   calculateLayout,
   buildRenderModel,
+  onGroupActivate,
   onNodeActivate,
   onPaneActivate,
 }: DiagramContentProps) {
@@ -162,6 +164,7 @@ function DiagramRendererContent({
               }
             : undefined
         }
+        onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
         onNodesChange={onNodesChange}
@@ -194,6 +197,7 @@ export function DiagramRendererBase({
   onOpenSource,
   calculateLayout,
   buildRenderModel,
+  onGroupActivate,
   onNodeActivate,
   onPaneActivate,
 }: DiagramRendererBaseProps) {
@@ -208,6 +212,7 @@ export function DiagramRendererBase({
         onOpenSource={onOpenSource}
         calculateLayout={calculateLayout}
         buildRenderModel={buildRenderModel}
+        onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
       />

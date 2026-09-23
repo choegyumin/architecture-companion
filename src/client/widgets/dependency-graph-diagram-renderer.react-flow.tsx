@@ -20,8 +20,8 @@ import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DependencyRenderOptions = Readonly<{
   focus?: DependencyFocus;
+  groupActivatable?: boolean;
   onAggregateActivate?: (edgeIds: readonly string[]) => void;
-  onGroupTitleActivate?: (groupId: string) => void;
 }>;
 
 export function buildDependencyGraphDiagramReactFlowRenderModel(
@@ -30,7 +30,7 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},
 ): DiagramReactFlowRenderModel {
-  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.onGroupTitleActivate);
+  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.groupActivatable);
   const bounds = getDependencyElementBounds(layout);
   const cards = layout.nodes.map(({ id }) => ({
     id,
@@ -104,21 +104,15 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
       target: projection.targetId,
       data: {
         ...route,
-        eyebrow: options.onAggregateActivate ? (
-          <button
-            aria-label={`Show ${edgeIds.length} edges from ${projection.sourceId} to ${projection.targetId}`}
-            className="nodrag nopan hover:underline"
-            onClick={(event) => {
-              event.stopPropagation();
-              options.onAggregateActivate?.(edgeIds);
-            }}
-            type="button"
-          >
-            ×{edgeIds.length}
-          </button>
-        ) : (
-          `×${edgeIds.length}`
-        ),
+        eyebrow: `×${edgeIds.length}`,
+        ...(options.onAggregateActivate
+          ? {
+              labelAction: {
+                ariaLabel: `Show ${edgeIds.length} edges from ${projection.sourceId} to ${projection.targetId}`,
+                onActivate: () => options.onAggregateActivate?.(edgeIds),
+              },
+            }
+          : {}),
       },
     };
   });

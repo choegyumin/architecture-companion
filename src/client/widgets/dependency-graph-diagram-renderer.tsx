@@ -22,11 +22,11 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
     (diagram: Diagram, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
       buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, onOpenSource, {
         focus,
+        groupActivatable: canFocus,
         ...(canFocus
           ? {
               onAggregateActivate: (edgeIds: readonly string[]) =>
                 setFocus({ type: "aggregate", edgeIds: [...edgeIds] }),
-              onGroupTitleActivate: (id: string) => setFocus({ type: "group", id }),
             }
           : {}),
       }),
@@ -38,6 +38,7 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
       {...props}
       buildRenderModel={buildRenderModel}
       calculateLayout={calculateLayout}
+      onGroupActivate={canFocus ? (id) => setFocus({ type: "group", id }) : undefined}
       onNodeActivate={canFocus ? (id) => setFocus({ type: "node", id }) : undefined}
       onPaneActivate={canFocus ? () => setFocus(undefined) : undefined}
     />
