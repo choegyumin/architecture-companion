@@ -38,12 +38,14 @@ describe("dependency graph React Flow adapter", () => {
     const onAggregateActivate = vi.fn();
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
       onAggregateActivate,
-      groupActivatable: true,
+      nodesActivatable: true,
     });
     const aggregate = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
     if (aggregate?.type !== "route") throw new Error("Missing aggregate route");
     const app = model.nodes.find((node) => node.id === "app");
     if (app?.type !== "labeled-group") throw new Error("Missing group");
+    const card = model.nodes.find((node) => node.id === "a");
+    if (card?.type !== "card") throw new Error("Missing card");
 
     expect(model.edges).toHaveLength(1);
     expect(aggregate.data?.path).toMatch(/^M .+ C /);
@@ -54,6 +56,7 @@ describe("dependency graph React Flow adapter", () => {
       edgeIds: ["a-c", "b-c"],
     });
     expect(app.data.activatable).toBe(true);
+    expect(card.data.activatable).toBe(true);
     expect(app.data).not.toHaveProperty("onTitleActivate");
     expect(aggregate.data?.eyebrow).toBe("×2");
     expect(aggregate.data?.labelAction?.ariaLabel).toBe("Show 2 edges from app to library");
@@ -66,6 +69,7 @@ describe("dependency graph React Flow adapter", () => {
     expect(commentAggregate.data?.eyebrow).toBe("×2");
     expect(commentAggregate.data?.labelAction).toBeUndefined();
     expect(commentModel.nodes.find((node) => node.id === "app")?.data).not.toHaveProperty("activatable");
+    expect(commentModel.nodes.find((node) => node.id === "a")?.data).not.toHaveProperty("activatable");
   });
 
   it("renders only selected original edges and preserves their individual targets", async () => {

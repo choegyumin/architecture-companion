@@ -184,7 +184,7 @@ export function buildDiagramReactFlowNodes(
   diagram: Diagram,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
-  groupActivatable = false,
+  nodesActivatable = false,
 ): DiagramReactFlowNode[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const groups = layout.groups.map<LabeledGroupReactFlowNode>((placement) => {
@@ -197,7 +197,7 @@ export function buildDiagramReactFlowNodes(
       data: {
         label: group.title,
         ...(group.description ? { description: group.description } : {}),
-        ...(groupActivatable ? { activatable: true } : {}),
+        ...(nodesActivatable ? { activatable: true } : {}),
       },
       position: placement.position,
       ...(placement.parentId ? { parentId: placement.parentId } : {}),
@@ -225,7 +225,10 @@ export function buildDiagramReactFlowNodes(
       return {
         ...common,
         type: "card",
-        data: toCardNodeData(node, onLinkActivate),
+        data: {
+          ...toCardNodeData(node, onLinkActivate),
+          ...(nodesActivatable ? { activatable: true } : {}),
+        },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
       };

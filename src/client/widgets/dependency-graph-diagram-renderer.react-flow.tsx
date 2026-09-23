@@ -20,7 +20,7 @@ import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DependencyRenderOptions = Readonly<{
   focus?: DependencyFocus;
-  groupActivatable?: boolean;
+  nodesActivatable?: boolean;
   onAggregateActivate?: (edgeIds: readonly string[]) => void;
 }>;
 
@@ -30,7 +30,7 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},
 ): DiagramReactFlowRenderModel {
-  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.groupActivatable);
+  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
   const cards = layout.nodes.map(({ id }) => ({
     id,

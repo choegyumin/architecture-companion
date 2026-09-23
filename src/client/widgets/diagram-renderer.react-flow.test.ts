@@ -107,6 +107,7 @@ describe("diagram renderer React Flow adapter", () => {
       position: { x: 0, y: 0 },
       data: { label: "Group", description: "Boundary" },
     });
+    expect(nodes.find((node) => node.id === "step")?.data).not.toHaveProperty("activatable");
     expect(edges.at(0)).toMatchObject({
       id: "next",
       source: "step",

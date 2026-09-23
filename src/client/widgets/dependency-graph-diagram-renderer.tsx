@@ -22,7 +22,7 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
     (diagram: Diagram, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
       buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, onOpenSource, {
         focus,
-        groupActivatable: canFocus,
+        nodesActivatable: canFocus,
         ...(canFocus
           ? {
               onAggregateActivate: (edgeIds: readonly string[]) =>
