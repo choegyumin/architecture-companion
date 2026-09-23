@@ -83,6 +83,7 @@ describe("diagram renderer React Flow adapter", () => {
           points: [
             { x: 100, y: 100 },
             { x: 200, y: 160 },
+            { x: 200, y: 180 },
           ],
         },
       ],
@@ -115,7 +116,8 @@ describe("diagram renderer React Flow adapter", () => {
       type: "route",
       label: "Continue",
       data: {
-        points: layout.edges.at(0)?.points,
+        path: "M 100 100 L 200 160 L 200 180",
+        labelPosition: { x: 150, y: 130 },
         eyebrow: "result",
         href: "https://example.com/review",
       },

@@ -91,7 +91,7 @@ describe("diagram canvas", () => {
             source: "checkout-page",
             target: "checkout-page",
             type: "route",
-            data: { points: [] },
+            data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
           },
         ]}
         nodes={[

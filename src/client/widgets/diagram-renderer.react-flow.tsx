@@ -6,10 +6,16 @@ import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DefaultDiagramNode, LifelineDiagramNode } from "@/features/diagram/diagram-graph";
 import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
-import type { DiagramLayout, DiagramLayoutNodeData, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
+import type {
+  DiagramLayout,
+  DiagramLayoutNodeData,
+  DiagramLayoutPoint,
+  DiagramNodeSizes,
+} from "@/features/diagram/diagram-spatial";
 import type { CardReactFlowNode } from "@/shared/react-flow/card-node";
 import type { LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import type { LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
+import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 
 type DiagramLinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
@@ -25,6 +31,10 @@ const EDGE_COLOR = "var(--foreground)";
 const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
+
+function toPolylinePath(points: readonly DiagramLayoutPoint[]): string {
+  return points.map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
+}
 
 export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
@@ -269,7 +279,11 @@ export function buildDiagramReactFlowRenderModel(
         type: "route",
         ...(edge.label ? { label: edge.label } : {}),
         data: {
-          points: placement.points,
+          path: toPolylinePath(placement.points),
+          labelPosition:
+            placement.points.length > 1
+              ? getPolylineEdgeLabelPlacement(placement.points)
+              : (placement.points.at(0) ?? { x: 0, y: 0 }),
           ...(edge.kind && edge.kind !== "direct-render" ? { eyebrow: edge.kind } : {}),
           ...(edge.href ? { href: edge.href } : {}),
           onLinkActivate,
