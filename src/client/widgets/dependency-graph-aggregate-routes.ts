@@ -1,0 +1,578 @@
+import type { EdgeRoute } from "@/client/widgets/dependency-graph-edge-routes";
+import type { DiagramLayoutPoint, DiagramLayoutSize } from "@/features/diagram/diagram-spatial";
+import { getOrThrow } from "@/shared/universal/get-or-throw";
+
+type Point = DiagramLayoutPoint;
+type Bounds = Readonly<{ position: Point; size: DiagramLayoutSize }>;
+type Side = "top" | "right" | "bottom" | "left";
+type Axis = "horizontal" | "vertical";
+type Rectangle = Readonly<{ left: number; top: number; right: number; bottom: number }>;
+type Segment = Readonly<{ from: Point; to: Point; axis: Axis }>;
+type Projection = Readonly<{ id: string; sourceId: string; targetId: string }>;
+type RoutingEdge = Projection & {
+  source: Rectangle;
+  target: Rectangle;
+  sourceSide: Side;
+  targetSide: Side;
+  start: Point;
+  end: Point;
+};
+type Connection = Readonly<{ point: number; length: number; axis: Axis }>;
+
+const CLEARANCE = 32;
+const TRACK_GAP = 16;
+const PORT_PADDING = 48;
+const PORT_GAP = 32;
+const BEND_COST = 256;
+const CROSSING_COST = 4_000;
+const POINT_CONTACT_COST = 5_000;
+const OVERLAP_COST = 6_000;
+const EPSILON = 0.001;
+
+function rectangle(bounds: Bounds): Rectangle {
+  return {
+    left: bounds.position.x,
+    top: bounds.position.y,
+    right: bounds.position.x + bounds.size.width,
+    bottom: bounds.position.y + bounds.size.height,
+  };
+}
+
+function center(rect: Rectangle): Point {
+  return { x: (rect.left + rect.right) / 2, y: (rect.top + rect.bottom) / 2 };
+}
+
+function sideFacing(rect: Rectangle, other: Rectangle): Side {
+  const a = center(rect);
+  const b = center(other);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  if (
+    Math.abs(dx) / Math.max((rect.right - rect.left) / 2, EPSILON) >=
+    Math.abs(dy) / Math.max((rect.bottom - rect.top) / 2, EPSILON)
+  ) {
+    return dx >= 0 ? "right" : "left";
+  }
+  return dy >= 0 ? "bottom" : "top";
+}
+
+function portRange(rect: Rectangle, side: Side): readonly [number, number] {
+  const vertical = side === "left" || side === "right";
+  const from = vertical ? rect.top : rect.left;
+  const to = vertical ? rect.bottom : rect.right;
+  const padding = Math.min(PORT_PADDING, (to - from) / 4);
+  return [from + padding, to - padding];
+}
+
+function preferredCoordinate(rect: Rectangle, side: Side, other: Rectangle): number {
+  const a = center(rect);
+  const b = center(other);
+  const horizontal = side === "top" || side === "bottom";
+  const boundary = horizontal ? (side === "top" ? rect.top : rect.bottom) : side === "left" ? rect.left : rect.right;
+  const along = horizontal ? a.x : a.y;
+  const delta = horizontal ? b.y - a.y : b.x - a.x;
+  const preferred =
+    Math.abs(delta) <= EPSILON
+      ? along
+      : along + ((horizontal ? b.x - a.x : b.y - a.y) * (boundary - (horizontal ? a.y : a.x))) / delta;
+  const [minimum, maximum] = portRange(rect, side);
+  return Math.min(maximum, Math.max(minimum, preferred));
+}
+
+function spreadCoordinates(preferred: readonly number[], minimum: number, maximum: number): number[] {
+  if (preferred.length === 0) return [];
+  const gap = preferred.length === 1 ? 0 : Math.min(PORT_GAP, (maximum - minimum) / (preferred.length - 1));
+  const forward = preferred.map((value) => Math.min(maximum, Math.max(minimum, value)));
+  for (let index = 1; index < forward.length; index += 1) {
+    forward[index] = Math.max(forward[index]!, forward[index - 1]! + gap);
+  }
+  const forwardShift = Math.min(0, maximum - forward.at(-1)!);
+  const backward = preferred.map((value) => Math.min(maximum, Math.max(minimum, value)));
+  for (let index = backward.length - 2; index >= 0; index -= 1) {
+    backward[index] = Math.min(backward[index]!, backward.at(index + 1)! - gap);
+  }
+  const backwardShift = Math.max(0, minimum - backward.at(0)!);
+  return forward.map((value, index) => (value + forwardShift + backward[index]! + backwardShift) / 2);
+}
+
+function portPoint(rect: Rectangle, side: Side, coordinate: number): Point {
+  switch (side) {
+    case "top":
+      return { x: coordinate, y: rect.top };
+    case "bottom":
+      return { x: coordinate, y: rect.bottom };
+    case "left":
+      return { x: rect.left, y: coordinate };
+    case "right":
+      return { x: rect.right, y: coordinate };
+  }
+}
+
+function assignPorts(edges: RoutingEdge[]): void {
+  const faces = new Map<string, Array<{ edge: RoutingEdge; source: boolean; preferred: number }>>();
+  for (const edge of edges) {
+    for (const source of [true, false]) {
+      const id = source ? edge.sourceId : edge.targetId;
+      const side = source ? edge.sourceSide : edge.targetSide;
+      const preferred = preferredCoordinate(
+        source ? edge.source : edge.target,
+        side,
+        source ? edge.target : edge.source,
+      );
+      const key = JSON.stringify([id, side]);
+      const entries = faces.get(key) ?? [];
+      entries.push({ edge, source, preferred });
+      faces.set(key, entries);
+    }
+  }
+  for (const entries of faces.values()) {
+    entries.sort((a, b) => a.preferred - b.preferred || a.edge.id.localeCompare(b.edge.id));
+    const first = getOrThrow(entries.at(0), "Missing aggregate port face");
+    const rect = first.source ? first.edge.source : first.edge.target;
+    const side = first.source ? first.edge.sourceSide : first.edge.targetSide;
+    const [minimum, maximum] = portRange(rect, side);
+    const coordinates = spreadCoordinates(
+      entries.map(({ preferred }) => preferred),
+      minimum,
+      maximum,
+    );
+    entries.forEach(({ edge, source }, index) => {
+      const point = portPoint(rect, side, getOrThrow(coordinates[index], "Missing aggregate port coordinate"));
+      if (source) edge.start = point;
+      else edge.end = point;
+    });
+  }
+}
+
+function outside(point: Point, side: Side): Point {
+  switch (side) {
+    case "top":
+      return { x: point.x, y: point.y - CLEARANCE };
+    case "bottom":
+      return { x: point.x, y: point.y + CLEARANCE };
+    case "left":
+      return { x: point.x - CLEARANCE, y: point.y };
+    case "right":
+      return { x: point.x + CLEARANCE, y: point.y };
+  }
+}
+
+function inflate(rect: Rectangle, amount: number): Rectangle {
+  return {
+    left: rect.left - amount,
+    top: rect.top - amount,
+    right: rect.right + amount,
+    bottom: rect.bottom + amount,
+  };
+}
+
+function distanceToRectangle(point: Point, rect: Rectangle): number {
+  return Math.hypot(
+    Math.max(rect.left - point.x, 0, point.x - rect.right),
+    Math.max(rect.top - point.y, 0, point.y - rect.bottom),
+  );
+}
+
+function interior(point: Point, rect: Rectangle): boolean {
+  return (
+    point.x > rect.left + EPSILON &&
+    point.x < rect.right - EPSILON &&
+    point.y > rect.top + EPSILON &&
+    point.y < rect.bottom - EPSILON
+  );
+}
+
+function contains(outer: Rectangle, inner: Rectangle): boolean {
+  return (
+    outer.left <= inner.left && outer.right >= inner.right && outer.top <= inner.top && outer.bottom >= inner.bottom
+  );
+}
+
+function intersects(a: Rectangle, b: Rectangle): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function obstaclesFor(edge: RoutingEdge, elements: ReadonlyMap<string, Bounds>, start: Point, end: Point): Rectangle[] {
+  const window = {
+    left: Math.min(edge.source.left, edge.target.left) - 128,
+    right: Math.max(edge.source.right, edge.target.right) + 128,
+    top: Math.min(edge.source.top, edge.target.top) - 128,
+    bottom: Math.max(edge.source.bottom, edge.target.bottom) + 128,
+  };
+  const candidates = [...elements.entries()]
+    .filter(([id, bounds]) => {
+      const rect = rectangle(bounds);
+      return (
+        (id === edge.sourceId || id === edge.targetId || intersects(rect, window)) &&
+        (id === edge.sourceId ||
+          id === edge.targetId ||
+          (!contains(edge.source, rect) &&
+            !contains(edge.target, rect) &&
+            !contains(rect, edge.source) &&
+            !contains(rect, edge.target)))
+      );
+    })
+    .map(([, bounds]) => rectangle(bounds));
+  return candidates
+    .filter(
+      (rect, index) =>
+        !candidates.some(
+          (other, otherIndex) => otherIndex !== index && contains(other, rect) && !contains(rect, other),
+        ),
+    )
+    .filter((rect) => !interior(start, rect) && !interior(end, rect))
+    .map((rect) =>
+      inflate(rect, Math.min(CLEARANCE, distanceToRectangle(start, rect), distanceToRectangle(end, rect))),
+    );
+}
+
+function segment(from: Point, to: Point): Segment {
+  return { from, to, axis: from.y === to.y ? "horizontal" : "vertical" };
+}
+
+function crossesObstacle(from: Point, to: Point, axis: Axis, rect: Rectangle): boolean {
+  if (axis === "horizontal") {
+    return (
+      from.y > rect.top + EPSILON &&
+      from.y < rect.bottom - EPSILON &&
+      Math.min(from.x, to.x) < rect.right - EPSILON &&
+      Math.max(from.x, to.x) > rect.left + EPSILON
+    );
+  }
+  return (
+    from.x > rect.left + EPSILON &&
+    from.x < rect.right - EPSILON &&
+    Math.min(from.y, to.y) < rect.bottom - EPSILON &&
+    Math.max(from.y, to.y) > rect.top + EPSILON
+  );
+}
+
+function routingGrid(start: Point, end: Point, obstacles: readonly Rectangle[]) {
+  const x = new Set([start.x, end.x]);
+  const y = new Set([start.y, end.y]);
+  for (const rect of obstacles) {
+    for (const boundary of [rect.left, rect.right]) {
+      for (const offset of [0, TRACK_GAP, TRACK_GAP * 2]) x.add(boundary + (boundary === rect.left ? -offset : offset));
+    }
+    for (const boundary of [rect.top, rect.bottom]) {
+      for (const offset of [0, TRACK_GAP, TRACK_GAP * 2]) y.add(boundary + (boundary === rect.top ? -offset : offset));
+    }
+  }
+  const xs = [...x].sort((a, b) => a - b);
+  const ys = [...y].sort((a, b) => a - b);
+  const points: Point[] = [];
+  const indices = new Map<string, number>();
+  const key = (point: Point) => `${point.x}:${point.y}`;
+  for (const yy of ys) {
+    for (const xx of xs) {
+      const point = { x: xx, y: yy };
+      if (obstacles.some((rect) => interior(point, rect))) continue;
+      indices.set(key(point), points.length);
+      points.push(point);
+    }
+  }
+  const neighbors: Connection[][] = points.map(() => []);
+  const link = (a: number, b: number, axis: Axis) => {
+    const from = getOrThrow(points[a], "Missing aggregate grid point");
+    const to = getOrThrow(points[b], "Missing aggregate grid point");
+    if (obstacles.some((rect) => crossesObstacle(from, to, axis, rect))) return;
+    const length = axis === "horizontal" ? Math.abs(from.x - to.x) : Math.abs(from.y - to.y);
+    neighbors[a]!.push({ point: b, length, axis });
+    neighbors[b]!.push({ point: a, length, axis });
+  };
+  for (const yy of ys) {
+    let previous: number | undefined;
+    for (const xx of xs) {
+      const index = indices.get(key({ x: xx, y: yy }));
+      if (index === undefined) continue;
+      if (previous !== undefined) link(previous, index, "horizontal");
+      previous = index;
+    }
+  }
+  for (const xx of xs) {
+    let previous: number | undefined;
+    for (const yy of ys) {
+      const index = indices.get(key({ x: xx, y: yy }));
+      if (index === undefined) continue;
+      if (previous !== undefined) link(previous, index, "vertical");
+      previous = index;
+    }
+  }
+  return {
+    points,
+    neighbors,
+    startIndex: getOrThrow(indices.get(key(start)), "Missing aggregate grid start"),
+    endIndex: getOrThrow(indices.get(key(end)), "Missing aggregate grid end"),
+  };
+}
+
+function between(value: number, a: number, b: number): boolean {
+  return value >= Math.min(a, b) - EPSILON && value <= Math.max(a, b) + EPSILON;
+}
+
+function interaction(first: Segment, second: Segment): Readonly<{ point?: Point; overlap: number; crossing: boolean }> {
+  if (first.axis === second.axis) {
+    const horizontal = first.axis === "horizontal";
+    const fixed = horizontal ? "y" : "x";
+    const variable = horizontal ? "x" : "y";
+    if (Math.abs(first.from[fixed] - second.from[fixed]) > EPSILON) return { overlap: 0, crossing: false };
+    const low = Math.max(
+      Math.min(first.from[variable], first.to[variable]),
+      Math.min(second.from[variable], second.to[variable]),
+    );
+    const high = Math.min(
+      Math.max(first.from[variable], first.to[variable]),
+      Math.max(second.from[variable], second.to[variable]),
+    );
+    if (high - low > EPSILON) return { overlap: high - low, crossing: false };
+    if (low - high > EPSILON) return { overlap: 0, crossing: false };
+    return {
+      point: horizontal ? { x: low, y: first.from.y } : { x: first.from.x, y: low },
+      overlap: 0,
+      crossing: false,
+    };
+  }
+  const horizontal = first.axis === "horizontal" ? first : second;
+  const vertical = first.axis === "vertical" ? first : second;
+  const point = { x: vertical.from.x, y: horizontal.from.y };
+  if (!between(point.x, horizontal.from.x, horizontal.to.x) || !between(point.y, vertical.from.y, vertical.to.y))
+    return { overlap: 0, crossing: false };
+  const crossing =
+    point.x > Math.min(horizontal.from.x, horizontal.to.x) + EPSILON &&
+    point.x < Math.max(horizontal.from.x, horizontal.to.x) - EPSILON &&
+    point.y > Math.min(vertical.from.y, vertical.to.y) + EPSILON &&
+    point.y < Math.max(vertical.from.y, vertical.to.y) - EPSILON;
+  return { point, overlap: 0, crossing };
+}
+
+export function aggregateSegmentCongestionCost(
+  candidate: Segment,
+  used: readonly Segment[],
+  ports: ReadonlySet<string>,
+): number {
+  let cost = 0;
+  const contacts = new Set<string>();
+  for (const prior of used) {
+    const { point, overlap, crossing } = interaction(candidate, prior);
+    if (overlap > EPSILON) {
+      cost += OVERLAP_COST + overlap;
+    } else if (point) {
+      const key = `${point.x}:${point.y}`;
+      if (ports.has(key)) continue;
+      if (crossing) cost += CROSSING_COST;
+      else if (!contacts.has(key)) cost += POINT_CONTACT_COST;
+      contacts.add(key);
+    }
+  }
+  return cost;
+}
+
+class MinHeap {
+  private entries: Array<{ state: number; cost: number }> = [];
+
+  push(entry: { state: number; cost: number }): void {
+    let index = this.entries.length;
+    this.entries.push(entry);
+    while (index > 0) {
+      const parent = (index - 1) >> 1;
+      if (this.entries[parent]!.cost <= entry.cost) break;
+      this.entries[index] = this.entries[parent]!;
+      index = parent;
+    }
+    this.entries[index] = entry;
+  }
+
+  pop(): { state: number; cost: number } | undefined {
+    const first = this.entries.at(0);
+    const last = this.entries.pop();
+    if (!first || !last || this.entries.length === 0) return first;
+    let index = 0;
+    while (index * 2 + 1 < this.entries.length) {
+      const left = index * 2 + 1;
+      const right = left + 1;
+      const child = right < this.entries.length && this.entries[right]!.cost < this.entries[left]!.cost ? right : left;
+      if (this.entries[child]!.cost >= last.cost) break;
+      this.entries[index] = this.entries[child]!;
+      index = child;
+    }
+    this.entries[index] = last;
+    return first;
+  }
+}
+
+function axisOf(side: Side): Axis {
+  return side === "left" || side === "right" ? "horizontal" : "vertical";
+}
+
+function findPath(
+  edge: RoutingEdge,
+  elements: ReadonlyMap<string, Bounds>,
+  used: readonly Segment[],
+  ports: ReadonlySet<string>,
+): Point[] {
+  const start = outside(edge.start, edge.sourceSide);
+  const end = outside(edge.end, edge.targetSide);
+  const obstacles = obstaclesFor(edge, elements, start, end);
+  const grid = routingGrid(start, end, obstacles);
+  const costs = Array<number>(grid.points.length * 2).fill(Infinity);
+  const previous = Array<number>(costs.length).fill(-1);
+  const heap = new MinHeap();
+  const axisIndex = (axis: Axis) => (axis === "horizontal" ? 0 : 1);
+  const initial = grid.startIndex * 2 + axisIndex(axisOf(edge.sourceSide));
+  const congestionCache = new Map<string, number>();
+  costs[initial] = 0;
+  heap.push({ state: initial, cost: 0 });
+  let best = Infinity;
+  let final = -1;
+
+  while (true) {
+    const current = heap.pop();
+    if (!current || current.cost >= best) break;
+    if (current.cost !== costs[current.state]) continue;
+    const index = Math.floor(current.state / 2);
+    const currentAxis: Axis = current.state % 2 === 0 ? "horizontal" : "vertical";
+    if (index === grid.endIndex) {
+      const total = current.cost + (currentAxis === axisOf(edge.targetSide) ? 0 : BEND_COST);
+      if (total < best) {
+        best = total;
+        final = current.state;
+      }
+      continue;
+    }
+    for (const neighbor of grid.neighbors[index] ?? []) {
+      const state = neighbor.point * 2 + axisIndex(neighbor.axis);
+      const cacheKey = `${Math.min(index, neighbor.point)}:${Math.max(index, neighbor.point)}`;
+      let traffic = congestionCache.get(cacheKey);
+      if (traffic === undefined) {
+        traffic = aggregateSegmentCongestionCost(
+          segment(
+            getOrThrow(grid.points[index], "Missing aggregate route point"),
+            getOrThrow(grid.points[neighbor.point], "Missing aggregate route point"),
+          ),
+          used,
+          ports,
+        );
+        congestionCache.set(cacheKey, traffic);
+      }
+      const cost = current.cost + neighbor.length + traffic + (currentAxis === neighbor.axis ? 0 : BEND_COST);
+      if (cost >= costs[state]!) continue;
+      costs[state] = cost;
+      previous[state] = current.state;
+      heap.push({ state, cost });
+    }
+  }
+
+  if (final === -1) {
+    const bend = axisOf(edge.sourceSide) === "horizontal" ? { x: end.x, y: start.y } : { x: start.x, y: end.y };
+    return [start, bend, end];
+  }
+  const path: Point[] = [];
+  for (let state = final; state !== -1; state = previous[state]!) {
+    path.push(getOrThrow(grid.points[Math.floor(state / 2)], "Missing aggregate path point"));
+  }
+  return path.reverse();
+}
+
+function compact(points: readonly Point[]): Point[] {
+  const distinct = points.filter((point, index) => {
+    const prior = points[index - 1];
+    return !prior || prior.x !== point.x || prior.y !== point.y;
+  });
+  return distinct.filter((point, index) => {
+    const prior = distinct[index - 1];
+    const next = distinct.at(index + 1);
+    return (
+      !prior || !next || !((prior.x === point.x && point.x === next.x) || (prior.y === point.y && point.y === next.y))
+    );
+  });
+}
+
+function roundedPath(points: readonly Point[]): string {
+  const first = getOrThrow(points.at(0), "Missing aggregate start point");
+  let path = `M ${first.x} ${first.y}`;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const before = getOrThrow(points[index - 1], "Missing aggregate point");
+    const corner = getOrThrow(points[index], "Missing aggregate corner");
+    const after = getOrThrow(points.at(index + 1), "Missing aggregate point");
+    const priorLength = Math.hypot(corner.x - before.x, corner.y - before.y);
+    const nextLength = Math.hypot(after.x - corner.x, after.y - corner.y);
+    const radius = Math.min(96, priorLength / 2, nextLength / 2);
+    const entry = {
+      x: corner.x + ((before.x - corner.x) * radius) / priorLength,
+      y: corner.y + ((before.y - corner.y) * radius) / priorLength,
+    };
+    const exit = {
+      x: corner.x + ((after.x - corner.x) * radius) / nextLength,
+      y: corner.y + ((after.y - corner.y) * radius) / nextLength,
+    };
+    path += ` L ${entry.x.toFixed(1)} ${entry.y.toFixed(1)} Q ${corner.x.toFixed(1)} ${corner.y.toFixed(1)} ${exit.x.toFixed(1)} ${exit.y.toFixed(1)}`;
+  }
+  const last = getOrThrow(points.at(-1), "Missing aggregate end point");
+  return `${path} L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+}
+
+function midpoint(points: readonly Point[]): Point {
+  const lengths = points.slice(1).map((point, index) => {
+    const prior = getOrThrow(points[index], "Missing aggregate midpoint point");
+    return Math.hypot(point.x - prior.x, point.y - prior.y);
+  });
+  let remaining = lengths.reduce((sum, length) => sum + length, 0) / 2;
+  for (let index = 0; index < lengths.length; index += 1) {
+    const length = getOrThrow(lengths[index], "Missing aggregate segment length");
+    if (remaining <= length) {
+      const a = getOrThrow(points[index], "Missing aggregate midpoint start");
+      const b = getOrThrow(points.at(index + 1), "Missing aggregate midpoint end");
+      const fraction = length ? remaining / length : 0;
+      return { x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction };
+    }
+    remaining -= length;
+  }
+  return getOrThrow(points.at(-1), "Missing aggregate midpoint");
+}
+
+export function routeAggregateDependencyEdges(
+  projections: readonly Projection[],
+  elements: ReadonlyMap<string, Bounds>,
+): ReadonlyMap<string, EdgeRoute> {
+  const edges: RoutingEdge[] = projections.map((projection) => {
+    const source = rectangle(
+      getOrThrow(elements.get(projection.sourceId), `Missing aggregate source: ${projection.sourceId}`),
+    );
+    const target = rectangle(
+      getOrThrow(elements.get(projection.targetId), `Missing aggregate target: ${projection.targetId}`),
+    );
+    return {
+      ...projection,
+      source,
+      target,
+      sourceSide: sideFacing(source, target),
+      targetSide: sideFacing(target, source),
+      start: center(source),
+      end: center(target),
+    };
+  });
+  assignPorts(edges);
+  const ports = new Set(edges.flatMap(({ start, end }) => [`${start.x}:${start.y}`, `${end.x}:${end.y}`]));
+  const ordered = [...edges].sort(
+    (a, b) =>
+      Math.abs(a.start.x - a.end.x) +
+        Math.abs(a.start.y - a.end.y) -
+        Math.abs(b.start.x - b.end.x) -
+        Math.abs(b.start.y - b.end.y) || a.id.localeCompare(b.id),
+  );
+  const used: Segment[] = [];
+  const routes = new Map<string, EdgeRoute>();
+  for (const edge of ordered) {
+    const points = compact([edge.start, ...findPath(edge, elements, used, ports), edge.end]);
+    for (let index = 1; index < points.length; index += 1) {
+      used.push(
+        segment(
+          getOrThrow(points[index - 1], "Missing aggregate segment start"),
+          getOrThrow(points[index], "Missing aggregate segment end"),
+        ),
+      );
+    }
+    routes.set(edge.id, { path: roundedPath(points), labelPosition: midpoint(points) });
+  }
+  return routes;
+}

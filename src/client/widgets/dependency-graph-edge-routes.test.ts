@@ -1,7 +1,8 @@
 import {
+  aggregateSegmentCongestionCost,
   routeAggregateDependencyEdges,
-  routeOriginalDependencyEdge,
-} from "@/client/widgets/dependency-graph-edge-routes";
+} from "@/client/widgets/dependency-graph-aggregate-routes";
+import { routeOriginalDependencyEdge } from "@/client/widgets/dependency-graph-edge-routes";
 
 const source = { position: { x: 0, y: 0 }, size: { width: 100, height: 60 } };
 const target = { position: { x: 0, y: 220 }, size: { width: 100, height: 60 } };
@@ -97,6 +98,34 @@ describe("dependency edge routes", () => {
     expect(route.labelPosition.y).toBeLessThan(0);
   });
 
+  it("charges non-port point contacts during route selection without prohibiting crossings", () => {
+    const used = [{ from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, axis: "horizontal" as const }];
+    const vertical = (x: number, from: number, to: number) => ({
+      from: { x, y: from },
+      to: { x, y: to },
+      axis: "vertical" as const,
+    });
+
+    expect(aggregateSegmentCongestionCost(vertical(100, -50, 50), used, new Set())).toBe(5_000);
+    expect(aggregateSegmentCongestionCost(vertical(50, -50, 0), used, new Set())).toBe(5_000);
+    expect(aggregateSegmentCongestionCost(vertical(50, -50, 50), used, new Set())).toBe(4_000);
+    expect(aggregateSegmentCongestionCost(vertical(100, -50, 50), used, new Set(["100:0"]))).toBe(0);
+    expect(
+      aggregateSegmentCongestionCost(
+        { from: { x: 100, y: 0 }, to: { x: 150, y: 0 }, axis: "horizontal" },
+        used,
+        new Set(),
+      ),
+    ).toBe(5_000);
+    expect(
+      aggregateSegmentCongestionCost(
+        { from: { x: 50, y: 0 }, to: { x: 150, y: 0 }, axis: "horizontal" },
+        used,
+        new Set(),
+      ),
+    ).toBeGreaterThan(5_000);
+  });
+
   it("routes an aggregate around a group with rounded corners", () => {
     const interveningGroup = { position: { x: 0, y: 100 }, size: { width: 100, height: 60 } };
     const route = routeBetween(
@@ -107,8 +136,9 @@ describe("dependency edge routes", () => {
       ]),
     );
 
-    expect(route?.path).toMatch(/^M .+ Q /);
-    expect(route?.labelPosition.x).toBeLessThan(0);
+    if (!route) throw new Error("Missing route around group");
+    expect(route.path).toMatch(/^M .+ Q /);
+    expect(route.labelPosition.x < 0 || route.labelPosition.x > 100).toBe(true);
   });
 
   it("distributes each group endpoint independently on a shared face", () => {
@@ -135,6 +165,46 @@ describe("dependency edge routes", () => {
 
     expect(new Set(serverY).size).toBe(6);
     expect(serverY.every((y) => y > 0 && y < 400)).toBe(true);
+  });
+
+  it("keeps ports and routes stable when projections arrive in another order", () => {
+    const elements = new Map([
+      ["origin", { position: { x: 0, y: 0 }, size: { width: 320, height: 280 } }],
+      ["one", { position: { x: 500, y: 0 }, size: { width: 160, height: 100 } }],
+      ["two", { position: { x: 500, y: 200 }, size: { width: 160, height: 100 } }],
+    ]);
+    const projections = [
+      { id: "out-one", sourceId: "origin", targetId: "one" },
+      { id: "out-two", sourceId: "origin", targetId: "two" },
+      { id: "in-one", sourceId: "one", targetId: "origin" },
+    ];
+    const forward = routeAggregateDependencyEdges(projections, elements);
+    const reverse = routeAggregateDependencyEdges(projections.toReversed(), elements);
+
+    for (const { id } of projections) expect(forward.get(id)).toEqual(reverse.get(id));
+  });
+
+  it("uses wide bends when both neighboring segments leave enough room", () => {
+    const routes = routeAggregateDependencyEdges(
+      [{ id: "diagonal", sourceId: "origin", targetId: "destination" }],
+      new Map([
+        ["origin", { position: { x: 0, y: 0 }, size: { width: 100, height: 100 } }],
+        ["destination", { position: { x: 600, y: 400 }, size: { width: 100, height: 100 } }],
+      ]),
+    );
+    const path = routes.get("diagonal")?.path;
+    if (!path) throw new Error("Missing diagonal route");
+    const commands = [...path.matchAll(/([MLQ]) ([-\d.]+) ([-\d.]+)(?: ([-\d.]+) ([-\d.]+))?/g)];
+    const radii = commands.flatMap(([_, command, x, y], index) => {
+      if (command !== "Q") return [];
+      const entry = commands[index - 1];
+      if (!entry) throw new Error("Missing rounded corner entry");
+      return [Math.hypot(Number(x) - Number(entry.at(2)), Number(y) - Number(entry.at(3)))];
+    });
+
+    expect(radii.length).toBeGreaterThan(0);
+    expect(Math.max(...radii)).toBeGreaterThan(14);
+    expect(Math.max(...radii)).toBeLessThanOrEqual(96);
   });
 
   it("separates the middle corridors of opposite aggregates without reusing a port", () => {
@@ -191,7 +261,7 @@ describe("dependency edge routes", () => {
       const path = routes.get(id)?.path;
       if (!path) throw new Error(`Missing route: ${id}`);
       const ordinates = [...path.matchAll(/[-\d.]+ ([-\d.]+)/g)].map((match) => Number(match.at(1)));
-      expect(Math.max(...ordinates)).toBeLessThan(3500);
+      expect(Math.max(...ordinates)).toBeLessThan(server.position.y + server.size.height / 2);
     }
     const toRoot = routes.get("server-root")?.path;
     const toIntegrations = routes.get("server-integrations")?.path;

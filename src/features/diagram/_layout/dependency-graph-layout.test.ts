@@ -95,6 +95,41 @@ describe("dependency graph layout", () => {
     expect(doesNotOverlap(layout, "app", "library")).toBe(true);
   });
 
+  it("keeps fixed group padding and separate root and nested layer gaps", async () => {
+    const graph = {
+      groups: [
+        { id: "parent", title: "Parent" },
+        { id: "peer", title: "Peer" },
+        { id: "later", title: "Later" },
+        { id: "child", title: "Child", parentId: "parent" },
+        { id: "next-child", title: "Next Child", parentId: "parent" },
+      ],
+      nodes: [node("first", "child"), node("second", "next-child"), node("outside", "later")],
+      edges: [edge("internal", "first", "second"), edge("external", "second", "outside")],
+    } satisfies DiagramGraph;
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+    const group = (id: string) => {
+      const placement = layout.groups.find((entry) => entry.id === id);
+      if (!placement) throw new Error(`Missing group: ${id}`);
+      return placement;
+    };
+    const parent = group("parent");
+    const child = group("child");
+    const next = group("next-child");
+    const later = group("later");
+    const parentPosition = absolutePosition(layout, "parent");
+    const childPosition = absolutePosition(layout, "child");
+    const nextPosition = absolutePosition(layout, "next-child");
+
+    expect(child.position.y).toBe(80);
+    expect(child.position.x).toBeGreaterThanOrEqual(64);
+    expect(absolutePosition(layout, "first").y - childPosition.y).toBe(80);
+    expect(nextPosition.y - childPosition.y - child.size.height).toBe(64);
+    expect(parent.size.height - (next.position.y + next.size.height)).toBe(64);
+    expect(later.position.y - parentPosition.y - parent.size.height).toBe(128);
+    expect(group("peer").position.y).toBe(parent.position.y);
+  });
+
   it("keeps cyclic sibling groups at the same level and their dependent group below", async () => {
     const graph = {
       groups: [

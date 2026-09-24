@@ -1,9 +1,9 @@
 import { MarkerType } from "@xyflow/react";
 
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
+import { routeAggregateDependencyEdges } from "@/client/widgets/dependency-graph-aggregate-routes";
 import {
   getDependencyElementBounds,
-  routeAggregateDependencyEdges,
   routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
 } from "@/client/widgets/dependency-graph-edge-routes";
