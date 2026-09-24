@@ -1,5 +1,5 @@
 import {
-  aggregateSegmentCongestionCost,
+  measureAggregateSegmentCongestion,
   routeAggregateDependencyEdges,
 } from "@/client/widgets/dependency-graph-aggregate-routes";
 import { routeOriginalDependencyEdge } from "@/client/widgets/dependency-graph-edge-routes";
@@ -98,32 +98,23 @@ describe("dependency edge routes", () => {
     expect(route.labelPosition.y).toBeLessThan(0);
   });
 
-  it("charges non-port point contacts during route selection without prohibiting crossings", () => {
-    const used = [{ from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, axis: "horizontal" as const }];
+  it("allows point contacts and counts continuous overlap once across used segments", () => {
+    const horizontal = (from: number, to: number) => ({
+      from: { x: from, y: 0 },
+      to: { x: to, y: 0 },
+      axis: "horizontal" as const,
+    });
     const vertical = (x: number, from: number, to: number) => ({
       from: { x, y: from },
       to: { x, y: to },
       axis: "vertical" as const,
     });
+    const used = [horizontal(0, 60), horizontal(40, 100)];
 
-    expect(aggregateSegmentCongestionCost(vertical(100, -50, 50), used, new Set())).toBe(5_000);
-    expect(aggregateSegmentCongestionCost(vertical(50, -50, 0), used, new Set())).toBe(5_000);
-    expect(aggregateSegmentCongestionCost(vertical(50, -50, 50), used, new Set())).toBe(4_000);
-    expect(aggregateSegmentCongestionCost(vertical(100, -50, 50), used, new Set(["100:0"]))).toBe(0);
-    expect(
-      aggregateSegmentCongestionCost(
-        { from: { x: 100, y: 0 }, to: { x: 150, y: 0 }, axis: "horizontal" },
-        used,
-        new Set(),
-      ),
-    ).toBe(5_000);
-    expect(
-      aggregateSegmentCongestionCost(
-        { from: { x: 50, y: 0 }, to: { x: 150, y: 0 }, axis: "horizontal" },
-        used,
-        new Set(),
-      ),
-    ).toBeGreaterThan(5_000);
+    expect(measureAggregateSegmentCongestion(vertical(100, -50, 50), used)).toEqual({ overlapLength: 0, crossings: 0 });
+    expect(measureAggregateSegmentCongestion(vertical(50, -50, 0), used)).toEqual({ overlapLength: 0, crossings: 0 });
+    expect(measureAggregateSegmentCongestion(vertical(50, -50, 50), used)).toEqual({ overlapLength: 0, crossings: 1 });
+    expect(measureAggregateSegmentCongestion(horizontal(0, 100), used)).toEqual({ overlapLength: 100, crossings: 0 });
   });
 
   it("routes an aggregate around a group with rounded corners", () => {

@@ -25,8 +25,9 @@ const PORT_PADDING = 48;
 const PORT_GAP = 32;
 const BEND_COST = 256;
 const CROSSING_COST = 4_000;
-const POINT_CONTACT_COST = 5_000;
 const OVERLAP_COST = 6_000;
+const MIN_DETOUR = 256;
+const DETOUR_RATIO = 0.25;
 const EPSILON = 0.001;
 
 function rectangle(bounds: Bounds): Rectangle {
@@ -345,32 +346,44 @@ function interaction(first: Segment, second: Segment): Readonly<{ point?: Point;
   return { point, overlap: 0, crossing };
 }
 
-export function aggregateSegmentCongestionCost(
+export function measureAggregateSegmentCongestion(
   candidate: Segment,
   used: readonly Segment[],
-  ports: ReadonlySet<string>,
-): number {
-  let cost = 0;
-  const contacts = new Set<string>();
+): Readonly<{ overlapLength: number; crossings: number }> {
+  const intervals: Array<readonly [number, number]> = [];
+  const crossings = new Set<string>();
+  const variable = candidate.axis === "horizontal" ? "x" : "y";
   for (const prior of used) {
-    const { point, overlap, crossing } = interaction(candidate, prior);
-    if (overlap > EPSILON) {
-      cost += OVERLAP_COST + overlap;
-    } else if (point) {
-      const key = `${point.x}:${point.y}`;
-      if (ports.has(key)) continue;
-      if (crossing) cost += CROSSING_COST;
-      else if (!contacts.has(key)) cost += POINT_CONTACT_COST;
-      contacts.add(key);
+    const relation = interaction(candidate, prior);
+    if (relation.overlap > EPSILON) {
+      intervals.push([
+        Math.max(
+          Math.min(candidate.from[variable], candidate.to[variable]),
+          Math.min(prior.from[variable], prior.to[variable]),
+        ),
+        Math.min(
+          Math.max(candidate.from[variable], candidate.to[variable]),
+          Math.max(prior.from[variable], prior.to[variable]),
+        ),
+      ]);
+    } else if (relation.crossing && relation.point) {
+      crossings.add(`${relation.point.x}:${relation.point.y}`);
     }
   }
-  return cost;
+  intervals.sort((a, b) => a.at(0)! - b.at(0)!);
+  let overlapLength = 0;
+  let end = Number.NEGATIVE_INFINITY;
+  for (const [from, to] of intervals) {
+    overlapLength += Math.max(0, to - Math.max(from, end));
+    end = Math.max(end, to);
+  }
+  return { overlapLength, crossings: crossings.size };
 }
 
-class MinHeap {
-  private entries: Array<{ state: number; cost: number }> = [];
+class MinHeap<T extends { cost: number }> {
+  private entries: T[] = [];
 
-  push(entry: { state: number; cost: number }): void {
+  push(entry: T): void {
     let index = this.entries.length;
     this.entries.push(entry);
     while (index > 0) {
@@ -382,7 +395,7 @@ class MinHeap {
     this.entries[index] = entry;
   }
 
-  pop(): { state: number; cost: number } | undefined {
+  pop(): T | undefined {
     const first = this.entries.at(0);
     const last = this.entries.pop();
     if (!first || !last || this.entries.length === 0) return first;
@@ -404,73 +417,114 @@ function axisOf(side: Side): Axis {
   return side === "left" || side === "right" ? "horizontal" : "vertical";
 }
 
+type SearchState = {
+  point: number;
+  axis: Axis;
+  overlapping: boolean;
+  length: number;
+  cost: number;
+  active: boolean;
+  previous?: SearchState;
+};
+
 function findPath(
   edge: RoutingEdge,
-  elements: ReadonlyMap<string, Bounds>,
+  grid: ReturnType<typeof routingGrid>,
   used: readonly Segment[],
-  ports: ReadonlySet<string>,
+  maxLength = Infinity,
 ): Point[] {
   const start = outside(edge.start, edge.sourceSide);
   const end = outside(edge.end, edge.targetSide);
-  const obstacles = obstaclesFor(edge, elements, start, end);
-  const grid = routingGrid(start, end, obstacles);
-  const costs = Array<number>(grid.points.length * 2).fill(Infinity);
-  const previous = Array<number>(costs.length).fill(-1);
-  const heap = new MinHeap();
-  const axisIndex = (axis: Axis) => (axis === "horizontal" ? 0 : 1);
-  const initial = grid.startIndex * 2 + axisIndex(axisOf(edge.sourceSide));
-  const congestionCache = new Map<string, number>();
-  costs[initial] = 0;
-  heap.push({ state: initial, cost: 0 });
+  const constrained = Number.isFinite(maxLength);
+  const keyOf = (point: number, axis: Axis, overlapping: boolean) =>
+    point * 4 + (axis === "horizontal" ? 0 : 2) + (overlapping ? 1 : 0);
+  const first: SearchState = {
+    point: grid.startIndex,
+    axis: axisOf(edge.sourceSide),
+    overlapping: false,
+    length: 0,
+    cost: 0,
+    active: true,
+  };
+  const states = new Map<number, SearchState[]>([[keyOf(first.point, first.axis, false), [first]]]);
+  const heap = new MinHeap<SearchState>();
+  const congestionCache = new Map<string, ReturnType<typeof measureAggregateSegmentCongestion>>();
+  heap.push(first);
   let best = Infinity;
-  let final = -1;
+  let final: SearchState | undefined;
 
   while (true) {
     const current = heap.pop();
     if (!current || current.cost >= best) break;
-    if (current.cost !== costs[current.state]) continue;
-    const index = Math.floor(current.state / 2);
-    const currentAxis: Axis = current.state % 2 === 0 ? "horizontal" : "vertical";
-    if (index === grid.endIndex) {
-      const total = current.cost + (currentAxis === axisOf(edge.targetSide) ? 0 : BEND_COST);
+    if (!current.active) continue;
+    if (current.point === grid.endIndex) {
+      const total = current.cost + (current.axis === axisOf(edge.targetSide) ? 0 : BEND_COST);
       if (total < best) {
         best = total;
-        final = current.state;
+        final = current;
       }
       continue;
     }
-    for (const neighbor of grid.neighbors[index] ?? []) {
-      const state = neighbor.point * 2 + axisIndex(neighbor.axis);
-      const cacheKey = `${Math.min(index, neighbor.point)}:${Math.max(index, neighbor.point)}`;
+    for (const neighbor of grid.neighbors[current.point] ?? []) {
+      const length = current.length + neighbor.length;
+      const point = getOrThrow(grid.points[neighbor.point], "Missing aggregate route point");
+      if (length + Math.abs(point.x - end.x) + Math.abs(point.y - end.y) > maxLength + EPSILON) continue;
+      const cacheKey = `${Math.min(current.point, neighbor.point)}:${Math.max(current.point, neighbor.point)}`;
       let traffic = congestionCache.get(cacheKey);
-      if (traffic === undefined) {
-        traffic = aggregateSegmentCongestionCost(
-          segment(
-            getOrThrow(grid.points[index], "Missing aggregate route point"),
-            getOrThrow(grid.points[neighbor.point], "Missing aggregate route point"),
-          ),
+      if (!traffic) {
+        traffic = measureAggregateSegmentCongestion(
+          segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point),
           used,
-          ports,
         );
         congestionCache.set(cacheKey, traffic);
       }
-      const cost = current.cost + neighbor.length + traffic + (currentAxis === neighbor.axis ? 0 : BEND_COST);
-      if (cost >= costs[state]!) continue;
-      costs[state] = cost;
-      previous[state] = current.state;
-      heap.push({ state, cost });
+      const overlapping = traffic.overlapLength > EPSILON;
+      const cost =
+        current.cost +
+        neighbor.length +
+        traffic.crossings * CROSSING_COST +
+        traffic.overlapLength +
+        (overlapping && !current.overlapping ? OVERLAP_COST : 0) +
+        (current.axis === neighbor.axis ? 0 : BEND_COST);
+      const key = keyOf(neighbor.point, neighbor.axis, overlapping);
+      const existing = states.get(key) ?? [];
+      if (existing.some((state) => state.cost <= cost && (!constrained || state.length <= length))) continue;
+      const retained = existing.filter((state) => {
+        const dominated = cost <= state.cost && (!constrained || length <= state.length);
+        if (dominated) state.active = false;
+        return !dominated;
+      });
+      const next: SearchState = {
+        point: neighbor.point,
+        axis: neighbor.axis,
+        overlapping,
+        length,
+        cost,
+        active: true,
+        previous: current,
+      };
+      retained.push(next);
+      states.set(key, retained);
+      heap.push(next);
     }
   }
 
-  if (final === -1) {
+  if (!final) {
     const bend = axisOf(edge.sourceSide) === "horizontal" ? { x: end.x, y: start.y } : { x: start.x, y: end.y };
     return [start, bend, end];
   }
   const path: Point[] = [];
-  for (let state = final; state !== -1; state = previous[state]!) {
-    path.push(getOrThrow(grid.points[Math.floor(state / 2)], "Missing aggregate path point"));
+  for (let state: SearchState | undefined = final; state; state = state.previous) {
+    path.push(getOrThrow(grid.points[state.point], "Missing aggregate path point"));
   }
   return path.reverse();
+}
+
+function routeLength(points: readonly Point[]): number {
+  return points.slice(1).reduce((length, point, index) => {
+    const previous = getOrThrow(points[index], "Missing aggregate route point");
+    return length + Math.abs(point.x - previous.x) + Math.abs(point.y - previous.y);
+  }, 0);
 }
 
 function compact(points: readonly Point[]): Point[] {
@@ -552,7 +606,6 @@ export function routeAggregateDependencyEdges(
     };
   });
   assignPorts(edges);
-  const ports = new Set(edges.flatMap(({ start, end }) => [`${start.x}:${start.y}`, `${end.x}:${end.y}`]));
   const ordered = [...edges].sort(
     (a, b) =>
       Math.abs(a.start.x - a.end.x) +
@@ -563,7 +616,14 @@ export function routeAggregateDependencyEdges(
   const used: Segment[] = [];
   const routes = new Map<string, EdgeRoute>();
   for (const edge of ordered) {
-    const points = compact([edge.start, ...findPath(edge, elements, used, ports), edge.end]);
+    const start = outside(edge.start, edge.sourceSide);
+    const end = outside(edge.end, edge.targetSide);
+    const grid = routingGrid(start, end, obstaclesFor(edge, elements, start, end));
+    const baseline = findPath(edge, grid, []);
+    const baselineLength = routeLength(baseline);
+    const maxLength = baselineLength + Math.max(MIN_DETOUR, baselineLength * DETOUR_RATIO);
+    const route = used.length ? findPath(edge, grid, used, maxLength) : baseline;
+    const points = compact([edge.start, ...route, edge.end]);
     for (let index = 1; index < points.length; index += 1) {
       used.push(
         segment(
