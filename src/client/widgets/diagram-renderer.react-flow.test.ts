@@ -1,10 +1,8 @@
 import { MarkerType } from "@xyflow/react";
 
-import {
-  buildDiagramMeasurementNodes,
-  buildDiagramReactFlowRenderModel,
-  resolveDiagramNodeSizes,
-} from "@/client/widgets/diagram-renderer.react-flow";
+import { buildDiagramMeasurementNodes, resolveDiagramNodeSizes } from "@/client/widgets/diagram-renderer.react-flow";
+import { buildElkLayeredDiagramReactFlowRenderModel } from "@/client/widgets/elk-layered-diagram-renderer.react-flow";
+import { buildSequenceDiagramReactFlowRenderModel } from "@/client/widgets/sequence-diagram-renderer.react-flow";
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
@@ -91,7 +89,7 @@ describe("diagram renderer React Flow adapter", () => {
     } satisfies DiagramLayout;
 
     const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
-    const { nodes, edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const { nodes, edges } = buildElkLayeredDiagramReactFlowRenderModel(diagram, layout, vi.fn());
 
     expect(measurementNode).toMatchObject({
       type: "card",
@@ -178,7 +176,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const { edges } = buildElkLayeredDiagramReactFlowRenderModel(diagram, layout, vi.fn());
 
     expect(edges.at(0)).not.toHaveProperty("label");
     expect(edges.at(0)?.data).not.toHaveProperty("eyebrow");
@@ -223,7 +221,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const { edges } = buildElkLayeredDiagramReactFlowRenderModel(diagram, layout, vi.fn());
 
     expect(edges.at(0)).toMatchObject({
       label: "from App",
@@ -328,7 +326,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    const { edges } = buildDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const { edges } = buildSequenceDiagramReactFlowRenderModel(diagram, layout, vi.fn());
 
     expect(edges.map(({ markerEnd }) => markerEnd)).toEqual([
       expect.objectContaining({ type: MarkerType.ArrowClosed }),
@@ -344,6 +342,15 @@ describe("diagram renderer React Flow adapter", () => {
     edges.forEach(({ data }) => {
       expect(data).toHaveProperty("onLinkActivate", expect.any(Function));
     });
+
+    const elkEdges = buildElkLayeredDiagramReactFlowRenderModel(
+      { ...diagram, layout: { id: "elk-layered" } },
+      layout,
+      vi.fn(),
+    ).edges;
+    expect(elkEdges.map(({ type, markerEnd, style }) => ({ type, markerEnd, style }))).toEqual(
+      edges.map(({ type, markerEnd, style }) => ({ type, markerEnd, style })),
+    );
   });
 
   it("rejects a group missing from the layout result", () => {
@@ -354,7 +361,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+    expect(() => buildElkLayeredDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
       "Layout result references an unknown diagram group: missing-group",
     );
   });
@@ -367,7 +374,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+    expect(() => buildElkLayeredDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
       "Layout result references an unknown diagram node: missing-node",
     );
   });
@@ -388,7 +395,7 @@ describe("diagram renderer React Flow adapter", () => {
       initialView: { mode: "fit" },
     } satisfies DiagramLayout;
 
-    expect(() => buildDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
+    expect(() => buildElkLayeredDiagramReactFlowRenderModel(sequenceDiagram, layout, vi.fn())).toThrow(
       "Layout result references an unknown diagram edge: missing-edge",
     );
   });

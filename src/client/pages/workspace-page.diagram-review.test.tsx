@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
@@ -238,6 +238,51 @@ describe("design (architecture·implementation) review", () => {
 });
 
 describe("process (product workflow) review", () => {
+  it("renders a sequence layout with lifelines and a message", async () => {
+    const sequenceArtifact = {
+      behaviors: [
+        {
+          id: "request-response",
+          title: "Request response",
+          generator: "built-in:freeform",
+          layout: { id: "sequence" },
+          graph: {
+            groups: [],
+            nodes: [
+              { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+              { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+            ],
+            edges: [
+              {
+                id: "request",
+                type: "message",
+                source: "client",
+                target: "server",
+                messageType: "sync",
+                label: "Request",
+              },
+            ],
+          },
+        },
+      ],
+      designs: [],
+    } as const;
+    const { cleanup } = await renderArtifact(sequenceArtifact);
+
+    try {
+      await screen.findByRole("region", { name: "Request response product behavior diagram" });
+      await screen.findByText("Laying out…");
+      await waitFor(() => expect(screen.queryByText("Laying out…")).not.toBeInTheDocument());
+      const overview = screen.getByRole("list", { name: "Diagram elements and connections" });
+      expect(overview).toHaveTextContent("participant: Client");
+      expect(overview).toHaveTextContent("participant: Server");
+      expect(overview).toHaveTextContent("client to server: Request");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("keeps the page running and shows an actionable invalid-artifact error", async () => {
     const { cleanup, scopePath } = await renderArtifact({ behaviors: [], designs: [] });
     await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid json");
