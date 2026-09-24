@@ -29,11 +29,12 @@ const config = {
         "plugins", // `src/plugins/`
         "server", // `src/server/`
         "shared", // `src/shared/`
-        "artifacts", // `.architecture-companion/` (Dogfooding), `skills/architecture-companion/`
         "notes", // Changes to documentation (examples: `README.md`, `.agents/skills/`)
         "build", // Changes that affect the build system (examples: `vite.config.ts`, `scripts/`)
         "ci", // Changes to our CI configuration files and scripts (examples: GitHub Actions)
         "deps", // Changes external dependencies (examples: package.json dependencies)
+        "dist", // `skills/architecture-companion/`
+        "artifacts", // `.architecture-companion/` (Dogfooding)
       ],
     ],
     "body-max-line-length": [2, "always", 120],
