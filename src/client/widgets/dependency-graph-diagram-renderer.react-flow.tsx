@@ -44,8 +44,12 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const projections = projectDependencyEdges(diagram.graph, options.focus);
   const groupIds = new Set(layout.groups.map(({ id }) => id));
   const hasGroupEndpoint = (sourceId: string, targetId: string) => groupIds.has(sourceId) || groupIds.has(targetId);
+  const aggregateProjections = projections
+    .filter((projection) => projection.type === "aggregate")
+    .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
+  const aggregateEndpointIds = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
   const aggregateElements = new Map(
-    [...layout.groups, ...layout.nodes.filter((node) => !node.parentId)].map(
+    [...layout.groups, ...layout.nodes.filter((node) => !node.parentId || aggregateEndpointIds.has(node.id))].map(
       ({ id }) => [id, getOrThrow(bounds.get(id), `Missing dependency element bounds: ${id}`)] as const,
     ),
   );
@@ -66,13 +70,9 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
       size: { width: right - left, height: bottom - top },
     });
   }
-  const aggregateRoutes = routeAggregateDependencyEdges(
-    projections
-      .filter((projection) => projection.type === "aggregate")
-      .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId)),
-    aggregateElements,
-    [...virtualGroups.values()],
-  );
+  const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, aggregateElements, [
+    ...virtualGroups.values(),
+  ]);
   const edges = projections.map<DiagramReactFlowEdge>((projection) => {
     const common = {
       focusable: false,

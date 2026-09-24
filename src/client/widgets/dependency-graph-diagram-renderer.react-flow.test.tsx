@@ -100,16 +100,28 @@ describe("dependency graph React Flow adapter", () => {
     expect(boundary?.type === "route" && boundary.data?.path).toContain(" L ");
   });
 
-  it("routes a focused nested group's boundary to its ancestor without invalid coordinates", async () => {
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
-    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+  it("routes a focused group's boundary to direct sibling nodes in both directions", async () => {
+    const withSibling = {
+      ...diagram,
+      graph: {
+        ...diagram.graph,
+        edges: [...diagram.graph.edges, { id: "a-b", type: "default", source: "a", target: "b" }],
+      },
+    } satisfies Diagram;
+    const layout = await layoutDependencyGraph(withSibling.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(withSibling, layout, vi.fn(), {
       focus: { type: "group", id: "nested" },
     });
-    const ancestor = model.edges.find((edge) => edge.source === "nested" && edge.target === "app");
-    if (ancestor?.type !== "route") throw new Error("Missing nested boundary");
+    const outgoing = model.edges.find((edge) => edge.source === "nested" && edge.target === "a");
+    const incoming = model.edges.find((edge) => edge.source === "a" && edge.target === "nested");
+    if (outgoing?.type !== "route" || incoming?.type !== "route") throw new Error("Missing sibling boundary");
 
-    expect(ancestor.data?.path).toMatch(/^M .+ L /);
-    expect(ancestor.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(outgoing.data?.path).toMatch(/^M .+ L /);
+    expect(incoming.data?.path).toMatch(/^M .+ L /);
+    expect(outgoing.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(incoming.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(model.edgeTargets?.get(outgoing.id)).toMatchObject({ sourceId: "nested", targetId: "a", edgeIds: ["b-a"] });
+    expect(model.edgeTargets?.get(incoming.id)).toMatchObject({ sourceId: "a", targetId: "nested", edgeIds: ["a-b"] });
   });
 
   it("uses separate orthogonal group–node routes for both directions", async () => {

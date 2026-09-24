@@ -69,7 +69,26 @@ describe("dependency edge projection", () => {
     expect(members({ type: "group", id: "pages" })).toEqual([
       { sourceId: "pages", targetId: "api", edgeIds: ["page-to-api"] },
       { sourceId: "pages", targetId: "shared", edgeIds: ["page-to-shared"] },
-      { sourceId: "app", targetId: "pages", edgeIds: ["app-to-page"] },
+      { sourceId: "app-a", targetId: "pages", edgeIds: ["app-to-page"] },
+    ]);
+  });
+
+  it("keeps direct sibling nodes as boundary endpoints in either direction", () => {
+    const withSibling = {
+      ...graph,
+      edges: [...graph.edges, { id: "page-to-app-b", type: "default", source: "page", target: "app-b" }],
+    } as const satisfies DiagramGraph;
+    const projections = projectDependencyEdges(withSibling, { type: "group", id: "pages" });
+
+    expect(
+      projections.flatMap((edge) =>
+        edge.type === "aggregate" && (edge.sourceId === "app-a" || edge.targetId === "app-b")
+          ? [{ sourceId: edge.sourceId, targetId: edge.targetId, edgeIds: edge.edgeIds }]
+          : [],
+      ),
+    ).toEqual([
+      { sourceId: "app-a", targetId: "pages", edgeIds: ["app-to-page"] },
+      { sourceId: "pages", targetId: "app-b", edgeIds: ["page-to-app-b"] },
     ]);
   });
 

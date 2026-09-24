@@ -75,7 +75,7 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
     });
   }
 
-  getOrThrow(groups.get(focus.id), `Missing focused diagram group: ${focus.id}`);
+  const focusedGroup = getOrThrow(groups.get(focus.id), `Missing focused diagram group: ${focus.id}`);
   const inside = new Set(
     graph.nodes.flatMap((node) => {
       let groupId = node.groupId;
@@ -100,7 +100,7 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
       nodes.get(sourceInside ? edge.target : edge.source),
       `Missing boundary edge node: ${edge.id}`,
     );
-    const outsideId = outside.groupId ?? outside.id;
+    const outsideId = outside.groupId === focusedGroup.parentId ? outside.id : (outside.groupId ?? outside.id);
     boundary.push(
       sourceInside
         ? { edgeId: edge.id, sourceId: focus.id, targetId: outsideId }
