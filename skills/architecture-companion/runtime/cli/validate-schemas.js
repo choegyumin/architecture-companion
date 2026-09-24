@@ -19767,6 +19767,14 @@ var diagramGraphSchema = external_exports.object({
   edges: external_exports.array(diagramEdgeSchema).readonly()
 }).strict();
 
+// src/features/diagram/_layout/dependency-graph-layout.ts
+var dependencyGraphLayoutConfigSchema = external_exports.object({ id: external_exports.literal("dependency-graph") }).strict();
+var GROUP_PADDING = { top: 96, right: 80, bottom: 80, left: 80 };
+var EMPTY_GROUP_SIZE = {
+  width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
+  height: GROUP_PADDING.top + GROUP_PADDING.bottom
+};
+
 // src/features/diagram/_layout/elk-layered-diagram-layout.ts
 var elkLayeredDiagramLayoutConfigSchema = external_exports.object({
   id: external_exports.literal("elk-layered"),
@@ -19774,10 +19782,10 @@ var elkLayeredDiagramLayoutConfigSchema = external_exports.object({
     direction: external_exports.enum(["UP", "DOWN", "LEFT", "RIGHT"]).optional()
   }).strict().optional()
 }).strict();
-var GROUP_PADDING = { top: 96, right: 32, bottom: 32, left: 32 };
-var EMPTY_GROUP_SIZE = {
-  width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
-  height: GROUP_PADDING.top + GROUP_PADDING.bottom
+var GROUP_PADDING2 = { top: 96, right: 32, bottom: 32, left: 32 };
+var EMPTY_GROUP_SIZE2 = {
+  width: 288 + GROUP_PADDING2.left + GROUP_PADDING2.right,
+  height: GROUP_PADDING2.top + GROUP_PADDING2.bottom
 };
 
 // src/features/diagram/_layout/sequence-diagram-layout.ts
@@ -19789,7 +19797,8 @@ var FRAGMENT_TOP_MARGIN = ROW_HEIGHT / 2 + FRAGMENT_GUARD_MESSAGE_GAP;
 // src/features/diagram/diagram-layout.ts
 var diagramLayoutConfigSchema = external_exports.discriminatedUnion("id", [
   elkLayeredDiagramLayoutConfigSchema,
-  sequenceDiagramLayoutConfigSchema
+  sequenceDiagramLayoutConfigSchema,
+  dependencyGraphLayoutConfigSchema
 ]);
 
 // src/features/diagram-generator/diagram-generator-reference.ts
@@ -19836,6 +19845,26 @@ var diagramSchema = external_exports.object({
           code: "custom",
           path: ["graph", "edges", index, "type"],
           message: "Sequence layout supports only message edges"
+        });
+      }
+    });
+  }
+  if (diagram.layout.id === "dependency-graph") {
+    diagram.graph.nodes.forEach((node2, index) => {
+      if (node2.type !== "default") {
+        context.addIssue({
+          code: "custom",
+          path: ["graph", "nodes", index, "type"],
+          message: "Dependency graph layout supports only default nodes"
+        });
+      }
+    });
+    diagram.graph.edges.forEach((edge, index) => {
+      if (edge.type !== "default") {
+        context.addIssue({
+          code: "custom",
+          path: ["graph", "edges", index, "type"],
+          message: "Dependency graph layout supports only default edges"
         });
       }
     });
