@@ -3,7 +3,8 @@ import { MarkerType } from "@xyflow/react";
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
 import {
   getDependencyElementBounds,
-  routeAggregateDependencyEdge,
+  routeAggregateDependencyEdges,
+  routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
 } from "@/client/widgets/dependency-graph-edge-routes";
 import {
@@ -40,7 +41,21 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const placementById = new Map(layout.edges.map((placement) => [placement.id, placement]));
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeTargets = new Map<string, AnnotationTarget>();
-  const edges = projectDependencyEdges(diagram.graph, options.focus).map<DiagramReactFlowEdge>((projection) => {
+  const projections = projectDependencyEdges(diagram.graph, options.focus);
+  const groupIds = new Set(layout.groups.map(({ id }) => id));
+  const hasGroupEndpoint = (sourceId: string, targetId: string) => groupIds.has(sourceId) || groupIds.has(targetId);
+  const aggregateElements = new Map(
+    [...layout.groups, ...layout.nodes.filter((node) => !node.parentId)].map(
+      ({ id }) => [id, getOrThrow(bounds.get(id), `Missing dependency element bounds: ${id}`)] as const,
+    ),
+  );
+  const aggregateRoutes = routeAggregateDependencyEdges(
+    projections
+      .filter((projection) => projection.type === "aggregate")
+      .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId)),
+    aggregateElements,
+  );
+  const edges = projections.map<DiagramReactFlowEdge>((projection) => {
     const common = {
       focusable: false,
       selectable: false,
@@ -72,25 +87,16 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
       };
     }
 
-    const source = getOrThrow(bounds.get(projection.sourceId), `Missing aggregate source: ${projection.sourceId}`);
-    const target = getOrThrow(bounds.get(projection.targetId), `Missing aggregate target: ${projection.targetId}`);
     const edgeIds = [...projection.edgeIds];
-    const contains = (outer: typeof source, inner: typeof source) =>
-      inner.position.x >= outer.position.x &&
-      inner.position.y >= outer.position.y &&
-      inner.position.x + inner.size.width <= outer.position.x + outer.size.width &&
-      inner.position.y + inner.size.height <= outer.position.y + outer.size.height;
-    const otherElements = [...layout.groups, ...layout.nodes]
-      .filter(({ id }) => id !== projection.sourceId && id !== projection.targetId)
-      .map(({ id }) => getOrThrow(bounds.get(id), `Missing dependency element bounds: ${id}`))
-      .filter(
-        (element) =>
-          !contains(source, element) &&
-          !contains(target, element) &&
-          !contains(element, source) &&
-          !contains(element, target),
-      );
-    const route = routeAggregateDependencyEdge(source, target, otherElements);
+    const route = hasGroupEndpoint(projection.sourceId, projection.targetId)
+      ? getOrThrow(aggregateRoutes.get(projection.id), `Missing aggregate route: ${projection.id}`)
+      : routeNodeDependencyEdge(
+          getOrThrow(bounds.get(projection.sourceId), `Missing aggregate source: ${projection.sourceId}`),
+          getOrThrow(bounds.get(projection.targetId), `Missing aggregate target: ${projection.targetId}`),
+          cards
+            .filter(({ id }) => id !== projection.sourceId && id !== projection.targetId)
+            .map(({ bounds }) => bounds),
+        );
     edgeTargets.set(projection.id, {
       type: "edge-set",
       sourceId: projection.sourceId,
