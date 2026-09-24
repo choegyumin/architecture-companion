@@ -75,6 +75,16 @@
         "parentId": "group:directory:src/plugins/diagram-generators"
       },
       {
+        "id": "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "title": "react-component-structure",
+        "parentId": "group:directory:src/plugins/diagram-generators"
+      },
+      {
+        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
+        "title": "cli",
+        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+      },
+      {
         "id": "group:directory:src/server",
         "title": "server"
       },
@@ -216,6 +226,13 @@
         "kind": "External package",
         "title": "tailwind-merge",
         "groupId": "group:external-packages",
+        "type": "default"
+      },
+      {
+        "id": "external:typescript",
+        "title": "typescript",
+        "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
@@ -430,6 +447,54 @@
         ]
       },
       {
+        "id": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "title": "dependency-graph-aggregate-routes.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-aggregate-routes.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "title": "dependency-graph-diagram-renderer.react-flow.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "title": "dependency-graph-diagram-renderer.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "title": "dependency-graph-edge-routes.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-edge-routes.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/client/widgets/diagram-links-panel.tsx",
         "title": "diagram-links-panel.tsx",
         "groupId": "group:directory:src/client/widgets",
@@ -438,6 +503,18 @@
           {
             "text": "source",
             "href": "source:///src/client/widgets/diagram-links-panel.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "title": "diagram-renderer-base.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/diagram-renderer-base.tsx"
           }
         ]
       },
@@ -462,6 +539,54 @@
           {
             "text": "source",
             "href": "source:///src/client/widgets/diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
+        "title": "elk-layered-diagram-renderer.react-flow.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "title": "elk-layered-diagram-renderer.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/elk-layered-diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "title": "sequence-diagram-renderer.react-flow.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/sequence-diagram-renderer.react-flow.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "title": "sequence-diagram-renderer.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/sequence-diagram-renderer.tsx"
           }
         ]
       },
@@ -562,6 +687,30 @@
         ]
       },
       {
+        "id": "file:src/features/diagram-generator/diagram-generator-reference.ts",
+        "title": "diagram-generator-reference.ts",
+        "groupId": "group:directory:src/features/diagram-generator",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram-generator/diagram-generator-reference.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
+        "title": "dependency-graph-layout.ts",
+        "groupId": "group:directory:src/features/diagram/_layout",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/_layout/dependency-graph-layout.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
         "title": "elk-layered-diagram-layout.ts",
         "groupId": "group:directory:src/features/diagram/_layout",
@@ -582,6 +731,18 @@
           {
             "text": "source",
             "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/dependency-edge-projection.ts",
+        "title": "dependency-edge-projection.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/dependency-edge-projection.ts"
           }
         ]
       },
@@ -714,6 +875,42 @@
           {
             "text": "source",
             "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generator.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/cli/run.ts",
+        "title": "run.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/cli/run.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/command.ts",
+        "title": "command.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/command.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "title": "generator.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/generator.ts"
           }
         ]
       },
@@ -1030,14 +1227,14 @@
         ]
       },
       {
-        "id": "file:src/shared/react-flow/polyline-edge.tsx",
-        "title": "polyline-edge.tsx",
+        "id": "file:src/shared/react-flow/route-edge.tsx",
+        "title": "route-edge.tsx",
         "groupId": "group:directory:src/shared/react-flow",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/shared/react-flow/polyline-edge.tsx"
+            "href": "source:///src/shared/react-flow/route-edge.tsx"
           }
         ]
       },
@@ -1355,6 +1552,13 @@
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
         "target": "file:src/features/diagram-generator/diagram-generator-manifest.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:type-only",
+        "type": "default",
+        "source": "file:src/cli/view-generators.command.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-reference.ts",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
@@ -1706,10 +1910,10 @@
         "target": "file:src/shared/react-flow/message-edge.tsx"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:runtime",
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.tsx",
-        "target": "file:src/shared/react-flow/polyline-edge.tsx"
+        "target": "file:src/shared/react-flow/route-edge.tsx"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-context.ts:runtime",
@@ -1751,6 +1955,154 @@
         "target": "file:src/shared/react-ui/item.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/parts/diagram-canvas.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/dependency-graph-aggregate-routes.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/dependency-graph-edge-routes.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/dependency-edge-projection.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer-base.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/_layout/dependency-graph-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/dependency-edge-projection.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge-label-placement.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "target": "file:src/shared/react-flow/polyline-edge-label-placement.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/client/widgets/diagram-links-panel.tsx",
@@ -1789,6 +2141,75 @@
         "target": "file:src/shared/react-ui/button.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/client/parts/annotation-layer.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/client/parts/diagram-canvas.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/client/widgets/diagram-links-panel.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/shared/react-flow/base-overlay-panel.tsx"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
@@ -1812,6 +2233,13 @@
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
         "target": "file:src/client/parts/diagram-canvas.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/annotation/annotation-document.ts",
         "kind": "type-only"
       },
       {
@@ -1863,72 +2291,166 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:external%3A%40xyflow%2Freact:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/message-edge.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:runtime",
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/elk-layered-diagram-renderer.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/sequence-diagram-renderer.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "external:@xyflow/react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:external%3Areact:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:type-only",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "external:react"
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/parts/diagram-canvas.tsx",
+        "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/client/parts/annotation-layer.tsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:runtime",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/client/parts/diagram-canvas.tsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:runtime",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/client/widgets/diagram-links-panel.tsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/features/diagram/diagram-layout.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge-label-placement.ts:runtime",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/shared/react/class-name.ts"
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/polyline-edge-label-placement.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:runtime",
         "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.tsx",
-        "target": "file:src/shared/react-flow/base-overlay-panel.tsx"
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer-base.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fmessage-edge.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/message-edge.tsx",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer-base.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/_layout/sequence-diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:external%3Azod:runtime",
@@ -2001,6 +2523,32 @@
         "target": "file:src/features/diagram/diagram.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:external%3Aelkjs:runtime",
         "type": "default",
         "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
@@ -2066,6 +2614,19 @@
         "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/dependency-edge-projection.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/dependency-edge-projection.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:external%3Azod:runtime",
         "type": "default",
         "source": "file:src/features/diagram/diagram-graph.ts",
@@ -2076,6 +2637,12 @@
         "type": "default",
         "source": "file:src/features/diagram/diagram-layout.ts",
         "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/dependency-graph-layout.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:runtime",
@@ -2129,10 +2696,10 @@
         "target": "file:src/features/diagram/diagram-layout.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:runtime",
         "type": "default",
         "source": "file:src/features/diagram/diagram.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
+        "target": "file:src/features/diagram-generator/diagram-generator-reference.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:external%3Azod:runtime",
@@ -2145,6 +2712,19 @@
         "type": "default",
         "source": "file:src/features/diagram-generator/diagram-generator-manifest.ts",
         "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram-generator/diagram-generator-reference.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram-generator/diagram-generator-reference.ts",
+        "target": "file:src/features/diagram-generator/diagram-generator-id.ts",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
@@ -2246,6 +2826,43 @@
         "type": "default",
         "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
         "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcommand.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/cli/run.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/command.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/command.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/generator.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:external%3Amicromatch:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "target": "external:micromatch"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:external%3Atypescript:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "target": "external:typescript"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "target": "file:src/shared/node/path.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fcreate-annotation-etag.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
@@ -2549,6 +3166,12 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/card-node.tsx",
@@ -2562,11 +3185,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3A%40xyflow%2Freact:type-only",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/labeled-group-node.tsx",
-        "target": "external:@xyflow/react",
-        "kind": "type-only"
+        "target": "external:@xyflow/react"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3Areact:type-only",
@@ -2574,6 +3196,12 @@
         "source": "file:src/shared/react-flow/labeled-group-node.tsx",
         "target": "external:react",
         "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/labeled-group-node.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -2625,29 +3253,23 @@
         "target": "file:src/shared/react-flow/message-edge-label-placement.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:external%3A%40xyflow%2Freact:runtime",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
-        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "source": "file:src/shared/react-flow/route-edge.tsx",
         "target": "external:@xyflow/react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:external%3Areact:type-only",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:external%3Areact:type-only",
         "type": "default",
-        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "source": "file:src/shared/react-flow/route-edge.tsx",
         "target": "external:react",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:runtime",
         "type": "default",
-        "source": "file:src/shared/react-flow/polyline-edge.tsx",
+        "source": "file:src/shared/react-flow/route-edge.tsx",
         "target": "file:src/shared/react-flow/base-edge-label.tsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge-label-placement.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-flow/polyline-edge.tsx",
-        "target": "file:src/shared/react-flow/polyline-edge-label-placement.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:external%3A%40base-ui%2Freact:runtime",
