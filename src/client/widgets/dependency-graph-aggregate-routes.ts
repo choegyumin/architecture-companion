@@ -19,8 +19,8 @@ type RoutingEdge = Projection & {
 };
 type Connection = Readonly<{ point: number; length: number; axis: Axis }>;
 
-const CLEARANCE = 32;
-const TRACK_GAP = 16;
+const CLEARANCE = 64;
+const TRACK_GAP = 32;
 const PORT_PADDING = 48;
 const PORT_GAP = 32;
 const BEND_COST = 256;
@@ -145,16 +145,34 @@ function assignPorts(edges: RoutingEdge[]): void {
   }
 }
 
-function outside(point: Point, side: Side): Point {
+function gapAlongSide(point: Point, side: Side, rect: Rectangle): number {
   switch (side) {
     case "top":
-      return { x: point.x, y: point.y - CLEARANCE };
+      return point.x > rect.left && point.x < rect.right ? point.y - rect.bottom : 0;
     case "bottom":
-      return { x: point.x, y: point.y + CLEARANCE };
+      return point.x > rect.left && point.x < rect.right ? rect.top - point.y : 0;
     case "left":
-      return { x: point.x - CLEARANCE, y: point.y };
+      return point.y > rect.top && point.y < rect.bottom ? point.x - rect.right : 0;
     case "right":
-      return { x: point.x + CLEARANCE, y: point.y };
+      return point.y > rect.top && point.y < rect.bottom ? rect.left - point.x : 0;
+  }
+}
+
+function outside(point: Point, side: Side, obstacles: readonly Rectangle[]): Point {
+  let clearance = CLEARANCE;
+  for (const rect of obstacles) {
+    const gap = gapAlongSide(point, side, rect);
+    if (gap > 0) clearance = Math.min(clearance, gap / 2);
+  }
+  switch (side) {
+    case "top":
+      return { x: point.x, y: point.y - clearance };
+    case "bottom":
+      return { x: point.x, y: point.y + clearance };
+    case "left":
+      return { x: point.x - clearance, y: point.y };
+    case "right":
+      return { x: point.x + clearance, y: point.y };
   }
 }
 
@@ -168,10 +186,7 @@ function inflate(rect: Rectangle, amount: number): Rectangle {
 }
 
 function distanceToRectangle(point: Point, rect: Rectangle): number {
-  return Math.hypot(
-    Math.max(rect.left - point.x, 0, point.x - rect.right),
-    Math.max(rect.top - point.y, 0, point.y - rect.bottom),
-  );
+  return Math.max(rect.left - point.x, point.x - rect.right, rect.top - point.y, point.y - rect.bottom, 0);
 }
 
 function interior(point: Point, rect: Rectangle): boolean {
@@ -193,14 +208,18 @@ function intersects(a: Rectangle, b: Rectangle): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
 
-function obstaclesFor(edge: RoutingEdge, elements: ReadonlyMap<string, Bounds>, start: Point, end: Point): Rectangle[] {
+function obstacleCandidates(
+  edge: RoutingEdge,
+  elements: ReadonlyMap<string, Bounds>,
+  virtualGroups: readonly Bounds[],
+): Rectangle[] {
   const window = {
     left: Math.min(edge.source.left, edge.target.left) - 128,
     right: Math.max(edge.source.right, edge.target.right) + 128,
     top: Math.min(edge.source.top, edge.target.top) - 128,
     bottom: Math.max(edge.source.bottom, edge.target.bottom) + 128,
   };
-  const candidates = [...elements.entries()]
+  const candidates = [...elements.entries(), ...virtualGroups.map((bounds) => [undefined, bounds] as const)]
     .filter(([id, bounds]) => {
       const rect = rectangle(bounds);
       return (
@@ -214,13 +233,14 @@ function obstaclesFor(edge: RoutingEdge, elements: ReadonlyMap<string, Bounds>, 
       );
     })
     .map(([, bounds]) => rectangle(bounds));
+  return candidates.filter(
+    (rect, index) =>
+      !candidates.some((other, otherIndex) => otherIndex !== index && contains(other, rect) && !contains(rect, other)),
+  );
+}
+
+function obstaclesFor(candidates: readonly Rectangle[], start: Point, end: Point): Rectangle[] {
   return candidates
-    .filter(
-      (rect, index) =>
-        !candidates.some(
-          (other, otherIndex) => otherIndex !== index && contains(other, rect) && !contains(rect, other),
-        ),
-    )
     .filter((rect) => !interior(start, rect) && !interior(end, rect))
     .map((rect) =>
       inflate(rect, Math.min(CLEARANCE, distanceToRectangle(start, rect), distanceToRectangle(end, rect))),
@@ -433,8 +453,8 @@ function findPath(
   used: readonly Segment[],
   maxLength = Infinity,
 ): Point[] {
-  const start = outside(edge.start, edge.sourceSide);
-  const end = outside(edge.end, edge.targetSide);
+  const start = getOrThrow(grid.points[grid.startIndex], "Missing aggregate grid start");
+  const end = getOrThrow(grid.points[grid.endIndex], "Missing aggregate grid end");
   const constrained = Number.isFinite(maxLength);
   const keyOf = (point: number, axis: Axis, overlapping: boolean) =>
     point * 4 + (axis === "horizontal" ? 0 : 2) + (overlapping ? 1 : 0);
@@ -587,6 +607,7 @@ function midpoint(points: readonly Point[]): Point {
 export function routeAggregateDependencyEdges(
   projections: readonly Projection[],
   elements: ReadonlyMap<string, Bounds>,
+  virtualGroups: readonly Bounds[] = [],
 ): ReadonlyMap<string, EdgeRoute> {
   const edges: RoutingEdge[] = projections.map((projection) => {
     const source = rectangle(
@@ -616,9 +637,10 @@ export function routeAggregateDependencyEdges(
   const used: Segment[] = [];
   const routes = new Map<string, EdgeRoute>();
   for (const edge of ordered) {
-    const start = outside(edge.start, edge.sourceSide);
-    const end = outside(edge.end, edge.targetSide);
-    const grid = routingGrid(start, end, obstaclesFor(edge, elements, start, end));
+    const candidates = obstacleCandidates(edge, elements, virtualGroups);
+    const start = outside(edge.start, edge.sourceSide, candidates);
+    const end = outside(edge.end, edge.targetSide, candidates);
+    const grid = routingGrid(start, end, obstaclesFor(candidates, start, end));
     const baseline = findPath(edge, grid, []);
     const baselineLength = routeLength(baseline);
     const maxLength = baselineLength + Math.max(MIN_DETOUR, baselineLength * DETOUR_RATIO);

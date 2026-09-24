@@ -132,6 +132,23 @@ describe("dependency edge routes", () => {
     expect(route.labelPosition.x < 0 || route.labelPosition.x > 100).toBe(true);
   });
 
+  it("routes around the boundary of a direct-node virtual group", () => {
+    const distantTarget = { position: { x: 0, y: 500 }, size: target.size };
+    const virtualGroup = { position: { x: -50, y: 200 }, size: { width: 200, height: 100 } };
+    const route = routeAggregateDependencyEdges(
+      [{ id: "aggregate", sourceId: "source", targetId: "target" }],
+      new Map([
+        ["source", source],
+        ["target", distantTarget],
+      ]),
+      [virtualGroup],
+    ).get("aggregate");
+
+    if (!route) throw new Error("Missing route around virtual group");
+    expect(route.path).toContain(" Q ");
+    expect(route.labelPosition.x < -50 || route.labelPosition.x > 150).toBe(true);
+  });
+
   it("distributes each group endpoint independently on a shared face", () => {
     const server = { position: { x: 0, y: 0 }, size: { width: 200, height: 400 } };
     const others = [0, 1, 2].map(

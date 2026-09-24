@@ -14,13 +14,13 @@ import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 export const dependencyGraphLayoutConfigSchema = z.object({ id: z.literal("dependency-graph") }).strict();
 
-const GROUP_PADDING = { top: 80, right: 64, bottom: 64, left: 64 } as const;
+const GROUP_PADDING = { top: 96, right: 80, bottom: 80, left: 80 } as const;
 const ROOT_PADDING = { top: 48, right: 48, bottom: 48, left: 48 } as const;
 const NODE_GAP = 64;
 const NODE_LEVEL_GAP = 96;
-const ITEM_GAP = 64;
-const GROUP_LEVEL_GAP = 64;
-const ROOT_LEVEL_GAP = 128;
+const ITEM_GAP = 128;
+const GROUP_LEVEL_GAP = 128;
+const ROOT_LEVEL_GAP = 192;
 const MAX_ROW_WIDTH = 1_408;
 const EMPTY_GROUP_SIZE = {
   width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,

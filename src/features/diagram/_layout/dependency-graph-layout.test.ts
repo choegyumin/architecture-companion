@@ -121,13 +121,14 @@ describe("dependency graph layout", () => {
     const childPosition = absolutePosition(layout, "child");
     const nextPosition = absolutePosition(layout, "next-child");
 
-    expect(child.position.y).toBe(80);
-    expect(child.position.x).toBeGreaterThanOrEqual(64);
-    expect(absolutePosition(layout, "first").y - childPosition.y).toBe(80);
-    expect(nextPosition.y - childPosition.y - child.size.height).toBe(64);
-    expect(parent.size.height - (next.position.y + next.size.height)).toBe(64);
-    expect(later.position.y - parentPosition.y - parent.size.height).toBe(128);
+    expect(child.position.y).toBe(96);
+    expect(child.position.x).toBeGreaterThanOrEqual(80);
+    expect(absolutePosition(layout, "first").y - childPosition.y).toBe(96);
+    expect(nextPosition.y - childPosition.y - child.size.height).toBe(128);
+    expect(parent.size.height - (next.position.y + next.size.height)).toBe(80);
+    expect(later.position.y - parentPosition.y - parent.size.height).toBe(192);
     expect(group("peer").position.y).toBe(parent.position.y);
+    expect(group("peer").position.x - parent.position.x - parent.size.width).toBe(128);
   });
 
   it("keeps cyclic sibling groups at the same level and their dependent group below", async () => {
