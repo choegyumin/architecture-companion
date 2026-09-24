@@ -32,8 +32,8 @@
         "type": "default",
         "id": "comments-has-local-edit",
         "kind": "condition",
-        "title": "Is the user editing a comment?",
-        "description": "Workspace compares the external document with the current comment edit state.",
+        "title": "Does the external update conflict with the comment being edited?",
+        "description": "Workspace compares the currently edited comment with the external document; unrelated changes and unchanged comments do not create a conflict.",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -52,7 +52,7 @@
         "id": "comments-show-conflict",
         "kind": "action",
         "title": "Show conflict options",
-        "description": "When the comment being edited has changed, prompt for a choice between the external comment and the local draft.",
+        "description": "If the comment being edited changed, offer the external version or local draft; if it was deleted, offer to discard or restore the local draft.",
         "links": [
           {
             "href": "source:///src/client/parts/annotation-layer.tsx"
@@ -64,7 +64,7 @@
         "id": "comments-continue-review",
         "kind": "result",
         "title": "Continue the review with the chosen content",
-        "description": "Apply the reviewer's choice and offer comment editing and saving again."
+        "description": "Apply the resolution: use the external text or keep the local draft after a change; discard or restore the draft after deletion, then continue the review."
       }
     ],
     "edges": [

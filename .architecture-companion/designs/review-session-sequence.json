@@ -22,7 +22,7 @@
         "title": "Agent",
         "links": [
           {
-            "href": "source:///SKILL.md"
+            "href": "source:///skills/architecture-companion/SKILL.md"
           }
         ],
         "type": "lifeline",
@@ -307,9 +307,6 @@
         "links": [
           {
             "href": "source:///src/client/widgets/diagram-renderer.tsx"
-          },
-          {
-            "href": "source:///src/client/widgets/diagram-renderer.react-flow.tsx"
           }
         ],
         "type": "lifeline",
@@ -334,9 +331,6 @@
         "links": [
           {
             "href": "source:///src/client/parts/diagram-canvas.tsx"
-          },
-          {
-            "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
           }
         ],
         "type": "lifeline",
@@ -360,10 +354,13 @@
         "title": "Diagram layout",
         "links": [
           {
-            "href": "source:///src/features/diagram/diagram-layout.ts"
+            "href": "source:///src/features/diagram/_layout/dependency-graph-layout.ts"
           },
           {
-            "href": "source:///src/features/diagram/diagram-spatial.ts"
+            "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
+          },
+          {
+            "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
           }
         ],
         "type": "lifeline",
@@ -582,7 +579,7 @@
         "type": "message",
         "source": "renderer",
         "target": "layout",
-        "label": "layoutDiagram(DiagramElements, DiagramNodeSizes)",
+        "label": "calculateLayout(diagram, measuredNodeSizes)",
         "messageType": "sync"
       },
       {

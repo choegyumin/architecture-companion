@@ -3,6 +3,7 @@ import { ExternalLink, FileCode2 } from "lucide-react";
 import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
+import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DefaultDiagramNode, LifelineDiagramNode, MessageDiagramEdge } from "@/features/diagram/diagram-graph";
 import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
@@ -27,7 +28,7 @@ export function createDiagramLinkActivationHandler(onOpenSource: (href: string) 
   };
 }
 
-export const DIAGRAM_EDGE_COLOR = "var(--foreground)";
+export const DIAGRAM_EDGE_COLOR = "var(--diagram-edge)";
 const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
@@ -35,6 +36,7 @@ const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
 export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
   edges: readonly DiagramReactFlowEdge[];
+  edgeTargets?: ReadonlyMap<string, AnnotationTarget>;
 }>;
 
 function toCardNodeData(
@@ -182,6 +184,7 @@ export function buildDiagramReactFlowNodes(
   diagram: Diagram,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
+  nodesActivatable = false,
 ): DiagramReactFlowNode[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const groups = layout.groups.map<LabeledGroupReactFlowNode>((placement) => {
@@ -194,6 +197,7 @@ export function buildDiagramReactFlowNodes(
       data: {
         label: group.title,
         ...(group.description ? { description: group.description } : {}),
+        ...(nodesActivatable ? { activatable: true } : {}),
       },
       position: placement.position,
       ...(placement.parentId ? { parentId: placement.parentId } : {}),
@@ -221,7 +225,10 @@ export function buildDiagramReactFlowNodes(
       return {
         ...common,
         type: "card",
-        data: toCardNodeData(node, onLinkActivate),
+        data: {
+          ...toCardNodeData(node, onLinkActivate),
+          ...(nodesActivatable ? { activatable: true } : {}),
+        },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
       };

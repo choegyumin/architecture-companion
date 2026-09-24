@@ -12,10 +12,11 @@ Each Annotation carries the following semantics.
 - On a Product Behavior canvas, `anchor.canvasId` has the form `behavior:<behavior-id>`.
 - On a Code Design canvas, `anchor.canvasId` has the form `design:<design-id>`.
 - When the reviewer selected a group, node, or edge, `anchor.target` records its `type` and stable element `id`.
+- When the reviewer selected an aggregated dependency route, `anchor.target` has `type: "edge-set"`; `sourceId` and `targetId` identify the displayed endpoints, and `edgeIds` contains the stable IDs of all original edges represented by that aggregate.
 - `anchor.target` is absent only for a canvas-level Annotation created without selecting an element.
 - `anchor.point` is the pin's visual position and does not replace the selected element target.
 
-Find the diagram in the active artifact through the Product Behavior or Code Design ID in `canvasId`, then match `target.id` inside that diagram. Runtime validation checks the Annotation structure but not whether these IDs actually exist in the active artifact. Prefer the stable element ID over the point when a target exists, and never guess a missing target from a nearby position or a similar title.
+Find the diagram in the active artifact through the Product Behavior or Code Design ID in `canvasId`. For a group, node, or edge target, match its stable `id` inside that diagram. For an `edge-set` target, find each `edgeIds` member among the diagram's original edges; use `sourceId` and `targetId` to understand the displayed aggregate endpoints, which may be groups or nodes, not as substitutes for the original edge IDs. Runtime validation checks the Annotation structure but not whether these IDs actually exist in the active artifact. Prefer stable element or edge IDs over the point when a target exists, and never guess a missing target from a nearby position or a similar title.
 
 ## Request interpretation
 

@@ -64,6 +64,9 @@ type DiagramCanvasProps = Readonly<{
   edges: DiagramReactFlowEdge[];
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
+  onGroupActivate?: (groupId: string) => void;
+  onNodeActivate?: (nodeId: string) => void;
+  onPaneActivate?: () => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
   initialView?: DiagramViewFramingOptions;
 }>;
@@ -74,6 +77,9 @@ export function DiagramCanvas({
   edges,
   nodes,
   onCanvasClick,
+  onGroupActivate,
+  onNodeActivate,
+  onPaneActivate,
   onNodesChange,
   initialView,
 }: DiagramCanvasProps) {
@@ -97,10 +103,12 @@ export function DiagramCanvas({
     };
   }, [fitView]);
 
+  function isInteractiveClick(event: MouseEvent): boolean {
+    return event.target instanceof Element && Boolean(event.target.closest(interactiveElementSelector));
+  }
+
   function handleCanvasClick(event: MouseEvent, target?: AnnotationTarget): void {
-    if (!onCanvasClick || !flowInstance) return;
-    const eventTarget = event.target;
-    if (eventTarget instanceof Element && eventTarget.closest(interactiveElementSelector)) return;
+    if (!onCanvasClick || !flowInstance || isInteractiveClick(event)) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -108,12 +116,29 @@ export function DiagramCanvas({
     onCanvasClick(point, target);
   }
 
+  function handlePaneClick(event: MouseEvent): void {
+    if (onCanvasClick) handleCanvasClick(event);
+    else if (onPaneActivate && !isInteractiveClick(event)) onPaneActivate();
+  }
+
+  function handleNodeClick(event: MouseEvent, node: DiagramReactFlowNode): void {
+    const clickedNode = event.target instanceof Element ? event.target.closest(".react-flow__node") : null;
+    const clickedNodeId = clickedNode?.getAttribute("data-id");
+    if (clickedNodeId && clickedNodeId !== node.id) return;
+    if (onCanvasClick) {
+      handleCanvasClick(event, { type: node.type === "labeled-group" ? "group" : "node", id: node.id });
+    } else if (!isInteractiveClick(event)) {
+      if (node.type === "card") onNodeActivate?.(node.id);
+      if (node.type === "labeled-group") onGroupActivate?.(node.id);
+    }
+  }
+
   return (
     <div
       aria-label="Diagram canvas"
       className="h-full min-h-0"
       onClick={(event) => {
-        if (event.target === event.currentTarget) handleCanvasClick(event);
+        if (event.target === event.currentTarget) handlePaneClick(event);
       }}
       ref={canvasRef}
       role="group"
@@ -134,14 +159,9 @@ export function DiagramCanvas({
         nodeTypes={diagramNodeTypes}
         onEdgeClick={(event, edge) => handleCanvasClick(event, { type: "edge", id: edge.id })}
         onInit={setFlowInstance}
-        onNodeClick={(event, node) =>
-          handleCanvasClick(event, {
-            type: node.type === "labeled-group" ? "group" : "node",
-            id: node.id,
-          })
-        }
+        onNodeClick={handleNodeClick}
         onNodesChange={onNodesChange}
-        onPaneClick={(event) => handleCanvasClick(event)}
+        onPaneClick={handlePaneClick}
         panOnDrag
         // WheelEvent cannot distinguish a trackpad from a mouse, so use macOS as the proxy.
         panOnScroll={isMacOS}

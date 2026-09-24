@@ -964,6 +964,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                 <DiagramRenderer
                   ariaLabel={activeDiagramCollection.ariaLabel}
                   annotations={{ ...annotationController, surface: activeDiagramCollection.annotationSurface }}
+                  commentEnabled={annotationState.isModeEnabled}
                   diagram={activeDiagramCollection.activeDiagram}
                   onOpenSource={openSource}
                 />

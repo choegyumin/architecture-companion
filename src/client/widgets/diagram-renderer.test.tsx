@@ -4,6 +4,9 @@ import type { AnnotationCanvasController } from "@/client/parts/annotation-layer
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
 import type { Diagram } from "@/features/diagram/diagram";
 
+vi.mock("@/client/widgets/dependency-graph-diagram-renderer", () => ({
+  DependencyGraphDiagramRenderer: () => <span>Dependency graph renderer</span>,
+}));
 vi.mock("@/client/widgets/elk-layered-diagram-renderer", () => ({
   ElkLayeredDiagramRenderer: () => <span>ELK layout renderer</span>,
 }));
@@ -20,6 +23,15 @@ const diagram = {
 } as const;
 
 describe("diagram renderer selection", () => {
+  it("selects the dependency renderer by layout ID", () => {
+    const dependencyDiagram = { ...diagram, layout: { id: "dependency-graph" } } satisfies Diagram;
+
+    render(<DiagramRenderer annotations={annotations} diagram={dependencyDiagram} onOpenSource={vi.fn()} />);
+
+    expect(screen.getByText("Dependency graph renderer")).toBeInTheDocument();
+    expect(screen.queryByText("ELK layout renderer")).not.toBeInTheDocument();
+  });
+
   it("selects the ELK renderer by layout ID", () => {
     const elkDiagram = { ...diagram, layout: { id: "elk-layered" } } satisfies Diagram;
 

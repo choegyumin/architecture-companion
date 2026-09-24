@@ -2,6 +2,7 @@ import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
 import { ExternalLink } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 
+import { cn } from "@/shared/react/class-name";
 import { Button } from "@/shared/react-ui/button";
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
@@ -18,6 +19,7 @@ type CardNodeData = Readonly<{
   details?: readonly ReactNode[];
   links?: readonly CardNodeLink[];
   onLinkActivate?: LinkActivationHandler;
+  activatable?: boolean;
 }>;
 
 export type CardReactFlowNode = Node<CardNodeData, "card">;
@@ -35,7 +37,10 @@ export function CardNode({
   return (
     <article
       aria-label={accessibleLabel || "Card"}
-      className="w-72 rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
+      className={cn(
+        "w-72 rounded-xl border bg-card p-4 text-card-foreground shadow-sm",
+        data.activatable && "cursor-pointer hover:border-primary/60",
+      )}
     >
       <Handle isConnectable={isConnectable} position={targetPosition} style={{ opacity: 0 }} type="target" />
       {data.eyebrow != null ? (

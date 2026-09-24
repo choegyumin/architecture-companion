@@ -158,6 +158,7 @@ async function renderArtifact(artifact: RenderableArtifact) {
   const review = render(<WorkspacePage client={client} />);
 
   return {
+    client,
     scopePath: temporaryRoot,
     cleanup: async () => {
       review.unmount();
@@ -233,6 +234,50 @@ describe("design (architecture·implementation) review", () => {
       expect(screen.queryByText("Browse products")).not.toBeInTheDocument();
     } finally {
       await cleanupScope();
+    }
+  });
+});
+
+describe("dependency graph review", () => {
+  it("loads and lays out a nested dependency artifact through the Review page", async () => {
+    const dependencyArtifact = {
+      behaviors: [],
+      designs: [
+        {
+          id: "dependencies",
+          title: "Dependencies",
+          generator: "built-in:freeform",
+          layout: { id: "dependency-graph" },
+          graph: {
+            groups: [
+              { id: "source", title: "Source" },
+              { id: "nested", title: "Nested", parentId: "source" },
+              { id: "target", title: "Target" },
+            ],
+            nodes: [
+              { id: "a", type: "default", title: "A", groupId: "source" },
+              { id: "b", type: "default", title: "B", groupId: "nested" },
+              { id: "c", type: "default", title: "C", groupId: "target" },
+            ],
+            edges: [
+              { id: "a-c", type: "default", source: "a", target: "c" },
+              { id: "b-c", type: "default", source: "b", target: "c" },
+            ],
+          },
+        },
+      ],
+    } as const;
+    const { cleanup } = await renderArtifact(dependencyArtifact);
+
+    try {
+      await screen.findByRole("region", { name: "Dependencies code design diagram" });
+      await screen.findByText("Laying out…");
+      await waitFor(() => expect(screen.queryByText("Laying out…")).not.toBeInTheDocument());
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.getByRole("list", { name: "Diagram elements and connections" })).toHaveTextContent("a to c");
+      expect(screen.getByRole("list", { name: "Diagram elements and connections" })).toHaveTextContent("b to c");
+    } finally {
+      await cleanup();
     }
   });
 });

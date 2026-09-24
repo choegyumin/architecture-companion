@@ -43,10 +43,10 @@
         "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
         "links": [
           {
-            "href": "source:///references/diagram.schema.json"
+            "href": "source:///skills/architecture-companion/schemas/diagram.schema.json"
           },
           {
-            "href": "source:///references/artifact-writing.md"
+            "href": "source:///skills/architecture-companion/artifact-writing.md"
           }
         ]
       },
@@ -115,7 +115,8 @@
         "type": "default",
         "id": "agent-runtime-to-validation",
         "source": "agent-artifact-valid",
-        "target": "agent-start-runtime"
+        "target": "agent-start-runtime",
+        "label": "Yes"
       },
       {
         "type": "default",
@@ -134,8 +135,7 @@
         "type": "default",
         "id": "agent-valid-to-share",
         "source": "agent-start-runtime",
-        "target": "agent-share-url",
-        "label": "Yes"
+        "target": "agent-share-url"
       }
     ]
   }

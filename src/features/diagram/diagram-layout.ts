@@ -1,5 +1,9 @@
 import z from "zod";
 
+import {
+  dependencyGraphLayoutConfigSchema,
+  layoutDependencyGraph,
+} from "@/features/diagram/_layout/dependency-graph-layout";
 import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-diagram-layout";
 import { layoutSequenceDiagram } from "@/features/diagram/_layout/sequence-diagram-layout";
 import type { DiagramGraph } from "@/features/diagram/diagram-graph";
@@ -11,6 +15,7 @@ import { sequenceDiagramLayoutConfigSchema } from "./_layout/sequence-diagram-la
 export const diagramLayoutConfigSchema = z.discriminatedUnion("id", [
   elkLayeredDiagramLayoutConfigSchema,
   sequenceDiagramLayoutConfigSchema,
+  dependencyGraphLayoutConfigSchema,
 ]);
 export type DiagramLayoutConfig = z.infer<typeof diagramLayoutConfigSchema>;
 
@@ -19,6 +24,8 @@ export function layoutDiagram(
   nodeSizes: DiagramNodeSizes,
 ): Promise<DiagramLayout> {
   switch (diagram.layout.id) {
+    case "dependency-graph":
+      return layoutDependencyGraph(diagram.graph, nodeSizes);
     case "elk-layered":
       return layoutElkLayeredDiagram(diagram.graph, nodeSizes, diagram.layout.options);
     case "sequence":

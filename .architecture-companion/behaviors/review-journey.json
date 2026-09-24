@@ -39,13 +39,10 @@
         "id": "journey-inspect-architecture",
         "kind": "action",
         "title": "Review diagrams and sources",
-        "description": "The reviewer inspects the process and design diagrams and opens the source evidence they need.",
+        "description": "The reviewer inspects the process and design diagrams and opens source evidence. In a dependency graph, hovering a route highlights it; selecting a group, node, or aggregate label focuses related edges, and clicking the blank canvas clears focus.",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
-          },
-          {
-            "href": "source:///src/server/open-source-reference.ts"
           }
         ]
       },
@@ -54,13 +51,10 @@
         "id": "journey-record-annotation",
         "kind": "action",
         "title": "Comment on a diagram",
-        "description": "The reviewer leaves a comment at the relevant spot on a diagram.",
+        "description": "When Comment mode is on, the reviewer leaves a comment at the relevant spot. A comment on an aggregated dependency relation records its endpoints and the IDs of all underlying edges.",
         "links": [
           {
             "href": "source:///src/client/parts/annotation-layer.tsx"
-          },
-          {
-            "href": "source:///src/client/pages/workspace-page.tsx"
           }
         ]
       },
@@ -72,7 +66,7 @@
         "description": "The reviewer sends the coding agent a follow-up request based on the review results.",
         "links": [
           {
-            "href": "source:///references/review-follow-up.md"
+            "href": "source:///skills/architecture-companion/review-follow-up.md"
           }
         ]
       }

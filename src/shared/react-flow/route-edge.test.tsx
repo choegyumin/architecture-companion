@@ -49,6 +49,39 @@ describe("route edge", () => {
     expect(onLinkActivate).toHaveBeenCalledWith(expect.anything(), "https://example.com");
   });
 
+  it("makes the entire aggregate label shape the focus button, not the edge path", () => {
+    const onActivate = vi.fn();
+    render(
+      <RouteEdge
+        data={{
+          path: "M 0 0 L 100 100",
+          labelPosition: { x: 50, y: 50 },
+          eyebrow: "×2",
+          labelAction: { ariaLabel: "Show 2 edges", onActivate },
+        }}
+        id="aggregate"
+        source="source"
+        sourcePosition={Position.Right}
+        sourceX={0}
+        sourceY={0}
+        target="target"
+        targetPosition={Position.Left}
+        targetX={100}
+        targetY={100}
+        type="route"
+      />,
+    );
+
+    const label = screen.getByRole("button", { name: "Show 2 edges" });
+    expect(label).toHaveClass("rounded-md", "border", "px-2", "py-1", "cursor-pointer");
+    expect(label).toHaveStyle({ left: "50px", top: "50px" });
+    expect(label).toContainElement(screen.getByText("×2"));
+    fireEvent.click(screen.getByTestId("edge-path"));
+    expect(onActivate).not.toHaveBeenCalled();
+    fireEvent.click(label);
+    expect(onActivate).toHaveBeenCalledOnce();
+  });
+
   it("does not render an empty path", () => {
     const { container } = render(
       <RouteEdge

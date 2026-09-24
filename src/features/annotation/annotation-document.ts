@@ -1,11 +1,16 @@
 import { z } from "zod";
 
-export const annotationTargetSchema = z
-  .object({
-    type: z.enum(["group", "node", "edge"]),
-    id: z.string().min(1),
-  })
-  .strict();
+export const annotationTargetSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.enum(["group", "node", "edge"]), id: z.string().min(1) }).strict(),
+  z
+    .object({
+      type: z.literal("edge-set"),
+      sourceId: z.string().min(1),
+      targetId: z.string().min(1),
+      edgeIds: z.array(z.string().min(1)).min(1).readonly(),
+    })
+    .strict(),
+]);
 export type AnnotationTarget = Readonly<z.infer<typeof annotationTargetSchema>>;
 
 export const annotationAnchorSchema = z
