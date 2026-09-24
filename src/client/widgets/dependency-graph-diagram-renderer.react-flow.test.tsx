@@ -48,6 +48,8 @@ describe("dependency graph React Flow adapter", () => {
     if (card?.type !== "card") throw new Error("Missing card");
 
     expect(model.edges).toHaveLength(1);
+    expect(aggregate.markerEnd).toMatchObject({ color: "var(--diagram-edge)" });
+    expect(aggregate.style).toMatchObject({ stroke: "var(--diagram-edge)" });
     expect(aggregate.data?.path).toMatch(/^M .+ L /);
     expect(aggregate.data?.path).not.toContain(" C ");
     expect(model.edgeTargets?.get(aggregate.id)).toEqual({

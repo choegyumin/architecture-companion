@@ -28,7 +28,7 @@ export function createDiagramLinkActivationHandler(onOpenSource: (href: string) 
   };
 }
 
-export const DIAGRAM_EDGE_COLOR = "var(--foreground)";
+export const DIAGRAM_EDGE_COLOR = "var(--diagram-edge)";
 const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;

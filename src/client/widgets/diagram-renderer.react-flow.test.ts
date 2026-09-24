@@ -114,6 +114,8 @@ describe("diagram renderer React Flow adapter", () => {
       target: "step",
       type: "route",
       label: "Continue",
+      markerEnd: { color: "var(--diagram-edge)" },
+      style: { stroke: "var(--diagram-edge)" },
       data: {
         path: "M 100 100 L 200 160 L 200 180",
         labelPosition: { x: 150, y: 130 },
@@ -330,10 +332,11 @@ describe("diagram renderer React Flow adapter", () => {
     const { edges } = buildSequenceDiagramReactFlowRenderModel(diagram, layout, vi.fn());
 
     expect(edges.map(({ markerEnd }) => markerEnd)).toEqual([
-      expect.objectContaining({ type: MarkerType.ArrowClosed }),
-      expect.objectContaining({ type: MarkerType.Arrow }),
-      expect.objectContaining({ type: MarkerType.Arrow }),
+      expect.objectContaining({ type: MarkerType.ArrowClosed, color: "var(--diagram-edge)" }),
+      expect.objectContaining({ type: MarkerType.Arrow, color: "var(--diagram-edge)" }),
+      expect.objectContaining({ type: MarkerType.Arrow, color: "var(--diagram-edge)" }),
     ]);
+    expect(edges.map(({ style }) => style?.stroke)).toEqual(Array(3).fill("var(--diagram-edge)"));
     expect(edges.map(({ style }) => style?.strokeDasharray)).toEqual([undefined, undefined, "6 4"]);
     expect(edges.map(({ type, sourceHandle, targetHandle }) => ({ type, sourceHandle, targetHandle }))).toEqual([
       { type: "message", sourceHandle: "sync:source", targetHandle: "sync:target" },
