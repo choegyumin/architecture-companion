@@ -286,15 +286,31 @@ function routingGrid(
       for (const offset of [0, gap, gap * 2]) y.add(boundary + (boundary === rect.top ? -offset : offset));
     }
   }
+  const window = {
+    left: Math.min(...x) - gap,
+    right: Math.max(...x) + gap,
+    top: Math.min(...y) - gap,
+    bottom: Math.max(...y) + gap,
+  };
   for (const prior of used) {
     if (prior.axis === "horizontal") {
+      if (
+        prior.from.y < window.top ||
+        prior.from.y > window.bottom ||
+        Math.max(prior.from.x, prior.to.x) < window.left ||
+        Math.min(prior.from.x, prior.to.x) > window.right
+      )
+        continue;
       for (const offset of [-gap, gap]) y.add(prior.from.y + offset);
-      x.add(prior.from.x);
-      x.add(prior.to.x);
     } else {
+      if (
+        prior.from.x < window.left ||
+        prior.from.x > window.right ||
+        Math.max(prior.from.y, prior.to.y) < window.top ||
+        Math.min(prior.from.y, prior.to.y) > window.bottom
+      )
+        continue;
       for (const offset of [-gap, gap]) x.add(prior.from.x + offset);
-      y.add(prior.from.y);
-      y.add(prior.to.y);
     }
   }
   const xs = [...x].sort((a, b) => a - b);
@@ -465,22 +481,21 @@ type SearchState = {
   previous?: SearchState;
 };
 
-function sharesTrack(candidate: Segment, used: readonly Segment[], gap: number): boolean {
+function sharesTrack(candidate: Segment, prior: Segment, gap: number): boolean {
+  if (prior.axis !== candidate.axis) return false;
   const fixed = candidate.axis === "horizontal" ? "y" : "x";
   const variable = candidate.axis === "horizontal" ? "x" : "y";
-  return used.some(
-    (prior) =>
-      prior.axis === candidate.axis &&
-      Math.abs(candidate.from[fixed] - prior.from[fixed]) < gap - EPSILON &&
-      Math.min(
-        Math.max(candidate.from[variable], candidate.to[variable]),
-        Math.max(prior.from[variable], prior.to[variable]),
-      ) -
-        Math.max(
-          Math.min(candidate.from[variable], candidate.to[variable]),
-          Math.min(prior.from[variable], prior.to[variable]),
-        ) >
-        EPSILON,
+  return (
+    Math.abs(candidate.from[fixed] - prior.from[fixed]) < gap - EPSILON &&
+    Math.min(
+      Math.max(candidate.from[variable], candidate.to[variable]),
+      Math.max(prior.from[variable], prior.to[variable]),
+    ) -
+      Math.max(
+        Math.min(candidate.from[variable], candidate.to[variable]),
+        Math.min(prior.from[variable], prior.to[variable]),
+      ) >
+      EPSILON
   );
 }
 
@@ -527,22 +542,12 @@ function findPath(
       const length = current.length + neighbor.length;
       const point = getOrThrow(grid.points[neighbor.point], "Missing aggregate route point");
       if (length + Math.abs(point.x - end.x) + Math.abs(point.y - end.y) > maxLength + EPSILON) continue;
-      if (
-        minimumTrackGap > 0 &&
-        sharesTrack(
-          segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point),
-          used,
-          minimumTrackGap,
-        )
-      )
-        continue;
+      const candidate = segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point);
+      if (minimumTrackGap > 0 && used.some((prior) => sharesTrack(candidate, prior, minimumTrackGap))) continue;
       const cacheKey = `${Math.min(current.point, neighbor.point)}:${Math.max(current.point, neighbor.point)}`;
       let traffic = congestionCache.get(cacheKey);
       if (!traffic) {
-        traffic = measureAggregateSegmentCongestion(
-          segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point),
-          used,
-        );
+        traffic = measureAggregateSegmentCongestion(candidate, used);
         congestionCache.set(cacheKey, traffic);
       }
       const overlapping = traffic.overlapLength > EPSILON;
@@ -692,13 +697,28 @@ export function routeAggregateDependencyEdges(
     const baseline = getOrThrow(findPath(edge, grid, []), "Missing aggregate baseline route");
     const baselineLength = routeLength(baseline);
     const maxLength = baselineLength + Math.max(MIN_DETOUR, baselineLength * DETOUR_RATIO);
-    let route: Point[] | undefined = used.length ? undefined : baseline;
-    for (let gap = TRACK_GAP; !route && gap >= MIN_TRACK_GAP; gap /= 2) {
-      const clearance = Math.min(CLEARANCE, gap * 2);
-      const candidateStart = outside(edge.start, edge.sourceSide, candidates, clearance);
-      const candidateEnd = outside(edge.end, edge.targetSide, candidates, clearance);
-      const obstacles = obstaclesFor(candidates, candidateStart, candidateEnd, clearance);
-      route = findPath(edge, routingGrid(candidateStart, candidateEnd, obstacles, used, gap), used, maxLength, gap);
+    const direct = compact([edge.start, ...baseline, edge.end]);
+    const directSegments = direct
+      .slice(1)
+      .map((point, index) => segment(getOrThrow(direct[index], "Missing aggregate route point"), point));
+    const clear = directSegments.every(
+      (candidate) =>
+        !used.some((prior) => sharesTrack(candidate, prior, TRACK_GAP)) &&
+        measureAggregateSegmentCongestion(candidate, used).crossings === 0,
+    );
+    const relevant = used.filter((prior) =>
+      directSegments.some((candidate) => sharesTrack(candidate, prior, TRACK_GAP)),
+    );
+    let route: Point[] | undefined = clear ? baseline : undefined;
+    for (const tracks of relevant.length === used.length ? [relevant] : [relevant, used]) {
+      for (let gap = TRACK_GAP; !route && gap >= MIN_TRACK_GAP; gap /= 2) {
+        const clearance = Math.min(CLEARANCE, gap * 2);
+        const candidateStart = outside(edge.start, edge.sourceSide, candidates, clearance);
+        const candidateEnd = outside(edge.end, edge.targetSide, candidates, clearance);
+        const obstacles = obstaclesFor(candidates, candidateStart, candidateEnd, clearance);
+        route = findPath(edge, routingGrid(candidateStart, candidateEnd, obstacles, tracks, gap), used, maxLength, gap);
+      }
+      if (route) break;
     }
     route ??= getOrThrow(findPath(edge, grid, used, maxLength), "Missing aggregate route");
     const points = compact([edge.start, ...route, edge.end]);
