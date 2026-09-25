@@ -545,12 +545,25 @@ function sharesTrack(candidate: Segment, prior: Segment, gap: number): boolean {
   );
 }
 
+function crossesAtVertex(point: Point, axis: Axis, used: readonly Segment[]): boolean {
+  const fixed = axis === "horizontal" ? "x" : "y";
+  const variable = axis === "horizontal" ? "y" : "x";
+  return used.some(
+    (prior) =>
+      prior.axis !== axis &&
+      Math.abs(prior.from[fixed] - point[fixed]) <= EPSILON &&
+      point[variable] > Math.min(prior.from[variable], prior.to[variable]) + EPSILON &&
+      point[variable] < Math.max(prior.from[variable], prior.to[variable]) - EPSILON,
+  );
+}
+
 function findPath(
   edge: RoutingEdge,
   grid: ReturnType<typeof routingGrid>,
   used: readonly Segment[],
   maxLength = Infinity,
   minimumTrackGap = 0,
+  avoidVertexCrossings = true,
 ): Point[] | undefined {
   const start = getOrThrow(grid.points[grid.startIndex], "Missing aggregate grid start");
   const end = getOrThrow(grid.points[grid.endIndex], "Missing aggregate grid end");
@@ -568,6 +581,7 @@ function findPath(
   const states = new Map<number, SearchState[]>([[keyOf(first.point, first.axis, false), [first]]]);
   const heap = new MinHeap<SearchState>();
   const congestionCache = new Map<string, ReturnType<typeof measureAggregateSegmentCongestion>>();
+  const vertexCrossingCache = new Map<number, boolean>();
   heap.push(first);
   let best = Infinity;
   let final: SearchState | undefined;
@@ -597,10 +611,28 @@ function findPath(
         congestionCache.set(cacheKey, traffic);
       }
       const overlapping = traffic.overlapLength > EPSILON;
+      const preceding = current.previous && grid.points[current.previous.point];
+      const along = neighbor.axis === "horizontal" ? "x" : "y";
+      let vertexCrossing = false;
+      if (
+        avoidVertexCrossings &&
+        used.length > 0 &&
+        preceding &&
+        current.axis === neighbor.axis &&
+        (candidate.from[along] - preceding[along]) * (point[along] - candidate.from[along]) > 0
+      ) {
+        const key = current.point * 2 + (neighbor.axis === "horizontal" ? 0 : 1);
+        let cached = vertexCrossingCache.get(key);
+        if (cached === undefined) {
+          cached = crossesAtVertex(candidate.from, neighbor.axis, used);
+          vertexCrossingCache.set(key, cached);
+        }
+        vertexCrossing = cached;
+      }
       const cost =
         current.cost +
         neighbor.length +
-        traffic.crossings * CROSSING_COST +
+        (traffic.crossings + Number(vertexCrossing)) * CROSSING_COST +
         traffic.overlapLength +
         (overlapping && !current.overlapping ? OVERLAP_COST : 0) +
         (current.axis === neighbor.axis ? 0 : BEND_COST);
@@ -707,7 +739,7 @@ function routeAssignedEdges(
   edges: readonly RoutingEdge[],
   elements: ReadonlyMap<string, Bounds>,
   virtualGroups: readonly Bounds[],
-  capturePaths = false,
+  preview = false,
 ): Readonly<{ routes: ReadonlyMap<string, EdgeRoute>; paths: ReadonlyMap<string, readonly Point[]> }> {
   const ordered = [...edges].sort(
     (a, b) =>
@@ -740,17 +772,58 @@ function routeAssignedEdges(
       directSegments.some((candidate) => sharesTrack(candidate, prior, TRACK_GAP)),
     );
     let route: Point[] | undefined = clear ? baseline : undefined;
+    let congestion = { crossings: 0, overlapLength: 0 };
     for (const tracks of relevant.length === used.length ? [relevant] : [relevant, used]) {
-      for (let gap = TRACK_GAP; !route && gap >= MIN_TRACK_GAP; gap /= 2) {
-        const clearance = Math.min(CLEARANCE, gap * 2);
+      for (
+        let gap = TRACK_GAP;
+        gap >= MIN_TRACK_GAP &&
+        (!route || (!preview && (congestion.crossings > 0 || congestion.overlapLength > EPSILON)));
+        gap /= 2
+      ) {
+        const clearance = !preview && gap === MIN_TRACK_GAP ? gap : Math.min(CLEARANCE, gap * 2);
         const candidateStart = outside(edge.start, edge.sourceSide, candidates, clearance);
         const candidateEnd = outside(edge.end, edge.targetSide, candidates, clearance);
         const obstacles = obstaclesFor(candidates, candidateStart, candidateEnd, clearance);
-        route = findPath(edge, routingGrid(candidateStart, candidateEnd, obstacles, tracks, gap), used, maxLength, gap);
+        const alternative = findPath(
+          edge,
+          routingGrid(candidateStart, candidateEnd, obstacles, tracks, gap),
+          used,
+          maxLength,
+          gap,
+          !preview,
+        );
+        if (!alternative) continue;
+        if (preview) {
+          route = alternative;
+          break;
+        }
+        const points = compact([edge.start, ...alternative, edge.end]);
+        const measured = points.slice(1).reduce(
+          (sum, point, index) => {
+            const traffic = measureAggregateSegmentCongestion(
+              segment(getOrThrow(points[index], "Missing aggregate segment start"), point),
+              used,
+            );
+            return {
+              crossings: sum.crossings + traffic.crossings,
+              overlapLength: sum.overlapLength + traffic.overlapLength,
+            };
+          },
+          { crossings: 0, overlapLength: 0 },
+        );
+        if (
+          !route ||
+          measured.overlapLength < congestion.overlapLength - EPSILON ||
+          (Math.abs(measured.overlapLength - congestion.overlapLength) <= EPSILON &&
+            measured.crossings < congestion.crossings)
+        ) {
+          route = alternative;
+          congestion = measured;
+        }
       }
-      if (route) break;
+      if (route && (preview || (congestion.crossings === 0 && congestion.overlapLength <= EPSILON))) break;
     }
-    route ??= getOrThrow(findPath(edge, grid, used, maxLength), "Missing aggregate route");
+    route ??= getOrThrow(findPath(edge, grid, used, maxLength, 0, !preview), "Missing aggregate route");
     const points = compact([edge.start, ...route, edge.end]);
     used.push(
       ...points
@@ -758,7 +831,7 @@ function routeAssignedEdges(
         .map((point, index) => segment(getOrThrow(points[index], "Missing aggregate segment start"), point)),
     );
     routes.set(edge.id, { path: roundedPath(points), labelPosition: midpoint(points) });
-    if (capturePaths) paths.set(edge.id, points);
+    if (preview) paths.set(edge.id, points);
   }
   return { routes, paths };
 }
@@ -786,17 +859,8 @@ export function routeAggregateDependencyEdges(
     };
   });
   const needsPreview = assignPorts(edges);
-  const initial = routeAssignedEdges(edges, elements, virtualGroups, needsPreview);
-  if (!needsPreview) return initial.routes;
-  const ports = edges.map(({ start, end }) => ({ start, end }));
-  assignPorts(edges, initial.paths);
-  return edges.some(
-    ({ start, end }, index) =>
-      start.x !== ports[index]?.start.x ||
-      start.y !== ports[index]?.start.y ||
-      end.x !== ports[index]?.end.x ||
-      end.y !== ports[index]?.end.y,
-  )
-    ? routeAssignedEdges(edges, elements, virtualGroups).routes
-    : initial.routes;
+  const result = routeAssignedEdges(edges, elements, virtualGroups, needsPreview);
+  if (!needsPreview) return result.routes;
+  assignPorts(edges, result.paths);
+  return routeAssignedEdges(edges, elements, virtualGroups).routes;
 }

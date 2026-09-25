@@ -39,6 +39,47 @@ function overlapsVisibly(first: string, second: string): boolean {
   return false;
 }
 
+function renderedSegments(path: string) {
+  const segments: Array<readonly [number, number, number, number]> = [];
+  let previous: readonly [number, number] | undefined;
+  for (const [, command, x, y, endX, endY] of path.matchAll(/([MLQ]) ([-\d.]+) ([-\d.]+)(?: ([-\d.]+) ([-\d.]+))?/g)) {
+    const point = [Number(x), Number(y)] as const;
+    if (command === "L" && previous) segments.push([...previous, ...point]);
+    if (command === "Q" && previous) {
+      const [fromX, fromY] = previous;
+      let prior = previous;
+      for (let step = 1; step <= 20; step += 1) {
+        const t = step / 20;
+        const next = [
+          (1 - t) ** 2 * fromX + 2 * (1 - t) * t * Number(x) + t ** 2 * Number(endX),
+          (1 - t) ** 2 * fromY + 2 * (1 - t) * t * Number(y) + t ** 2 * Number(endY),
+        ] as const;
+        segments.push([...prior, ...next]);
+        prior = next;
+      }
+    }
+    previous = command === "Q" ? [Number(endX), Number(endY)] : point;
+  }
+  return segments;
+}
+
+function pathsCross(first: string, second: string): boolean {
+  for (const [ax, ay, bx, by] of renderedSegments(first)) {
+    for (const [cx, cy, dx, dy] of renderedSegments(second)) {
+      const vx = bx - ax;
+      const vy = by - ay;
+      const wx = dx - cx;
+      const wy = dy - cy;
+      const denominator = vx * wy - vy * wx;
+      if (Math.abs(denominator) < 0.000001) continue;
+      const t = ((cx - ax) * wy - (cy - ay) * wx) / denominator;
+      const u = ((cx - ax) * vy - (cy - ay) * vx) / denominator;
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return true;
+    }
+  }
+  return false;
+}
+
 function overlappingPairs(
   projections: readonly Readonly<{ id: string; sourceId: string; targetId: string }>[],
   routes: ReadonlyMap<string, Readonly<{ path: string }>>,
@@ -57,6 +98,47 @@ function overlappingPairs(
     }
   }
   return overlaps;
+}
+
+async function focusedRoutes(focusId: string) {
+  const diagram = parseDiagram(artifactJson);
+  const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const layout = await layoutDependencyGraph(diagram.graph, sizes);
+  const bounds = getDependencyElementBounds(layout);
+  const projections = projectDependencyEdges(diagram.graph, { type: "group", id: focusId }).filter(
+    (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
+      projection.type === "aggregate",
+  );
+  const endpointIds = new Set(projections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
+  const elements = new Map(
+    [...layout.groups, ...layout.nodes.filter(({ id, parentId }) => !parentId || endpointIds.has(id))].map(
+      ({ id }) => [id, getOrThrow(bounds.get(id), `Missing aggregate element: ${id}`)] as const,
+    ),
+  );
+  const virtualGroups = new Map<string | undefined, NonNullable<ReturnType<typeof bounds.get>>>();
+  for (const node of layout.nodes) {
+    const current = getOrThrow(bounds.get(node.id), `Missing node bounds: ${node.id}`);
+    const previous = virtualGroups.get(node.parentId);
+    if (!previous) {
+      virtualGroups.set(node.parentId, current);
+      continue;
+    }
+    const left = Math.min(previous.position.x, current.position.x);
+    const top = Math.min(previous.position.y, current.position.y);
+    const right = Math.max(previous.position.x + previous.size.width, current.position.x + current.size.width);
+    const bottom = Math.max(previous.position.y + previous.size.height, current.position.y + current.size.height);
+    virtualGroups.set(node.parentId, {
+      position: { x: left, y: top },
+      size: { width: right - left, height: bottom - top },
+    });
+  }
+  const routes = routeAggregateDependencyEdges(projections, elements, [...virtualGroups.values()]);
+  const pathFrom = (sourceId: string, targetId: string) => {
+    const projection = projections.find((edge) => edge.sourceId === sourceId && edge.targetId === targetId);
+    if (!projection) throw new Error(`Missing aggregate edge: ${sourceId} → ${targetId}`);
+    return getOrThrow(routes.get(projection.id), `Missing route: ${projection.id}`).path;
+  };
+  return { pathFrom };
 }
 
 describe("dependency aggregate routes on the checked-in design", () => {
@@ -151,5 +233,55 @@ describe("dependency aggregate routes on the checked-in design", () => {
       overlaps.push(...overlappingPairs(projections, routes).map((pair) => `${group.title}: ${pair}`));
     }
     expect(overlaps).toEqual([]);
+  });
+
+  it("avoids crossings at grid vertices for server and artifact focus", async () => {
+    const server = "group:directory:src/server";
+    const artifact = "group:directory:src/features/artifact";
+    const cases = [
+      [server, server, artifact, server, "group:directory:src/features/diagram"],
+      [artifact, "group:directory:src/client", artifact, "group:directory:src/client/pages", artifact],
+    ] as const;
+    const crossings: string[] = [];
+    for (const [focusId, firstSource, firstTarget, secondSource, secondTarget] of cases) {
+      const { pathFrom } = await focusedRoutes(focusId);
+      if (pathsCross(pathFrom(firstSource, firstTarget), pathFrom(secondSource, secondTarget))) crossings.push(focusId);
+    }
+    expect(crossings).toEqual([]);
+  });
+
+  it("keeps the focused diagram's outward departures from crossing", async () => {
+    const diagramId = "group:directory:src/features/diagram";
+    const { pathFrom } = await focusedRoutes(diagramId);
+    expect(
+      pathsCross(
+        pathFrom(diagramId, "group:directory:src/shared/universal"),
+        pathFrom(diagramId, "group:external-packages"),
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps focused features' arrivals uncrossed around server", async () => {
+    const featuresId = "group:directory:src/features";
+    const { pathFrom } = await focusedRoutes(featuresId);
+    const groups = [
+      ["group:directory:src/client/pages", "group:directory:src/client/parts", "group:directory:src/client"],
+      [
+        "group:directory:src/client/widgets",
+        "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "group:directory:src/plugins/diagram-generators/react-component-structure",
+      ],
+    ];
+    const crossings: string[] = [];
+    for (const sources of groups) {
+      for (let index = 0; index < sources.length; index += 1) {
+        for (const sourceId of sources.slice(index + 1)) {
+          const first = getOrThrow(sources[index], "Missing first features source");
+          if (pathsCross(pathFrom(first, featuresId), pathFrom(sourceId, featuresId)))
+            crossings.push(`${first} / ${sourceId}`);
+        }
+      }
+    }
+    expect(crossings).toEqual([]);
   });
 });
