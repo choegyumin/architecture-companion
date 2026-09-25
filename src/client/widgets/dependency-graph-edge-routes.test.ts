@@ -2,7 +2,13 @@ import {
   measureAggregateSegmentCongestion,
   routeAggregateDependencyEdges,
 } from "@/client/widgets/dependency-graph-aggregate-routes";
-import { routeOriginalDependencyEdge } from "@/client/widgets/dependency-graph-edge-routes";
+import { getDependencyElementBounds, routeOriginalDependencyEdge } from "@/client/widgets/dependency-graph-edge-routes";
+import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
+import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
+import { parseDiagram } from "@/features/diagram/diagram";
+import { getOrThrow } from "@/shared/universal/get-or-throw";
+
+import artifactJson from "../../../.architecture-companion/designs/dependency-graph.json";
 
 const source = { position: { x: 0, y: 0 }, size: { width: 100, height: 60 } };
 const target = { position: { x: 0, y: 220 }, size: { width: 100, height: 60 } };
@@ -53,6 +59,41 @@ function overlappingStraightLength(first: string, second: string, distance = 8) 
     }
   }
   return overlap;
+}
+
+async function focusedAggregateRoutes(focusId: string) {
+  const diagram = parseDiagram(artifactJson);
+  const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const layout = await layoutDependencyGraph(diagram.graph, sizes);
+  const bounds = getDependencyElementBounds(layout);
+  const projections = projectDependencyEdges(diagram.graph, { type: "group", id: focusId }).filter(
+    (projection) => projection.type === "aggregate",
+  );
+  const endpointIds = new Set(projections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
+  const elements = new Map(
+    [...layout.groups, ...layout.nodes.filter(({ id, parentId }) => !parentId || endpointIds.has(id))].map(
+      ({ id }) => [id, getOrThrow(bounds.get(id), `Missing aggregate element: ${id}`)] as const,
+    ),
+  );
+  const virtualGroups = new Map<string | undefined, NonNullable<ReturnType<typeof bounds.get>>>();
+  for (const node of layout.nodes) {
+    const current = getOrThrow(bounds.get(node.id), `Missing node bounds: ${node.id}`);
+    const previous = virtualGroups.get(node.parentId);
+    if (!previous) {
+      virtualGroups.set(node.parentId, current);
+      continue;
+    }
+    const left = Math.min(previous.position.x, current.position.x);
+    const top = Math.min(previous.position.y, current.position.y);
+    const right = Math.max(previous.position.x + previous.size.width, current.position.x + current.size.width);
+    const bottom = Math.max(previous.position.y + previous.size.height, current.position.y + current.size.height);
+    virtualGroups.set(node.parentId, {
+      position: { x: left, y: top },
+      size: { width: right - left, height: bottom - top },
+    });
+  }
+  const routes = routeAggregateDependencyEdges(projections, elements, [...virtualGroups.values()]);
+  return { projections, routes, bounds };
 }
 
 describe("dependency edge routes", () => {
@@ -173,6 +214,177 @@ describe("dependency edge routes", () => {
 
     expect(new Set(serverY).size).toBe(6);
     expect(serverY.every((y) => y > 0 && y < 400)).toBe(true);
+  });
+
+  it("gives the shortest center-to-center edges the closest ports on each projected side", () => {
+    const origin = { position: { x: 0, y: 0 }, size: { width: 300, height: 200 } };
+    const elements = new Map([
+      ["origin", origin],
+      ["near-left", { position: { x: 60, y: 420 }, size: { width: 80, height: 80 } }],
+      ["far-left", { position: { x: -140, y: 900 }, size: { width: 80, height: 80 } }],
+      ["near-right", { position: { x: 260, y: 500 }, size: { width: 80, height: 80 } }],
+      ["far-right", { position: { x: 380, y: 920 }, size: { width: 80, height: 80 } }],
+    ]);
+    const projections = ["far-left", "far-right", "near-left", "near-right"].map((id) => ({
+      id,
+      sourceId: "origin",
+      targetId: id,
+    }));
+    const routes = routeAggregateDependencyEdges(projections, elements);
+    const sourceX = (id: string) => {
+      const start = routes.get(id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing source port: ${id}`);
+      return Number(start.at(1));
+    };
+
+    expect(sourceX("far-left")).toBeLessThan(sourceX("near-left"));
+    expect(sourceX("near-left")).toBeLessThan(150);
+    expect(sourceX("near-right")).toBeGreaterThan(150);
+    expect(sourceX("near-right")).toBeLessThan(sourceX("far-right"));
+    expect(150 - sourceX("near-left")).toBeLessThan(150 - sourceX("far-left"));
+    expect(sourceX("near-right") - 150).toBeLessThan(sourceX("far-right") - 150);
+  });
+
+  it("ranks shared-side ports by Euclidean rather than Manhattan center distance", () => {
+    const routes = routeAggregateDependencyEdges(
+      [
+        { id: "far", sourceId: "origin", targetId: "far" },
+        { id: "near", sourceId: "origin", targetId: "near" },
+      ],
+      new Map([
+        ["origin", { position: { x: 0, y: 0 }, size: { width: 300, height: 200 } }],
+        ["near", { position: { x: 310, y: 460 }, size: { width: 80, height: 80 } }],
+        ["far", { position: { x: 125, y: 610 }, size: { width: 80, height: 80 } }],
+      ]),
+    );
+    const sourceX = (id: string) => {
+      const start = routes.get(id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing source port: ${id}`);
+      return Number(start.at(1));
+    };
+
+    expect(sourceX("near")).toBeGreaterThan(150);
+    expect(sourceX("near")).toBeLessThan(sourceX("far"));
+  });
+
+  it("keeps 32px port gaps unless the face needs tighter spacing", () => {
+    const sourcePorts = (width: number) => {
+      const centerX = width / 2;
+      const projections = [0, 1, 2].map((index) => ({
+        id: `edge${index}`,
+        sourceId: "origin",
+        targetId: `target${index}`,
+      }));
+      const elements = new Map([
+        ["origin", { position: { x: 0, y: 0 }, size: { width, height: 200 } }],
+        ...projections.map(
+          ({ targetId }, index) =>
+            [
+              targetId,
+              { position: { x: centerX + 20 + index * 5, y: 420 + index * 100 }, size: { width: 80, height: 80 } },
+            ] as const,
+        ),
+      ]);
+      const routes = routeAggregateDependencyEdges(projections, elements);
+      return projections.map(({ id }) => {
+        const start = routes.get(id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+        if (!start) throw new Error(`Missing source port: ${id}`);
+        return Number(start.at(1));
+      });
+    };
+    const wide = sourcePorts(300);
+    const narrow = sourcePorts(100);
+
+    expect(wide.at(1)! - wide.at(0)!).toBe(32);
+    expect(wide.at(2)! - wide.at(1)!).toBe(32);
+    expect(narrow.at(1)! - narrow.at(0)!).toBeGreaterThan(0);
+    expect(narrow.at(1)! - narrow.at(0)!).toBeLessThan(32);
+    expect(narrow.at(2)! - narrow.at(1)!).toBeCloseTo(narrow.at(1)! - narrow.at(0)!);
+  });
+
+  it("orders tied destination ports by the approaching tracks", () => {
+    const elements = new Map([
+      ["client", { position: { x: 0, y: 0 }, size: { width: 300, height: 300 } }],
+      ["parts", { position: { x: 50, y: 50 }, size: { width: 200, height: 210 } }],
+      ["server", { position: { x: 30, y: 360 }, size: { width: 500, height: 350 } }],
+      ["features", { position: { x: 0, y: 900 }, size: { width: 300, height: 120 } }],
+    ]);
+    const routes = routeAggregateDependencyEdges(
+      [
+        { id: "client-features", sourceId: "client", targetId: "features" },
+        { id: "parts-features", sourceId: "parts", targetId: "features" },
+      ],
+      elements,
+    );
+    const targetX = (id: string) => {
+      const path = routes.get(id)?.path;
+      const last = path?.match(/ L ([-\d.]+) ([-\d.]+)$/);
+      if (!last) throw new Error(`Missing aggregate destination: ${id}`);
+      return Number(last.at(1));
+    };
+
+    expect(targetX("parts-features")).toBeLessThan(targetX("client-features"));
+  });
+
+  it("keeps focused features' off-center arrivals on their projected side", async () => {
+    const featuresId = "group:directory:src/features";
+    const { projections, routes, bounds } = await focusedAggregateRoutes(featuresId);
+    const targetX = (sourceId: string) => {
+      const projection = projections.find((edge) => edge.sourceId === sourceId && edge.targetId === featuresId);
+      if (!projection) throw new Error(`Missing features edge: ${sourceId}`);
+      const route = getOrThrow(routes.get(projection.id), `Missing features route: ${sourceId}`);
+      const endpoint = route.path.match(/ L ([-\d.]+) ([-\d.]+)$/);
+      if (!endpoint) throw new Error(`Missing features port: ${sourceId}`);
+      return Number(endpoint.at(1));
+    };
+
+    const features = getOrThrow(bounds.get(featuresId), "Missing features bounds");
+    const centerX = features.position.x + features.size.width / 2;
+    expect(targetX("group:directory:src/client/pages")).toBeLessThan(centerX);
+    expect(Math.abs(targetX("group:directory:src/client/parts") - centerX)).toBeLessThan(
+      Math.abs(targetX("group:directory:src/client") - centerX),
+    );
+  });
+
+  it("gives the two nearest incoming edges to focused shared distinct center-nearest ports", async () => {
+    const sharedId = "group:directory:src/shared";
+    const diagramId = "group:directory:src/features/diagram";
+    const layoutId = "group:directory:src/features/diagram/_layout";
+    const { projections, routes, bounds } = await focusedAggregateRoutes(sharedId);
+    const ports = projections
+      .filter(({ targetId }) => targetId === sharedId)
+      .map(({ id, sourceId }) => {
+        const endpoint = routes.get(id)?.path.match(/ L ([-\d.]+) ([-\d.]+)$/);
+        if (!endpoint) throw new Error(`Missing shared port: ${sourceId}`);
+        return { sourceId, x: Number(endpoint.at(1)) };
+      });
+    const shared = getOrThrow(bounds.get(sharedId), "Missing shared bounds");
+    const centerX = shared.position.x + shared.size.width / 2;
+    const nearest = ports.toSorted((a, b) => Math.abs(a.x - centerX) - Math.abs(b.x - centerX)).slice(0, 2);
+
+    expect(new Set(nearest.map(({ sourceId }) => sourceId))).toEqual(new Set([diagramId, layoutId]));
+    expect(nearest.at(0)?.x).not.toBe(nearest.at(1)?.x);
+  });
+
+  it("places the focused client's closer departure nearer its center", async () => {
+    const clientId = "group:directory:src/client";
+    const { projections, routes, bounds } = await focusedAggregateRoutes(clientId);
+    const sourceX = (targetId: string) => {
+      const projection = projections.find((edge) => edge.sourceId === clientId && edge.targetId === targetId);
+      if (!projection) throw new Error(`Missing client edge: ${targetId}`);
+      const route = getOrThrow(routes.get(projection.id), `Missing client route: ${targetId}`);
+      const start = route.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing client port: ${targetId}`);
+      return Number(start.at(1));
+    };
+
+    const client = getOrThrow(bounds.get(clientId), "Missing client bounds");
+    const centerX = client.position.x + client.size.width / 2;
+    const layoutPort = sourceX("group:directory:src/features/diagram/_layout");
+    expect(layoutPort).toBeLessThan(centerX);
+    expect(Math.abs(layoutPort - centerX)).toBeLessThan(
+      Math.abs(sourceX("group:directory:src/shared/react-ui") - centerX),
+    );
   });
 
   it("separates routes in a crowded corridor by narrowing their track spacing", () => {

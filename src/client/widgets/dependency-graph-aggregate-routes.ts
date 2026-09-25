@@ -81,22 +81,6 @@ function preferredCoordinate(rect: Rectangle, side: Side, other: Rectangle): num
   return Math.min(maximum, Math.max(minimum, preferred));
 }
 
-function spreadCoordinates(preferred: readonly number[], minimum: number, maximum: number): number[] {
-  if (preferred.length === 0) return [];
-  const gap = preferred.length === 1 ? 0 : Math.min(PORT_GAP, (maximum - minimum) / (preferred.length - 1));
-  const forward = preferred.map((value) => Math.min(maximum, Math.max(minimum, value)));
-  for (let index = 1; index < forward.length; index += 1) {
-    forward[index] = Math.max(forward[index]!, forward[index - 1]! + gap);
-  }
-  const forwardShift = Math.min(0, maximum - forward.at(-1)!);
-  const backward = preferred.map((value) => Math.min(maximum, Math.max(minimum, value)));
-  for (let index = backward.length - 2; index >= 0; index -= 1) {
-    backward[index] = Math.min(backward[index]!, backward.at(index + 1)! - gap);
-  }
-  const backwardShift = Math.max(0, minimum - backward.at(0)!);
-  return forward.map((value, index) => (value + forwardShift + backward[index]! + backwardShift) / 2);
-}
-
 function portPoint(rect: Rectangle, side: Side, coordinate: number): Point {
   switch (side) {
     case "top":
@@ -111,8 +95,11 @@ function portPoint(rect: Rectangle, side: Side, coordinate: number): Point {
 }
 
 function assignPorts(edges: RoutingEdge[]): void {
-  const faces = new Map<string, Array<{ edge: RoutingEdge; source: boolean; preferred: number }>>();
+  const faces = new Map<string, Array<{ edge: RoutingEdge; source: boolean; preferred: number; distance: number }>>();
   for (const edge of edges) {
+    const sourceCenter = center(edge.source);
+    const targetCenter = center(edge.target);
+    const distance = Math.hypot(sourceCenter.x - targetCenter.x, sourceCenter.y - targetCenter.y);
     for (const source of [true, false]) {
       const id = source ? edge.sourceId : edge.targetId;
       const side = source ? edge.sourceSide : edge.targetSide;
@@ -123,23 +110,42 @@ function assignPorts(edges: RoutingEdge[]): void {
       );
       const key = JSON.stringify([id, side]);
       const entries = faces.get(key) ?? [];
-      entries.push({ edge, source, preferred });
+      entries.push({ edge, source, preferred, distance });
       faces.set(key, entries);
     }
   }
   for (const entries of faces.values()) {
-    entries.sort((a, b) => a.preferred - b.preferred || a.edge.id.localeCompare(b.edge.id));
     const first = getOrThrow(entries.at(0), "Missing aggregate port face");
     const rect = first.source ? first.edge.source : first.edge.target;
     const side = first.source ? first.edge.sourceSide : first.edge.targetSide;
     const [minimum, maximum] = portRange(rect, side);
-    const coordinates = spreadCoordinates(
-      entries.map(({ preferred }) => preferred),
-      minimum,
-      maximum,
+    const faceAxis = side === "top" || side === "bottom" ? "x" : "y";
+    const faceCenter = center(rect)[faceAxis];
+    const negative = entries.filter(({ preferred }) => preferred < faceCenter - EPSILON);
+    const positive = entries.filter(({ preferred }) => preferred > faceCenter + EPSILON);
+    const centered = entries
+      .filter(({ preferred }) => Math.abs(preferred - faceCenter) <= EPSILON)
+      .sort((a, b) => a.distance - b.distance || a.edge.id.localeCompare(b.edge.id));
+    for (const entry of centered) (negative.length <= positive.length ? negative : positive).push(entry);
+
+    const rank = (a: (typeof entries)[number], b: (typeof entries)[number]) =>
+      a.distance - b.distance ||
+      Math.abs(a.preferred - faceCenter) - Math.abs(b.preferred - faceCenter) ||
+      a.edge.id.localeCompare(b.edge.id);
+    negative.sort(rank);
+    positive.sort(rank);
+    const gap = Math.min(
+      PORT_GAP,
+      negative.length ? (faceCenter - minimum) / (negative.length - 0.5) : PORT_GAP,
+      positive.length ? (maximum - faceCenter) / (positive.length - 0.5) : PORT_GAP,
     );
-    entries.forEach(({ edge, source }, index) => {
-      const point = portPoint(rect, side, getOrThrow(coordinates[index], "Missing aggregate port coordinate"));
+    negative.forEach(({ edge, source }, index) => {
+      const point = portPoint(rect, side, faceCenter - (index + 0.5) * gap);
+      if (source) edge.start = point;
+      else edge.end = point;
+    });
+    positive.forEach(({ edge, source }, index) => {
+      const point = portPoint(rect, side, faceCenter + (index + 0.5) * gap);
       if (source) edge.start = point;
       else edge.end = point;
     });
@@ -722,14 +728,11 @@ export function routeAggregateDependencyEdges(
     }
     route ??= getOrThrow(findPath(edge, grid, used, maxLength), "Missing aggregate route");
     const points = compact([edge.start, ...route, edge.end]);
-    for (let index = 1; index < points.length; index += 1) {
-      used.push(
-        segment(
-          getOrThrow(points[index - 1], "Missing aggregate segment start"),
-          getOrThrow(points[index], "Missing aggregate segment end"),
-        ),
-      );
-    }
+    used.push(
+      ...points
+        .slice(1)
+        .map((point, index) => segment(getOrThrow(points[index], "Missing aggregate segment start"), point)),
+    );
     routes.set(edge.id, { path: roundedPath(points), labelPosition: midpoint(points) });
   }
   return routes;
