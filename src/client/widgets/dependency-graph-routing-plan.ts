@@ -1,5 +1,6 @@
 import {
   center,
+  CLEARANCE,
   EPSILON,
   MIN_GAP,
   MinHeap,
@@ -139,7 +140,7 @@ function search(
       const portal = scene.portals[id]!;
       const nextCell = portal.a === current.cell ? portal.b : portal.a;
       if (query.blocked.has(nextCell) || nextCell === current.previous?.cell) continue;
-      const inset = Math.min(12, (portal.max - portal.min) / 4);
+      const inset = Math.min(CLEARANCE, (portal.max - portal.min) / 4);
       const resource: RoutingResource = {
         key: `p:${id}`,
         axis: portal.axis,

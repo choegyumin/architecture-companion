@@ -9,6 +9,7 @@ export type Projection = Readonly<{ id: string; sourceId: string; targetId: stri
 export type Segment = Readonly<{ from: Point; to: Point; axis: "horizontal" | "vertical" }>;
 
 export const EPSILON = 0.001;
+export const CLEARANCE = 64;
 export const TRACK_GAP = 32;
 export const MIN_GAP = 4;
 

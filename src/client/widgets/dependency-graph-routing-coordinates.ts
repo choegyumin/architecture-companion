@@ -1,5 +1,6 @@
 import type { EdgeRoute } from "./dependency-graph-edge-routes";
 import {
+  CLEARANCE,
   compact,
   crossesObstacle,
   EPSILON,
@@ -340,7 +341,7 @@ function connectorCost(
 }
 
 function tracks(min: number, max: number, preferred: number, coordinates: readonly number[]): number[] {
-  const inset = Math.min(MIN_GAP, (max - min) / 4);
+  const inset = Math.min(CLEARANCE, (max - min) / 4);
   const low = min + inset;
   const high = max - inset;
   const nearEnds = coordinates.slice(0, 2).flatMap((coordinate) => [coordinate - MIN_GAP, coordinate + MIN_GAP]);
