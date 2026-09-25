@@ -311,6 +311,30 @@ describe("dependency edge routes", () => {
     expect(sourceX("near")).toBeGreaterThan(sourceX("far"));
   });
 
+  it("assigns all centered ties to their shared approach side at both endpoints", () => {
+    const elements = new Map([
+      ["near", { position: { x: 0, y: 0 }, size: { width: 300, height: 100 } }],
+      ["far", { position: { x: 0, y: 160 }, size: { width: 300, height: 100 } }],
+      ["group", { position: { x: 0, y: 900 }, size: { width: 300, height: 100 } }],
+      ["blocker", { position: { x: -500, y: 400 }, size: { width: 720, height: 200 } }],
+    ]);
+    const incoming = routeAggregateDependencyEdges(
+      ["near", "far"].map((id) => ({ id, sourceId: id, targetId: "group" })),
+      elements,
+    );
+    const outgoing = routeAggregateDependencyEdges(
+      ["near", "far"].map((id) => ({ id, sourceId: "group", targetId: id })),
+      elements,
+    );
+    for (const id of ["near", "far"]) {
+      const arrival = incoming.get(id)?.path.match(/ L ([-\d.]+) ([-\d.]+)$/);
+      const departure = outgoing.get(id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!arrival || !departure) throw new Error(`Missing group port: ${id}`);
+      expect(Number(arrival.at(1))).toBeGreaterThan(150);
+      expect(Number(departure.at(1))).toBeGreaterThan(150);
+    }
+  });
+
   it("keeps 32px port gaps unless the face needs tighter spacing", () => {
     const sourcePorts = (width: number) => {
       const centerX = width / 2;

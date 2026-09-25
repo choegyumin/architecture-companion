@@ -100,12 +100,15 @@ function overlappingPairs(
   return overlaps;
 }
 
-async function focusedRoutes(focusId: string) {
+async function focusedRoutes(focusId?: string) {
   const diagram = parseDiagram(artifactJson);
   const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
   const layout = await layoutDependencyGraph(diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
-  const projections = projectDependencyEdges(diagram.graph, { type: "group", id: focusId }).filter(
+  const projections = projectDependencyEdges(
+    diagram.graph,
+    focusId ? { type: "group", id: focusId } : undefined,
+  ).filter(
     (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
       projection.type === "aggregate",
   );
@@ -172,6 +175,26 @@ describe("dependency aggregate routes on the checked-in design", () => {
     expect(routeOrdinateRange(pathFrom(featuresId)).at(-1)).toBeLessThanOrEqual(
       external.position.y + external.size.height,
     );
+  });
+
+  it("places root arrivals from the left before the central and right-hand arrivals", async () => {
+    const externalId = "group:external-packages";
+    const { pathFrom } = await focusedRoutes();
+    const incomingX = (sourceId: string) => {
+      const endpoint = pathFrom(sourceId, externalId).match(/ L ([-\d.]+) ([-\d.]+)$/);
+      if (!endpoint) throw new Error(`Missing external arrival port: ${sourceId}`);
+      return Number(endpoint.at(1));
+    };
+    const sharedX = incomingX("group:directory:src/shared");
+
+    expect(incomingX("group:directory:src/client")).toBeLessThan(sharedX);
+    for (const sourceId of [
+      "group:directory:src/features",
+      "group:directory:src/server",
+      "group:directory:src/plugins",
+    ]) {
+      expect(incomingX(sourceId)).toBeGreaterThan(sharedX);
+    }
   });
 
   it("keeps distinct aggregate edges on separate straight tracks", async () => {

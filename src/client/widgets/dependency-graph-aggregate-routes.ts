@@ -132,22 +132,33 @@ function assignPorts(edges: RoutingEdge[], preview?: ReadonlyMap<string, readonl
     const centered = entries
       .filter(({ preferred }) => Math.abs(preferred - faceCenter) <= EPSILON)
       .sort((a, b) => a.distance - b.distance || a.edge.id.localeCompare(b.edge.id));
-    const anchor = centered.at(0);
     const outbound = entries.every(({ source }) => source);
-    if (centered.length > 1 && outbound) needsPreview = true;
-    const reassignCentered = Boolean(preview && outbound && centered.length > 1);
+    if (centered.length > 1) needsPreview = true;
+    const reassignCentered = Boolean(preview && centered.length > 1);
+    const remaining: typeof centered = [];
     if (reassignCentered) {
-      for (const entry of centered.slice(1)) {
+      const ports = entries.map(({ edge, source }) => (source ? edge.start : edge.end)[faceAxis]);
+      const minimumPort = Math.min(...ports);
+      const maximumPort = Math.max(...ports);
+      for (const entry of centered) {
         const path = getOrThrow(preview?.get(entry.edge.id), "Missing provisional aggregate route");
-        const start = getOrThrow(path.at(0), "Missing provisional aggregate start");
-        const lateral = path.find((point) => Math.abs(point[faceAxis] - start[faceAxis]) > EPSILON);
-        if (lateral && lateral[faceAxis] < start[faceAxis]) negative.push(entry);
-        else if (lateral && lateral[faceAxis] > start[faceAxis]) positive.push(entry);
-        else (negative.length < positive.length ? negative : positive).push(entry);
+        const outward = entry.source ? path : path.toReversed();
+        const exit = outward.find(
+          (point) => point[faceAxis] < minimumPort - EPSILON || point[faceAxis] > maximumPort + EPSILON,
+        );
+        if (!exit) remaining.push(entry);
+        else if (exit[faceAxis] < minimumPort - EPSILON) negative.push(entry);
+        else positive.push(entry);
       }
+    } else {
+      remaining.push(...centered);
+    }
+    const anchor = remaining.at(0);
+    if (reassignCentered) {
+      for (const entry of remaining.slice(1)) (negative.length < positive.length ? negative : positive).push(entry);
       if (anchor) (negative.length < positive.length ? negative : positive).push(anchor);
     } else {
-      for (const entry of centered) (negative.length < positive.length ? negative : positive).push(entry);
+      for (const entry of remaining) (negative.length < positive.length ? negative : positive).push(entry);
     }
 
     const rank = (a: (typeof entries)[number], b: (typeof entries)[number]) =>
@@ -156,7 +167,7 @@ function assignPorts(edges: RoutingEdge[], preview?: ReadonlyMap<string, readonl
       a.edge.id.localeCompare(b.edge.id);
     negative.sort(rank);
     positive.sort(rank);
-    const neutral = reassignCentered && anchor ? [anchor] : centered;
+    const neutral = reassignCentered ? (anchor ? [anchor] : []) : centered;
     if (entries.length > 1 && outbound) {
       const destinations = entries.map(({ edge }) => faceMidpoint(edge.target, edge.targetSide)[faceAxis]);
       // Keep the center-first order when destinations spread beyond the available face.
