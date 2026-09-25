@@ -94,12 +94,17 @@ function portPoint(rect: Rectangle, side: Side, coordinate: number): Point {
   }
 }
 
+function faceMidpoint(rect: Rectangle, side: Side): Point {
+  const midpoint = center(rect);
+  return portPoint(rect, side, side === "top" || side === "bottom" ? midpoint.x : midpoint.y);
+}
+
 function assignPorts(edges: RoutingEdge[]): void {
   const faces = new Map<string, Array<{ edge: RoutingEdge; source: boolean; preferred: number; distance: number }>>();
   for (const edge of edges) {
-    const sourceCenter = center(edge.source);
-    const targetCenter = center(edge.target);
-    const distance = Math.hypot(sourceCenter.x - targetCenter.x, sourceCenter.y - targetCenter.y);
+    const sourceFace = faceMidpoint(edge.source, edge.sourceSide);
+    const targetFace = faceMidpoint(edge.target, edge.targetSide);
+    const distance = Math.hypot(sourceFace.x - targetFace.x, sourceFace.y - targetFace.y);
     for (const source of [true, false]) {
       const id = source ? edge.sourceId : edge.targetId;
       const side = source ? edge.sourceSide : edge.targetSide;
@@ -126,7 +131,7 @@ function assignPorts(edges: RoutingEdge[]): void {
     const centered = entries
       .filter(({ preferred }) => Math.abs(preferred - faceCenter) <= EPSILON)
       .sort((a, b) => a.distance - b.distance || a.edge.id.localeCompare(b.edge.id));
-    for (const entry of centered) (negative.length <= positive.length ? negative : positive).push(entry);
+    for (const entry of centered) (negative.length < positive.length ? negative : positive).push(entry);
 
     const rank = (a: (typeof entries)[number], b: (typeof entries)[number]) =>
       a.distance - b.distance ||

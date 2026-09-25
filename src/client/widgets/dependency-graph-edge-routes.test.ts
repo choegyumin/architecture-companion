@@ -216,7 +216,7 @@ describe("dependency edge routes", () => {
     expect(serverY.every((y) => y > 0 && y < 400)).toBe(true);
   });
 
-  it("gives the shortest center-to-center edges the closest ports on each projected side", () => {
+  it("gives the shortest face-to-face edges the closest ports on each projected side", () => {
     const origin = { position: { x: 0, y: 0 }, size: { width: 300, height: 200 } };
     const elements = new Map([
       ["origin", origin],
@@ -245,7 +245,51 @@ describe("dependency edge routes", () => {
     expect(sourceX("near-right") - 150).toBeLessThan(sourceX("far-right") - 150);
   });
 
-  it("ranks shared-side ports by Euclidean rather than Manhattan center distance", () => {
+  it("uses facing side midpoints instead of group centers to rank incoming ports", () => {
+    const routes = routeAggregateDependencyEdges(
+      [
+        { id: "center-near", sourceId: "center-near", targetId: "target" },
+        { id: "face-near", sourceId: "face-near", targetId: "target" },
+      ],
+      new Map([
+        ["target", { position: { x: 0, y: 800 }, size: { width: 300, height: 100 } }],
+        ["center-near", { position: { x: -240, y: 450 }, size: { width: 80, height: 80 } }],
+        ["face-near", { position: { x: -125, y: 0 }, size: { width: 500, height: 600 } }],
+      ]),
+    );
+    const targetX = (id: string) => {
+      const endpoint = routes.get(id)?.path.match(/ L ([-\d.]+) ([-\d.]+)$/);
+      if (!endpoint) throw new Error(`Missing target port: ${id}`);
+      return Number(endpoint.at(1));
+    };
+
+    expect(targetX("face-near")).toBeLessThan(150);
+    expect(targetX("face-near")).toBeGreaterThan(targetX("center-near"));
+  });
+
+  it("uses the destination side midpoint when ranking departure ports", () => {
+    const routes = routeAggregateDependencyEdges(
+      [
+        { id: "center-near", sourceId: "origin", targetId: "center-near" },
+        { id: "face-near", sourceId: "origin", targetId: "face-near" },
+      ],
+      new Map([
+        ["origin", { position: { x: 0, y: 0 }, size: { width: 300, height: 200 } }],
+        ["center-near", { position: { x: 360, y: 450 }, size: { width: 80, height: 80 } }],
+        ["face-near", { position: { x: 125, y: 400 }, size: { width: 80, height: 600 } }],
+      ]),
+    );
+    const sourceX = (id: string) => {
+      const start = routes.get(id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing source port: ${id}`);
+      return Number(start.at(1));
+    };
+
+    expect(sourceX("face-near")).toBeGreaterThan(150);
+    expect(sourceX("face-near")).toBeLessThan(sourceX("center-near"));
+  });
+
+  it("ranks shared-side ports by Euclidean rather than Manhattan face-midpoint distance", () => {
     const routes = routeAggregateDependencyEdges(
       [
         { id: "far", sourceId: "origin", targetId: "far" },
@@ -326,7 +370,7 @@ describe("dependency edge routes", () => {
     expect(targetX("parts-features")).toBeLessThan(targetX("client-features"));
   });
 
-  it("keeps focused features' off-center arrivals on their projected side", async () => {
+  it("prioritizes focused features' arrivals by facing-side distance", async () => {
     const featuresId = "group:directory:src/features";
     const { projections, routes, bounds } = await focusedAggregateRoutes(featuresId);
     const targetX = (sourceId: string) => {
@@ -341,8 +385,8 @@ describe("dependency edge routes", () => {
     const features = getOrThrow(bounds.get(featuresId), "Missing features bounds");
     const centerX = features.position.x + features.size.width / 2;
     expect(targetX("group:directory:src/client/pages")).toBeLessThan(centerX);
-    expect(Math.abs(targetX("group:directory:src/client/parts") - centerX)).toBeLessThan(
-      Math.abs(targetX("group:directory:src/client") - centerX),
+    expect(Math.abs(targetX("group:directory:src/client") - centerX)).toBeLessThan(
+      Math.abs(targetX("group:directory:src/client/parts") - centerX),
     );
   });
 
