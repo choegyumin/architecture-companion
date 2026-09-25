@@ -21,6 +21,7 @@ type Connection = Readonly<{ point: number; length: number; axis: Axis }>;
 
 const CLEARANCE = 64;
 const TRACK_GAP = 32;
+const MIN_TRACK_GAP = 4;
 const PORT_PADDING = 48;
 const PORT_GAP = 32;
 const BEND_COST = 256;
@@ -158,21 +159,21 @@ function gapAlongSide(point: Point, side: Side, rect: Rectangle): number {
   }
 }
 
-function outside(point: Point, side: Side, obstacles: readonly Rectangle[]): Point {
-  let clearance = CLEARANCE;
+function outside(point: Point, side: Side, obstacles: readonly Rectangle[], clearance = CLEARANCE): Point {
+  let distance = clearance;
   for (const rect of obstacles) {
     const gap = gapAlongSide(point, side, rect);
-    if (gap > 0) clearance = Math.min(clearance, gap / 2);
+    if (gap > 0) distance = Math.min(distance, gap / 2);
   }
   switch (side) {
     case "top":
-      return { x: point.x, y: point.y - clearance };
+      return { x: point.x, y: point.y - distance };
     case "bottom":
-      return { x: point.x, y: point.y + clearance };
+      return { x: point.x, y: point.y + distance };
     case "left":
-      return { x: point.x - clearance, y: point.y };
+      return { x: point.x - distance, y: point.y };
     case "right":
-      return { x: point.x + clearance, y: point.y };
+      return { x: point.x + distance, y: point.y };
   }
 }
 
@@ -239,11 +240,11 @@ function obstacleCandidates(
   );
 }
 
-function obstaclesFor(candidates: readonly Rectangle[], start: Point, end: Point): Rectangle[] {
+function obstaclesFor(candidates: readonly Rectangle[], start: Point, end: Point, clearance = CLEARANCE): Rectangle[] {
   return candidates
     .filter((rect) => !interior(start, rect) && !interior(end, rect))
     .map((rect) =>
-      inflate(rect, Math.min(CLEARANCE, distanceToRectangle(start, rect), distanceToRectangle(end, rect))),
+      inflate(rect, Math.min(clearance, distanceToRectangle(start, rect), distanceToRectangle(end, rect))),
     );
 }
 
@@ -268,15 +269,32 @@ function crossesObstacle(from: Point, to: Point, axis: Axis, rect: Rectangle): b
   );
 }
 
-function routingGrid(start: Point, end: Point, obstacles: readonly Rectangle[]) {
+function routingGrid(
+  start: Point,
+  end: Point,
+  obstacles: readonly Rectangle[],
+  used: readonly Segment[] = [],
+  gap = TRACK_GAP,
+) {
   const x = new Set([start.x, end.x]);
   const y = new Set([start.y, end.y]);
   for (const rect of obstacles) {
     for (const boundary of [rect.left, rect.right]) {
-      for (const offset of [0, TRACK_GAP, TRACK_GAP * 2]) x.add(boundary + (boundary === rect.left ? -offset : offset));
+      for (const offset of [0, gap, gap * 2]) x.add(boundary + (boundary === rect.left ? -offset : offset));
     }
     for (const boundary of [rect.top, rect.bottom]) {
-      for (const offset of [0, TRACK_GAP, TRACK_GAP * 2]) y.add(boundary + (boundary === rect.top ? -offset : offset));
+      for (const offset of [0, gap, gap * 2]) y.add(boundary + (boundary === rect.top ? -offset : offset));
+    }
+  }
+  for (const prior of used) {
+    if (prior.axis === "horizontal") {
+      for (const offset of [-gap, gap]) y.add(prior.from.y + offset);
+      x.add(prior.from.x);
+      x.add(prior.to.x);
+    } else {
+      for (const offset of [-gap, gap]) x.add(prior.from.x + offset);
+      y.add(prior.from.y);
+      y.add(prior.to.y);
     }
   }
   const xs = [...x].sort((a, b) => a - b);
@@ -447,12 +465,32 @@ type SearchState = {
   previous?: SearchState;
 };
 
+function sharesTrack(candidate: Segment, used: readonly Segment[], gap: number): boolean {
+  const fixed = candidate.axis === "horizontal" ? "y" : "x";
+  const variable = candidate.axis === "horizontal" ? "x" : "y";
+  return used.some(
+    (prior) =>
+      prior.axis === candidate.axis &&
+      Math.abs(candidate.from[fixed] - prior.from[fixed]) < gap - EPSILON &&
+      Math.min(
+        Math.max(candidate.from[variable], candidate.to[variable]),
+        Math.max(prior.from[variable], prior.to[variable]),
+      ) -
+        Math.max(
+          Math.min(candidate.from[variable], candidate.to[variable]),
+          Math.min(prior.from[variable], prior.to[variable]),
+        ) >
+        EPSILON,
+  );
+}
+
 function findPath(
   edge: RoutingEdge,
   grid: ReturnType<typeof routingGrid>,
   used: readonly Segment[],
   maxLength = Infinity,
-): Point[] {
+  minimumTrackGap = 0,
+): Point[] | undefined {
   const start = getOrThrow(grid.points[grid.startIndex], "Missing aggregate grid start");
   const end = getOrThrow(grid.points[grid.endIndex], "Missing aggregate grid end");
   const constrained = Number.isFinite(maxLength);
@@ -489,6 +527,15 @@ function findPath(
       const length = current.length + neighbor.length;
       const point = getOrThrow(grid.points[neighbor.point], "Missing aggregate route point");
       if (length + Math.abs(point.x - end.x) + Math.abs(point.y - end.y) > maxLength + EPSILON) continue;
+      if (
+        minimumTrackGap > 0 &&
+        sharesTrack(
+          segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point),
+          used,
+          minimumTrackGap,
+        )
+      )
+        continue;
       const cacheKey = `${Math.min(current.point, neighbor.point)}:${Math.max(current.point, neighbor.point)}`;
       let traffic = congestionCache.get(cacheKey);
       if (!traffic) {
@@ -530,6 +577,7 @@ function findPath(
   }
 
   if (!final) {
+    if (minimumTrackGap > 0) return undefined;
     const bend = axisOf(edge.sourceSide) === "horizontal" ? { x: end.x, y: start.y } : { x: start.x, y: end.y };
     return [start, bend, end];
   }
@@ -641,10 +689,18 @@ export function routeAggregateDependencyEdges(
     const start = outside(edge.start, edge.sourceSide, candidates);
     const end = outside(edge.end, edge.targetSide, candidates);
     const grid = routingGrid(start, end, obstaclesFor(candidates, start, end));
-    const baseline = findPath(edge, grid, []);
+    const baseline = getOrThrow(findPath(edge, grid, []), "Missing aggregate baseline route");
     const baselineLength = routeLength(baseline);
     const maxLength = baselineLength + Math.max(MIN_DETOUR, baselineLength * DETOUR_RATIO);
-    const route = used.length ? findPath(edge, grid, used, maxLength) : baseline;
+    let route: Point[] | undefined = used.length ? undefined : baseline;
+    for (let gap = TRACK_GAP; !route && gap >= MIN_TRACK_GAP; gap /= 2) {
+      const clearance = Math.min(CLEARANCE, gap * 2);
+      const candidateStart = outside(edge.start, edge.sourceSide, candidates, clearance);
+      const candidateEnd = outside(edge.end, edge.targetSide, candidates, clearance);
+      const obstacles = obstaclesFor(candidates, candidateStart, candidateEnd, clearance);
+      route = findPath(edge, routingGrid(candidateStart, candidateEnd, obstacles, used, gap), used, maxLength, gap);
+    }
+    route ??= getOrThrow(findPath(edge, grid, used, maxLength), "Missing aggregate route");
     const points = compact([edge.start, ...route, edge.end]);
     for (let index = 1; index < points.length; index += 1) {
       used.push(

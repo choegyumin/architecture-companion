@@ -34,17 +34,17 @@ function straightSegments(path: string) {
   return segments;
 }
 
-function overlappingStraightLength(first: string, second: string) {
+function overlappingStraightLength(first: string, second: string, distance = 8) {
   let overlap = 0;
   for (const [ax, ay, bx, by] of straightSegments(first)) {
     for (const [cx, cy, dx, dy] of straightSegments(second)) {
-      if (ax === bx && cx === dx && Math.abs(ax - cx) < 8) {
+      if (ax === bx && cx === dx && Math.abs(ax - cx) < distance) {
         overlap += Math.max(
           0,
           Math.min(Math.max(ay, by), Math.max(cy, dy)) - Math.max(Math.min(ay, by), Math.min(cy, dy)),
         );
       }
-      if (ay === by && cy === dy && Math.abs(ay - cy) < 8) {
+      if (ay === by && cy === dy && Math.abs(ay - cy) < distance) {
         overlap += Math.max(
           0,
           Math.min(Math.max(ax, bx), Math.max(cx, dx)) - Math.max(Math.min(ax, bx), Math.min(cx, dx)),
@@ -173,6 +173,87 @@ describe("dependency edge routes", () => {
 
     expect(new Set(serverY).size).toBe(6);
     expect(serverY.every((y) => y > 0 && y < 400)).toBe(true);
+  });
+
+  it("separates routes in a crowded corridor by narrowing their track spacing", () => {
+    const origin = { position: { x: 0, y: 0 }, size: { width: 600, height: 100 } };
+    const middle = { position: { x: 150, y: 292 }, size: { width: 700, height: 100 } };
+    const destinations = Array.from(
+      { length: 8 },
+      (_, index) =>
+        [
+          `destination${index}`,
+          { position: { x: 1000 + index * 120, y: 600 }, size: { width: 80, height: 80 } },
+        ] as const,
+    );
+    const projections = destinations.map(([id]) => ({ id, sourceId: "origin", targetId: id }));
+    const routes = routeAggregateDependencyEdges(
+      projections,
+      new Map([["origin", origin] as const, ["middle", middle] as const, ...destinations]),
+    );
+    const paths = projections.map(({ id }) => {
+      const route = routes.get(id);
+      if (!route) throw new Error(`Missing route: ${id}`);
+      return route.path;
+    });
+    const overlaps = paths.flatMap((path, index) =>
+      paths.slice(index + 1).map((other) => overlappingStraightLength(path, other, 2.1)),
+    );
+    const corridorTracks = paths.flatMap((path) =>
+      straightSegments(path).flatMap(([fromX, fromY, toX, toY]) =>
+        fromY === toY && fromY > 100 && fromY < 292 && Math.min(fromX, toX) < 600 && Math.max(fromX, toX) > 600
+          ? [fromY]
+          : [],
+      ),
+    );
+
+    const orderedTracks = corridorTracks.toSorted((a, b) => a - b);
+    const smallestGap = Math.min(...orderedTracks.slice(1).map((track, index) => track - orderedTracks[index]!));
+    expect(overlaps.every((length) => length === 0)).toBe(true);
+    expect(corridorTracks.length).toBe(8);
+    expect(smallestGap).toBeGreaterThanOrEqual(2.1);
+    expect(smallestGap).toBeLessThan(32);
+  });
+
+  it("separates vertical tracks in a crowded passage", () => {
+    const origin = { position: { x: 0, y: 0 }, size: { width: 100, height: 600 } };
+    const middle = { position: { x: 292, y: 150 }, size: { width: 100, height: 700 } };
+    const destinations = Array.from(
+      { length: 8 },
+      (_, index) =>
+        [
+          `destination${index}`,
+          { position: { x: 600, y: 1000 + index * 120 }, size: { width: 80, height: 80 } },
+        ] as const,
+    );
+    const projections = destinations.map(([id]) => ({ id, sourceId: "origin", targetId: id }));
+    const routes = routeAggregateDependencyEdges(
+      projections,
+      new Map([["origin", origin] as const, ["middle", middle] as const, ...destinations]),
+    );
+    const paths = projections.map(({ id }) => {
+      const route = routes.get(id);
+      if (!route) throw new Error(`Missing route: ${id}`);
+      return route.path;
+    });
+    const corridorTracks = paths.flatMap((path) =>
+      straightSegments(path).flatMap(([fromX, fromY, toX, toY]) =>
+        fromX === toX && fromX > 100 && fromX < 292 && Math.min(fromY, toY) < 700 && Math.max(fromY, toY) > 700
+          ? [fromX]
+          : [],
+      ),
+    );
+    const orderedTracks = corridorTracks.toSorted((a, b) => a - b);
+    const smallestGap = Math.min(...orderedTracks.slice(1).map((track, index) => track - orderedTracks[index]!));
+
+    expect(
+      paths
+        .flatMap((path, index) => paths.slice(index + 1).map((other) => overlappingStraightLength(path, other, 2.1)))
+        .every((length) => length === 0),
+    ).toBe(true);
+    expect(corridorTracks.length).toBe(8);
+    expect(smallestGap).toBeGreaterThanOrEqual(2.1);
+    expect(smallestGap).toBeLessThan(32);
   });
 
   it("keeps ports and routes stable when projections arrive in another order", () => {
