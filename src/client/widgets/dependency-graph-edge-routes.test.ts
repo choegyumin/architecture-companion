@@ -267,7 +267,7 @@ describe("dependency edge routes", () => {
     expect(targetX("face-near")).toBeGreaterThan(targetX("center-near"));
   });
 
-  it("uses the destination side midpoint when ranking departure ports", () => {
+  it("uses the destination side midpoint when ranking outward departure ports", () => {
     const routes = routeAggregateDependencyEdges(
       [
         { id: "center-near", sourceId: "origin", targetId: "center-near" },
@@ -275,7 +275,7 @@ describe("dependency edge routes", () => {
       ],
       new Map([
         ["origin", { position: { x: 0, y: 0 }, size: { width: 300, height: 200 } }],
-        ["center-near", { position: { x: 360, y: 450 }, size: { width: 80, height: 80 } }],
+        ["center-near", { position: { x: 310, y: 450 }, size: { width: 80, height: 80 } }],
         ["face-near", { position: { x: 125, y: 400 }, size: { width: 80, height: 600 } }],
       ]),
     );
@@ -286,10 +286,10 @@ describe("dependency edge routes", () => {
     };
 
     expect(sourceX("face-near")).toBeGreaterThan(150);
-    expect(sourceX("face-near")).toBeLessThan(sourceX("center-near"));
+    expect(sourceX("face-near")).toBeGreaterThan(sourceX("center-near"));
   });
 
-  it("ranks shared-side ports by Euclidean rather than Manhattan face-midpoint distance", () => {
+  it("ranks shared-side outbound ports by Euclidean rather than Manhattan face-midpoint distance", () => {
     const routes = routeAggregateDependencyEdges(
       [
         { id: "far", sourceId: "origin", targetId: "far" },
@@ -308,7 +308,7 @@ describe("dependency edge routes", () => {
     };
 
     expect(sourceX("near")).toBeGreaterThan(150);
-    expect(sourceX("near")).toBeLessThan(sourceX("far"));
+    expect(sourceX("near")).toBeGreaterThan(sourceX("far"));
   });
 
   it("keeps 32px port gaps unless the face needs tighter spacing", () => {
@@ -339,11 +339,11 @@ describe("dependency edge routes", () => {
     const wide = sourcePorts(300);
     const narrow = sourcePorts(100);
 
-    expect(wide.at(1)! - wide.at(0)!).toBe(32);
-    expect(wide.at(2)! - wide.at(1)!).toBe(32);
-    expect(narrow.at(1)! - narrow.at(0)!).toBeGreaterThan(0);
-    expect(narrow.at(1)! - narrow.at(0)!).toBeLessThan(32);
-    expect(narrow.at(2)! - narrow.at(1)!).toBeCloseTo(narrow.at(1)! - narrow.at(0)!);
+    expect(Math.abs(wide.at(1)! - wide.at(0)!)).toBe(32);
+    expect(Math.abs(wide.at(2)! - wide.at(1)!)).toBe(32);
+    expect(Math.abs(narrow.at(1)! - narrow.at(0)!)).toBeGreaterThan(0);
+    expect(Math.abs(narrow.at(1)! - narrow.at(0)!)).toBeLessThan(32);
+    expect(Math.abs(narrow.at(2)! - narrow.at(1)!)).toBeCloseTo(Math.abs(narrow.at(1)! - narrow.at(0)!));
   });
 
   it("orders tied destination ports by the approaching tracks", () => {
@@ -408,6 +408,36 @@ describe("dependency edge routes", () => {
 
     expect(new Set(nearest.map(({ sourceId }) => sourceId))).toEqual(new Set([diagramId, layoutId]));
     expect(nearest.at(0)?.x).not.toBe(nearest.at(1)?.x);
+  });
+
+  it("places one-sided cli and plugins departures from the outside inward", async () => {
+    const cases = [
+      {
+        sourceId: "group:directory:src/cli",
+        targets: [
+          "group:directory:src/server",
+          "group:directory:src/features/diagram-generator",
+          "group:directory:src/shared/node",
+        ],
+        side: "right",
+      },
+      {
+        sourceId: "group:directory:src/plugins",
+        targets: ["group:directory:src/features/diagram", "group:directory:src/shared/node", "group:external-packages"],
+        side: "left",
+      },
+    ] as const;
+    for (const { sourceId, targets, side } of cases) {
+      const { projections, routes } = await focusedAggregateRoutes(sourceId);
+      const ports = targets.map((targetId) => {
+        const projection = projections.find((edge) => edge.sourceId === sourceId && edge.targetId === targetId);
+        if (!projection) throw new Error(`Missing outgoing edge: ${sourceId} → ${targetId}`);
+        const start = routes.get(projection.id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+        if (!start) throw new Error(`Missing outgoing port: ${sourceId} → ${targetId}`);
+        return Number(start.at(1));
+      });
+      expect(ports).toEqual(ports.toSorted((a, b) => (side === "right" ? b - a : a - b)));
+    }
   });
 
   it("places the focused client's closer departure nearer its center", async () => {

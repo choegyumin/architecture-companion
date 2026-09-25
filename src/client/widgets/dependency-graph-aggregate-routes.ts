@@ -139,6 +139,18 @@ function assignPorts(edges: RoutingEdge[]): void {
       a.edge.id.localeCompare(b.edge.id);
     negative.sort(rank);
     positive.sort(rank);
+    if (
+      entries.length > 1 &&
+      entries.every(({ source }) => source) &&
+      (negative.length === entries.length || positive.length === entries.length)
+    ) {
+      const destinations = entries.map(({ edge }) => faceMidpoint(edge.target, edge.targetSide)[faceAxis]);
+      // Keep the center-first order when destinations spread beyond the available face.
+      if (Math.max(...destinations) - Math.min(...destinations) <= maximum - minimum) {
+        negative.reverse();
+        positive.reverse();
+      }
+    }
     const gap = Math.min(
       PORT_GAP,
       negative.length ? (faceCenter - minimum) / (negative.length - 0.5) : PORT_GAP,
