@@ -457,6 +457,51 @@ function interaction(first: Segment, second: Segment): Readonly<{ point?: Point;
   return { point, overlap: 0, crossing };
 }
 
+type SegmentIndex = Readonly<{ horizontal: readonly Segment[]; vertical: readonly Segment[] }>;
+
+function indexSegments(used: readonly Segment[]): SegmentIndex {
+  return {
+    horizontal: used.filter((segment) => segment.axis === "horizontal").sort((a, b) => a.from.y - b.from.y),
+    vertical: used.filter((segment) => segment.axis === "vertical").sort((a, b) => a.from.x - b.from.x),
+  };
+}
+
+function lowerBound(segments: readonly Segment[], coordinate: "x" | "y", value: number): number {
+  let low = 0;
+  let high = segments.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (segments[middle]!.from[coordinate] < value) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function nearbySegments(candidate: Segment, index: SegmentIndex): Segment[] {
+  const fixed = candidate.axis === "horizontal" ? "y" : "x";
+  const variable = candidate.axis === "horizontal" ? "x" : "y";
+  const parallel = candidate.axis === "horizontal" ? index.horizontal : index.vertical;
+  const perpendicular = candidate.axis === "horizontal" ? index.vertical : index.horizontal;
+  const minimum = Math.min(candidate.from[variable], candidate.to[variable]);
+  const maximum = Math.max(candidate.from[variable], candidate.to[variable]);
+  const nearby: Segment[] = [];
+  for (let at = lowerBound(parallel, fixed, candidate.from[fixed] - EPSILON); at < parallel.length; at += 1) {
+    const prior = parallel[at]!;
+    if (prior.from[fixed] > candidate.from[fixed] + EPSILON) break;
+    if (Math.min(prior.from[variable], prior.to[variable]) > maximum + EPSILON) continue;
+    if (Math.max(prior.from[variable], prior.to[variable]) < minimum - EPSILON) continue;
+    nearby.push(prior);
+  }
+  for (let at = lowerBound(perpendicular, variable, minimum - EPSILON); at < perpendicular.length; at += 1) {
+    const prior = perpendicular[at]!;
+    if (prior.from[variable] > maximum + EPSILON) break;
+    if (Math.min(prior.from[fixed], prior.to[fixed]) > candidate.from[fixed] + EPSILON) continue;
+    if (Math.max(prior.from[fixed], prior.to[fixed]) < candidate.from[fixed] - EPSILON) continue;
+    nearby.push(prior);
+  }
+  return nearby;
+}
+
 export function measureAggregateSegmentCongestion(
   candidate: Segment,
   used: readonly Segment[],
@@ -581,6 +626,7 @@ function findPath(
   maxLength = Infinity,
   minimumTrackGap = 0,
   avoidVertexCrossings = true,
+  index?: SegmentIndex,
 ): Point[] | undefined {
   const start = getOrThrow(grid.points[grid.startIndex], "Missing aggregate grid start");
   const end = getOrThrow(grid.points[grid.endIndex], "Missing aggregate grid end");
@@ -627,7 +673,7 @@ function findPath(
       const cacheKey = `${Math.min(current.point, neighbor.point)}:${Math.max(current.point, neighbor.point)}`;
       let traffic = congestionCache.get(cacheKey);
       if (!traffic) {
-        traffic = measureAggregateSegmentCongestion(candidate, used);
+        traffic = measureAggregateSegmentCongestion(candidate, index ? nearbySegments(candidate, index) : used);
         congestionCache.set(cacheKey, traffic);
       }
       const overlapping = traffic.overlapLength > EPSILON;
@@ -832,6 +878,7 @@ function routeAssignedEdges(
     const baseline = getOrThrow(findPath(edge, grid, []), "Missing aggregate baseline route");
     const baselineLength = routeLength(baseline);
     const maxLength = baselineLength + Math.max(MIN_DETOUR, baselineLength * DETOUR_RATIO);
+    const segmentIndex = indexSegments(used);
     const direct = compact([edge.start, ...baseline, edge.end]);
     const directSegments = direct
       .slice(1)
@@ -839,7 +886,7 @@ function routeAssignedEdges(
     const clear = directSegments.every(
       (candidate) =>
         !used.some((prior) => sharesTrack(candidate, prior, TRACK_GAP)) &&
-        measureAggregateSegmentCongestion(candidate, used).crossings === 0,
+        measureAggregateSegmentCongestion(candidate, nearbySegments(candidate, segmentIndex)).crossings === 0,
     );
     const relevant = used.filter((prior) =>
       directSegments.some((candidate) => sharesTrack(candidate, prior, TRACK_GAP)),
@@ -864,6 +911,7 @@ function routeAssignedEdges(
           maxLength,
           gap,
           !preview,
+          segmentIndex,
         );
         if (!alternative) continue;
         if (preview) {
@@ -873,10 +921,8 @@ function routeAssignedEdges(
         const points = compact([edge.start, ...alternative, edge.end]);
         const measured = points.slice(1).reduce(
           (sum, point, index) => {
-            const traffic = measureAggregateSegmentCongestion(
-              segment(getOrThrow(points[index], "Missing aggregate segment start"), point),
-              used,
-            );
+            const candidate = segment(getOrThrow(points[index], "Missing aggregate segment start"), point);
+            const traffic = measureAggregateSegmentCongestion(candidate, nearbySegments(candidate, segmentIndex));
             return {
               crossings: sum.crossings + traffic.crossings,
               overlapLength: sum.overlapLength + traffic.overlapLength,
@@ -896,7 +942,7 @@ function routeAssignedEdges(
       }
       if (route && (preview || (congestion.crossings === 0 && congestion.overlapLength <= EPSILON))) break;
     }
-    route ??= getOrThrow(findPath(edge, grid, used, maxLength, 0, !preview), "Missing aggregate route");
+    route ??= getOrThrow(findPath(edge, grid, used, maxLength, 0, !preview, segmentIndex), "Missing aggregate route");
     const points = compact([edge.start, ...route, edge.end]);
     used.push(
       ...points
