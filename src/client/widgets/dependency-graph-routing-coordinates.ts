@@ -27,17 +27,20 @@ type Slot = Readonly<{ edgeId: string; resource: RoutingResource; preferred: num
 type Separation = Readonly<{ before: number; after: number; preferred: number }>;
 type Connection = Readonly<{
   edgeId: string;
+  cell: number;
   index: number;
   from: Point;
   to: Point;
   entry: RoutingResource;
   exit: RoutingResource;
 }>;
-type ConnectionPath = Readonly<{ points: readonly Point[]; cost: number }>;
+type ConnectionPath = Readonly<{ points: readonly Point[]; cost: number; compression: number; gap: number }>;
+type PlacedSegment = Segment & Readonly<{ edgeId: string; cell: number; gap: number }>;
 
 const MAX_ALIGNMENT_RETRIES = 128;
 const MAX_CELL_AXIS_COORDINATES = 20;
 const MAX_CELL_EXPANSIONS = 1_024;
+const MAX_CELL_ATTEMPT_WORK = 32_768;
 const CROSSING_COST = 4_000;
 const BEND_COST = 128;
 const roundingClearance = new WeakMap<readonly Point[], number>();
@@ -63,7 +66,6 @@ function solveSlots(
   slots: readonly Slot[],
   separations: readonly Separation[],
   parent: readonly number[],
-  preferred: boolean,
   budget: WorkBudget,
 ): number[] | undefined {
   if (!spend(budget, slots.length + separations.length)) return;
@@ -98,7 +100,7 @@ function solveSlots(
     const before = root[separation.before]!;
     const after = root[separation.after]!;
     if (before === after) return;
-    const gap = preferred ? separation.preferred : MIN_GAP;
+    const gap = separation.preferred;
     const edges = outgoing.get(before) ?? new Map<number, number>();
     if (!edges.has(after)) indegree.set(after, indegree.get(after)! + 1);
     edges.set(after, Math.max(edges.get(after) ?? 0, gap));
@@ -222,25 +224,23 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
     }
   };
   for (const run of alignments) mergeRun(together, run);
-  let values =
-    solveSlots(slots, separations, together, true, budget) ?? solveSlots(slots, separations, together, false, budget);
+  let values = solveSlots(slots, separations, together, budget);
   if (!values && !budget.exhausted) {
     let parent = separate;
-    values = solveSlots(slots, separations, parent, false, budget);
+    values = solveSlots(slots, separations, parent, budget);
     if (!values) return;
-    // Only conflicting runs lose alignment; unrelated slab boundaries remain invisible.
+    // Release conflicting alignments instead of squeezing every corridor to the minimum gap.
     for (const run of alignments.slice(0, MAX_ALIGNMENT_RETRIES)) {
       if (!spend(budget, run.length)) return;
       const trial = [...parent];
       mergeRun(trial, run);
-      const solved = solveSlots(slots, separations, trial, false, budget);
+      const solved = solveSlots(slots, separations, trial, budget);
       if (solved) {
         parent = trial;
         values = solved;
       }
       if (budget.exhausted) return;
     }
-    values = solveSlots(slots, separations, parent, true, budget) ?? values;
   }
   if (!values) return;
   return new Map([...routes].map(([id, route]) => [id, route.map((index) => values[index]!)]));
@@ -253,7 +253,8 @@ function within(value: number, from: number, to: number): boolean {
 function interaction(
   first: Segment,
   second: Segment,
-): Readonly<{ valid: boolean; crossing: number; clearance: number }> {
+  gap = MIN_GAP,
+): Readonly<{ valid: boolean; crossing: number; clearance: number; compression: number }> {
   if (first.axis === second.axis) {
     const fixed = first.axis === "horizontal" ? "y" : "x";
     const variable = first.axis === "horizontal" ? "x" : "y";
@@ -268,9 +269,10 @@ function interaction(
     );
     const clearance = Math.hypot(distance, Math.max(0, low - high));
     return {
-      valid: clearance > EPSILON && (high - low <= EPSILON || distance >= MIN_GAP - EPSILON),
+      valid: clearance > EPSILON && (high - low <= EPSILON || distance >= gap - EPSILON),
       crossing: 0,
       clearance,
+      compression: Math.max(0, TRACK_GAP - distance) * Math.max(0, high - low),
     };
   }
   const horizontal = first.axis === "horizontal" ? first : second;
@@ -283,13 +285,13 @@ function interaction(
     0,
   );
   const dy = Math.max(Math.min(vertical.from.y, vertical.to.y) - y, y - Math.max(vertical.from.y, vertical.to.y), 0);
-  if (dx > EPSILON || dy > EPSILON) return { valid: true, crossing: 0, clearance: Math.hypot(dx, dy) };
+  if (dx > EPSILON || dy > EPSILON) return { valid: true, crossing: 0, clearance: Math.hypot(dx, dy), compression: 0 };
   const crossing =
     x > Math.min(horizontal.from.x, horizontal.to.x) + EPSILON &&
     x < Math.max(horizontal.from.x, horizontal.to.x) - EPSILON &&
     y > Math.min(vertical.from.y, vertical.to.y) + EPSILON &&
     y < Math.max(vertical.from.y, vertical.to.y) - EPSILON;
-  return { valid: crossing, crossing: crossing ? 1 : 0, clearance: Infinity };
+  return { valid: crossing, crossing: crossing ? 1 : 0, clearance: Infinity, compression: 0 };
 }
 
 function normal(resource: RoutingResource, rect: Rectangle): Point {
@@ -308,9 +310,10 @@ function connectorCost(
   points: readonly Point[],
   connection: Connection,
   rect: Rectangle,
-  used: readonly Segment[],
+  used: readonly PlacedSegment[],
+  gap: number,
   budget: WorkBudget,
-): number | undefined {
+): Readonly<{ cost: number; compression: number }> | undefined {
   if (
     points.length < 2 ||
     !follows(points.at(0)!, points.at(1)!, normal(connection.entry, rect)) ||
@@ -322,14 +325,18 @@ function connectorCost(
   }
   const own = segments(points);
   let crossings = 0;
+  let compression = 0;
   for (let index = 0; index < own.length; index += 1) {
     const segment = own[index]!;
     if (segment.from.x !== segment.to.x && segment.from.y !== segment.to.y) return;
     for (const prior of used) {
       if (!spend(budget)) return;
-      const relation = interaction(segment, prior);
+      // Cross-cell contacts are checked after collinear pieces have been joined.
+      if (prior.cell !== connection.cell && prior.axis !== segment.axis) continue;
+      const relation = interaction(segment, prior, gap);
       if (!relation.valid) return;
       crossings += relation.crossing;
+      compression += relation.compression;
     }
     for (let other = 0; other < index - 1; other += 1) {
       if (!spend(budget)) return;
@@ -337,30 +344,39 @@ function connectorCost(
       if (!relation.valid || relation.crossing) return;
     }
   }
-  return routeLength(points) + Math.max(0, points.length - 2) * BEND_COST + crossings * CROSSING_COST;
+  return {
+    cost: routeLength(points) + Math.max(0, points.length - 2) * BEND_COST + crossings * CROSSING_COST,
+    compression,
+  };
 }
 
-function tracks(min: number, max: number, preferred: number, coordinates: readonly number[]): number[] {
+function tracks(min: number, max: number, preferred: number, coordinates: readonly number[], gap: number): number[] {
   const inset = Math.min(CLEARANCE, (max - min) / 4);
   const low = min + inset;
   const high = max - inset;
-  const nearEnds = coordinates.slice(0, 2).flatMap((coordinate) => [coordinate - MIN_GAP, coordinate + MIN_GAP]);
+  // Only a relaxed attempt may use tracks beside a terminal outside the preferred cell inset.
+  const nearEnds = coordinates
+    .slice(0, 2)
+    .flatMap((coordinate) => [coordinate - gap, coordinate + gap])
+    .filter((value) => gap < TRACK_GAP && value >= min + MIN_GAP && value <= max - MIN_GAP);
   const alternatives = [
     (low + high) / 2,
     ...coordinates.flatMap((coordinate) => [
       coordinate - TRACK_GAP,
       coordinate + TRACK_GAP,
-      coordinate - MIN_GAP,
-      coordinate + MIN_GAP,
+      coordinate - gap,
+      coordinate + gap,
     ]),
   ].sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred) || a - b);
   // Keep escapes near both endpoints when the bounded cell search samples a long corridor.
   return [
-    ...new Set(
-      [clamp(preferred, low, high), low, high, ...nearEnds, ...alternatives].filter(
-        (value) => value >= low && value <= high,
-      ),
-    ),
+    ...new Set([
+      clamp(preferred, low, high),
+      low,
+      high,
+      ...nearEnds,
+      ...alternatives.filter((value) => value >= low && value <= high),
+    ]),
   ].slice(0, MAX_CELL_AXIS_COORDINATES - 2);
 }
 
@@ -369,7 +385,8 @@ function searchConnector(
   rect: Rectangle,
   xs: readonly number[],
   ys: readonly number[],
-  used: readonly Segment[],
+  used: readonly PlacedSegment[],
+  gap: number,
   budget: WorkBudget,
 ): ConnectionPath | undefined {
   type State = {
@@ -396,8 +413,8 @@ function searchConnector(
       for (let current: State | undefined = state; current; current = current.previous) points.push(current.point);
       points.reverse();
       const result = compact(points);
-      const cost = connectorCost(result, connection, rect, used, budget);
-      if (cost !== undefined) return { points: result, cost };
+      const resultCost = connectorCost(result, connection, rect, used, gap, budget);
+      if (resultCost) return { points: result, ...resultCost, gap };
       continue;
     }
     for (const direction of ["horizontal", "vertical"] as const) {
@@ -422,7 +439,8 @@ function searchConnector(
         let valid = true;
         for (const prior of used) {
           if (!spend(budget)) return;
-          const relation = interaction(segment, prior);
+          if (prior.cell !== connection.cell && prior.axis !== segment.axis) continue;
+          const relation = interaction(segment, prior, gap);
           if (!relation.valid) {
             valid = false;
             break;
@@ -445,36 +463,43 @@ function searchConnector(
   }
 }
 
-function connectCell(
+function connectCellAtGap(
   connection: Connection,
   rect: Rectangle,
   rank: number,
   count: number,
-  used: readonly Segment[],
+  used: readonly PlacedSegment[],
+  gap: number,
   budget: WorkBudget,
 ): ConnectionPath | undefined {
   const { from, to } = connection;
-  const xs = tracks(rect.left, rect.right, rect.left + ((rect.right - rect.left) * (rank + 1)) / (count + 1), [
-    from.x,
-    to.x,
-    ...used.flatMap(({ from, to }) => [from.x, to.x]),
-  ]);
-  const ys = tracks(rect.top, rect.bottom, rect.top + ((rect.bottom - rect.top) * (rank + 1)) / (count + 1), [
-    from.y,
-    to.y,
-    ...used.flatMap(({ from, to }) => [from.y, to.y]),
-  ]);
+  const xs = tracks(
+    rect.left,
+    rect.right,
+    rect.left + ((rect.right - rect.left) * (rank + 1)) / (count + 1),
+    [from.x, to.x, ...used.flatMap(({ from, to }) => [from.x, to.x])],
+    gap,
+  );
+  const ys = tracks(
+    rect.top,
+    rect.bottom,
+    rect.top + ((rect.bottom - rect.top) * (rank + 1)) / (count + 1),
+    [from.y, to.y, ...used.flatMap(({ from, to }) => [from.y, to.y])],
+    gap,
+  );
   let best: ConnectionPath | undefined;
   const consider = (points: readonly Point[]) => {
     if (!spend(budget)) return;
     const result = compact(points);
-    const cost = connectorCost(result, connection, rect, used, budget);
-    if (cost !== undefined && (!best || cost < best.cost)) best = { points: result, cost };
+    const resultCost = connectorCost(result, connection, rect, used, gap, budget);
+    if (resultCost && (!best || resultCost.cost + resultCost.compression / 4 < best.cost + best.compression / 4)) {
+      best = { points: result, ...resultCost, gap };
+    }
   };
   if (from.x === to.x || from.y === to.y) consider([from, to]);
   consider([from, { x: from.x, y: to.y }, to]);
   consider([from, { x: to.x, y: from.y }, to]);
-  if (best && best.points.length <= 3 && best.cost < CROSSING_COST) return best;
+  if (best && best.compression === 0 && best.points.length <= 3 && best.cost < CROSSING_COST) return best;
   if (connection.entry.axis === connection.exit.axis) {
     for (const coordinate of connection.entry.axis === "y" ? xs : ys) {
       if (budget.exhausted) break;
@@ -503,8 +528,30 @@ function connectCell(
     [...new Set([from.x, to.x, ...xs])],
     [...new Set([from.y, to.y, ...ys])],
     used,
+    gap,
     budget,
   );
+}
+
+function connectCell(
+  connection: Connection,
+  rect: Rectangle,
+  rank: number,
+  count: number,
+  used: readonly PlacedSegment[],
+  budget: WorkBudget,
+): ConnectionPath | undefined {
+  for (let gap = TRACK_GAP; gap >= MIN_GAP && !budget.exhausted; gap /= 2) {
+    const limit = Math.min(budget.remaining, gap === MIN_GAP ? MAX_CELL_ATTEMPT_WORK : MAX_CELL_ATTEMPT_WORK / 16);
+    if (!limit) {
+      budget.exhausted = true;
+      break;
+    }
+    const attempt: WorkBudget = { remaining: limit, exhausted: false };
+    const result = connectCellAtGap(connection, rect, rank, count, used, gap, attempt);
+    budget.remaining -= limit - attempt.remaining;
+    if (result) return result;
+  }
 }
 
 function boundaryPosition(point: Point, rect: Rectangle): number {
@@ -609,12 +656,13 @@ export function coordinateRoutingPlan(
   plan: RoutingPlan,
   queries: ReadonlyMap<string, ReturnType<typeof createRoutingQuery>>,
   budget: WorkBudget,
-): { paths: ReadonlyMap<string, readonly Point[]>; cost: number } {
+): { paths: ReadonlyMap<string, readonly Point[]>; cost: number; compression: number } {
   const paths = new Map<string, readonly Point[]>();
   const coordinates = assignSlots(plan, budget);
-  if (!coordinates) return { paths, cost: 0 };
+  if (!coordinates) return { paths, cost: 0, compression: 0 };
   const cells = new Map<number, Connection[]>();
-  const connections = new Map<string, Map<number, readonly Point[]>>();
+  const connections = new Map<string, Map<number, ConnectionPath>>();
+  const placed: PlacedSegment[] = [];
   for (const [edgeId, candidate] of plan.selected) {
     const values = coordinates.get(edgeId)!;
     candidate.cells.forEach((cell, index) => {
@@ -623,6 +671,7 @@ export function coordinateRoutingPlan(
       const exit = candidate.resources.at(index + 1)!;
       entries.push({
         edgeId,
+        cell,
         index,
         from: resourcePoint(entry, values[index]!),
         to: resourcePoint(exit, values.at(index + 1)!),
@@ -644,26 +693,55 @@ export function coordinateRoutingPlan(
     entries.sort(
       (a, b) => Number(straight(b)) - Number(straight(a)) || span(a) - span(b) || a.edgeId.localeCompare(b.edgeId),
     );
-    const used: Segment[] = [];
+    const nearby: PlacedSegment[] = [];
+    for (const segment of placed) {
+      if (!spend(budget)) break;
+      if (
+        Math.max(segment.from.x, segment.to.x) >= rect.left - TRACK_GAP &&
+        Math.min(segment.from.x, segment.to.x) <= rect.right + TRACK_GAP &&
+        Math.max(segment.from.y, segment.to.y) >= rect.top - TRACK_GAP &&
+        Math.min(segment.from.y, segment.to.y) <= rect.bottom + TRACK_GAP
+      )
+        nearby.push(segment);
+    }
+    if (budget.exhausted) break;
     for (let rank = 0; rank < entries.length; rank += 1) {
       const connection = entries[rank]!;
+      const used = nearby.filter(({ edgeId }) => edgeId !== connection.edgeId);
       const result = connectCell(connection, rect, rank, entries.length, used, budget);
       if (!result) continue;
-      const route = connections.get(connection.edgeId) ?? new Map<number, readonly Point[]>();
-      route.set(connection.index, result.points);
+      const route = connections.get(connection.edgeId) ?? new Map<number, ConnectionPath>();
+      route.set(connection.index, result);
       connections.set(connection.edgeId, route);
-      used.push(...segments(result.points));
+      const added = segments(result.points).map((segment) => ({
+        ...segment,
+        edgeId: connection.edgeId,
+        cell,
+        gap: result.gap,
+      }));
+      placed.push(...added);
+      nearby.push(...added);
     }
   }
   let cost = 0;
-  const accepted: Array<{ points: readonly Point[]; segments: readonly Segment[]; clearance: number }> = [];
+  let compression = 0;
+  const accepted: Array<{
+    points: readonly Point[];
+    segments: readonly Segment[];
+    sections: readonly PlacedSegment[];
+    clearance: number;
+  }> = [];
   for (const [edgeId, candidate] of [...plan.selected].sort(([a], [b]) => a.localeCompare(b))) {
     if (!spend(budget)) break;
     const pieces = connections.get(edgeId);
     const query = queries.get(edgeId);
     if (!pieces || pieces.size !== candidate.cells.length || !query) continue;
-    const points = compact(candidate.cells.flatMap((_, index) => [...pieces.get(index)!]));
+    const points = compact(candidate.cells.flatMap((_, index) => [...pieces.get(index)!.points]));
     const own = segments(points);
+    const sections = candidate.cells.flatMap((cell, index) => {
+      const piece = pieces.get(index)!;
+      return segments(piece.points).map((segment) => ({ ...segment, edgeId, cell, gap: piece.gap }));
+    });
     let valid = points.length > 1;
     for (const segment of own) {
       for (const obstacle of query.obstacles) {
@@ -677,6 +755,7 @@ export function coordinateRoutingPlan(
     if (!valid) continue;
     let crossings = 0;
     let clearance = Infinity;
+    let pathCompression = 0;
     const neighboring: Array<readonly [number, number]> = [];
     for (let index = 0; index < accepted.length && valid; index += 1) {
       let pairClearance = Infinity;
@@ -692,9 +771,25 @@ export function coordinateRoutingPlan(
             break;
           }
           crossings += relation.crossing;
+          pathCompression += relation.compression;
           pairClearance = Math.min(pairClearance, relation.clearance);
         }
         if (!valid) break;
+      }
+      // Keep each connector's relaxation local when rechecking the complete paths.
+      for (const section of sections) {
+        if (!valid) break;
+        for (const prior of accepted[index]!.sections) {
+          if (!spend(budget)) {
+            valid = false;
+            break;
+          }
+          if (section.axis !== prior.axis) continue;
+          if (!interaction(section, prior, Math.min(section.gap, prior.gap)).valid) {
+            valid = false;
+            break;
+          }
+        }
       }
       clearance = Math.min(clearance, pairClearance);
       neighboring.push([index, pairClearance]);
@@ -706,9 +801,10 @@ export function coordinateRoutingPlan(
       roundingClearance.set(prior.points, prior.clearance / 4);
     }
     roundingClearance.set(points, clearance / 4);
-    accepted.push({ points, segments: own, clearance });
+    accepted.push({ points, segments: own, sections, clearance });
     paths.set(edgeId, points);
+    compression += pathCompression;
     cost += routeLength(points) + Math.max(0, points.length - 2) * BEND_COST + crossings * CROSSING_COST;
   }
-  return { paths, cost };
+  return { paths, cost, compression };
 }

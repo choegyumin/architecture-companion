@@ -142,6 +142,36 @@ function ordinatesAtX(path: string, x: number): number[] {
   });
 }
 
+function parallelClearances(first: string, second: string, openArea: Box): number[] {
+  type Line = Readonly<{ axis: "horizontal" | "vertical"; fixed: number; from: number; to: number }>;
+  const lines = (path: string): Line[] => {
+    const points = pathPoints(path);
+    return points.slice(1).flatMap<Line>((end, index) => {
+      const start = points[index]!;
+      if (start.y === end.y) {
+        const from = Math.max(Math.min(start.x, end.x), openArea.left);
+        const to = Math.min(Math.max(start.x, end.x), openArea.right);
+        return start.y > openArea.top && start.y < openArea.bottom && to > from
+          ? [{ axis: "horizontal" as const, fixed: start.y, from, to }]
+          : [];
+      }
+      if (start.x === end.x) {
+        const from = Math.max(Math.min(start.y, end.y), openArea.top);
+        const to = Math.min(Math.max(start.y, end.y), openArea.bottom);
+        return start.x > openArea.left && start.x < openArea.right && to > from
+          ? [{ axis: "vertical" as const, fixed: start.x, from, to }]
+          : [];
+      }
+      return [];
+    });
+  };
+  return lines(first).flatMap((a) =>
+    lines(second).flatMap((b) =>
+      a.axis === b.axis && Math.min(a.to, b.to) - Math.max(a.from, b.from) >= 32 ? [Math.abs(a.fixed - b.fixed)] : [],
+    ),
+  );
+}
+
 function routeFor(routes: ReadonlyMap<string, AggregateEdgeRoute>, id: string): AggregateEdgeRoute {
   const route = routes.get(id);
   if (!route) throw new Error(`Missing aggregate route: ${id}`);
@@ -392,6 +422,116 @@ describe("aggregate dependency routing at its public seam", () => {
     expect(forwardTracks.length).toBeGreaterThan(0);
     expect(reverseTracks.length).toBeGreaterThan(0);
     expect(forwardTracks.every((y) => reverseTracks.every((other) => Math.abs(y - other) >= 4))).toBe(true);
+  });
+
+  it.each(["horizontal", "vertical"] as const)(
+    "keeps parallel %s connectors at least 32 apart in an open corridor",
+    (axis) => {
+      const horizontal = axis === "horizontal";
+      const layout = layoutOf(
+        horizontal
+          ? [group("source", 0, 0, 120, 300), group("target", 700, 0, 120, 300)]
+          : [group("source", 0, 0, 300, 120), group("target", 0, 700, 300, 120)],
+      );
+      const requests = Array.from({ length: 3 }, (_, index) => edge(`parallel-${index}`, "source", "target"));
+      const routes = routeAggregateDependencyEdges(requests, layout);
+      const area = horizontal ? box(160, -100, 660, 400) : box(-100, 160, 400, 660);
+      const source = horizontal ? box(0, 0, 120, 300) : box(0, 0, 300, 120);
+      const target = horizontal ? box(700, 0, 820, 300) : box(0, 700, 300, 820);
+
+      expect([...routes.keys()].toSorted()).toEqual(requests.map(({ id }) => id).toSorted());
+      for (const { id } of requests) expectConnected(routeFor(routes, id), source, target);
+      for (let first = 0; first < requests.length; first += 1) {
+        for (let second = first + 1; second < requests.length; second += 1) {
+          const clearances = parallelClearances(
+            routeFor(routes, requests[first]!.id).path,
+            routeFor(routes, requests[second]!.id).path,
+            area,
+          );
+          expect(clearances.length).toBeGreaterThan(0);
+          expect(clearances.every((distance) => distance >= 32 - 0.01)).toBe(true);
+        }
+      }
+    },
+  );
+
+  it("separates parallel connectors in an open crossing cell before reducing spacing", () => {
+    const layout = layoutOf([
+      group("northwest", 0, 0, 120, 120),
+      group("southwest", 0, 120, 120, 120),
+      group("northeast", 700, 0, 120, 120),
+      group("southeast", 700, 120, 120, 120),
+    ]);
+    const requests = [
+      edge("cross-down", "northwest", "southeast"),
+      edge("cross-up", "southwest", "northeast"),
+      edge("top", "northwest", "northeast"),
+      edge("bottom", "southwest", "southeast"),
+    ];
+    const routes = routeAggregateDependencyEdges(requests, layout);
+    const down = routeFor(routes, "cross-down");
+    const up = routeFor(routes, "cross-up");
+
+    expect([...routes.keys()].toSorted()).toEqual(requests.map(({ id }) => id).toSorted());
+    expectConnected(down, box(0, 0, 120, 120), box(700, 120, 820, 240));
+    expectConnected(up, box(0, 120, 120, 240), box(700, 0, 820, 120));
+    expect(parallelClearances(down.path, up.path, box(160, 32, 660, 208)).every((gap) => gap >= 32 - 0.01)).toBe(true);
+  });
+
+  it("keeps every narrow-pass route obstacle-free without shrinking unrelated wide tracks", () => {
+    const upper = box(300, -500, 600, 88);
+    const lower = box(300, 112, 600, 600);
+    const layout = layoutOf([
+      group("source", 0, -100, 120, 400),
+      group("target", 800, -100, 120, 400),
+      group("upper", upper.left, upper.top, 300, 588),
+      group("lower", lower.left, lower.top, 300, 488),
+      group("wide-source", 0, 800, 120, 300),
+      group("wide-target", 800, 800, 120, 300),
+    ]);
+    const requests = [
+      ...Array.from({ length: 3 }, (_, index) => edge(`narrow-${index}`, "source", "target")),
+      edge("wide-a", "wide-source", "wide-target"),
+      edge("wide-b", "wide-source", "wide-target"),
+    ];
+    const routes = routeAggregateDependencyEdges(requests, layout);
+
+    expect([...routes.keys()].toSorted()).toEqual(requests.map(({ id }) => id).toSorted());
+    for (const { id } of requests) {
+      const route = routeFor(routes, id);
+      expectConnected(
+        route,
+        id.startsWith("narrow") ? box(0, -100, 120, 300) : box(0, 800, 120, 1100),
+        id.startsWith("narrow") ? box(800, -100, 920, 300) : box(800, 800, 920, 1100),
+      );
+      expect(route.routing.stage).not.toBe("direct");
+      expect(entersBox(route.path, upper)).toBe(false);
+      expect(entersBox(route.path, lower)).toBe(false);
+    }
+    const wideClearances = parallelClearances(
+      routeFor(routes, "wide-a").path,
+      routeFor(routes, "wide-b").path,
+      box(160, 700, 760, 1200),
+    );
+    expect(wideClearances.length).toBeGreaterThan(0);
+    expect(wideClearances.every((distance) => distance >= 32 - 0.01)).toBe(true);
+
+    const reversed = routeAggregateDependencyEdges(requests.toReversed(), structuredClone(layout));
+    for (const { id } of requests) expect(reversed.get(id)).toEqual(routes.get(id));
+
+    const limited = routeAggregateDependencyEdges(requests, layout, { maxCoordinateSteps: 0 });
+    expect([...limited.keys()].toSorted()).toEqual(requests.map(({ id }) => id).toSorted());
+    for (const { id } of requests) {
+      const route = routeFor(limited, id);
+      expectConnected(
+        route,
+        id.startsWith("narrow") ? box(0, -100, 120, 300) : box(0, 800, 120, 1100),
+        id.startsWith("narrow") ? box(800, -100, 920, 300) : box(800, 800, 920, 1100),
+      );
+      expect(route.routing).toEqual({ stage: "independent", reason: "coordinate-limit" });
+      expect(entersBox(route.path, upper)).toBe(false);
+      expect(entersBox(route.path, lower)).toBe(false);
+    }
   });
 
   it("preserves distinct ports when multiple relationships branch and rejoin around an obstacle", () => {

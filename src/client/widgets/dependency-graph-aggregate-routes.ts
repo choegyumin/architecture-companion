@@ -133,7 +133,7 @@ export function routeAggregateDependencyEdges(
       const route = renderRoutingPath(points, queries.get(id)!.obstacles);
       if (route) rendered.set(id, route);
     }
-    return { plan, rendered, cost: result.cost };
+    return { plan, rendered, cost: result.cost, compression: result.compression };
   };
   const orderBudget = budget(orderLimit);
   const coordinateBudget = budget(coordinateLimit);
@@ -141,7 +141,9 @@ export function routeAggregateDependencyEdges(
   const improves = (next: typeof selected, previous: typeof selected) =>
     [...previous.rendered.keys()].every((id) => next.rendered.has(id)) &&
     (next.rendered.size > previous.rendered.size ||
-      (next.rendered.size === previous.rendered.size && next.cost < previous.cost));
+      (next.rendered.size === previous.rendered.size &&
+        (next.compression < previous.compression ||
+          (next.compression === previous.compression && next.cost < previous.cost))));
   const refine = (extended: boolean, ordering: WorkBudget, coordinates: WorkBudget) => {
     for (let pass = 0; pass < Math.min(4, options.maxImprovementPasses ?? 1); pass += 1) {
       let changed = false;
