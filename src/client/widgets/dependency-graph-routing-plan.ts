@@ -7,7 +7,6 @@ import {
   type Point,
   type Projection,
   rectangle,
-  sideFacing,
   TRACK_GAP,
 } from "@/client/widgets/dependency-graph-routing-geometry";
 import type { RoutingScene, RoutingTerminal } from "@/client/widgets/dependency-graph-routing-scene";
@@ -88,18 +87,24 @@ function search(
   const targetBounds = scene.bounds.get(edge.targetId)!;
   const sourceRect = rectangle(sourceBounds);
   const targetRect = rectangle(targetBounds);
-  const preferredSource = sideFacing(sourceRect, targetRect);
-  const preferredTarget = sideFacing(targetRect, sourceRect);
   const project = (point: Point, resource: RoutingResource) =>
     resourcePoint(resource, Math.max(resource.min, Math.min(resource.max, point[resource.axis])));
   const targetResources = query.targets.map(terminalResource);
   const estimate = (point: Point) =>
     targetResources.reduce((best, target) => Math.min(best, distance(point, project(point, target))), Infinity);
   const terminalCost = (terminal: RoutingTerminal, source: boolean) => {
-    const preferred = source ? preferredSource : preferredTarget;
+    const sideCost = source
+      ? terminal.side === "bottom"
+        ? 0
+        : terminal.side === "top"
+          ? 256
+          : 64
+      : terminal.side === "bottom"
+        ? 256
+        : 0;
     const along = center(source ? sourceRect : targetRect)[terminal.axis];
     return (
-      (terminal.side === preferred ? 0 : 256) +
+      sideCost +
       Math.abs((terminal.min + terminal.max) / 2 - along) * 0.15 +
       (penalties.get(JSON.stringify([terminal.elementId, terminal.side])) ?? 0)
     );

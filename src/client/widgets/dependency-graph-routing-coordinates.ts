@@ -586,6 +586,17 @@ function hullIntrudes(points: readonly Point[], rect: Rectangle): boolean {
   return true;
 }
 
+function onObstacleBoundary(point: Point, rect: Rectangle): boolean {
+  return (
+    ((Math.abs(point.x - rect.left) <= EPSILON || Math.abs(point.x - rect.right) <= EPSILON) &&
+      point.y >= rect.top - EPSILON &&
+      point.y <= rect.bottom + EPSILON) ||
+    ((Math.abs(point.y - rect.top) <= EPSILON || Math.abs(point.y - rect.bottom) <= EPSILON) &&
+      point.x >= rect.left - EPSILON &&
+      point.x <= rect.right + EPSILON)
+  );
+}
+
 export function renderRoutingPath(points: readonly Point[], obstacles: readonly Rectangle[]): EdgeRoute | undefined {
   if (points.length < 2 || points.some((point) => !Number.isFinite(point.x) || !Number.isFinite(point.y))) return;
   const route = compact(points);
@@ -611,9 +622,13 @@ export function renderRoutingPath(points: readonly Point[], obstacles: readonly 
         top: Math.min(tip.y, tip.y - dy * 20),
         bottom: Math.max(tip.y, tip.y - dy * 20),
       };
+  // The marker box may overlap an attached endpoint across a narrow gap; only foreign obstacles hide the arrow.
+  const start = route.at(0)!;
   if (
     obstacles.some(
       (obstacle) =>
+        !onObstacleBoundary(start, obstacle) &&
+        !onObstacleBoundary(tip, obstacle) &&
         Math.min(arrow.right, obstacle.right) > Math.max(arrow.left, obstacle.left) + EPSILON &&
         Math.min(arrow.bottom, obstacle.bottom) > Math.max(arrow.top, obstacle.top) + EPSILON,
     )

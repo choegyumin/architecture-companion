@@ -203,6 +203,27 @@ describe("aggregate dependency routing at its public seam", () => {
     expect([...routes.values()].map(({ routing }) => routing.stage)).toEqual(["normal", "normal"]);
   });
 
+  it.each([
+    { name: "directly below", x: 0, y: 500, departure: "bottom", arrival: "top" },
+    { name: "diagonally below", x: 240, y: 320, departure: "right", arrival: "left" },
+    { name: "above and to the right", x: 120, y: -300, departure: "right", arrival: "left" },
+  ])("balances departure and arrival sides when the target is $name", ({ x, y, departure, arrival }) => {
+    const layout = layoutOf([group("source", 0, 0, 120, 120), group("target", x, y, 120, 120)]);
+    const route = routeFor(routeAggregateDependencyEdges([edge("one", "source", "target")], layout), "one");
+    const points = pathPoints(route.path);
+    const side = (point: Point, rect: Box) => {
+      if (point.y === rect.top) return "top";
+      if (point.y === rect.bottom) return "bottom";
+      if (point.x === rect.left) return "left";
+      if (point.x === rect.right) return "right";
+    };
+
+    expect(route.routing.stage).toBe("normal");
+    expectConnected(route, box(0, 0, 120, 120), box(x, y, x + 120, y + 120));
+    expect(side(points.at(0)!, box(0, 0, 120, 120))).toBe(departure);
+    expect(side(points.at(-1)!, box(x, y, x + 120, y + 120))).toBe(arrival);
+  });
+
   it("keeps finite, connected paths when endpoint bounds overlap or coincide", () => {
     const layout = layoutOf([
       group("large", 0, 0, 200, 200),
