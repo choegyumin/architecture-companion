@@ -440,6 +440,38 @@ describe("dependency edge routes", () => {
     }
   });
 
+  it("places an aligned external detour right of the focused annotation's direct departure", async () => {
+    const annotationId = "group:directory:src/features/annotation";
+    const { projections, routes } = await focusedAggregateRoutes(annotationId);
+    const sourceX = (targetId: string) => {
+      const projection = projections.find((edge) => edge.sourceId === annotationId && edge.targetId === targetId);
+      if (!projection) throw new Error(`Missing annotation edge: ${targetId}`);
+      const start = routes.get(projection.id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing annotation port: ${targetId}`);
+      return Number(start.at(1));
+    };
+
+    expect(sourceX("group:external-packages")).toBeGreaterThan(sourceX("group:directory:src/features/artifact"));
+  });
+
+  it("keeps focused annotation arrivals on their established sides", async () => {
+    const annotationId = "group:directory:src/features/annotation";
+    const { projections, routes, bounds } = await focusedAggregateRoutes(annotationId);
+    const targetX = (sourceId: string) => {
+      const projection = projections.find((edge) => edge.sourceId === sourceId && edge.targetId === annotationId);
+      if (!projection) throw new Error(`Missing annotation arrival: ${sourceId}`);
+      const end = routes.get(projection.id)?.path.match(/ L ([-\d.]+) ([-\d.]+)$/);
+      if (!end) throw new Error(`Missing annotation target port: ${sourceId}`);
+      return Number(end.at(1));
+    };
+    const annotation = getOrThrow(bounds.get(annotationId), "Missing annotation bounds");
+    const centerX = annotation.position.x + annotation.size.width / 2;
+
+    expect(targetX("group:directory:src/client")).toBeGreaterThan(centerX);
+    expect(targetX("group:directory:src/client/widgets")).toBeGreaterThan(centerX);
+    expect(targetX("group:directory:src/client/pages")).toBeLessThan(centerX);
+  });
+
   it("places focused features' universal departure left of the external detour", async () => {
     const featuresId = "group:directory:src/features";
     const { projections, routes, bounds } = await focusedAggregateRoutes(featuresId);

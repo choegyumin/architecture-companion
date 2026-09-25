@@ -99,8 +99,9 @@ function faceMidpoint(rect: Rectangle, side: Side): Point {
   return portPoint(rect, side, side === "top" || side === "bottom" ? midpoint.x : midpoint.y);
 }
 
-function assignPorts(edges: RoutingEdge[]): void {
+function assignPorts(edges: RoutingEdge[], preview?: ReadonlyMap<string, readonly Point[]>): boolean {
   const faces = new Map<string, Array<{ edge: RoutingEdge; source: boolean; preferred: number; distance: number }>>();
+  let needsPreview = false;
   for (const edge of edges) {
     const sourceFace = faceMidpoint(edge.source, edge.sourceSide);
     const targetFace = faceMidpoint(edge.target, edge.targetSide);
@@ -131,7 +132,23 @@ function assignPorts(edges: RoutingEdge[]): void {
     const centered = entries
       .filter(({ preferred }) => Math.abs(preferred - faceCenter) <= EPSILON)
       .sort((a, b) => a.distance - b.distance || a.edge.id.localeCompare(b.edge.id));
-    for (const entry of centered) (negative.length < positive.length ? negative : positive).push(entry);
+    const anchor = centered.at(0);
+    const outbound = entries.every(({ source }) => source);
+    if (centered.length > 1 && outbound) needsPreview = true;
+    const reassignCentered = Boolean(preview && outbound && centered.length > 1);
+    if (reassignCentered) {
+      for (const entry of centered.slice(1)) {
+        const path = getOrThrow(preview?.get(entry.edge.id), "Missing provisional aggregate route");
+        const start = getOrThrow(path.at(0), "Missing provisional aggregate start");
+        const lateral = path.find((point) => Math.abs(point[faceAxis] - start[faceAxis]) > EPSILON);
+        if (lateral && lateral[faceAxis] < start[faceAxis]) negative.push(entry);
+        else if (lateral && lateral[faceAxis] > start[faceAxis]) positive.push(entry);
+        else (negative.length < positive.length ? negative : positive).push(entry);
+      }
+      if (anchor) (negative.length < positive.length ? negative : positive).push(anchor);
+    } else {
+      for (const entry of centered) (negative.length < positive.length ? negative : positive).push(entry);
+    }
 
     const rank = (a: (typeof entries)[number], b: (typeof entries)[number]) =>
       a.distance - b.distance ||
@@ -139,7 +156,8 @@ function assignPorts(edges: RoutingEdge[]): void {
       a.edge.id.localeCompare(b.edge.id);
     negative.sort(rank);
     positive.sort(rank);
-    if (entries.length > 1 && entries.every(({ source }) => source)) {
+    const neutral = reassignCentered && anchor ? [anchor] : centered;
+    if (entries.length > 1 && outbound) {
       const destinations = entries.map(({ edge }) => faceMidpoint(edge.target, edge.targetSide)[faceAxis]);
       // Keep the center-first order when destinations spread beyond the available face.
       if (Math.max(...destinations) - Math.min(...destinations) <= maximum - minimum) {
@@ -147,9 +165,9 @@ function assignPorts(edges: RoutingEdge[]): void {
           negative.reverse();
           positive.reverse();
         } else if (
-          centered.length > 0 &&
-          !centered.includes(entries.reduce((nearest, entry) => (rank(entry, nearest) < 0 ? entry : nearest))) &&
-          (negative.every((entry) => centered.includes(entry)) || positive.every((entry) => centered.includes(entry)))
+          neutral.length > 0 &&
+          !neutral.includes(entries.reduce((nearest, entry) => (rank(entry, nearest) < 0 ? entry : nearest))) &&
+          (negative.every((entry) => neutral.includes(entry)) || positive.every((entry) => neutral.includes(entry)))
         ) {
           [negative, positive] = [positive, negative];
         }
@@ -171,6 +189,7 @@ function assignPorts(edges: RoutingEdge[]): void {
       else edge.end = point;
     });
   }
+  return needsPreview;
 }
 
 function gapAlongSide(point: Point, side: Side, rect: Rectangle): number {
@@ -684,29 +703,12 @@ function midpoint(points: readonly Point[]): Point {
   return getOrThrow(points.at(-1), "Missing aggregate midpoint");
 }
 
-export function routeAggregateDependencyEdges(
-  projections: readonly Projection[],
+function routeAssignedEdges(
+  edges: readonly RoutingEdge[],
   elements: ReadonlyMap<string, Bounds>,
-  virtualGroups: readonly Bounds[] = [],
-): ReadonlyMap<string, EdgeRoute> {
-  const edges: RoutingEdge[] = projections.map((projection) => {
-    const source = rectangle(
-      getOrThrow(elements.get(projection.sourceId), `Missing aggregate source: ${projection.sourceId}`),
-    );
-    const target = rectangle(
-      getOrThrow(elements.get(projection.targetId), `Missing aggregate target: ${projection.targetId}`),
-    );
-    return {
-      ...projection,
-      source,
-      target,
-      sourceSide: sideFacing(source, target),
-      targetSide: sideFacing(target, source),
-      start: center(source),
-      end: center(target),
-    };
-  });
-  assignPorts(edges);
+  virtualGroups: readonly Bounds[],
+  capturePaths = false,
+): Readonly<{ routes: ReadonlyMap<string, EdgeRoute>; paths: ReadonlyMap<string, readonly Point[]> }> {
   const ordered = [...edges].sort(
     (a, b) =>
       Math.abs(a.start.x - a.end.x) +
@@ -716,6 +718,7 @@ export function routeAggregateDependencyEdges(
   );
   const used: Segment[] = [];
   const routes = new Map<string, EdgeRoute>();
+  const paths = new Map<string, readonly Point[]>();
   for (const edge of ordered) {
     const candidates = obstacleCandidates(edge, elements, virtualGroups);
     const start = outside(edge.start, edge.sourceSide, candidates);
@@ -755,6 +758,45 @@ export function routeAggregateDependencyEdges(
         .map((point, index) => segment(getOrThrow(points[index], "Missing aggregate segment start"), point)),
     );
     routes.set(edge.id, { path: roundedPath(points), labelPosition: midpoint(points) });
+    if (capturePaths) paths.set(edge.id, points);
   }
-  return routes;
+  return { routes, paths };
+}
+
+export function routeAggregateDependencyEdges(
+  projections: readonly Projection[],
+  elements: ReadonlyMap<string, Bounds>,
+  virtualGroups: readonly Bounds[] = [],
+): ReadonlyMap<string, EdgeRoute> {
+  const edges: RoutingEdge[] = projections.map((projection) => {
+    const source = rectangle(
+      getOrThrow(elements.get(projection.sourceId), `Missing aggregate source: ${projection.sourceId}`),
+    );
+    const target = rectangle(
+      getOrThrow(elements.get(projection.targetId), `Missing aggregate target: ${projection.targetId}`),
+    );
+    return {
+      ...projection,
+      source,
+      target,
+      sourceSide: sideFacing(source, target),
+      targetSide: sideFacing(target, source),
+      start: center(source),
+      end: center(target),
+    };
+  });
+  const needsPreview = assignPorts(edges);
+  const initial = routeAssignedEdges(edges, elements, virtualGroups, needsPreview);
+  if (!needsPreview) return initial.routes;
+  const ports = edges.map(({ start, end }) => ({ start, end }));
+  assignPorts(edges, initial.paths);
+  return edges.some(
+    ({ start, end }, index) =>
+      start.x !== ports[index]?.start.x ||
+      start.y !== ports[index]?.start.y ||
+      end.x !== ports[index]?.end.x ||
+      end.y !== ports[index]?.end.y,
+  )
+    ? routeAssignedEdges(edges, elements, virtualGroups).routes
+    : initial.routes;
 }
