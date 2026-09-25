@@ -735,11 +735,62 @@ function midpoint(points: readonly Point[]): Point {
   return getOrThrow(points.at(-1), "Missing aggregate midpoint");
 }
 
+function reserveTargetTracks(
+  edges: readonly RoutingEdge[],
+  elements: ReadonlyMap<string, Bounds>,
+  virtualGroups: readonly Bounds[],
+): ReadonlyMap<string, number> {
+  const byFace = new Map<string, RoutingEdge[]>();
+  for (const edge of edges) {
+    if ((edge.targetSide !== "top" && edge.targetSide !== "bottom") || Math.abs(edge.start.x - edge.end.x) <= EPSILON)
+      continue;
+    const key = JSON.stringify([edge.targetId, edge.targetSide]);
+    const group = byFace.get(key) ?? [];
+    group.push(edge);
+    byFace.set(key, group);
+  }
+  const rectangles = [...elements.values(), ...virtualGroups].map(rectangle);
+  const reserved = new Map<string, number>();
+  for (const group of byFace.values()) {
+    if (group.length < 2) continue;
+    const first = getOrThrow(group.at(0), "Missing aggregate corridor edge");
+    const { target, targetSide } = first;
+    const minPort = Math.min(...group.map(({ end }) => end.x));
+    const maxPort = Math.max(...group.map(({ end }) => end.x));
+    const blockers = rectangles.filter(
+      (rect) =>
+        rect.left <= minPort + EPSILON &&
+        rect.right >= maxPort - EPSILON &&
+        (targetSide === "top" ? rect.bottom < target.top - EPSILON : rect.top > target.bottom + EPSILON),
+    );
+    if (blockers.length === 0) continue;
+    const boundary =
+      targetSide === "top"
+        ? Math.max(...blockers.map(({ bottom }) => bottom))
+        : Math.min(...blockers.map(({ top }) => top));
+    const available = Math.abs((targetSide === "top" ? target.top : target.bottom) - boundary) - 2 * TRACK_GAP;
+    if (available <= 0) continue;
+    const middle = center(target).x;
+    const sides = [group.filter(({ end }) => end.x < middle), group.filter(({ end }) => end.x >= middle)];
+    const count = Math.max(...sides.map((side) => side.length));
+    if (available / (count + 1) < MIN_TRACK_GAP) continue;
+    for (const side of sides) {
+      side.sort((a, b) => Math.abs(a.end.x - middle) - Math.abs(b.end.x - middle) || a.id.localeCompare(b.id));
+      side.forEach((edge, index) => {
+        const distance = TRACK_GAP + ((index + 1) * available) / (count + 1);
+        reserved.set(edge.id, targetSide === "top" ? boundary + distance : boundary - distance);
+      });
+    }
+  }
+  return reserved;
+}
+
 function routeAssignedEdges(
   edges: readonly RoutingEdge[],
   elements: ReadonlyMap<string, Bounds>,
   virtualGroups: readonly Bounds[],
   preview = false,
+  targetTracks: ReadonlyMap<string, number> = new Map(),
 ): Readonly<{ routes: ReadonlyMap<string, EdgeRoute>; paths: ReadonlyMap<string, readonly Point[]> }> {
   const ordered = [...edges].sort(
     (a, b) =>
@@ -754,7 +805,8 @@ function routeAssignedEdges(
   for (const edge of ordered) {
     const candidates = obstacleCandidates(edge, elements, virtualGroups);
     const start = outside(edge.start, edge.sourceSide, candidates);
-    const end = outside(edge.end, edge.targetSide, candidates);
+    const track = targetTracks.get(edge.id);
+    const end = track === undefined ? outside(edge.end, edge.targetSide, candidates) : { ...edge.end, y: track };
     const grid = routingGrid(start, end, obstaclesFor(candidates, start, end));
     const baseline = getOrThrow(findPath(edge, grid, []), "Missing aggregate baseline route");
     const baselineLength = routeLength(baseline);
@@ -782,7 +834,7 @@ function routeAssignedEdges(
       ) {
         const clearance = !preview && gap === MIN_TRACK_GAP ? gap : Math.min(CLEARANCE, gap * 2);
         const candidateStart = outside(edge.start, edge.sourceSide, candidates, clearance);
-        const candidateEnd = outside(edge.end, edge.targetSide, candidates, clearance);
+        const candidateEnd = track === undefined ? outside(edge.end, edge.targetSide, candidates, clearance) : end;
         const obstacles = obstaclesFor(candidates, candidateStart, candidateEnd, clearance);
         const alternative = findPath(
           edge,
@@ -859,8 +911,10 @@ export function routeAggregateDependencyEdges(
     };
   });
   const needsPreview = assignPorts(edges);
-  const result = routeAssignedEdges(edges, elements, virtualGroups, needsPreview);
+  const tracks = needsPreview ? undefined : reserveTargetTracks(edges, elements, virtualGroups);
+  const result = routeAssignedEdges(edges, elements, virtualGroups, needsPreview, tracks);
   if (!needsPreview) return result.routes;
   assignPorts(edges, result.paths);
-  return routeAssignedEdges(edges, elements, virtualGroups).routes;
+  return routeAssignedEdges(edges, elements, virtualGroups, false, reserveTargetTracks(edges, elements, virtualGroups))
+    .routes;
 }

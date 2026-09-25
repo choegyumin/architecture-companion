@@ -138,7 +138,7 @@ async function focusedRoutes(focusId: string) {
     if (!projection) throw new Error(`Missing aggregate edge: ${sourceId} → ${targetId}`);
     return getOrThrow(routes.get(projection.id), `Missing route: ${projection.id}`).path;
   };
-  return { pathFrom };
+  return { pathFrom, bounds };
 }
 
 describe("dependency aggregate routes on the checked-in design", () => {
@@ -283,5 +283,29 @@ describe("dependency aggregate routes on the checked-in design", () => {
       }
     }
     expect(crossings).toEqual([]);
+  });
+
+  it("spreads focused annotation arrivals through the free corridor above it", async () => {
+    const annotationId = "group:directory:src/features/annotation";
+    const serverId = "group:directory:src/server";
+    const { pathFrom, bounds } = await focusedRoutes(annotationId);
+    const annotation = getOrThrow(bounds.get(annotationId), "Missing annotation group");
+    const server = getOrThrow(bounds.get(serverId), "Missing server group");
+    const upper = server.position.y + server.size.height;
+    const lower = annotation.position.y;
+    const levels = [
+      "group:directory:src/client",
+      "group:directory:src/client/pages",
+      "group:directory:src/client/parts",
+      "group:directory:src/client/widgets",
+    ].flatMap((sourceId) =>
+      straightSegments(pathFrom(sourceId, annotationId)).flatMap(([fromX, fromY, toX, toY]) =>
+        fromY === toY && Math.abs(toX - fromX) > 100 && fromY > upper && fromY < lower ? [fromY] : [],
+      ),
+    );
+
+    expect(levels.length).toBeGreaterThanOrEqual(4);
+    expect(Math.min(...levels)).toBeLessThan((upper + lower) / 2);
+    expect(Math.max(...levels)).toBeGreaterThan((upper + lower) / 2);
   });
 });
