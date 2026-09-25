@@ -534,6 +534,40 @@ describe("aggregate dependency routing at its public seam", () => {
     }
   });
 
+  it("rounds both corners despite a nearby parallel branch", () => {
+    const layout = layoutOf([
+      group("source", 0, 0, 120, 180),
+      group("target", 950, 0, 120, 180),
+      group("blocker", 420, -100, 180, 380),
+      group("wall", 350, 280, 320, 650),
+      group("side", 150, -400, 120, 100),
+    ]);
+    const routes = routeAggregateDependencyEdges(
+      [edge("long", "source", "target"), edge("other", "source", "side")],
+      layout,
+    );
+    const route = routeFor(routes, "long");
+    const tokens = route.path.split(/\s+/);
+    const radii = tokens.flatMap((token, index) =>
+      token === "Q"
+        ? [
+            Math.hypot(
+              Number(tokens.at(index - 2)) - Number(tokens.at(index + 1)),
+              Number(tokens.at(index - 1)) - Number(tokens.at(index + 2)),
+            ),
+          ]
+        : [],
+    );
+
+    expect(route.routing.stage).toBe("normal");
+    expectConnected(route, box(0, 0, 120, 180), box(950, 0, 1070, 180));
+    expect(radii.length).toBeGreaterThanOrEqual(2);
+    expect(Math.min(...radii)).toBeGreaterThan(40);
+    expect(entersBox(route.path, box(420, -100, 600, 280))).toBe(false);
+    expect(entersBox(route.path, box(350, 280, 670, 930))).toBe(false);
+    expect(entersBox(route.path, box(150, -400, 270, -300))).toBe(false);
+  });
+
   it("preserves distinct ports when multiple relationships branch and rejoin around an obstacle", () => {
     const obstacle = box(300, -80, 480, 280);
     const layout = layoutOf([

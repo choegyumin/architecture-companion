@@ -43,7 +43,6 @@ const MAX_CELL_EXPANSIONS = 1_024;
 const MAX_CELL_ATTEMPT_WORK = 32_768;
 const CROSSING_COST = 4_000;
 const BEND_COST = 128;
-const roundingClearance = new WeakMap<readonly Point[], number>();
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
@@ -254,7 +253,7 @@ function interaction(
   first: Segment,
   second: Segment,
   gap = MIN_GAP,
-): Readonly<{ valid: boolean; crossing: number; clearance: number; compression: number }> {
+): Readonly<{ valid: boolean; crossing: number; compression: number }> {
   if (first.axis === second.axis) {
     const fixed = first.axis === "horizontal" ? "y" : "x";
     const variable = first.axis === "horizontal" ? "x" : "y";
@@ -271,7 +270,6 @@ function interaction(
     return {
       valid: clearance > EPSILON && (high - low <= EPSILON || distance >= gap - EPSILON),
       crossing: 0,
-      clearance,
       compression: Math.max(0, TRACK_GAP - distance) * Math.max(0, high - low),
     };
   }
@@ -285,13 +283,13 @@ function interaction(
     0,
   );
   const dy = Math.max(Math.min(vertical.from.y, vertical.to.y) - y, y - Math.max(vertical.from.y, vertical.to.y), 0);
-  if (dx > EPSILON || dy > EPSILON) return { valid: true, crossing: 0, clearance: Math.hypot(dx, dy), compression: 0 };
+  if (dx > EPSILON || dy > EPSILON) return { valid: true, crossing: 0, compression: 0 };
   const crossing =
     x > Math.min(horizontal.from.x, horizontal.to.x) + EPSILON &&
     x < Math.max(horizontal.from.x, horizontal.to.x) - EPSILON &&
     y > Math.min(vertical.from.y, vertical.to.y) + EPSILON &&
     y < Math.max(vertical.from.y, vertical.to.y) - EPSILON;
-  return { valid: crossing, crossing: crossing ? 1 : 0, clearance: Infinity, compression: 0 };
+  return { valid: crossing, crossing: crossing ? 1 : 0, compression: 0 };
 }
 
 function normal(resource: RoutingResource, rect: Rectangle): Point {
@@ -628,7 +626,7 @@ export function renderRoutingPath(points: readonly Point[], obstacles: readonly 
     const after = route.at(index + 1)!;
     const incoming = Math.abs(corner.x - before.x) + Math.abs(corner.y - before.y);
     const outgoing = Math.abs(after.x - corner.x) + Math.abs(after.y - corner.y);
-    let radius = Math.min(96, incoming / 2, outgoing / 2, roundingClearance.get(points) ?? Infinity);
+    let radius = Math.min(96, incoming / 2, outgoing / 2);
     if ((before.x === corner.x && corner.x === after.x) || (before.y === corner.y && corner.y === after.y)) radius = 0;
     let first = corner;
     let last = corner;
@@ -726,10 +724,8 @@ export function coordinateRoutingPlan(
   let cost = 0;
   let compression = 0;
   const accepted: Array<{
-    points: readonly Point[];
     segments: readonly Segment[];
     sections: readonly PlacedSegment[];
-    clearance: number;
   }> = [];
   for (const [edgeId, candidate] of [...plan.selected].sort(([a], [b]) => a.localeCompare(b))) {
     if (!spend(budget)) break;
@@ -754,13 +750,11 @@ export function coordinateRoutingPlan(
     }
     if (!valid) continue;
     let crossings = 0;
-    let clearance = Infinity;
     let pathCompression = 0;
-    const neighboring: Array<readonly [number, number]> = [];
-    for (let index = 0; index < accepted.length && valid; index += 1) {
-      let pairClearance = Infinity;
+    for (const previous of accepted) {
+      if (!valid) break;
       for (const segment of own) {
-        for (const prior of accepted[index]!.segments) {
+        for (const prior of previous.segments) {
           if (!spend(budget)) {
             valid = false;
             break;
@@ -772,14 +766,13 @@ export function coordinateRoutingPlan(
           }
           crossings += relation.crossing;
           pathCompression += relation.compression;
-          pairClearance = Math.min(pairClearance, relation.clearance);
         }
         if (!valid) break;
       }
       // Keep each connector's relaxation local when rechecking the complete paths.
       for (const section of sections) {
         if (!valid) break;
-        for (const prior of accepted[index]!.sections) {
+        for (const prior of previous.sections) {
           if (!spend(budget)) {
             valid = false;
             break;
@@ -791,17 +784,9 @@ export function coordinateRoutingPlan(
           }
         }
       }
-      clearance = Math.min(clearance, pairClearance);
-      neighboring.push([index, pairClearance]);
     }
     if (!valid || !renderRoutingPath(points, query.obstacles)) continue;
-    for (const [index, distance] of neighboring) {
-      const prior = accepted[index]!;
-      prior.clearance = Math.min(prior.clearance, distance);
-      roundingClearance.set(prior.points, prior.clearance / 4);
-    }
-    roundingClearance.set(points, clearance / 4);
-    accepted.push({ points, segments: own, sections, clearance });
+    accepted.push({ segments: own, sections });
     paths.set(edgeId, points);
     compression += pathCompression;
     cost += routeLength(points) + Math.max(0, points.length - 2) * BEND_COST + crossings * CROSSING_COST;
