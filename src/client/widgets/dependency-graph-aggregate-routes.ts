@@ -491,15 +491,19 @@ export function measureAggregateSegmentCongestion(
   return { overlapLength, crossings: crossings.size };
 }
 
-class MinHeap<T extends { cost: number }> {
+class MinHeap<T extends { priority: number; cost: number }> {
   private entries: T[] = [];
+
+  private earlier(a: T, b: T): boolean {
+    return a.priority < b.priority || (a.priority === b.priority && a.cost < b.cost);
+  }
 
   push(entry: T): void {
     let index = this.entries.length;
     this.entries.push(entry);
     while (index > 0) {
       const parent = (index - 1) >> 1;
-      if (this.entries[parent]!.cost <= entry.cost) break;
+      if (!this.earlier(entry, this.entries[parent]!)) break;
       this.entries[index] = this.entries[parent]!;
       index = parent;
     }
@@ -514,8 +518,9 @@ class MinHeap<T extends { cost: number }> {
     while (index * 2 + 1 < this.entries.length) {
       const left = index * 2 + 1;
       const right = left + 1;
-      const child = right < this.entries.length && this.entries[right]!.cost < this.entries[left]!.cost ? right : left;
-      if (this.entries[child]!.cost >= last.cost) break;
+      const child =
+        right < this.entries.length && this.earlier(this.entries[right]!, this.entries[left]!) ? right : left;
+      if (!this.earlier(this.entries[child]!, last)) break;
       this.entries[index] = this.entries[child]!;
       index = child;
     }
@@ -534,6 +539,7 @@ type SearchState = {
   overlapping: boolean;
   length: number;
   cost: number;
+  priority: number;
   active: boolean;
   previous?: SearchState;
 };
@@ -579,6 +585,7 @@ function findPath(
   const start = getOrThrow(grid.points[grid.startIndex], "Missing aggregate grid start");
   const end = getOrThrow(grid.points[grid.endIndex], "Missing aggregate grid end");
   const constrained = Number.isFinite(maxLength);
+  const distanceToEnd = (point: Point) => Math.abs(point.x - end.x) + Math.abs(point.y - end.y);
   const keyOf = (point: number, axis: Axis, overlapping: boolean) =>
     point * 4 + (axis === "horizontal" ? 0 : 2) + (overlapping ? 1 : 0);
   const first: SearchState = {
@@ -587,6 +594,7 @@ function findPath(
     overlapping: false,
     length: 0,
     cost: 0,
+    priority: distanceToEnd(start),
     active: true,
   };
   const states = new Map<number, SearchState[]>([[keyOf(first.point, first.axis, false), [first]]]);
@@ -599,7 +607,7 @@ function findPath(
 
   while (true) {
     const current = heap.pop();
-    if (!current || current.cost >= best) break;
+    if (!current || current.priority >= best) break;
     if (!current.active) continue;
     if (current.point === grid.endIndex) {
       const total = current.cost + (current.axis === axisOf(edge.targetSide) ? 0 : BEND_COST);
@@ -612,7 +620,8 @@ function findPath(
     for (const neighbor of grid.neighbors[current.point] ?? []) {
       const length = current.length + neighbor.length;
       const point = getOrThrow(grid.points[neighbor.point], "Missing aggregate route point");
-      if (length + Math.abs(point.x - end.x) + Math.abs(point.y - end.y) > maxLength + EPSILON) continue;
+      const remaining = distanceToEnd(point);
+      if (length + remaining > maxLength + EPSILON || current.cost + neighbor.length + remaining >= best) continue;
       const candidate = segment(getOrThrow(grid.points[current.point], "Missing aggregate route point"), point);
       if (minimumTrackGap > 0 && used.some((prior) => sharesTrack(candidate, prior, minimumTrackGap))) continue;
       const cacheKey = `${Math.min(current.point, neighbor.point)}:${Math.max(current.point, neighbor.point)}`;
@@ -661,6 +670,7 @@ function findPath(
         overlapping,
         length,
         cost,
+        priority: cost + remaining,
         active: true,
         previous: current,
       };
