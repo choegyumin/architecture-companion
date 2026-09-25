@@ -126,8 +126,8 @@ function assignPorts(edges: RoutingEdge[]): void {
     const [minimum, maximum] = portRange(rect, side);
     const faceAxis = side === "top" || side === "bottom" ? "x" : "y";
     const faceCenter = center(rect)[faceAxis];
-    const negative = entries.filter(({ preferred }) => preferred < faceCenter - EPSILON);
-    const positive = entries.filter(({ preferred }) => preferred > faceCenter + EPSILON);
+    let negative = entries.filter(({ preferred }) => preferred < faceCenter - EPSILON);
+    let positive = entries.filter(({ preferred }) => preferred > faceCenter + EPSILON);
     const centered = entries
       .filter(({ preferred }) => Math.abs(preferred - faceCenter) <= EPSILON)
       .sort((a, b) => a.distance - b.distance || a.edge.id.localeCompare(b.edge.id));
@@ -139,16 +139,20 @@ function assignPorts(edges: RoutingEdge[]): void {
       a.edge.id.localeCompare(b.edge.id);
     negative.sort(rank);
     positive.sort(rank);
-    if (
-      entries.length > 1 &&
-      entries.every(({ source }) => source) &&
-      (negative.length === entries.length || positive.length === entries.length)
-    ) {
+    if (entries.length > 1 && entries.every(({ source }) => source)) {
       const destinations = entries.map(({ edge }) => faceMidpoint(edge.target, edge.targetSide)[faceAxis]);
       // Keep the center-first order when destinations spread beyond the available face.
       if (Math.max(...destinations) - Math.min(...destinations) <= maximum - minimum) {
-        negative.reverse();
-        positive.reverse();
+        if (negative.length === entries.length || positive.length === entries.length) {
+          negative.reverse();
+          positive.reverse();
+        } else if (
+          centered.length > 0 &&
+          !centered.includes(entries.reduce((nearest, entry) => (rank(entry, nearest) < 0 ? entry : nearest))) &&
+          (negative.every((entry) => centered.includes(entry)) || positive.every((entry) => centered.includes(entry)))
+        ) {
+          [negative, positive] = [positive, negative];
+        }
       }
     }
     const gap = Math.min(

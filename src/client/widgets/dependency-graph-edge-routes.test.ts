@@ -440,6 +440,23 @@ describe("dependency edge routes", () => {
     }
   });
 
+  it("places focused features' universal departure left of the external detour", async () => {
+    const featuresId = "group:directory:src/features";
+    const { projections, routes, bounds } = await focusedAggregateRoutes(featuresId);
+    const sourceX = (targetId: string) => {
+      const projection = projections.find((edge) => edge.sourceId === featuresId && edge.targetId === targetId);
+      if (!projection) throw new Error(`Missing features edge: ${targetId}`);
+      const start = routes.get(projection.id)?.path.match(/^M ([-\d.]+) ([-\d.]+)/);
+      if (!start) throw new Error(`Missing features port: ${targetId}`);
+      return Number(start.at(1));
+    };
+    const features = getOrThrow(bounds.get(featuresId), "Missing features bounds");
+    const centerX = features.position.x + features.size.width / 2;
+
+    expect(sourceX("group:directory:src/shared/universal")).toBeLessThan(centerX);
+    expect(sourceX("group:external-packages")).toBeGreaterThan(centerX);
+  });
+
   it("places the focused client's closer departure nearer its center", async () => {
     const clientId = "group:directory:src/client";
     const { projections, routes, bounds } = await focusedAggregateRoutes(clientId);
