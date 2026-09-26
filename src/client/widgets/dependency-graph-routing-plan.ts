@@ -244,6 +244,31 @@ export function slotCoordinate(resource: RoutingResource, index: number, count: 
   return (resource.min + resource.max) / 2 + (index - (count - 1) / 2) * gap;
 }
 
+// Cost per pixel between an ordered slot's estimated coordinate and its preferred
+// one: large enough to decide rank ties, below a crossing (4,000).
+const PREFERENCE_COST = 4;
+
+// Where a slot roughly lands given its order neighbours: separations pin it
+// within a gap of the neighbours' own preferred coordinates, so a rank on the
+// wrong side of a neighbour estimates that neighbour's coordinate, not its own.
+// Without this term ranks tie whenever crossings tie and the insertion sequence
+// alone decides who sits where on a shared line.
+function preferenceCost(
+  resource: RoutingResource,
+  rank: number,
+  order: readonly string[],
+  selected: ReadonlyMap<string, RouteCandidate>,
+): number {
+  const gap = Math.min(TRACK_GAP, Math.min(TRACK_WIDTH, resource.max - resource.min) / Math.max(1, order.length));
+  const anchor = resource.preferred ?? (resource.min + resource.max) / 2;
+  const neighbour = (id: string) =>
+    selected.get(id)?.resources.find((entry) => entry.key === resource.key)?.preferred ??
+    (resource.min + resource.max) / 2;
+  const lower = rank > 0 ? neighbour(order[rank - 1]!) + gap : -Infinity;
+  const upper = rank < order.length ? neighbour(order[rank]!) - gap : Infinity;
+  return Math.abs(Math.max(lower, Math.min(upper, anchor)) - anchor) * PREFERENCE_COST;
+}
+
 function boundaryPosition(scene: RoutingScene, cell: number, point: Point): number {
   const { left, right, top, bottom } = scene.cells[cell]!.rect;
   const width = right - left;
@@ -298,7 +323,7 @@ function insertion(
     for (let rank = 0; rank <= order.length; rank += 1) {
       if (!spend(budget)) return;
       if (index === 0) {
-        states.push({ rank, cost: pressure });
+        states.push({ rank, cost: pressure + preferenceCost(resource, rank, order, plan.selected) });
         continue;
       }
       const previousResource = candidate.resources.at(index - 1)!;
@@ -334,7 +359,7 @@ function insertion(
           };
           if (alternating(a, b, position(connection.from), position(connection.to))) crossings += 1;
         }
-        const cost = prior.cost + crossings * 4_000 + pressure;
+        const cost = prior.cost + crossings * 4_000 + pressure + preferenceCost(resource, rank, order, plan.selected);
         if (!best || cost < best.cost) best = { rank, cost, previous: prior };
       }
       if (best) next.push(best);

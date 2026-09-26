@@ -231,6 +231,102 @@ export function buildRoutingScene(
     }
     previousSlab = currentSlab;
   }
+
+  // Global slicers cut cells no local obstacle justifies: one obstacle edge
+  // partitions the whole board, so free space arrives as narrow strips beside
+  // walls that only exist elsewhere. Merge neighbours with identical blockers
+  // whose union stays a rectangle — the seam between them was never a wall —
+  // then renumber and refresh portal spans to the merged extents.
+  {
+    const mergeable = cells.map((cell) => ({
+      id: cell.id,
+      rect: cell.rect,
+      blockers: cell.blockers,
+      portals: [...cell.portals],
+      dead: false,
+    }));
+    const links = portals.map((portal) => ({ ...portal, dead: false }));
+    const sameBlockers = (a: (typeof mergeable)[number], b: (typeof mergeable)[number]) =>
+      a.blockers.length === b.blockers.length && a.blockers.every((id, index) => id === b.blockers[index]);
+    let merged = true;
+    while (merged && work <= MAX_SCENE_WORK) {
+      merged = false;
+      work += links.length;
+      for (const link of links) {
+        if (link.dead) continue;
+        const a = mergeable[link.a]!;
+        const b = mergeable[link.b]!;
+        if (a.dead || b.dead || !sameBlockers(a, b)) continue;
+        const aligned =
+          link.axis === "x"
+            ? a.rect.left === b.rect.left && a.rect.right === b.rect.right
+            : a.rect.top === b.rect.top && a.rect.bottom === b.rect.bottom;
+        if (!aligned) continue;
+        a.rect =
+          link.axis === "x"
+            ? {
+                left: a.rect.left,
+                top: Math.min(a.rect.top, b.rect.top),
+                right: a.rect.right,
+                bottom: Math.max(a.rect.bottom, b.rect.bottom),
+              }
+            : {
+                left: Math.min(a.rect.left, b.rect.left),
+                top: a.rect.top,
+                right: Math.max(a.rect.right, b.rect.right),
+                bottom: a.rect.bottom,
+              };
+        link.dead = true;
+        for (const id of b.portals) {
+          const other = links[id]!;
+          if (other.dead || other === link) continue;
+          if (other.a === b.id) other.a = a.id;
+          else if (other.b === b.id) other.b = a.id;
+          if (other.a === other.b) {
+            other.dead = true;
+            continue;
+          }
+          if (!a.portals.includes(id)) a.portals.push(id);
+        }
+        b.dead = true;
+        b.portals.length = 0;
+        merged = true;
+      }
+    }
+    const renumber = new Map<number, number>();
+    const mergedCells: typeof cells = [];
+    for (const cell of mergeable) {
+      if (cell.dead) continue;
+      renumber.set(cell.id, mergedCells.length);
+      mergedCells.push({ id: mergedCells.length, rect: cell.rect, blockers: cell.blockers, portals: [] });
+    }
+    const mergedPortals: typeof portals = [];
+    const seenLinks = new Set<string>();
+    for (const link of links) {
+      if (link.dead) continue;
+      const a = renumber.get(link.a);
+      const b = renumber.get(link.b);
+      if (a === undefined || b === undefined || a === b) continue;
+      const first = mergedCells[a]!.rect;
+      const second = mergedCells[b]!.rect;
+      const min = link.axis === "x" ? Math.max(first.left, second.left) : Math.max(first.top, second.top);
+      const max = link.axis === "x" ? Math.min(first.right, second.right) : Math.min(first.bottom, second.bottom);
+      if (max - min <= EPSILON) continue;
+      const key = `${a}|${b}|${link.axis}|${link.fixed}|${min}|${max}`;
+      if (seenLinks.has(key)) continue;
+      seenLinks.add(key);
+      const id = mergedPortals.length;
+      mergedPortals.push({ id, a, b, axis: link.axis, fixed: link.fixed, min, max });
+      mergedCells[a]!.portals.push(id);
+      mergedCells[b]!.portals.push(id);
+    }
+    work += mergedCells.length + mergedPortals.length;
+    if (work > MAX_SCENE_WORK) return undefined;
+    cells.length = 0;
+    cells.push(...mergedCells);
+    portals.length = 0;
+    portals.push(...mergedPortals);
+  }
   return { bounds: new Map(bounds), obstacles, cells, portals, parents, kinds };
 }
 
