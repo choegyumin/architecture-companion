@@ -127,6 +127,7 @@ export function routeAggregateDependencyEdges(
     const result = coordinateRoutingPlan(scene, plan, queries, work);
     const rendered = new Map<string, EdgeRoute>();
     const polylines = new Map<string, readonly Segment[]>();
+    let bends = 0;
     for (const [id, points] of result.paths) {
       const reference = baselineLengths.get(id);
       if (
@@ -138,6 +139,7 @@ export function routeAggregateDependencyEdges(
       if (route) {
         rendered.set(id, route);
         polylines.set(id, segments(points));
+        bends += Math.max(0, points.length - 2);
       }
     }
     // Realized crossings between rendered routes — the ordering stage only estimates
@@ -151,19 +153,24 @@ export function routeAggregateDependencyEdges(
         }
       }
     }
-    return { plan, rendered, cost: result.cost, compression: result.compression, crossings };
+    return { plan, rendered, cost: result.cost, compression: result.compression, crossings, bends };
   };
   const orderBudget = budget(orderLimit);
   const coordinateBudget = budget(coordinateLimit);
   let selected = evaluate(selectRoutingPlan(scene, requests, orderBudget), coordinateBudget);
+  // Straightness ranks between crossings and compression: a plan with fewer real
+  // corners wins even when it packs the corridors slightly tighter, because every
+  // avoidable stair or hook reads as a routing error on the canvas.
   const improves = (next: typeof selected, previous: typeof selected) =>
     [...previous.rendered.keys()].every((id) => next.rendered.has(id)) &&
     (next.rendered.size > previous.rendered.size ||
       (next.rendered.size === previous.rendered.size &&
         (next.crossings < previous.crossings ||
           (next.crossings === previous.crossings &&
-            (next.compression < previous.compression ||
-              (next.compression === previous.compression && next.cost < previous.cost))))));
+            (next.bends < previous.bends ||
+              (next.bends === previous.bends &&
+                (next.compression < previous.compression ||
+                  (next.compression === previous.compression && next.cost < previous.cost))))))));
   const refine = (extended: boolean, ordering: WorkBudget, coordinates: WorkBudget) => {
     for (let pass = 0; pass < Math.min(4, options.maxImprovementPasses ?? 1); pass += 1) {
       let changed = false;
