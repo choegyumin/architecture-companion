@@ -47,32 +47,7 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const aggregateProjections = projections
     .filter((projection) => projection.type === "aggregate")
     .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
-  const aggregateEndpointIds = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
-  const aggregateElements = new Map(
-    [...layout.groups, ...layout.nodes.filter((node) => !node.parentId || aggregateEndpointIds.has(node.id))].map(
-      ({ id }) => [id, getOrThrow(bounds.get(id), `Missing dependency element bounds: ${id}`)] as const,
-    ),
-  );
-  const virtualGroups = new Map<string | undefined, (typeof cards)[number]["bounds"]>();
-  for (const node of layout.nodes) {
-    const current = getOrThrow(bounds.get(node.id), `Missing dependency node bounds: ${node.id}`);
-    const previous = virtualGroups.get(node.parentId);
-    if (!previous) {
-      virtualGroups.set(node.parentId, current);
-      continue;
-    }
-    const left = Math.min(previous.position.x, current.position.x);
-    const top = Math.min(previous.position.y, current.position.y);
-    const right = Math.max(previous.position.x + previous.size.width, current.position.x + current.size.width);
-    const bottom = Math.max(previous.position.y + previous.size.height, current.position.y + current.size.height);
-    virtualGroups.set(node.parentId, {
-      position: { x: left, y: top },
-      size: { width: right - left, height: bottom - top },
-    });
-  }
-  const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, aggregateElements, [
-    ...virtualGroups.values(),
-  ]);
+  const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, layout);
   const edges = projections.map<DiagramReactFlowEdge>((projection) => {
     const common = {
       focusable: false,
