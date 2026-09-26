@@ -11,6 +11,7 @@ import {
   pathsCross,
   pathsOverlap,
 } from "@/client/widgets/dependency-graph-route-test-geometry";
+import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import { parseDiagram } from "@/features/diagram/diagram";
@@ -119,17 +120,31 @@ function ordinateAtX(path: string, x: number): number[] {
 
 type AggregateProjection = Readonly<{ id: string; sourceId: string; targetId: string }>;
 
+function onElementBoundary(
+  point: { x: number; y: number },
+  elementId: string,
+  bounds: ReturnType<typeof getDependencyElementBounds>,
+  bundles: ReadonlyMap<string, { position: { x: number; y: number }; size: { width: number; height: number } }>,
+): boolean {
+  const rects = [bounds.get(elementId), bundles.get(elementId)].filter(Boolean);
+  return rects.some((rect) => onBoundary(point, rect!));
+}
+
 function expectReadableRoutes(
   projections: readonly AggregateProjection[],
   routes: ReadonlyMap<string, AggregateEdgeRoute>,
   bounds: ReturnType<typeof getDependencyElementBounds>,
+  bundles: ReadonlyMap<
+    string,
+    { position: { x: number; y: number }; size: { width: number; height: number } }
+  > = new Map(),
 ): void {
   for (const { id, sourceId, targetId } of projections) {
     const route = getOrThrow(routes.get(id), `Missing normal route: ${id}`);
     const { start, end } = pathEndpoints(route.path);
     expect(route.routing.stage).toBe("normal");
-    expect(onBoundary(start, getOrThrow(bounds.get(sourceId), `Missing source: ${sourceId}`))).toBe(true);
-    expect(onBoundary(end, getOrThrow(bounds.get(targetId), `Missing target: ${targetId}`))).toBe(true);
+    expect(onElementBoundary(start, sourceId, bounds, bundles)).toBe(true);
+    expect(onElementBoundary(end, targetId, bounds, bundles)).toBe(true);
   }
   for (const [index, first] of projections.entries()) {
     for (const second of projections.slice(index + 1)) {
@@ -150,20 +165,21 @@ async function focusedAggregateRoutes(focusId: string) {
   const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
   const layout = await layoutDependencyGraph(diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
+  const bundles = collectVirtualBundles(layout, bounds) ?? new Map();
   const projections = projectDependencyEdges(diagram.graph, { type: "group", id: focusId }).filter(
     (projection) => projection.type === "aggregate",
   );
   const routes = routeAggregateDependencyEdges(projections, layout);
-  return { projections, routes, bounds };
+  return { projections, routes, bounds, bundles };
 }
 
 async function expectFocusedRelations(focusId: string, pairs: readonly (readonly [string, string])[]): Promise<void> {
-  const { projections, routes, bounds } = await focusedAggregateRoutes(focusId);
+  const { projections, routes, bounds, bundles } = await focusedAggregateRoutes(focusId);
   const selected = pairs.map(([sourceId, targetId]) => {
     const projection = projections.find((edge) => edge.sourceId === sourceId && edge.targetId === targetId);
     return getOrThrow(projection, `Missing focused relation: ${sourceId} → ${targetId}`);
   });
-  expectReadableRoutes(selected, routes, bounds);
+  expectReadableRoutes(selected, routes, bounds, bundles);
 }
 
 describe("dependency edge routes", () => {

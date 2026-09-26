@@ -7,6 +7,8 @@ import {
   routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
 } from "@/client/widgets/dependency-graph-edge-routes";
+import type { Bounds } from "@/client/widgets/dependency-graph-routing-geometry";
+import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
 import {
   buildDiagramReactFlowNodes,
   createDiagramLinkActivationHandler,
@@ -17,6 +19,7 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+import type { LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DependencyRenderOptions = Readonly<{
@@ -33,6 +36,28 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
 ): DiagramReactFlowRenderModel {
   const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
+  // Loose-node bundles render above their group and below the cards: a dashed
+  // outline marking where a mixed group's aggregate edges attach.
+  const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
+  const bundleNodes = [...bundles].map<LabeledGroupReactFlowNode>(([groupId, bundle]) => {
+    const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
+    return {
+      id: `virtual-bundle:${groupId}`,
+      type: "labeled-group",
+      data: { label: "", variant: "virtual" },
+      position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
+      parentId: groupId,
+      style: { width: bundle.size.width, height: bundle.size.height },
+      draggable: false,
+      focusable: false,
+      selectable: false,
+    };
+  });
+  const layeredNodes = [
+    ...nodes.filter((node) => node.type === "labeled-group"),
+    ...bundleNodes,
+    ...nodes.filter((node) => node.type !== "labeled-group"),
+  ];
   const cards = layout.nodes.map(({ id }) => ({
     id,
     bounds: getOrThrow(bounds.get(id), `Missing dependency node bounds: ${id}`),
@@ -116,5 +141,5 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
     };
   });
 
-  return { nodes, edges, edgeTargets };
+  return { nodes: layeredNodes, edges, edgeTargets };
 }

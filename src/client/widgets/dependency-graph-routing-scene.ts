@@ -39,6 +39,7 @@ export type RoutingScene = Readonly<{
   portals: readonly RoutingPortal[];
   parents: ReadonlyMap<string, string | undefined>;
   kinds: ReadonlyMap<string, "group" | "node">;
+  bundles: ReadonlyMap<string, RoutingObstacle>;
 }>;
 export type RoutingTerminal = Readonly<{
   key: string;
@@ -57,6 +58,8 @@ const MAX_SLABS = 4_000;
 const MAX_CELLS = 20_000;
 const MAX_PORTALS = 60_000;
 const MAX_SCENE_WORK = 2_000_000;
+// Breathing room between a loose-node bundle and the cards it wraps.
+const BUNDLE_PADDING = 32;
 
 function valid(rect: Rectangle): boolean {
   return (
@@ -106,9 +109,44 @@ function virtualObstacles(
     let id = stem;
     for (let suffix = 1; identifiers.has(id); suffix += 1) id = `${stem}:${suffix}`;
     identifiers.add(id);
-    result.push({ id, kind: "virtual", rect: { left, top, right, bottom }, parentId, members });
+    // Padding keeps the drawn outline and the routing face off the cards, so the
+    // bundle reads as a container instead of a second skin. It draws into the
+    // group's free space — the layout does not reserve room for it.
+    result.push({
+      id,
+      kind: "virtual",
+      rect: {
+        left: left - BUNDLE_PADDING,
+        top: top - BUNDLE_PADDING,
+        right: right + BUNDLE_PADDING,
+        bottom: bottom + BUNDLE_PADDING,
+      },
+      parentId,
+      members,
+    });
   }
   return result;
+}
+
+export function collectVirtualBundles(
+  layout: DiagramLayout,
+  bounds: ReadonlyMap<string, Bounds>,
+): ReadonlyMap<string, Bounds> | undefined {
+  const existing = new Set([...layout.groups, ...layout.nodes].map(({ id }) => id));
+  const virtual = virtualObstacles(layout, bounds, existing);
+  if (!virtual) return undefined;
+  const bundles = new Map<string, Bounds>();
+  for (const obstacle of virtual) {
+    if (!obstacle.parentId) continue;
+    bundles.set(obstacle.parentId, {
+      position: { x: obstacle.rect.left, y: obstacle.rect.top },
+      size: {
+        width: obstacle.rect.right - obstacle.rect.left,
+        height: obstacle.rect.bottom - obstacle.rect.top,
+      },
+    });
+  }
+  return bundles;
 }
 
 export function buildRoutingScene(
@@ -139,6 +177,23 @@ export function buildRoutingScene(
   const virtual = virtualObstacles(layout, bounds, new Set(obstacles.map(({ id }) => id)));
   if (!virtual) return undefined;
   obstacles.push(...virtual);
+  // Bundles behave like groups downstream: ancestors resolve through the parent
+  // chain, so existing exemptions apply unchanged.
+  const bundles = new Map<string, RoutingObstacle>();
+  const sceneBounds = new Map(bounds);
+  for (const obstacle of virtual) {
+    if (!obstacle.parentId) continue;
+    bundles.set(obstacle.parentId, obstacle);
+    parents.set(obstacle.id, obstacle.parentId);
+    kinds.set(obstacle.id, "group");
+    sceneBounds.set(obstacle.id, {
+      position: { x: obstacle.rect.left, y: obstacle.rect.top },
+      size: {
+        width: obstacle.rect.right - obstacle.rect.left,
+        height: obstacle.rect.bottom - obstacle.rect.top,
+      },
+    });
+  }
   if (obstacles.length === 0 || obstacles.length > MAX_OBSTACLES) return undefined;
   obstacles.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
@@ -331,7 +386,7 @@ export function buildRoutingScene(
     portals.length = 0;
     portals.push(...mergedPortals);
   }
-  return { bounds: new Map(bounds), obstacles, cells, portals, parents, kinds };
+  return { bounds: sceneBounds, obstacles, cells, portals, parents, kinds, bundles };
 }
 
 function descendantOf(scene: RoutingScene, elementId: string, groupId: string): boolean {
@@ -409,16 +464,19 @@ export function createRoutingQuery(
   sources: readonly RoutingTerminal[];
   targets: readonly RoutingTerminal[];
 }> {
+  // A mixed group's aggregate rolls up exactly its loose direct nodes, so the
+  // endpoint resolves to their bundle instead of the outer group border.
+  const resolve = (elementId: string) => scene.bundles.get(elementId)?.id ?? elementId;
+  const sourceId = resolve(projection.sourceId);
+  const targetId = resolve(projection.targetId);
   const exempt = new Set<string>();
-  for (const id of [projection.sourceId, projection.targetId]) {
+  for (const id of [sourceId, targetId]) {
     for (let parent = scene.parents.get(id); parent; parent = scene.parents.get(parent)) exempt.add(parent);
   }
-  const inwardSource =
-    scene.kinds.get(projection.sourceId) === "group" && descendantOf(scene, projection.targetId, projection.sourceId);
-  const inwardTarget =
-    scene.kinds.get(projection.targetId) === "group" && descendantOf(scene, projection.sourceId, projection.targetId);
-  if (inwardSource) exempt.add(projection.sourceId);
-  if (inwardTarget) exempt.add(projection.targetId);
+  const inwardSource = scene.kinds.get(sourceId) === "group" && descendantOf(scene, targetId, sourceId);
+  const inwardTarget = scene.kinds.get(targetId) === "group" && descendantOf(scene, sourceId, targetId);
+  if (inwardSource) exempt.add(sourceId);
+  if (inwardTarget) exempt.add(targetId);
   for (const obstacle of scene.obstacles) {
     if (
       obstacle.kind === "virtual" &&
@@ -434,7 +492,7 @@ export function createRoutingQuery(
   return {
     blocked,
     obstacles: scene.obstacles.filter(({ id }) => !exempt.has(id)).map(({ rect }) => rect),
-    sources: terminals(scene, projection.sourceId, inwardSource, blocked),
-    targets: terminals(scene, projection.targetId, inwardTarget, blocked),
+    sources: terminals(scene, sourceId, inwardSource, blocked),
+    targets: terminals(scene, targetId, inwardTarget, blocked),
   };
 }

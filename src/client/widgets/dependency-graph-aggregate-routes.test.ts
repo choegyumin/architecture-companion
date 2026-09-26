@@ -377,6 +377,24 @@ describe("aggregate dependency routing at its public seam", () => {
     expect(entersBox(route.path, box(460, 430, 540, 510))).toBe(false);
   });
 
+  it("attaches a mixed group's aggregate to its loose-node bundle inside the group", () => {
+    const layout = layoutOf(
+      [group("mixed", 0, 0, 600, 400), group("inner", 20, 180, 200, 200, "mixed"), group("target", 800, 60, 200, 200)],
+      [node("loose", 300, 40, 120, 80, "mixed")],
+    );
+    const route = routeFor(routeAggregateDependencyEdges([edge("out", "mixed", "target")], layout), "out");
+
+    expect(route.routing.stage).toBe("normal");
+    // The bundle is the loose node's box plus 32px padding; the port sits on its
+    // perimeter, well inside the 600-wide outer group.
+    const start = pathPoints(route.path).at(0)!;
+    const onBundleFace =
+      (start.x === 268 || start.x === 452) && start.y >= 8 && start.y <= 152
+        ? true
+        : (start.y === 8 || start.y === 152) && start.x >= 268 && start.x <= 452;
+    expect(onBundleFace).toBe(true);
+  });
+
   it("lets a node endpoint be reached through its own virtual envelope", () => {
     const layout = layoutOf(
       [group("source", -300, 200, 100, 100)],

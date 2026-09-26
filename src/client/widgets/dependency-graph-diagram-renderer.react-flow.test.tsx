@@ -75,6 +75,20 @@ describe("dependency graph React Flow adapter", () => {
     expect(commentModel.nodes.find((node) => node.id === "a")?.data).not.toHaveProperty("activatable");
   });
 
+  it("renders an inert dashed bundle for a mixed group's loose nodes between group and cards", async () => {
+    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const bundle = model.nodes.find((node) => node.id === "virtual-bundle:app");
+    if (bundle?.type !== "labeled-group") throw new Error("Missing virtual bundle");
+    expect(bundle.data.variant).toBe("virtual");
+    expect(bundle.parentId).toBe("app");
+    expect(bundle.selectable).toBe(false);
+    const order = model.nodes.map(({ id }) => id);
+    expect(order.indexOf("virtual-bundle:app")).toBeGreaterThan(order.indexOf("app"));
+    expect(order.indexOf("virtual-bundle:app")).toBeLessThan(order.indexOf("a"));
+    expect(model.nodes.find((node) => node.id === "virtual-bundle:library")).toBeUndefined();
+  });
+
   it("renders only selected original edges and preserves their individual targets", async () => {
     const layout = await layoutDependencyGraph(diagram.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
