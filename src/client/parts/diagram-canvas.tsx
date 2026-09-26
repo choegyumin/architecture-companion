@@ -25,6 +25,7 @@ import {
 import { DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
+import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
@@ -34,7 +35,11 @@ import { RouteEdge, type RouteReactFlowEdge } from "@/shared/react-flow/route-ed
 import { useTheme } from "@/shared/react-ui/theme-context";
 
 export type DiagramReactFlowNode =
-  CardReactFlowNode | LabeledGroupReactFlowNode | LifelineReactFlowNode | FragmentReactFlowNode;
+  | CardReactFlowNode
+  | LabeledGroupReactFlowNode
+  | LifelineReactFlowNode
+  | FragmentReactFlowNode
+  | BoundingGroupReactFlowNode;
 export type DiagramReactFlowEdge = RouteReactFlowEdge | MessageReactFlowEdge;
 
 type NodeRendererRegistry<NodeType extends Node> = {
@@ -49,6 +54,7 @@ const diagramNodeTypes = {
   "labeled-group": LabeledGroupNode,
   fragment: FragmentNode,
   lifeline: LifelineNode,
+  "bounding-group": BoundingGroupNode,
 } satisfies NodeRendererRegistry<DiagramReactFlowNode>;
 const diagramEdgeTypes = {
   message: MessageEdge,
@@ -125,9 +131,9 @@ export function DiagramCanvas({
     const clickedNode = event.target instanceof Element ? event.target.closest(".react-flow__node") : null;
     const clickedNodeId = clickedNode?.getAttribute("data-id");
     if (clickedNodeId && clickedNodeId !== node.id) return;
-    // Virtual bundles are decoration over the group: they have no element id to
+    // Bounding groups are decoration over the group: they have no element id to
     // activate or annotate, so clicks must not resolve to them.
-    if (node.type === "labeled-group" && node.data.variant === "virtual") return;
+    if (node.type === "bounding-group") return;
     if (onCanvasClick) {
       handleCanvasClick(event, { type: node.type === "labeled-group" ? "group" : "node", id: node.id });
     } else if (!isInteractiveClick(event)) {

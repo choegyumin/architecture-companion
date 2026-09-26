@@ -7,19 +7,11 @@ type LabeledGroupNodeData = Readonly<{
   label: ReactNode;
   description?: ReactNode;
   activatable?: boolean;
-  // A loose-node bundle: a dashed, inert outline that marks where an implicit
-  // grouping sits — visually a group, but not one the reader can act on.
-  variant?: "virtual";
 }>;
 
 export type LabeledGroupReactFlowNode = Node<LabeledGroupNodeData, "labeled-group">;
 
 export function LabeledGroupNode({ data, isConnectable }: NodeProps<LabeledGroupReactFlowNode>) {
-  if (data.variant === "virtual") {
-    // Edge-weight dashed stroke in the group border color: clearly a container,
-    // clearly not a real group.
-    return <article aria-hidden="true" className="pointer-events-none size-full rounded-xl border-2 border-dashed" />;
-  }
   return (
     <article
       aria-label={typeof data.label === "string" ? `Group: ${data.label}` : "Group"}

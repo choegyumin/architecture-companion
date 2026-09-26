@@ -19,7 +19,7 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
-import type { LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
+import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DependencyRenderOptions = Readonly<{
@@ -50,24 +50,24 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const aggregateProjections = projections
     .filter((projection) => projection.type === "aggregate")
     .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
-  // Loose-node bundles render above their group and below the cards: a dashed
+  // Bounding groups render above their group and below the cards: a dashed
   // outline marking where a mixed group's aggregate edges attach — and only
   // while such an edge exists; otherwise the loose nodes read as plain cards.
   const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
   const attached = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
-  const bundleNodes = [...bundles]
+  const boundingGroups = [...bundles]
     .filter(([groupId]) => attached.has(groupId))
-    .map<LabeledGroupReactFlowNode>(([groupId, bundle]) => {
+    .map<BoundingGroupReactFlowNode>(([groupId, bundle]) => {
       const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
       return {
-        id: `virtual-bundle:${groupId}`,
-        type: "labeled-group",
-        data: { label: "", variant: "virtual" },
+        id: `bounding-group:${groupId}`,
+        type: "bounding-group",
+        data: {},
         position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
         parentId: groupId,
         // Blocking the React Flow wrapper (not just the article) lets hover and
-        // clicks fall through to the group underneath, so the bundle never
-        // intercepts interactions or hover effects.
+        // clicks fall through to the group underneath, so the bounding group
+        // never intercepts interactions or hover effects.
         style: { width: bundle.size.width, height: bundle.size.height, pointerEvents: "none" },
         draggable: false,
         focusable: false,
@@ -76,7 +76,7 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
     });
   const layeredNodes = [
     ...nodes.filter((node) => node.type === "labeled-group"),
-    ...bundleNodes,
+    ...boundingGroups,
     ...nodes.filter((node) => node.type !== "labeled-group"),
   ];
   const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, layout);
