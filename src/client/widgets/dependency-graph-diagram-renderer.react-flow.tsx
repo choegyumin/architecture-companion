@@ -7,6 +7,8 @@ import {
   routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
 } from "@/client/widgets/dependency-graph-edge-routes";
+import type { Bounds } from "@/client/widgets/dependency-graph-routing-geometry";
+import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
 import {
   buildDiagramReactFlowNodes,
   createDiagramLinkActivationHandler,
@@ -17,6 +19,7 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 type DependencyRenderOptions = Readonly<{
@@ -47,32 +50,36 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const aggregateProjections = projections
     .filter((projection) => projection.type === "aggregate")
     .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
-  const aggregateEndpointIds = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
-  const aggregateElements = new Map(
-    [...layout.groups, ...layout.nodes.filter((node) => !node.parentId || aggregateEndpointIds.has(node.id))].map(
-      ({ id }) => [id, getOrThrow(bounds.get(id), `Missing dependency element bounds: ${id}`)] as const,
-    ),
-  );
-  const virtualGroups = new Map<string | undefined, (typeof cards)[number]["bounds"]>();
-  for (const node of layout.nodes) {
-    const current = getOrThrow(bounds.get(node.id), `Missing dependency node bounds: ${node.id}`);
-    const previous = virtualGroups.get(node.parentId);
-    if (!previous) {
-      virtualGroups.set(node.parentId, current);
-      continue;
-    }
-    const left = Math.min(previous.position.x, current.position.x);
-    const top = Math.min(previous.position.y, current.position.y);
-    const right = Math.max(previous.position.x + previous.size.width, current.position.x + current.size.width);
-    const bottom = Math.max(previous.position.y + previous.size.height, current.position.y + current.size.height);
-    virtualGroups.set(node.parentId, {
-      position: { x: left, y: top },
-      size: { width: right - left, height: bottom - top },
+  // Bounding groups render above their group and below the cards: a dashed
+  // outline marking where a mixed group's aggregate edges attach — and only
+  // while such an edge exists; otherwise the loose nodes read as plain cards.
+  const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
+  const attached = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
+  const boundingGroups = [...bundles]
+    .filter(([groupId]) => attached.has(groupId))
+    .map<BoundingGroupReactFlowNode>(([groupId, bundle]) => {
+      const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
+      return {
+        id: `bounding-group:${groupId}`,
+        type: "bounding-group",
+        data: {},
+        position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
+        parentId: groupId,
+        // Blocking the React Flow wrapper (not just the article) lets hover and
+        // clicks fall through to the group underneath, so the bounding group
+        // never intercepts interactions or hover effects.
+        style: { width: bundle.size.width, height: bundle.size.height, pointerEvents: "none" },
+        draggable: false,
+        focusable: false,
+        selectable: false,
+      };
     });
-  }
-  const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, aggregateElements, [
-    ...virtualGroups.values(),
-  ]);
+  const layeredNodes = [
+    ...nodes.filter((node) => node.type === "labeled-group"),
+    ...boundingGroups,
+    ...nodes.filter((node) => node.type !== "labeled-group"),
+  ];
+  const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, layout);
   const edges = projections.map<DiagramReactFlowEdge>((projection) => {
     const common = {
       focusable: false,
@@ -141,5 +148,5 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
     };
   });
 
-  return { nodes, edges, edgeTargets };
+  return { nodes: layeredNodes, edges, edgeTargets };
 }

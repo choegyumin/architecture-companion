@@ -1,0 +1,498 @@
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+
+import {
+  type Bounds,
+  EPSILON,
+  portRange,
+  type Projection,
+  type Rectangle,
+  rectangle,
+  type Side,
+} from "./dependency-graph-routing-geometry";
+
+export type RoutingObstacle = Readonly<{
+  id: string;
+  kind: "group" | "node" | "virtual";
+  rect: Rectangle;
+  parentId?: string;
+  members?: readonly string[];
+}>;
+export type RoutingCell = Readonly<{
+  id: number;
+  rect: Rectangle;
+  blockers: readonly string[];
+  portals: readonly number[];
+}>;
+export type RoutingPortal = Readonly<{
+  id: number;
+  a: number;
+  b: number;
+  axis: "x" | "y";
+  fixed: number;
+  min: number;
+  max: number;
+}>;
+export type RoutingScene = Readonly<{
+  bounds: ReadonlyMap<string, Bounds>;
+  obstacles: readonly RoutingObstacle[];
+  cells: readonly RoutingCell[];
+  portals: readonly RoutingPortal[];
+  parents: ReadonlyMap<string, string | undefined>;
+  kinds: ReadonlyMap<string, "group" | "node">;
+  bundles: ReadonlyMap<string, RoutingObstacle>;
+}>;
+export type RoutingTerminal = Readonly<{
+  key: string;
+  elementId: string;
+  side: Side;
+  cell: number;
+  axis: "x" | "y";
+  fixed: number;
+  min: number;
+  max: number;
+  inward: boolean;
+}>;
+
+const MAX_OBSTACLES = 2_000;
+const MAX_SLABS = 4_000;
+const MAX_CELLS = 20_000;
+const MAX_PORTALS = 60_000;
+const MAX_SCENE_WORK = 2_000_000;
+// Breathing room between a loose-node bundle and the cards it wraps.
+const BUNDLE_PADDING = 32;
+
+function valid(rect: Rectangle): boolean {
+  return (
+    Number.isFinite(rect.left) &&
+    Number.isFinite(rect.top) &&
+    Number.isFinite(rect.right) &&
+    Number.isFinite(rect.bottom) &&
+    rect.left < rect.right &&
+    rect.top < rect.bottom
+  );
+}
+
+function virtualObstacles(
+  layout: DiagramLayout,
+  bounds: ReadonlyMap<string, Bounds>,
+  existing: ReadonlySet<string>,
+): RoutingObstacle[] | undefined {
+  const children = new Map<string | undefined, string[]>();
+  for (const node of layout.nodes) {
+    const members = children.get(node.parentId) ?? [];
+    members.push(node.id);
+    children.set(node.parentId, members);
+  }
+  const identifiers = new Set(existing);
+  const result: RoutingObstacle[] = [];
+  for (const [parentId, members] of children) {
+    // Virtual wrappers exist only where loose nodes sit beside subgroups: a pure
+    // node container duplicates its group obstacle, and top-level nodes bundle in
+    // the layout already — wrapping them only blocks unrelated through traffic.
+    if (!parentId || !layout.groups.some((group) => group.parentId === parentId)) continue;
+    members.sort();
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    for (const member of members) {
+      const placement = bounds.get(member);
+      if (!placement) return undefined;
+      const rect = rectangle(placement);
+      if (!valid(rect)) return undefined;
+      left = Math.min(left, rect.left);
+      top = Math.min(top, rect.top);
+      right = Math.max(right, rect.right);
+      bottom = Math.max(bottom, rect.bottom);
+    }
+    const stem = `virtual:${JSON.stringify([parentId ?? null, members])}`;
+    let id = stem;
+    for (let suffix = 1; identifiers.has(id); suffix += 1) id = `${stem}:${suffix}`;
+    identifiers.add(id);
+    // Padding keeps the drawn outline and the routing face off the cards, so the
+    // bundle reads as a container instead of a second skin. It draws into the
+    // group's free space — the layout does not reserve room for it.
+    result.push({
+      id,
+      kind: "virtual",
+      rect: {
+        left: left - BUNDLE_PADDING,
+        top: top - BUNDLE_PADDING,
+        right: right + BUNDLE_PADDING,
+        bottom: bottom + BUNDLE_PADDING,
+      },
+      parentId,
+      members,
+    });
+  }
+  return result;
+}
+
+export function collectVirtualBundles(
+  layout: DiagramLayout,
+  bounds: ReadonlyMap<string, Bounds>,
+): ReadonlyMap<string, Bounds> | undefined {
+  const existing = new Set([...layout.groups, ...layout.nodes].map(({ id }) => id));
+  const virtual = virtualObstacles(layout, bounds, existing);
+  if (!virtual) return undefined;
+  const bundles = new Map<string, Bounds>();
+  for (const obstacle of virtual) {
+    if (!obstacle.parentId) continue;
+    bundles.set(obstacle.parentId, {
+      position: { x: obstacle.rect.left, y: obstacle.rect.top },
+      size: {
+        width: obstacle.rect.right - obstacle.rect.left,
+        height: obstacle.rect.bottom - obstacle.rect.top,
+      },
+    });
+  }
+  return bundles;
+}
+
+export function buildRoutingScene(
+  layout: DiagramLayout,
+  bounds: ReadonlyMap<string, Bounds>,
+): RoutingScene | undefined {
+  const parents = new Map<string, string | undefined>();
+  const kinds = new Map<string, "group" | "node">();
+  const obstacles: RoutingObstacle[] = [];
+  for (const group of layout.groups) {
+    const placement = bounds.get(group.id);
+    if (!placement) return undefined;
+    const rect = rectangle(placement);
+    if (!valid(rect)) return undefined;
+    obstacles.push({ id: group.id, kind: "group", rect, parentId: group.parentId });
+    parents.set(group.id, group.parentId);
+    kinds.set(group.id, "group");
+  }
+  for (const node of layout.nodes) {
+    const placement = bounds.get(node.id);
+    if (!placement) return undefined;
+    const rect = rectangle(placement);
+    if (!valid(rect)) return undefined;
+    obstacles.push({ id: node.id, kind: "node", rect, parentId: node.parentId });
+    parents.set(node.id, node.parentId);
+    kinds.set(node.id, "node");
+  }
+  const virtual = virtualObstacles(layout, bounds, new Set(obstacles.map(({ id }) => id)));
+  if (!virtual) return undefined;
+  obstacles.push(...virtual);
+  // Bundles behave like groups downstream: ancestors resolve through the parent
+  // chain, so existing exemptions apply unchanged.
+  const bundles = new Map<string, RoutingObstacle>();
+  const sceneBounds = new Map(bounds);
+  for (const obstacle of virtual) {
+    if (!obstacle.parentId) continue;
+    bundles.set(obstacle.parentId, obstacle);
+    parents.set(obstacle.id, obstacle.parentId);
+    kinds.set(obstacle.id, "group");
+    sceneBounds.set(obstacle.id, {
+      position: { x: obstacle.rect.left, y: obstacle.rect.top },
+      size: {
+        width: obstacle.rect.right - obstacle.rect.left,
+        height: obstacle.rect.bottom - obstacle.rect.top,
+      },
+    });
+  }
+  if (obstacles.length === 0 || obstacles.length > MAX_OBSTACLES) return undefined;
+  obstacles.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const left = Math.min(...obstacles.map(({ rect }) => rect.left));
+  const top = Math.min(...obstacles.map(({ rect }) => rect.top));
+  const right = Math.max(...obstacles.map(({ rect }) => rect.right));
+  const bottom = Math.max(...obstacles.map(({ rect }) => rect.bottom));
+  const margin = Math.max(512, Math.max(right - left, bottom - top) / 8);
+  const world = { left: left - margin, top: top - margin, right: right + margin, bottom: bottom + margin };
+  if (!valid(world)) return undefined;
+  const xs = [...new Set([world.left, world.right, ...obstacles.flatMap(({ rect }) => [rect.left, rect.right])])].sort(
+    (a, b) => a - b,
+  );
+  if (xs.length - 1 > MAX_SLABS) return undefined;
+
+  const cells: Array<{
+    id: number;
+    rect: Rectangle;
+    blockers: readonly string[];
+    portals: number[];
+  }> = [];
+  const portals: RoutingPortal[] = [];
+  let work = obstacles.length + xs.length;
+  let previousSlab: number[] = [];
+  const connect = (a: number, b: number, axis: "x" | "y", fixed: number, min: number, max: number): boolean => {
+    if (max - min <= EPSILON) return true;
+    if (portals.length >= MAX_PORTALS || ++work > MAX_SCENE_WORK) return false;
+    const id = portals.length;
+    portals.push({ id, a, b, axis, fixed, min, max });
+    cells[a]!.portals.push(id);
+    cells[b]!.portals.push(id);
+    return true;
+  };
+
+  for (let slab = 0; slab < xs.length - 1; slab += 1) {
+    const x0 = xs.at(slab)!;
+    const x1 = xs.at(slab + 1)!;
+    work += obstacles.length;
+    if (work > MAX_SCENE_WORK) return undefined;
+    const active = obstacles.filter(({ rect }) => rect.left < x1 && rect.right > x0);
+    const events = new Map<number, { enter: string[]; leave: string[] }>();
+    const eventAt = (y: number) => {
+      let event = events.get(y);
+      if (!event) {
+        event = { enter: [], leave: [] };
+        events.set(y, event);
+      }
+      return event;
+    };
+    for (const obstacle of active) {
+      eventAt(obstacle.rect.top).enter.push(obstacle.id);
+      eventAt(obstacle.rect.bottom).leave.push(obstacle.id);
+    }
+    const ys = [...new Set([world.top, world.bottom, ...events.keys()])].sort((a, b) => a - b);
+    work += active.length * 2 + ys.length;
+    if (work > MAX_SCENE_WORK || cells.length + ys.length - 1 > MAX_CELLS) return undefined;
+    const mask = new Set<string>();
+    const currentSlab: number[] = [];
+    for (let row = 0; row < ys.length - 1; row += 1) {
+      const y0 = ys.at(row)!;
+      const y1 = ys.at(row + 1)!;
+      const event = events.get(y0);
+      for (const id of event?.leave ?? []) mask.delete(id);
+      for (const id of event?.enter ?? []) mask.add(id);
+      work += mask.size + 1;
+      if (work > MAX_SCENE_WORK || cells.length >= MAX_CELLS) return undefined;
+      const id = cells.length;
+      cells.push({
+        id,
+        rect: { left: x0, right: x1, top: y0, bottom: y1 },
+        blockers: [...mask].sort(),
+        portals: [],
+      });
+      currentSlab.push(id);
+      if (row > 0 && !connect(id - 1, id, "x", y0, x0, x1)) return undefined;
+    }
+
+    // Two sorted interval lists suffice; no Cartesian product of global x/y boundaries.
+    let prior = 0;
+    let current = 0;
+    while (prior < previousSlab.length && current < currentSlab.length) {
+      const a = cells[previousSlab[prior]!]!;
+      const b = cells[currentSlab[current]!]!;
+      const min = Math.max(a.rect.top, b.rect.top);
+      const max = Math.min(a.rect.bottom, b.rect.bottom);
+      if (!connect(a.id, b.id, "y", x0, min, max)) return undefined;
+      if (++work > MAX_SCENE_WORK) return undefined;
+      if (a.rect.bottom < b.rect.bottom) prior += 1;
+      else if (b.rect.bottom < a.rect.bottom) current += 1;
+      else {
+        prior += 1;
+        current += 1;
+      }
+    }
+    previousSlab = currentSlab;
+  }
+
+  // Global slicers cut cells no local obstacle justifies: one obstacle edge
+  // partitions the whole board, so free space arrives as narrow strips beside
+  // walls that only exist elsewhere. Merge neighbours with identical blockers
+  // whose union stays a rectangle — the seam between them was never a wall —
+  // then renumber and refresh portal spans to the merged extents.
+  {
+    const mergeable = cells.map((cell) => ({
+      id: cell.id,
+      rect: cell.rect,
+      blockers: cell.blockers,
+      portals: [...cell.portals],
+      dead: false,
+    }));
+    const links = portals.map((portal) => ({ ...portal, dead: false }));
+    const sameBlockers = (a: (typeof mergeable)[number], b: (typeof mergeable)[number]) =>
+      a.blockers.length === b.blockers.length && a.blockers.every((id, index) => id === b.blockers[index]);
+    let merged = true;
+    while (merged && work <= MAX_SCENE_WORK) {
+      merged = false;
+      work += links.length;
+      for (const link of links) {
+        if (link.dead) continue;
+        const a = mergeable[link.a]!;
+        const b = mergeable[link.b]!;
+        if (a.dead || b.dead || !sameBlockers(a, b)) continue;
+        const aligned =
+          link.axis === "x"
+            ? a.rect.left === b.rect.left && a.rect.right === b.rect.right
+            : a.rect.top === b.rect.top && a.rect.bottom === b.rect.bottom;
+        if (!aligned) continue;
+        a.rect =
+          link.axis === "x"
+            ? {
+                left: a.rect.left,
+                top: Math.min(a.rect.top, b.rect.top),
+                right: a.rect.right,
+                bottom: Math.max(a.rect.bottom, b.rect.bottom),
+              }
+            : {
+                left: Math.min(a.rect.left, b.rect.left),
+                top: a.rect.top,
+                right: Math.max(a.rect.right, b.rect.right),
+                bottom: a.rect.bottom,
+              };
+        link.dead = true;
+        for (const id of b.portals) {
+          const other = links[id]!;
+          if (other.dead || other === link) continue;
+          if (other.a === b.id) other.a = a.id;
+          else if (other.b === b.id) other.b = a.id;
+          if (other.a === other.b) {
+            other.dead = true;
+            continue;
+          }
+          if (!a.portals.includes(id)) a.portals.push(id);
+        }
+        b.dead = true;
+        b.portals.length = 0;
+        merged = true;
+      }
+    }
+    const renumber = new Map<number, number>();
+    const mergedCells: typeof cells = [];
+    for (const cell of mergeable) {
+      if (cell.dead) continue;
+      renumber.set(cell.id, mergedCells.length);
+      mergedCells.push({ id: mergedCells.length, rect: cell.rect, blockers: cell.blockers, portals: [] });
+    }
+    const mergedPortals: typeof portals = [];
+    const seenLinks = new Set<string>();
+    for (const link of links) {
+      if (link.dead) continue;
+      const a = renumber.get(link.a);
+      const b = renumber.get(link.b);
+      if (a === undefined || b === undefined || a === b) continue;
+      const first = mergedCells[a]!.rect;
+      const second = mergedCells[b]!.rect;
+      const min = link.axis === "x" ? Math.max(first.left, second.left) : Math.max(first.top, second.top);
+      const max = link.axis === "x" ? Math.min(first.right, second.right) : Math.min(first.bottom, second.bottom);
+      if (max - min <= EPSILON) continue;
+      const key = `${a}|${b}|${link.axis}|${link.fixed}|${min}|${max}`;
+      if (seenLinks.has(key)) continue;
+      seenLinks.add(key);
+      const id = mergedPortals.length;
+      mergedPortals.push({ id, a, b, axis: link.axis, fixed: link.fixed, min, max });
+      mergedCells[a]!.portals.push(id);
+      mergedCells[b]!.portals.push(id);
+    }
+    work += mergedCells.length + mergedPortals.length;
+    if (work > MAX_SCENE_WORK) return undefined;
+    cells.length = 0;
+    cells.push(...mergedCells);
+    portals.length = 0;
+    portals.push(...mergedPortals);
+  }
+  return { bounds: sceneBounds, obstacles, cells, portals, parents, kinds, bundles };
+}
+
+function descendantOf(scene: RoutingScene, elementId: string, groupId: string): boolean {
+  for (let parent = scene.parents.get(elementId); parent; parent = scene.parents.get(parent)) {
+    if (parent === groupId) return true;
+  }
+  return false;
+}
+
+function terminals(
+  scene: RoutingScene,
+  elementId: string,
+  inward: boolean,
+  blocked: ReadonlySet<number>,
+): RoutingTerminal[] {
+  const placement = scene.bounds.get(elementId);
+  if (!placement) return [];
+  const rect = rectangle(placement);
+  const result: RoutingTerminal[] = [];
+  for (const side of ["top", "right", "bottom", "left"] as const) {
+    const axis = side === "top" || side === "bottom" ? "x" : "y";
+    const fixed =
+      side === "top" ? rect.top : side === "bottom" ? rect.bottom : side === "left" ? rect.left : rect.right;
+    const [minimum, maximum] = portRange(rect, side);
+    const face: RoutingTerminal[] = [];
+    for (const cell of scene.cells) {
+      if (blocked.has(cell.id)) continue;
+      const span = cell.rect;
+      const touching =
+        side === "top"
+          ? Math.abs((inward ? span.top : span.bottom) - fixed) <= EPSILON &&
+            (inward ? span.bottom > fixed : span.top < fixed)
+          : side === "bottom"
+            ? Math.abs((inward ? span.bottom : span.top) - fixed) <= EPSILON &&
+              (inward ? span.top < fixed : span.bottom > fixed)
+            : side === "left"
+              ? Math.abs((inward ? span.left : span.right) - fixed) <= EPSILON &&
+                (inward ? span.right > fixed : span.left < fixed)
+              : Math.abs((inward ? span.right : span.left) - fixed) <= EPSILON &&
+                (inward ? span.left < fixed : span.right > fixed);
+      if (!touching) continue;
+      let min = Math.max(minimum, axis === "x" ? span.left : span.top);
+      let max = Math.min(maximum, axis === "x" ? span.right : span.bottom);
+      if (max - min <= EPSILON) continue;
+      const inset = Math.min(8, (max - min) / 4);
+      min += inset;
+      max -= inset;
+      face.push({
+        key: JSON.stringify([elementId, side, cell.id]),
+        elementId,
+        side,
+        cell: cell.id,
+        axis,
+        fixed,
+        min,
+        max,
+        inward,
+      });
+    }
+    const midpoint = (minimum + maximum) / 2;
+    face.sort(
+      (a, b) => Math.abs((a.min + a.max) / 2 - midpoint) - Math.abs((b.min + b.max) / 2 - midpoint) || a.cell - b.cell,
+    );
+    result.push(...face);
+  }
+  return result;
+}
+
+export function createRoutingQuery(
+  scene: RoutingScene,
+  projection: Projection,
+): Readonly<{
+  blocked: ReadonlySet<number>;
+  obstacles: readonly Rectangle[];
+  sources: readonly RoutingTerminal[];
+  targets: readonly RoutingTerminal[];
+}> {
+  // A mixed group's aggregate rolls up exactly its loose direct nodes, so the
+  // endpoint resolves to their bundle instead of the outer group border.
+  const resolve = (elementId: string) => scene.bundles.get(elementId)?.id ?? elementId;
+  const sourceId = resolve(projection.sourceId);
+  const targetId = resolve(projection.targetId);
+  const exempt = new Set<string>();
+  for (const id of [sourceId, targetId]) {
+    for (let parent = scene.parents.get(id); parent; parent = scene.parents.get(parent)) exempt.add(parent);
+  }
+  const inwardSource = scene.kinds.get(sourceId) === "group" && descendantOf(scene, targetId, sourceId);
+  const inwardTarget = scene.kinds.get(targetId) === "group" && descendantOf(scene, sourceId, targetId);
+  if (inwardSource) exempt.add(sourceId);
+  if (inwardTarget) exempt.add(targetId);
+  for (const obstacle of scene.obstacles) {
+    if (
+      obstacle.kind === "virtual" &&
+      obstacle.members?.some((id) => id === projection.sourceId || id === projection.targetId)
+    ) {
+      exempt.add(obstacle.id);
+    }
+  }
+  const blocked = new Set<number>();
+  for (const cell of scene.cells) {
+    if (cell.blockers.some((id) => !exempt.has(id))) blocked.add(cell.id);
+  }
+  return {
+    blocked,
+    obstacles: scene.obstacles.filter(({ id }) => !exempt.has(id)).map(({ rect }) => rect),
+    sources: terminals(scene, sourceId, inwardSource, blocked),
+    targets: terminals(scene, targetId, inwardTarget, blocked),
+  };
+}

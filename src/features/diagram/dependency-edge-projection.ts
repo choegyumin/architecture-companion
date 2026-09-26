@@ -52,6 +52,10 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
   };
 
   if (!focus) {
+    // Without groups there is nothing to roll up: override the aggregate
+    // default and show every relationship as its original edge instead of
+    // pointless ×1 bundles.
+    if (!groups.size) return graph.edges.map(({ id }) => ({ type: "original", edgeId: id }) as const);
     return aggregateEdges(
       graph.edges.map((edge) => ({
         edgeId: edge.id,

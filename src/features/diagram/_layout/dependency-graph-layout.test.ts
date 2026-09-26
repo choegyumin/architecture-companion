@@ -128,7 +128,7 @@ describe("dependency graph layout", () => {
     expect(parent.size.height - (next.position.y + next.size.height)).toBe(80);
     expect(later.position.y - parentPosition.y - parent.size.height).toBe(192);
     expect(group("peer").position.y).toBe(parent.position.y);
-    expect(group("peer").position.x - parent.position.x - parent.size.width).toBe(128);
+    expect(group("peer").position.x - parent.position.x - parent.size.width).toBe(256);
   });
 
   it("keeps cyclic sibling groups at the same level and their dependent group below", async () => {
