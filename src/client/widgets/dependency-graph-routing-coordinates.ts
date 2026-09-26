@@ -145,7 +145,11 @@ function solveSlots(
   return root.map((id) => values.get(id)!);
 }
 
-function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string, readonly number[]> | undefined {
+function assignSlots(
+  plan: RoutingPlan,
+  budget: WorkBudget,
+  departureAnchors?: ReadonlyMap<string, number>,
+): ReadonlyMap<string, readonly number[]> | undefined {
   const slots: Slot[] = [];
   const indices = new Map<string, Map<string, number>>();
   const routes = new Map<string, number[]>();
@@ -189,13 +193,14 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
   for (const [edgeId, candidate] of [...plan.selected].sort(([a], [b]) => a.localeCompare(b))) {
     const route: number[] = [];
     let run: number[] = [];
-    for (const resource of candidate.resources) {
+    for (const [position, resource] of candidate.resources.entries()) {
       if (!spend(budget)) return;
       const order = plan.orders.get(resource.key) ?? [];
       const rank = order.indexOf(edgeId);
       if (rank < 0 || (order.length - 1) * MIN_GAP > resource.max - resource.min + EPSILON) return;
       const gap = chainGap.get(resource.key) ?? baseGap(resource);
       const halfSpan = ((order.length - 1) * gap) / 2;
+      const anchor = position === 0 ? departureAnchors?.get(edgeId) : undefined;
       const middle = clamp(
         resource.preferred ?? (resource.min + resource.max) / 2,
         resource.min + halfSpan,
@@ -205,7 +210,13 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       slots.push({
         edgeId,
         resource,
-        preferred: middle + (rank - (order.length - 1) / 2) * gap,
+        // An anchor is the coordinate this edge's own route settled on, not a
+        // pack centre to offset a rank from — the rank correction would drag the
+        // port off the measured column and reintroduce the departure jog.
+        preferred:
+          anchor !== undefined
+            ? clamp(anchor, resource.min, resource.max)
+            : middle + (rank - (order.length - 1) / 2) * gap,
       });
       const entries = indices.get(resource.key) ?? new Map<string, number>();
       entries.set(edgeId, index);
@@ -750,14 +761,15 @@ export function renderRoutingPath(points: readonly Point[], obstacles: readonly 
   return { path: commands.join(" "), labelPosition: midpoint(route) };
 }
 
-export function coordinateRoutingPlan(
+function placeRoutes(
   scene: RoutingScene,
   plan: RoutingPlan,
   queries: ReadonlyMap<string, ReturnType<typeof createRoutingQuery>>,
   budget: WorkBudget,
+  departureAnchors?: ReadonlyMap<string, number>,
 ): { paths: ReadonlyMap<string, readonly Point[]>; cost: number; compression: number } {
   const paths = new Map<string, readonly Point[]>();
-  const coordinates = assignSlots(plan, budget);
+  const coordinates = assignSlots(plan, budget, departureAnchors);
   if (!coordinates) return { paths, cost: 0, compression: 0 };
   const cells = new Map<number, Connection[]>();
   const connections = new Map<string, Map<number, ConnectionPath>>();
@@ -894,4 +906,41 @@ export function coordinateRoutingPlan(
     cost += routeLength(points) + Math.max(0, points.length - 2) * BEND_COST + crossings * CROSSING_COST;
   }
   return { paths, cost, compression };
+}
+
+// A solved departure slot anchors the port where the goal's centre projects onto
+// the face, but the connector then walks around occupied corridors and its first
+// real track settles elsewhere — the port draws a jog on departure. Read that
+// settled coordinate back out of the routed points so the next pass can re-solve
+// the departure slots against where each route actually goes.
+function departureAnchorsFrom(paths: ReadonlyMap<string, readonly Point[]>, plan: RoutingPlan): Map<string, number> {
+  const anchors = new Map<string, number>();
+  for (const [edgeId, candidate] of plan.selected) {
+    const side = candidate.resources.at(0)?.terminal?.side;
+    const points = paths.get(edgeId);
+    if (!side || !points || points.length < 2) continue;
+    const outward = side === "bottom" || side === "top" ? "y" : "x";
+    const along = side === "bottom" || side === "top" ? "x" : "y";
+    // Consume the face-normal stub leaving the port, then the transverse run that
+    // follows it; where that run settles is the coordinate the port should own.
+    let cursor = 1;
+    while (cursor < points.length && points[cursor]![along] === points[cursor - 1]![along]) cursor += 1;
+    if (cursor >= points.length) continue;
+    while (cursor < points.length && points[cursor]![outward] === points[cursor - 1]![outward]) cursor += 1;
+    anchors.set(edgeId, points[cursor - 1]![along]);
+  }
+  return anchors;
+}
+
+export function coordinateRoutingPlan(
+  scene: RoutingScene,
+  plan: RoutingPlan,
+  queries: ReadonlyMap<string, ReturnType<typeof createRoutingQuery>>,
+  budget: WorkBudget,
+): { paths: ReadonlyMap<string, readonly Point[]>; cost: number; compression: number } {
+  const first = placeRoutes(scene, plan, queries, budget);
+  const anchors = departureAnchorsFrom(first.paths, plan);
+  if (!anchors.size || budget.exhausted) return first;
+  const second = placeRoutes(scene, plan, queries, budget, anchors);
+  return second.paths.size >= first.paths.size ? second : first;
 }
