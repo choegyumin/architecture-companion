@@ -4,11 +4,14 @@ import {
   type Bounds,
   center,
   compact,
+  measureAggregateSegmentCongestion,
   midpoint,
   portPoint,
   type Projection,
   rectangle,
   routeLength,
+  type Segment,
+  segments,
   sideFacing,
 } from "@/client/widgets/dependency-graph-routing-geometry";
 import {
@@ -123,6 +126,7 @@ export function routeAggregateDependencyEdges(
   const evaluate = (plan: RoutingPlan, work: WorkBudget, extended = false) => {
     const result = coordinateRoutingPlan(scene, plan, queries, work);
     const rendered = new Map<string, EdgeRoute>();
+    const polylines = new Map<string, readonly Segment[]>();
     for (const [id, points] of result.paths) {
       const reference = baselineLengths.get(id);
       if (
@@ -131,9 +135,23 @@ export function routeAggregateDependencyEdges(
       )
         continue;
       const route = renderRoutingPath(points, queries.get(id)!.obstacles);
-      if (route) rendered.set(id, route);
+      if (route) {
+        rendered.set(id, route);
+        polylines.set(id, segments(points));
+      }
     }
-    return { plan, rendered, cost: result.cost, compression: result.compression };
+    // Realized crossings between rendered routes — the ordering stage only estimates
+    // them, so refinement must compare what actually got drawn.
+    const placed = [...polylines.keys()];
+    let crossings = 0;
+    for (let index = 0; index < placed.length; index += 1) {
+      for (const other of placed.slice(index + 1)) {
+        for (const segment of polylines.get(placed[index]!)!) {
+          crossings += measureAggregateSegmentCongestion(segment, polylines.get(other)!).crossings;
+        }
+      }
+    }
+    return { plan, rendered, cost: result.cost, compression: result.compression, crossings };
   };
   const orderBudget = budget(orderLimit);
   const coordinateBudget = budget(coordinateLimit);
@@ -142,8 +160,10 @@ export function routeAggregateDependencyEdges(
     [...previous.rendered.keys()].every((id) => next.rendered.has(id)) &&
     (next.rendered.size > previous.rendered.size ||
       (next.rendered.size === previous.rendered.size &&
-        (next.compression < previous.compression ||
-          (next.compression === previous.compression && next.cost < previous.cost))));
+        (next.crossings < previous.crossings ||
+          (next.crossings === previous.crossings &&
+            (next.compression < previous.compression ||
+              (next.compression === previous.compression && next.cost < previous.cost))))));
   const refine = (extended: boolean, ordering: WorkBudget, coordinates: WorkBudget) => {
     for (let pass = 0; pass < Math.min(4, options.maxImprovementPasses ?? 1); pass += 1) {
       let changed = false;

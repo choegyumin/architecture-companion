@@ -308,9 +308,7 @@ describe("dependency edge routes", () => {
       return id.startsWith("out-") ? pathEndpoints(route.path).start : pathEndpoints(route.path).end;
     });
 
-    // TODO(port-slots): with tighter portal margins one inbound wraps over the top
-    // and crosses its outbound sibling; mixed-face arrivals exceed the slot solver.
-    expectReadableRoutes(projections, routes, bounds, { toleratedCrossings: [["server", "other0"]] });
+    expectReadableRoutes(projections, routes, bounds);
     expect(new Set(serverPorts.map(({ x, y }) => `${x}:${y}`)).size).toBe(6);
   });
 
@@ -481,8 +479,7 @@ describe("dependency edge routes", () => {
   it("keeps focused features' client arrivals distinct and uncrossed", async () => {
     expect.hasAssertions();
     const featuresId = "group:directory:src/features";
-    // TODO(port-slots): the client/pages crossing survives crossing-cost minimization
-    // because mixed arrival faces need an ordering the current slot solver cannot express.
+    // TODO(port-slots): mixed arrival faces still need the extended budget.
     await expectFocusedRelations(
       featuresId,
       [
@@ -490,10 +487,7 @@ describe("dependency edge routes", () => {
         ["group:directory:src/client", featuresId],
         ["group:directory:src/client/parts", featuresId],
       ],
-      {
-        allowDetour: true,
-        toleratedCrossings: [["group:directory:src/client", "group:directory:src/client/pages"]],
-      },
+      { allowDetour: true },
     );
   });
 
@@ -542,19 +536,11 @@ describe("dependency edge routes", () => {
   it("keeps focused annotation's client arrivals distinct and uncrossed", async () => {
     expect.hasAssertions();
     const annotationId = "group:directory:src/features/annotation";
-    // TODO(port-slots): client's top approach crosses widgets' below-annotation wrap;
-    // mixed arrival faces need an ordering the current slot solver cannot express.
-    await expectFocusedRelations(
-      annotationId,
-      [
-        ["group:directory:src/client", annotationId],
-        ["group:directory:src/client/widgets", annotationId],
-        ["group:directory:src/client/pages", annotationId],
-      ],
-      {
-        toleratedCrossings: [["group:directory:src/client", "group:directory:src/client/widgets"]],
-      },
-    );
+    await expectFocusedRelations(annotationId, [
+      ["group:directory:src/client", annotationId],
+      ["group:directory:src/client/widgets", annotationId],
+      ["group:directory:src/client/pages", annotationId],
+    ]);
   });
 
   it("separates focused features' universal and external departures", async () => {

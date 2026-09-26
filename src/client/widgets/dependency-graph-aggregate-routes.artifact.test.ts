@@ -248,9 +248,6 @@ describe("dependency aggregate routes on the checked-in design", () => {
       ],
     ];
     const crossings: string[] = [];
-    // TODO(port-slots): the pages/parts crossing survives crossing-cost minimization
-    // because mixed arrival faces need an ordering the current slot solver cannot express.
-    const tolerated = new Set(["group:directory:src/client/pages / group:directory:src/client"]);
     for (const sources of groups) {
       for (let index = 0; index < sources.length; index += 1) {
         for (const sourceId of sources.slice(index + 1)) {
@@ -260,7 +257,7 @@ describe("dependency aggregate routes on the checked-in design", () => {
         }
       }
     }
-    expect(crossings.filter((pair) => !tolerated.has(pair))).toEqual([]);
+    expect(crossings).toEqual([]);
   });
 
   it("spaces only annotation arrivals that actually share the upper corridor", async () => {
@@ -286,17 +283,9 @@ describe("dependency aggregate routes on the checked-in design", () => {
     });
     const ports = paths.map((path) => pathEndpoints(path).end);
     const gaps: number[] = [];
-    // TODO(port-slots): client's top approach crosses parts'/widgets' below-annotation
-    // wraps; mixed arrival faces need an ordering the current slot solver cannot express.
-    const tolerated = new Set([
-      "group:directory:src/client / group:directory:src/client/parts",
-      "group:directory:src/client / group:directory:src/client/widgets",
-    ]);
     for (const [index, first] of paths.entries()) {
-      for (const [secondIndex, second] of paths.slice(index + 1).entries()) {
-        expect(
-          pathsCross(first, second) && !tolerated.has(`${sources[index]} / ${sources.at(index + 1 + secondIndex)}`),
-        ).toBe(false);
+      for (const second of paths.slice(index + 1)) {
+        expect(pathsCross(first, second)).toBe(false);
         expect(pathsOverlap(first, second)).toBe(false);
         for (const [ax, ay, bx, by] of straightSegments(first)) {
           if (ay !== by || ay <= upper || ay >= lower) continue;
