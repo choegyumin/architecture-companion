@@ -15,8 +15,9 @@ export const TRACK_GAP = 32;
 // span, centered; wider corridors keep the leftover empty instead of sprawling.
 export const TRACK_WIDTH = 256;
 // Breathing room kept between a track and the obstacle corner at a corridor's end;
-// small on purpose — larger values halve narrow corridors and force track compression.
-export const PORTAL_MARGIN = 16;
+// doubling this to 64 halves the narrowest corridors until their bundles no longer
+// pack, so it stays at the largest value those corridors still tolerate.
+export const PORTAL_MARGIN = 32;
 export const MIN_GAP = 4;
 
 export function rectangle(bounds: Bounds): Rectangle {
