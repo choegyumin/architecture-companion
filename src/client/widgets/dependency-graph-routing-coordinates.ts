@@ -151,6 +151,41 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
   const routes = new Map<string, number[]>();
   const separations: Separation[] = [];
   const alignments: Array<readonly number[]> = [];
+  // Consecutive same-axis resources of one edge carry the same pack of edges past
+  // every portal, but each portal sizes its track gap from its own width — a pack
+  // crossing portals of different widths re-spaces at each boundary and every
+  // member draws a stair. Unify the gap across a chain to one that fits the
+  // narrowest overlap of the chain's ranges so the pack keeps one layout and the
+  // per-edge alignment joins stay solvable.
+  const chainGap = new Map<string, number>();
+  const baseGap = (resource: RoutingResource): number => {
+    const count = Math.max(1, (plan.orders.get(resource.key) ?? []).length - 1);
+    return Math.min(TRACK_GAP, Math.min(TRACK_WIDTH, resource.max - resource.min) / count);
+  };
+  for (const candidate of plan.selected.values()) {
+    let run: RoutingResource[] = [];
+    const flush = () => {
+      if (run.length > 1) {
+        const low = Math.max(...run.map(({ min }) => min));
+        const high = Math.min(...run.map(({ max }) => max));
+        const [first, ...rest] = run.map((resource) => new Set(plan.orders.get(resource.key) ?? []));
+        const common = rest.reduce((members, order) => members.filter((id) => order.has(id)), [...first]);
+        const unified = Math.min(...run.map(baseGap), (high - low) / Math.max(1, common.length - 1));
+        // Below MIN_GAP the pack cannot hold one layout through this chain at all;
+        // leaving the per-portal gaps in place beats collapsing the corridor.
+        if (unified >= MIN_GAP)
+          for (const resource of run)
+            chainGap.set(resource.key, Math.min(chainGap.get(resource.key) ?? Infinity, unified));
+      }
+      run = [];
+    };
+    for (const resource of candidate.resources) {
+      const previous = run.at(-1);
+      if (previous && (previous.axis !== resource.axis || previous.fixed === resource.fixed)) flush();
+      run.push(resource);
+    }
+    flush();
+  }
   for (const [edgeId, candidate] of [...plan.selected].sort(([a], [b]) => a.localeCompare(b))) {
     const route: number[] = [];
     let run: number[] = [];
@@ -159,10 +194,7 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       const order = plan.orders.get(resource.key) ?? [];
       const rank = order.indexOf(edgeId);
       if (rank < 0 || (order.length - 1) * MIN_GAP > resource.max - resource.min + EPSILON) return;
-      const gap = Math.min(
-        TRACK_GAP,
-        Math.min(TRACK_WIDTH, resource.max - resource.min) / Math.max(1, order.length - 1),
-      );
+      const gap = chainGap.get(resource.key) ?? baseGap(resource);
       const halfSpan = ((order.length - 1) * gap) / 2;
       const middle = clamp(
         resource.preferred ?? (resource.min + resource.max) / 2,
@@ -198,11 +230,7 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       const after = entries.get(order[index]!);
       if (before === undefined || after === undefined) continue;
       const resource = slots[before]!.resource;
-      separations.push({
-        before,
-        after,
-        preferred: Math.min(TRACK_GAP, Math.min(TRACK_WIDTH, resource.max - resource.min) / (order.length - 1)),
-      });
+      separations.push({ before, after, preferred: chainGap.get(key) ?? baseGap(resource) });
     }
   }
   // Same-line reservations: portals and terminals sharing a geometric line (same
