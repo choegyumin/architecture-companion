@@ -205,6 +205,52 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       });
     }
   }
+  // Same-line reservations: portals and terminals sharing a geometric line (same
+  // axis and fixed coordinate) are distinct resources, so without this their slots
+  // solve to overlapping coordinates — the port collision. Space every line like
+  // one shared corridor by joining nearest neighbours in preferred order.
+  const lines = new Map<string, number[]>();
+  for (const entries of indices.values()) {
+    for (const index of entries.values()) {
+      const resource = slots[index]!.resource;
+      const line = `${resource.axis}:${Math.round(resource.fixed)}`;
+      lines.set(line, [...(lines.get(line) ?? []), index]);
+    }
+  }
+  const lineSeparations: Separation[] = [];
+  const outgoing = new Map<number, Set<number>>();
+  for (const { before, after } of separations) {
+    const set = outgoing.get(before) ?? new Set();
+    set.add(after);
+    outgoing.set(before, set);
+  }
+  const reaches = (from: number, to: number): boolean => {
+    const seen = new Set<number>();
+    const queue = [...(outgoing.get(from) ?? [])];
+    while (queue.length) {
+      const current = queue.pop()!;
+      if (current === to) return true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      queue.push(...(outgoing.get(current) ?? []));
+    }
+    return false;
+  };
+  for (const members of lines.values()) {
+    const ordered = members.sort((a, b) => slots[a]!.preferred - slots[b]!.preferred || a - b);
+    for (let index = 1; index < ordered.length; index += 1) {
+      const before = ordered[index - 1]!;
+      const after = ordered[index]!;
+      if (slots[before]!.edgeId === slots[after]!.edgeId) continue;
+      // Skip pairs that would close a cycle against the per-resource order chains.
+      if (reaches(after, before)) continue;
+      lineSeparations.push({ before, after, preferred: MIN_GAP });
+      const set = outgoing.get(before) ?? new Set();
+      set.add(after);
+      outgoing.set(before, set);
+    }
+  }
+  separations.push(...lineSeparations);
   const separate = slots.map((_, index) => index);
   const together = [...separate];
   const mergeRun = (parent: number[], run: readonly number[]) => {
@@ -227,17 +273,25 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
     }
   };
   for (const run of alignments) mergeRun(together, run);
-  let values = solveSlots(slots, separations, together, budget);
+  // Same-line reservations must never make the solve infeasible: when they do,
+  // drop them and continue with the pre-reservation separation set.
+  const baseSeparations = separations.filter((separation) => !lineSeparations.includes(separation));
+  let effective = separations;
+  let values = solveSlots(slots, effective, together, budget);
+  if (!values && !budget.exhausted && lineSeparations.length) {
+    effective = baseSeparations;
+    values = solveSlots(slots, effective, together, budget);
+  }
   if (!values && !budget.exhausted) {
     let parent = separate;
-    values = solveSlots(slots, separations, parent, budget);
+    values = solveSlots(slots, effective, parent, budget);
     if (!values) return;
     // Release conflicting alignments instead of squeezing every corridor to the minimum gap.
     for (const run of alignments.slice(0, MAX_ALIGNMENT_RETRIES)) {
       if (!spend(budget, run.length)) return;
       const trial = [...parent];
       mergeRun(trial, run);
-      const solved = solveSlots(slots, separations, trial, budget);
+      const solved = solveSlots(slots, effective, trial, budget);
       if (solved) {
         parent = trial;
         values = solved;
@@ -804,7 +858,8 @@ export function coordinateRoutingPlan(
         }
       }
     }
-    if (!valid || !renderRoutingPath(points, query.obstacles)) continue;
+    if (!valid) continue;
+    if (!renderRoutingPath(points, query.obstacles)) continue;
     accepted.push({ segments: own, sections });
     paths.set(edgeId, points);
     compression += pathCompression;
