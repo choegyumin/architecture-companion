@@ -87,6 +87,12 @@ describe("dependency graph React Flow adapter", () => {
     expect(order.indexOf("virtual-bundle:app")).toBeGreaterThan(order.indexOf("app"));
     expect(order.indexOf("virtual-bundle:app")).toBeLessThan(order.indexOf("a"));
     expect(model.nodes.find((node) => node.id === "virtual-bundle:library")).toBeUndefined();
+
+    // Without an aggregate attaching to the group, the bundle stays hidden.
+    const focused = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      focus: { type: "node", id: "c" },
+    });
+    expect(focused.nodes.find((node) => node.id === "virtual-bundle:app")).toBeUndefined();
   });
 
   it("renders only selected original edges and preserves their individual targets", async () => {

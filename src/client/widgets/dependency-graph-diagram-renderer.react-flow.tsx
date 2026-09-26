@@ -36,28 +36,6 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
 ): DiagramReactFlowRenderModel {
   const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
-  // Loose-node bundles render above their group and below the cards: a dashed
-  // outline marking where a mixed group's aggregate edges attach.
-  const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
-  const bundleNodes = [...bundles].map<LabeledGroupReactFlowNode>(([groupId, bundle]) => {
-    const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
-    return {
-      id: `virtual-bundle:${groupId}`,
-      type: "labeled-group",
-      data: { label: "", variant: "virtual" },
-      position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
-      parentId: groupId,
-      style: { width: bundle.size.width, height: bundle.size.height },
-      draggable: false,
-      focusable: false,
-      selectable: false,
-    };
-  });
-  const layeredNodes = [
-    ...nodes.filter((node) => node.type === "labeled-group"),
-    ...bundleNodes,
-    ...nodes.filter((node) => node.type !== "labeled-group"),
-  ];
   const cards = layout.nodes.map(({ id }) => ({
     id,
     bounds: getOrThrow(bounds.get(id), `Missing dependency node bounds: ${id}`),
@@ -72,6 +50,32 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const aggregateProjections = projections
     .filter((projection) => projection.type === "aggregate")
     .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
+  // Loose-node bundles render above their group and below the cards: a dashed
+  // outline marking where a mixed group's aggregate edges attach — and only
+  // while such an edge exists; otherwise the loose nodes read as plain cards.
+  const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
+  const attached = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
+  const bundleNodes = [...bundles]
+    .filter(([groupId]) => attached.has(groupId))
+    .map<LabeledGroupReactFlowNode>(([groupId, bundle]) => {
+      const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
+      return {
+        id: `virtual-bundle:${groupId}`,
+        type: "labeled-group",
+        data: { label: "", variant: "virtual" },
+        position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
+        parentId: groupId,
+        style: { width: bundle.size.width, height: bundle.size.height },
+        draggable: false,
+        focusable: false,
+        selectable: false,
+      };
+    });
+  const layeredNodes = [
+    ...nodes.filter((node) => node.type === "labeled-group"),
+    ...bundleNodes,
+    ...nodes.filter((node) => node.type !== "labeled-group"),
+  ];
   const aggregateRoutes = routeAggregateDependencyEdges(aggregateProjections, layout);
   const edges = projections.map<DiagramReactFlowEdge>((projection) => {
     const common = {
