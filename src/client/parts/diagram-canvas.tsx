@@ -125,6 +125,9 @@ export function DiagramCanvas({
     const clickedNode = event.target instanceof Element ? event.target.closest(".react-flow__node") : null;
     const clickedNodeId = clickedNode?.getAttribute("data-id");
     if (clickedNodeId && clickedNodeId !== node.id) return;
+    // Virtual bundles are decoration over the group: they have no element id to
+    // activate or annotate, so clicks must not resolve to them.
+    if (node.type === "labeled-group" && node.data.variant === "virtual") return;
     if (onCanvasClick) {
       handleCanvasClick(event, { type: node.type === "labeled-group" ? "group" : "node", id: node.id });
     } else if (!isInteractiveClick(event)) {

@@ -65,7 +65,10 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
         data: { label: "", variant: "virtual" },
         position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
         parentId: groupId,
-        style: { width: bundle.size.width, height: bundle.size.height },
+        // Blocking the React Flow wrapper (not just the article) lets hover and
+        // clicks fall through to the group underneath, so the bundle never
+        // intercepts interactions or hover effects.
+        style: { width: bundle.size.width, height: bundle.size.height, pointerEvents: "none" },
         draggable: false,
         focusable: false,
         selectable: false,
