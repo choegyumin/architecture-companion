@@ -364,8 +364,7 @@ describe("aggregate dependency routing at its public seam", () => {
     expectConnected(route, box(0, 0, 600, 440), box(230, 160, 330, 240));
   });
 
-  it("avoids the whole virtual envelope around direct nodes, not only the individual cards", () => {
-    const envelope = box(250, 100, 540, 510);
+  it("threads between loose top-level cards instead of around their whole envelope", () => {
     const layout = layoutOf(
       [group("source", 0, 260, 100, 100), group("target", 700, 260, 100, 100)],
       [node("upper-left", 250, 100, 80, 80), node("lower-right", 460, 430, 80, 80)],
@@ -374,7 +373,8 @@ describe("aggregate dependency routing at its public seam", () => {
 
     expect(route.routing.stage).toBe("normal");
     expectConnected(route, box(0, 260, 100, 360), box(700, 260, 800, 360));
-    expect(entersBox(route.path, envelope)).toBe(false);
+    expect(entersBox(route.path, box(250, 100, 330, 180))).toBe(false);
+    expect(entersBox(route.path, box(460, 430, 540, 510))).toBe(false);
   });
 
   it("lets a node endpoint be reached through its own virtual envelope", () => {

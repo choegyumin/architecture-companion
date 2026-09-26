@@ -83,6 +83,10 @@ function virtualObstacles(
   const identifiers = new Set(existing);
   const result: RoutingObstacle[] = [];
   for (const [parentId, members] of children) {
+    // Virtual wrappers exist only where loose nodes sit beside subgroups: a pure
+    // node container duplicates its group obstacle, and top-level nodes bundle in
+    // the layout already — wrapping them only blocks unrelated through traffic.
+    if (!parentId || !layout.groups.some((group) => group.parentId === parentId)) continue;
     members.sort();
     let left = Infinity;
     let top = Infinity;
