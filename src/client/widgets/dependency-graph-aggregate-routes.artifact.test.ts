@@ -198,12 +198,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
       );
       const routes = routeAggregateDependencyEdges(projections, layout);
       overlaps.push(...overlappingPairs(projections, routes).map((pair) => `${group.title}: ${pair}`));
-      // TODO(port-slots): colliding ports force a few edges onto the extended budget;
-      // direct/independent fallbacks would still be a regression.
       degraded.push(
-        ...[...routes]
-          .filter(([, route]) => route.routing.stage !== "normal" && route.routing.stage !== "detour")
-          .map(([id]) => `${group.title}: ${id}`),
+        ...[...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => `${group.title}: ${id}`),
       );
     }
     expect(degraded).toEqual([]);
