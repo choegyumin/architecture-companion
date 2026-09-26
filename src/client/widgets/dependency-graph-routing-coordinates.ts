@@ -160,8 +160,30 @@ function assignSlots(
   // crossing portals of different widths re-spaces at each boundary and every
   // member draws a stair. Unify the gap across a chain to one that fits the
   // narrowest overlap of the chain's ranges so the pack keeps one layout and the
-  // per-edge alignment joins stay solvable.
+  // per-edge alignment joins stay solvable. The pack's centre needs the same
+  // treatment: each resource clamps its preferred coordinate to its own span, so
+  // unequal ranges split the middle and every member jogs between resources.
   const chainGap = new Map<string, number>();
+  const chainMiddle = new Map<string, number>();
+  // A centre is directional while a gap is not: merging two chains' gaps keeps
+  // every member no closer than the tighter spacing, but merging their centres
+  // drags one chain's pack onto the other's row. Unify the centre only for a
+  // chain whose resources no other chain claims.
+  const chainClaims = new Map<string, number>();
+  for (const candidate of plan.selected.values()) {
+    let run: RoutingResource[] = [];
+    const count = () => {
+      if (run.length > 1)
+        for (const resource of run) chainClaims.set(resource.key, (chainClaims.get(resource.key) ?? 0) + 1);
+      run = [];
+    };
+    for (const resource of candidate.resources) {
+      const previous = run.at(-1);
+      if (previous && (previous.axis !== resource.axis || previous.fixed === resource.fixed)) count();
+      run.push(resource);
+    }
+    count();
+  }
   const baseGap = (resource: RoutingResource): number => {
     const count = Math.max(1, (plan.orders.get(resource.key) ?? []).length - 1);
     return Math.min(TRACK_GAP, Math.min(TRACK_WIDTH, resource.max - resource.min) / count);
@@ -177,9 +199,24 @@ function assignSlots(
         const unified = Math.min(...run.map(baseGap), (high - low) / Math.max(1, common.length - 1));
         // Below MIN_GAP the pack cannot hold one layout through this chain at all;
         // leaving the per-portal gaps in place beats collapsing the corridor.
-        if (unified >= MIN_GAP)
+        if (unified >= MIN_GAP) {
           for (const resource of run)
             chainGap.set(resource.key, Math.min(chainGap.get(resource.key) ?? Infinity, unified));
+          if (run.every((resource) => (chainClaims.get(resource.key) ?? 0) === 1)) {
+            const centreOf = (resource: RoutingResource): number => {
+              const count = (plan.orders.get(resource.key) ?? []).length;
+              const halfSpan = (Math.max(0, count - 1) * unified) / 2;
+              return clamp(
+                resource.preferred ?? (resource.min + resource.max) / 2,
+                resource.min + halfSpan,
+                resource.max - halfSpan,
+              );
+            };
+            // The narrowest clamped centre governs, matching the gap rule.
+            const centre = Math.min(...run.map(centreOf));
+            for (const resource of run) chainMiddle.set(resource.key, centre);
+          }
+        }
       }
       run = [];
     };
@@ -202,7 +239,7 @@ function assignSlots(
       const halfSpan = ((order.length - 1) * gap) / 2;
       const anchor = position === 0 ? departureAnchors?.get(edgeId) : undefined;
       const middle = clamp(
-        resource.preferred ?? (resource.min + resource.max) / 2,
+        chainMiddle.get(resource.key) ?? resource.preferred ?? (resource.min + resource.max) / 2,
         resource.min + halfSpan,
         resource.max - halfSpan,
       );
