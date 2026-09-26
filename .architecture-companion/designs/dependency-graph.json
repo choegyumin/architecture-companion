@@ -125,107 +125,107 @@
     "nodes": [
       {
         "id": "external:@base-ui/react",
-        "kind": "External package",
         "title": "@base-ui/react",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:@base-ui/utils",
-        "kind": "External package",
         "title": "@base-ui/utils",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:@hono/node-server",
-        "kind": "External package",
         "title": "@hono/node-server",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:@xyflow/react",
-        "kind": "External package",
         "title": "@xyflow/react",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:class-variance-authority",
-        "kind": "External package",
         "title": "class-variance-authority",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:clsx",
-        "kind": "External package",
         "title": "clsx",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:dependency-cruiser",
-        "kind": "External package",
         "title": "dependency-cruiser",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:elkjs",
-        "kind": "External package",
         "title": "elkjs",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:hono",
-        "kind": "External package",
         "title": "hono",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:lucide-react",
-        "kind": "External package",
         "title": "lucide-react",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:micromatch",
-        "kind": "External package",
         "title": "micromatch",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:overlay-kit",
-        "kind": "External package",
         "title": "overlay-kit",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:react",
-        "kind": "External package",
         "title": "react",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:react-dom",
-        "kind": "External package",
         "title": "react-dom",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
         "id": "external:tailwind-merge",
-        "kind": "External package",
         "title": "tailwind-merge",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
@@ -237,9 +237,9 @@
       },
       {
         "id": "external:zod",
-        "kind": "External package",
         "title": "zod",
         "groupId": "group:external-packages",
+        "kind": "External package",
         "type": "default"
       },
       {
@@ -491,6 +491,66 @@
           {
             "text": "source",
             "href": "source:///src/client/widgets/dependency-graph-edge-routes.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-route-test-geometry.ts",
+        "title": "dependency-graph-route-test-geometry.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-route-test-geometry.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-routing-coordinates.ts",
+        "title": "dependency-graph-routing-coordinates.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-routing-coordinates.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-routing-geometry.ts",
+        "title": "dependency-graph-routing-geometry.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-routing-geometry.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-routing-plan.ts",
+        "title": "dependency-graph-routing-plan.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-routing-plan.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/dependency-graph-routing-scene.ts",
+        "title": "dependency-graph-routing-scene.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/dependency-graph-routing-scene.ts"
           }
         ]
       },
@@ -1139,6 +1199,18 @@
           {
             "text": "source",
             "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/bounding-group-node.tsx",
+        "title": "bounding-group-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/bounding-group-node.tsx"
           }
         ]
       },
@@ -1880,6 +1952,12 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/bounding-group-node.tsx"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:runtime",
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.tsx",
@@ -1955,11 +2033,34 @@
         "target": "file:src/shared/react-ui/item.tsx"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
-        "target": "file:src/client/widgets/dependency-graph-edge-routes.ts",
-        "kind": "type-only"
+        "target": "file:src/client/widgets/dependency-graph-edge-routes.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-coordinates.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-coordinates.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-plan.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-plan.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-scene.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -2000,6 +2101,19 @@
         "target": "file:src/client/widgets/dependency-graph-edge-routes.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/dependency-graph-routing-scene.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
@@ -2030,6 +2144,13 @@
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/shared/react-flow/bounding-group-node.tsx",
         "kind": "type-only"
       },
       {
@@ -2101,6 +2222,70 @@
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-edge-routes.ts",
         "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-coordinates.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-coordinates.ts",
+        "target": "file:src/client/widgets/dependency-graph-edge-routes.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-coordinates.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-coordinates.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-coordinates.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-plan.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-coordinates.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-plan.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-coordinates.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-coordinates.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-scene.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-geometry.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-geometry.ts",
+        "target": "file:src/shared/universal/get-or-throw.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-plan.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-plan.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-plan.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-plan.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-scene.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-scene.ts",
+        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-scene.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-links-panel.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -3144,6 +3329,13 @@
         "type": "default",
         "source": "file:src/shared/react-flow/base-overlay-panel.tsx",
         "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:external%3A%40xyflow%2Freact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-flow/bounding-group-node.tsx",
+        "target": "external:@xyflow/react",
         "kind": "type-only"
       },
       {
