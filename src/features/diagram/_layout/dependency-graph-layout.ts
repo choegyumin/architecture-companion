@@ -16,11 +16,12 @@ export const dependencyGraphLayoutConfigSchema = z.object({ id: z.literal("depen
 
 const GROUP_PADDING = { top: 96, right: 80, bottom: 80, left: 80 } as const;
 const ROOT_PADDING = { top: 48, right: 48, bottom: 48, left: 48 } as const;
-const NODE_GAP = 64;
-const NODE_LEVEL_GAP = 96;
-const ITEM_GAP = 128;
-const GROUP_LEVEL_GAP = 128;
-const ROOT_LEVEL_GAP = 192;
+/** Space between sibling nodes in one row / between rows of nodes. */
+const NODE_GAP = { horizontal: 64, vertical: 96 } as const;
+/** Space between sibling groups in one row / between rows of nested groups. */
+const GROUP_GAP = { horizontal: 128, vertical: 128 } as const;
+/** Space between top-level groups — the widest corridors aggregate edges route through. */
+const ROOT_GAP = { horizontal: 256, vertical: 192 } as const;
 const MAX_ROW_WIDTH = 1_408;
 const EMPTY_GROUP_SIZE = {
   width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
@@ -117,8 +118,7 @@ function rankComponents(count: number, connections: readonly (readonly [number, 
 function arrangeItems(
   items: readonly Item[],
   connections: readonly (readonly [number, number])[],
-  gap: number,
-  levelGap: number,
+  gap: Readonly<{ horizontal: number; vertical: number }>,
   maxRowWidth = Number.POSITIVE_INFINITY,
 ): Readonly<{ size: DiagramLayoutSize; positions: readonly DiagramLayoutPoint[] }> {
   const components = rankComponents(items.length, connections);
@@ -142,12 +142,15 @@ function arrangeItems(
     let bandHeight = 0;
     let rowIndices: number[] = [];
     members.forEach(({ members: component }) => {
-      const componentWidth = component.reduce((sum, index) => sum + (items[index]?.size.width ?? 0) + gap, -gap);
+      const componentWidth = component.reduce(
+        (sum, index) => sum + (items[index]?.size.width ?? 0) + gap.horizontal,
+        -gap.horizontal,
+      );
       if (cursorX > 0 && cursorX + componentWidth > maxRowWidth) {
-        rows.push({ indices: rowIndices, width: cursorX - gap });
-        width = Math.max(width, cursorX - gap);
+        rows.push({ indices: rowIndices, width: cursorX - gap.horizontal });
+        width = Math.max(width, cursorX - gap.horizontal);
         cursorX = 0;
-        cursorY += bandHeight + gap;
+        cursorY += bandHeight + gap.horizontal;
         bandHeight = 0;
         rowIndices = [];
       }
@@ -156,13 +159,13 @@ function arrangeItems(
         const item = getOrThrow(items[index], `Missing dependency item: ${index}`);
         positions[index] = { x: cursorX, y: cursorY };
         rowIndices.push(index);
-        cursorX += item.size.width + gap;
+        cursorX += item.size.width + gap.horizontal;
       });
       bandHeight = Math.max(bandHeight, componentHeight);
     });
-    rows.push({ indices: rowIndices, width: cursorX - gap });
-    width = Math.max(width, cursorX - gap);
-    cursorY += bandHeight + levelGap;
+    rows.push({ indices: rowIndices, width: cursorX - gap.horizontal });
+    width = Math.max(width, cursorX - gap.horizontal);
+    cursorY += bandHeight + gap.vertical;
   });
   rows.forEach((row) => {
     row.indices.forEach((index) => {
@@ -170,7 +173,7 @@ function arrangeItems(
       positions[index] = { x: position.x + (width - row.width) / 2, y: position.y };
     });
   });
-  return { size: { width, height: levels.length ? cursorY - levelGap : 0 }, positions };
+  return { size: { width, height: levels.length ? cursorY - gap.vertical : 0 }, positions };
 }
 
 function layoutDirectNodes(
@@ -191,7 +194,7 @@ function layoutDirectNodes(
     nodes: [],
     groups: [],
   }));
-  const arranged = arrangeItems(items, connections, NODE_GAP, NODE_LEVEL_GAP, MAX_ROW_WIDTH);
+  const arranged = arrangeItems(items, connections, NODE_GAP, MAX_ROW_WIDTH);
   return {
     id: directId,
     size: arranged.size,
@@ -241,7 +244,7 @@ export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNod
       const target = indexes.get(ownerOf(edge.target, parentId) ?? "");
       return source === undefined || target === undefined || source === target ? [] : [[source, target]];
     });
-    const arranged = arrangeItems(items, connections, ITEM_GAP, parentId ? GROUP_LEVEL_GAP : ROOT_LEVEL_GAP);
+    const arranged = arrangeItems(items, connections, parentId ? GROUP_GAP : ROOT_GAP);
     const groups: DiagramLayoutGroup[] = [];
     const nodes: DiagramLayoutNode[] = [];
     items.forEach((item, index) => {
