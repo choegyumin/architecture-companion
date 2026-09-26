@@ -53,6 +53,25 @@ describe("dependency edge projection", () => {
     ]);
   });
 
+  it("shows every relationship as original edges when the graph has no groups", () => {
+    const plain = {
+      groups: [],
+      nodes: [
+        { id: "a", type: "default", title: "A" },
+        { id: "b", type: "default", title: "B" },
+      ],
+      edges: [
+        { id: "a-to-b", type: "default", source: "a", target: "b" },
+        { id: "b-to-a", type: "default", source: "b", target: "a" },
+      ],
+    } as const satisfies DiagramGraph;
+
+    expect(projectDependencyEdges(plain)).toEqual([
+      { type: "original", edgeId: "a-to-b" },
+      { type: "original", edgeId: "b-to-a" },
+    ]);
+  });
+
   it("shows only internal original edges and directional boundary aggregates for a group", () => {
     expect(members({ type: "group", id: "app" })).toEqual([
       { edgeId: "app-to-page" },
