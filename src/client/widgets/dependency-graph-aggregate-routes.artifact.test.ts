@@ -185,26 +185,26 @@ describe("dependency aggregate routes on the checked-in design", () => {
     expect(overlappingPairs(projections, routes)).toEqual([]);
   });
 
-  it("keeps focused groups' boundary edges on separate tracks", async () => {
-    const diagram = parseDiagram(artifactJson);
-    const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
-    const overlaps: string[] = [];
-    const degraded: string[] = [];
-    for (const group of diagram.graph.groups) {
-      const projections = projectDependencyEdges(diagram.graph, { type: "group", id: group.id }).filter(
+  // One `it` per group so the five-second timeout applies to each focus rather
+  // than to the sweep as a whole; a shared layout keeps the scene cached across
+  // the generated tests.
+  const boundaryDiagram = parseDiagram(artifactJson);
+  const sharedLayout = layoutDependencyGraph(
+    boundaryDiagram.graph,
+    Object.fromEntries(boundaryDiagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),
+  );
+  for (const { id: groupId, title } of boundaryDiagram.graph.groups) {
+    it(`keeps ${title}'s focused boundary edges on separate tracks`, async () => {
+      const layout = await sharedLayout;
+      const projections = projectDependencyEdges(boundaryDiagram.graph, { type: "group", id: groupId }).filter(
         (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
           projection.type === "aggregate",
       );
       const routes = routeAggregateDependencyEdges(projections, layout);
-      overlaps.push(...overlappingPairs(projections, routes).map((pair) => `${group.title}: ${pair}`));
-      degraded.push(
-        ...[...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => `${group.title}: ${id}`),
-      );
-    }
-    expect(degraded).toEqual([]);
-    expect(overlaps).toEqual([]);
-  });
+      expect([...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => id)).toEqual([]);
+      expect(overlappingPairs(projections, routes)).toEqual([]);
+    });
+  }
 
   it("avoids crossings at grid vertices for server and artifact focus", async () => {
     const server = "group:directory:src/server";
