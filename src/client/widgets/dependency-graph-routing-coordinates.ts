@@ -1,6 +1,5 @@
 import type { EdgeRoute } from "./dependency-graph-edge-routes";
 import {
-  CLEARANCE,
   compact,
   crossesObstacle,
   EPSILON,
@@ -8,11 +7,13 @@ import {
   MIN_GAP,
   MinHeap,
   type Point,
+  PORTAL_MARGIN,
   type Rectangle,
   routeLength,
   type Segment,
   segments,
   TRACK_GAP,
+  TRACK_WIDTH,
 } from "./dependency-graph-routing-geometry";
 import {
   resourcePoint,
@@ -158,7 +159,10 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       const order = plan.orders.get(resource.key) ?? [];
       const rank = order.indexOf(edgeId);
       if (rank < 0 || (order.length - 1) * MIN_GAP > resource.max - resource.min + EPSILON) return;
-      const gap = Math.min(TRACK_GAP, (resource.max - resource.min) / Math.max(1, order.length - 1));
+      const gap = Math.min(
+        TRACK_GAP,
+        Math.min(TRACK_WIDTH, resource.max - resource.min) / Math.max(1, order.length - 1),
+      );
       const halfSpan = ((order.length - 1) * gap) / 2;
       const middle = clamp(
         resource.preferred ?? (resource.min + resource.max) / 2,
@@ -197,7 +201,7 @@ function assignSlots(plan: RoutingPlan, budget: WorkBudget): ReadonlyMap<string,
       separations.push({
         before,
         after,
-        preferred: Math.min(TRACK_GAP, (resource.max - resource.min) / (order.length - 1)),
+        preferred: Math.min(TRACK_GAP, Math.min(TRACK_WIDTH, resource.max - resource.min) / (order.length - 1)),
       });
     }
   }
@@ -349,7 +353,7 @@ function connectorCost(
 }
 
 function tracks(min: number, max: number, preferred: number, coordinates: readonly number[], gap: number): number[] {
-  const inset = Math.min(CLEARANCE, (max - min) / 4);
+  const inset = Math.min(PORTAL_MARGIN, (max - min) / 4);
   const low = min + inset;
   const high = max - inset;
   // Only a relaxed attempt may use tracks beside a terminal outside the preferred cell inset.

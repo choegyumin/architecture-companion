@@ -11,6 +11,12 @@ export type Segment = Readonly<{ from: Point; to: Point; axis: "horizontal" | "v
 export const EPSILON = 0.001;
 export const CLEARANCE = 64;
 export const TRACK_GAP = 32;
+// A corridor's usable band: a track bundle may claim up to this much of the free
+// span, centered; wider corridors keep the leftover empty instead of sprawling.
+export const TRACK_WIDTH = 256;
+// Breathing room kept between a track and the obstacle corner at a corridor's end;
+// small on purpose — larger values halve narrow corridors and force track compression.
+export const PORTAL_MARGIN = 16;
 export const MIN_GAP = 4;
 
 export function rectangle(bounds: Bounds): Rectangle {

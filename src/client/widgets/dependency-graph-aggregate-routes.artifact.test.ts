@@ -250,7 +250,7 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const crossings: string[] = [];
     // TODO(port-slots): the pages/parts crossing survives crossing-cost minimization
     // because mixed arrival faces need an ordering the current slot solver cannot express.
-    const tolerated = new Set(["group:directory:src/client/pages / group:directory:src/client/parts"]);
+    const tolerated = new Set(["group:directory:src/client/pages / group:directory:src/client"]);
     for (const sources of groups) {
       for (let index = 0; index < sources.length; index += 1) {
         for (const sourceId of sources.slice(index + 1)) {

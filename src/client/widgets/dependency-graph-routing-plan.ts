@@ -1,13 +1,14 @@
 import {
   center,
-  CLEARANCE,
   EPSILON,
   MIN_GAP,
   MinHeap,
   type Point,
+  PORTAL_MARGIN,
   type Projection,
   rectangle,
   TRACK_GAP,
+  TRACK_WIDTH,
 } from "@/client/widgets/dependency-graph-routing-geometry";
 import type { RoutingScene, RoutingTerminal } from "@/client/widgets/dependency-graph-routing-scene";
 import { createRoutingQuery } from "@/client/widgets/dependency-graph-routing-scene";
@@ -145,7 +146,7 @@ function search(
       const portal = scene.portals[id]!;
       const nextCell = portal.a === current.cell ? portal.b : portal.a;
       if (query.blocked.has(nextCell) || nextCell === current.previous?.cell) continue;
-      const inset = Math.min(CLEARANCE, (portal.max - portal.min) / 4);
+      const inset = Math.min(PORTAL_MARGIN, (portal.max - portal.min) / 4);
       const resource: RoutingResource = {
         key: `p:${id}`,
         axis: portal.axis,
@@ -236,7 +237,10 @@ export function collectRoutingRequests(
 }
 
 export function slotCoordinate(resource: RoutingResource, index: number, count: number): number {
-  const gap = Math.min(TRACK_GAP, (resource.max - resource.min) / Math.max(1, count - 1));
+  // Bundles pack at TRACK_GAP inside a centered TRACK_WIDTH band; compression only
+  // when the band itself cannot fit every track.
+  const band = Math.min(TRACK_WIDTH, resource.max - resource.min);
+  const gap = Math.min(TRACK_GAP, band / Math.max(1, count - 1));
   return (resource.min + resource.max) / 2 + (index - (count - 1) / 2) * gap;
 }
 
