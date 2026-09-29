@@ -8,13 +8,10 @@ import {
   type DiagramReactFlowRenderModel,
   toMessageReactFlowEdge,
 } from "@/client/widgets/diagram-renderer.react-flow";
+import { toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
 import type { Diagram } from "@/features/diagram/diagram";
-import type { DiagramLayout, DiagramLayoutPoint } from "@/features/diagram/diagram-spatial";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
-
-function toPolylinePath(points: readonly DiagramLayoutPoint[]): string {
-  return points.map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
-}
 
 export function buildElkLayeredDiagramReactFlowRenderModel(
   diagram: Diagram,
@@ -39,7 +36,7 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
       type: "route",
       ...(edge.label ? { label: edge.label } : {}),
       data: {
-        path: toPolylinePath(placement.points),
+        path: placement.routing === "spline" ? toSplinePath(placement.points) : toPolylinePath(placement.points),
         labelPosition:
           placement.points.length > 1
             ? getPolylineEdgeLabelPlacement(placement.points)

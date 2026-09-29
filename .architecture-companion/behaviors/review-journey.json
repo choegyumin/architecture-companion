@@ -5,7 +5,8 @@
   "layout": {
     "id": "elk-layered",
     "options": {
-      "direction": "RIGHT"
+      "direction": "RIGHT",
+      "edgeRouting": "SPLINES"
     }
   },
   "links": [

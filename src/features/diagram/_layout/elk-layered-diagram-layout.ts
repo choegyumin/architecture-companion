@@ -19,6 +19,7 @@ export const elkLayeredDiagramLayoutConfigSchema = z
     options: z
       .object({
         direction: z.enum(["UP", "DOWN", "LEFT", "RIGHT"]).optional(),
+        edgeRouting: z.enum(["ORTHOGONAL", "POLY_LINE", "SPLINES"]).optional(),
         nudgeObstacleNodes: z.boolean().optional(),
       })
       .strict()
@@ -36,7 +37,9 @@ const EMPTY_GROUP_SIZE = {
   height: GROUP_PADDING.top + GROUP_PADDING.bottom,
 } as const;
 
-type ElkLayeredDiagramLayoutDirection = NonNullable<NonNullable<ElkLayeredDiagramLayoutConfig["options"]>["direction"]>;
+type ElkLayeredDiagramLayoutOptions = NonNullable<ElkLayeredDiagramLayoutConfig["options"]>;
+type ElkLayeredDiagramLayoutDirection = NonNullable<ElkLayeredDiagramLayoutOptions["direction"]>;
+type ElkLayeredDiagramLayoutEdgeRouting = NonNullable<ElkLayeredDiagramLayoutOptions["edgeRouting"]>;
 
 function toPadding({ top, right, bottom, left }: typeof GROUP_PADDING): string {
   return `[top=${top},right=${right},bottom=${bottom},left=${left}]`;
@@ -77,12 +80,14 @@ function toElkInput(
   diagram: DiagramGraph,
   nodeSizes: DiagramNodeSizes,
   direction: ElkLayeredDiagramLayoutDirection,
+  edgeRouting: ElkLayeredDiagramLayoutEdgeRouting,
 ): ElkNode {
   return {
     id: ROOT_ID,
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": direction,
+      "elk.layered.edgeRouting": edgeRouting,
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
       // The default BRANDES_KOEPF aligns the deepest vertical spine to keep it straight,
       // which roots trees at a side edge. LINEAR_SEGMENTS balances layers instead.
@@ -160,6 +165,7 @@ function collectElkEdges(parent: ElkNode): readonly CollectedElkEdge[] {
 function toDiagramLayoutEdge(
   { edge, containerId }: CollectedElkEdge,
   groupOrigins: CollectedElements["groupOrigins"],
+  edgeRouting: ElkLayeredDiagramLayoutEdgeRouting,
 ): DiagramLayoutEdge {
   const section = edge.sections?.at(0);
   if (!section) throw new Error(`ELK result is missing an edge path: ${edge.id}`);
@@ -172,7 +178,9 @@ function toDiagramLayoutEdge(
     y: y + offset.y,
   }));
 
-  return { id: edge.id, points };
+  // elkjs emits the same polyline skeleton for every edgeRouting value; SPLINES asks
+  // the renderer to smooth that skeleton into a spline instead of drawing corners.
+  return { id: edge.id, points, ...(edgeRouting === "SPLINES" ? { routing: "spline" as const } : {}) };
 }
 
 function toViewportPolicy(
@@ -399,8 +407,9 @@ export async function layoutElkLayeredDiagram(
   options?: ElkLayeredDiagramLayoutConfig["options"],
 ): Promise<DiagramLayout> {
   const direction = options?.direction ?? "DOWN";
+  const edgeRouting = options?.edgeRouting ?? "ORTHOGONAL";
   const { default: ELK } = await import("elkjs/lib/elk.bundled.js");
-  const output = await new ELK().layout(toElkInput(diagram, nodeSizes, direction));
+  const output = await new ELK().layout(toElkInput(diagram, nodeSizes, direction, edgeRouting));
   const groupIds = new Set(diagram.groups.map(({ id }) => id));
   const elements = collectElements(output, groupIds, undefined, { x: 0, y: 0 });
   const outputNodeIds = new Set(elements.nodes.map(({ id }) => id));
@@ -416,7 +425,7 @@ export async function layoutElkLayeredDiagram(
   const layout: DiagramLayout = {
     nodes: elements.nodes,
     groups: elements.groups,
-    edges: collectElkEdges(output).map((edge) => toDiagramLayoutEdge(edge, elements.groupOrigins)),
+    edges: collectElkEdges(output).map((edge) => toDiagramLayoutEdge(edge, elements.groupOrigins, edgeRouting)),
     initialView: toViewportPolicy(diagram, direction),
   };
   return options?.nudgeObstacleNodes === true ? straightenLayeredEdges(diagram, layout, direction) : layout;

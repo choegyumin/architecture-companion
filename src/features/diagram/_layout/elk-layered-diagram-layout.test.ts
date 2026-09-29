@@ -105,6 +105,25 @@ describe("ELK layered diagram layout", () => {
     expect(result.initialView).toEqual({ mode: "node", nodeId: "source", x: "clamp", y: "center" });
   });
 
+  it("marks edges for spline rendering when edgeRouting is SPLINES", async () => {
+    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+      direction: "RIGHT",
+      edgeRouting: "SPLINES",
+    });
+
+    expect(result.edges).toEqual([expect.objectContaining({ id: "source-target", routing: "spline" })]);
+  });
+
+  it("keeps polyline edges when edgeRouting is omitted or orthogonal", async () => {
+    const defaults = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes);
+    const orthogonal = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+      edgeRouting: "ORTHOGONAL",
+    });
+
+    expect(defaults.edges.at(0)).not.toHaveProperty("routing");
+    expect(orthogonal.edges.at(0)).not.toHaveProperty("routing");
+  });
+
   it("keeps the fitted viewport even when the graph has multiple roots", async () => {
     const diagram = {
       ...directionDiagram,
