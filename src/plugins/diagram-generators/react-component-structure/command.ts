@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { generateReactComponentStructureGraph, type GenerateReactComponentStructureOptions } from "./generator";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
-  [--exclude-path <glob> ...] [--exclude-component <glob> ...] <source-path>...`;
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
@@ -25,6 +25,7 @@ function parseArguments(args: readonly string[]): ParsedArguments {
   const sourcePaths: string[] = [];
   const excludeFilePatterns: string[] = [];
   const excludeComponentPatterns: string[] = [];
+  const rootPatterns: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
@@ -42,6 +43,9 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     } else if (option === "--exclude-component") {
       excludeComponentPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--root") {
+      rootPatterns.push(readValue(args, index, option));
+      index += 1;
     } else if (option.startsWith("--")) {
       throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
@@ -56,6 +60,7 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(tsconfigPath ? { tsconfigPath } : {}),
     ...(excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {}),
     ...(excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}),
+    ...(rootPatterns.length > 0 ? { rootPatterns } : {}),
   };
 }
 

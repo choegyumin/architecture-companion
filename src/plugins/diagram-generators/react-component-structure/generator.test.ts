@@ -1898,4 +1898,77 @@ describe("React component structure generator", () => {
       }
     });
   });
+
+  const rootChainFiles = {
+    "src/app.tsx": `
+      import { Layout } from "./layout";
+
+      export function App() {
+        return <Layout />;
+      }
+    `,
+    "src/layout.tsx": `
+      import { Content } from "./content";
+
+      export function Layout() {
+        return <section><Content /></section>;
+      }
+    `,
+    "src/content.tsx": `export function Content() { return <main>Content</main>; }`,
+  } as const;
+
+  it("keeps only components reachable from a selected root", async () => {
+    await withFixture(rootChainFiles, async (scopePath) => {
+      const graph = await generateReactComponentStructureGraph({
+        scopePath,
+        sourcePaths: ["src"],
+        rootPatterns: ["Layout"],
+      });
+
+      expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
+      expect(edgeFacts(graph)).toEqual([
+        { source: "Layout", target: "Content", kind: "direct-render", label: undefined },
+      ]);
+    });
+  });
+
+  it("matches roots by stable component ID and unions multiple patterns", async () => {
+    await withFixture(rootChainFiles, async (scopePath) => {
+      const graph = await generateReactComponentStructureGraph({
+        scopePath,
+        sourcePaths: ["src"],
+        rootPatterns: ["component:src/app.tsx#App", "component:src/content.tsx#Content"],
+      });
+
+      expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
+      expect(graph.edges).toHaveLength(2);
+    });
+  });
+
+  it("fails when no visible component matches a root pattern", async () => {
+    await withFixture(rootChainFiles, async (scopePath) => {
+      await expect(
+        generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          rootPatterns: ["Missing"],
+        }),
+      ).rejects.toThrow("No visible component matches the --root pattern: Missing");
+    });
+  });
+
+  it("applies --root through the command seam", async () => {
+    await withFixture(rootChainFiles, async (scopePath) => {
+      const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "Layout"], {
+        writeStdout: () => undefined,
+      });
+
+      try {
+        const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
+      } finally {
+        await rm(dirname(graphPath), { recursive: true });
+      }
+    });
+  });
 });

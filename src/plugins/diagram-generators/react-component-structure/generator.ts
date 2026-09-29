@@ -35,6 +35,7 @@ export type GenerateReactComponentStructureOptions = Readonly<{
   tsconfigPath?: string;
   excludeFilePatterns?: readonly string[];
   excludeComponentPatterns?: readonly string[];
+  rootPatterns?: readonly string[];
 }>;
 
 type FunctionLike = ts.ArrowFunction | ts.FunctionDeclaration | ts.FunctionExpression;
@@ -2094,6 +2095,37 @@ function createGraph(
   return { groups: [], nodes, edges };
 }
 
+function focusGraphOnRoots(graph: DiagramGraph, rootPatterns: readonly string[]): DiagramGraph {
+  const roots = graph.nodes.filter(({ id, title }) =>
+    rootPatterns.some((pattern) => matchesComponentPattern(id, title, [pattern])),
+  );
+  if (roots.length === 0) {
+    throw new Error(`No visible component matches the --root pattern: ${rootPatterns.join(", ")}`);
+  }
+
+  const reachable = new Set(roots.map(({ id }) => id));
+  const targetsBySource = new Map<string, string[]>();
+  for (const { source, target } of graph.edges) {
+    targetsBySource.set(source, [...(targetsBySource.get(source) ?? []), target]);
+  }
+  const queue = [...reachable];
+  while (queue.length > 0) {
+    const current = queue.pop() as string;
+    for (const target of targetsBySource.get(current) ?? []) {
+      if (!reachable.has(target)) {
+        reachable.add(target);
+        queue.push(target);
+      }
+    }
+  }
+
+  return {
+    ...graph,
+    nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
+    edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
+  };
+}
+
 export async function generateReactComponentStructureGraph(
   options: GenerateReactComponentStructureOptions,
 ): Promise<DiagramGraph> {
@@ -2150,5 +2182,8 @@ export async function generateReactComponentStructureGraph(
     options.excludeComponentPatterns ?? [],
   );
   const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
-  return createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  const graph = createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  return options.rootPatterns && options.rootPatterns.length > 0
+    ? focusGraphOnRoots(graph, [...options.rootPatterns])
+    : graph;
 }
