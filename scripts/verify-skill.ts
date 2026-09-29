@@ -40,8 +40,8 @@ const skillSourceRoot = join(packageRoot, "skills", "architecture-companion");
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
 const expectedBuiltInGeneratorFiles = {
   freeform: ["GENERATOR.md"],
-  "js-module-dependency-graph": ["GENERATOR.md", "generate.js"],
-  "react-component-structure": ["GENERATOR.md", join("cli", "run.js")],
+  "js-module-dependency-graph": ["GENERATOR.md", "run.js"],
+  "react-component-structure": ["GENERATOR.md", "run.js"],
   sequence: ["GENERATOR.md"],
 } as const;
 
@@ -490,16 +490,20 @@ async function verifyInstalledReactComponentGenerator(
     nodes: ReadonlyArray<{ id: string; title: string }>;
   }>;
 
-  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "react-component-structure", "cli", "run.js");
+  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "react-component-structure", "run.js");
   async function generateGraph(extraArguments: readonly string[] = [], sourcePath = "src"): Promise<InstalledGraph> {
     const result = await runInstalledScript(
       scriptPath,
-      ["--scope", scopePath, "--source", sourcePath, ...extraArguments],
+      ["--base", scopePath, sourcePath, ...extraArguments],
       environment,
       skillRoot,
     );
     assertSuccessfulCompletion(result, scriptPath);
-    const graphPath = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+    const outputLine = /^([^\n]+)\n$/.exec(result.stdout)?.at(1);
+    assert.ok(outputLine, "Installed React generator must print one JSON line.");
+    const graphOutput = JSON.parse(outputLine) as Readonly<{ graphPath?: unknown }>;
+    assert.equal(typeof graphOutput.graphPath, "string");
+    const graphPath = graphOutput.graphPath as string;
     assert.ok(graphPath && isAbsolute(graphPath), "Installed React generator must print one absolute graph path.");
     const graphDirectory = dirname(graphPath);
     assert.match(graphDirectory, /architecture-companion-react-components-/);
@@ -544,7 +548,7 @@ async function verifyInstalledReactComponentGenerator(
 
   for (const filtered of [
     await generateGraph(["--exclude-component", "Layout"]),
-    await generateGraph(["--exclude-file", "src/layout.tsx"]),
+    await generateGraph(["--exclude-path", "src/layout.tsx"]),
   ]) {
     assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
     assert.deepEqual(edgeFacts(filtered), [
@@ -577,10 +581,10 @@ async function verifyInstalledJsModuleDependencyGenerator(
   );
   await writeFixtureFile(scopePath, "node_modules/installed-package/feature.js", "export default true;\n");
 
-  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "js-module-dependency-graph", "generate.js");
+  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "js-module-dependency-graph", "run.js");
   const result = await runInstalledScript(
     scriptPath,
-    ["--scope", scopePath, "--ts-config", "tsconfig.json", "src"],
+    ["--base", scopePath, "--tsconfig", "tsconfig.json", "src"],
     environment,
     skillRoot,
   );

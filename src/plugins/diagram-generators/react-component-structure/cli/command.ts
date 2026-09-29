@@ -2,16 +2,16 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { generateReactComponentStructureGraph, type GenerateReactComponentStructureOptions } from "./generator";
+import { buildComponentGraph, type ComponentGraphOptions } from "../analysis/build-component-graph";
 
-const usage = `Usage: react-component-structure --scope <directory> --source <path> [--source <path> ...]
-  [--tsconfig <path>] [--exclude-file <glob> ...] [--exclude-component <glob> ...]`;
+const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
 }>;
 
-type ParsedArguments = GenerateReactComponentStructureOptions;
+type ParsedArguments = ComponentGraphOptions;
 
 function readValue(args: readonly string[], index: number, option: string): string {
   const value = args.at(index + 1);
@@ -25,28 +25,31 @@ function parseArguments(args: readonly string[]): ParsedArguments {
   const sourcePaths: string[] = [];
   const excludeFilePatterns: string[] = [];
   const excludeComponentPatterns: string[] = [];
+  const rootPatterns: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
-    if (option === "--scope") {
-      if (scopePath) throw new Error(`--scope may be provided only once.\n${usage}`);
+    if (option === "--base") {
+      if (scopePath) throw new Error(`--base may be provided only once.\n${usage}`);
       scopePath = readValue(args, index, option);
-      index += 1;
-    } else if (option === "--source") {
-      sourcePaths.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--tsconfig") {
       if (tsconfigPath) throw new Error(`--tsconfig may be provided only once.\n${usage}`);
       tsconfigPath = readValue(args, index, option);
       index += 1;
-    } else if (option === "--exclude-file") {
+    } else if (option === "--exclude-path") {
       excludeFilePatterns.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--exclude-component") {
       excludeComponentPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--root") {
+      rootPatterns.push(readValue(args, index, option));
+      index += 1;
+    } else if (option.startsWith("--")) {
+      throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
-      throw new Error(`Unknown argument: ${option ?? ""}\n${usage}`);
+      sourcePaths.push(option);
     }
   }
 
@@ -57,6 +60,7 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(tsconfigPath ? { tsconfigPath } : {}),
     ...(excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {}),
     ...(excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}),
+    ...(rootPatterns.length > 0 ? { rootPatterns } : {}),
   };
 }
 
@@ -65,13 +69,13 @@ export async function executeReactComponentStructureCommand(
   environment: CommandEnvironment,
 ): Promise<string> {
   const options = parseArguments(args);
-  const graph = await generateReactComponentStructureGraph(options);
+  const graph = await buildComponentGraph(options);
   const resolvedOutputPath = join(
     await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")),
     "graph.json",
   );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(graph, undefined, 2)}\n`);
-  environment.writeStdout(`${resolvedOutputPath}\n`);
+  environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}\n`);
   return resolvedOutputPath;
 }

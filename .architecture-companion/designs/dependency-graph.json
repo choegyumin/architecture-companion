@@ -2,7 +2,7 @@
   "id": "dependency-graph",
   "title": "JavaScript module dependency graph",
   "generator": "built-in:js-module-dependency-graph",
-  "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/generate.js\" \\\n  --scope \".\" \\\n  --ts-config \"tsconfig.json\" \\\n  --exclude \"src/plugins/diagram-generators/js-module-dependency-graph/tooling/**\" \\\n  \"src\"",
+  "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/diagram-generators/js-module-dependency-graph/packaging/**\" \\\n  \"src\"",
   "layout": {
     "id": "dependency-graph"
   },

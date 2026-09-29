@@ -1,8 +1,7 @@
-import { executeGenerateJsModuleDependencyGraphCommand } from "./generate.command";
-import { writeJsModuleDependencyGraph } from "./generator";
+import { executeJsModuleDependencyGraphCommand, writeJsModuleDependencyGraph } from "./cli/command";
 
 try {
-  await executeGenerateJsModuleDependencyGraphCommand(process.argv.slice(2), {
+  await executeJsModuleDependencyGraphCommand(process.argv.slice(2), {
     writeGraph: writeJsModuleDependencyGraph,
     writeStdout: (output) => process.stdout.write(output),
   });

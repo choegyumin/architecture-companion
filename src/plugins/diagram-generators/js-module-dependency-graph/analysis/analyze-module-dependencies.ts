@@ -8,7 +8,7 @@ import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
-import type { DiscoveredSourceFile } from "./discover-source-files";
+import type { DiscoveredSourceFile } from "./collect-source-files";
 
 export type DependencyKind = "runtime" | "type-only";
 
@@ -107,7 +107,7 @@ export async function resolveTsConfigPath(
   }
 
   if (!isPathInside(scopePath, canonicalPath)) {
-    throw new Error(`TypeScript config must stay within the scope: ${tsConfigPath ?? "tsconfig.json"}`);
+    throw new Error(`TypeScript config must stay inside the base: ${tsConfigPath ?? "tsconfig.json"}`);
   }
   if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
   return canonicalPath;

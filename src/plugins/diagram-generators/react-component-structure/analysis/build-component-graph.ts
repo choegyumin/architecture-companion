@@ -1,40 +1,27 @@
 import { createHash } from "node:crypto";
-import { readdir, realpath, stat } from "node:fs/promises";
-import { basename, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { lstat, realpath } from "node:fs/promises";
+import { basename, extname, relative, resolve } from "node:path";
 
+import ignore from "ignore";
 import micromatch from "micromatch";
 import ts from "typescript";
 
 import type { DefaultDiagramEdge, DefaultDiagramNode, DiagramGraph } from "@/features/diagram/diagram-graph";
-import { isPathInside, toPosixPath } from "@/shared/node/path";
+import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
+
+import { collectSourceFiles } from "./collect-source-files";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
-const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
-const defaultAnalysisExcludeFilePatterns = [
-  "**/node_modules/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/coverage/**",
-  "**/.next/**",
-  "**/.output/**",
-  "**/out/**",
-  "**/__tests__/**",
-  "**/*.test.{js,jsx,ts,tsx}",
-  "**/*.spec.{js,jsx,ts,tsx}",
-  "**/*.d.ts",
-  "**/*.generated.{js,jsx,ts,tsx}",
-  "**/*.gen.{js,jsx,ts,tsx}",
-] as const;
-
 export type ReactComponentRelationshipKind = "direct-render" | "node-prop" | "render-prop" | "component-prop";
 
-export type GenerateReactComponentStructureOptions = Readonly<{
+export type ComponentGraphOptions = Readonly<{
   scopePath: string;
   sourcePaths: readonly string[];
   tsconfigPath?: string;
   excludeFilePatterns?: readonly string[];
   excludeComponentPatterns?: readonly string[];
+  rootPatterns?: readonly string[];
 }>;
 
 type FunctionLike = ts.ArrowFunction | ts.FunctionDeclaration | ts.FunctionExpression;
@@ -141,68 +128,34 @@ type AnalysisContext = Readonly<{
   analyzedUseIds: Set<string>;
 }>;
 
-function matchesAny(value: string, patterns: readonly string[]): boolean {
-  return patterns.length > 0 && micromatch.isMatch(value, patterns, { dot: true });
-}
-
-async function collectSourceFiles(
-  scopePath: string,
-  sourcePaths: readonly string[],
-  excludeFilePatterns: readonly string[],
-): Promise<readonly string[]> {
-  const files = new Set<string>();
-
-  async function visit(candidatePath: string): Promise<void> {
-    const resolvedPath = await realpath(candidatePath);
-    if (!isPathInside(scopePath, resolvedPath)) {
-      throw new Error(`Source path must stay inside the scope: ${candidatePath}`);
-    }
-
-    const relativePath = toPosixPath(relative(scopePath, resolvedPath));
-    if (relativePath && matchesAny(relativePath, excludeFilePatterns)) return;
-
-    const candidateStat = await stat(resolvedPath);
-    if (candidateStat.isDirectory()) {
-      const entries = await readdir(resolvedPath, { withFileTypes: true });
-      for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
-        if (entry.isDirectory() || entry.isFile()) await visit(join(resolvedPath, entry.name));
-      }
-      return;
-    }
-
-    if (!candidateStat.isFile()) return;
-    if (!sourceExtensions.has(extname(resolvedPath))) return;
-    files.add(resolvedPath);
-  }
-
-  for (const sourcePath of sourcePaths) {
-    await visit(isAbsolute(sourcePath) ? sourcePath : resolve(scopePath, sourcePath));
-  }
-
-  return [...files].toSorted();
-}
-
 function formatDiagnostic(diagnostic: ts.Diagnostic): string {
   return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
 }
 
-function readCompilerOptions(scopePath: string, tsconfigPath?: string): ts.CompilerOptions {
-  const configPath = tsconfigPath
-    ? isAbsolute(tsconfigPath)
-      ? tsconfigPath
-      : resolve(scopePath, tsconfigPath)
-    : ts.findConfigFile(scopePath, ts.sys.fileExists, "tsconfig.json");
+async function readCompilerOptions(scopePath: string, tsconfigPath?: string): Promise<ts.CompilerOptions> {
+  const candidatePath = resolve(scopePath, tsconfigPath ?? "tsconfig.json");
+  let canonicalPath: string;
+  try {
+    canonicalPath = await realpath(candidatePath);
+  } catch (error) {
+    if (isMissingPathError(error) && tsconfigPath === undefined) return {};
+    throw error;
+  }
+  if (!isPathInside(scopePath, canonicalPath)) {
+    throw new Error(`TypeScript config must stay inside the base: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
+  if (!(await lstat(canonicalPath)).isFile()) {
+    throw new Error(`TypeScript config must be a file: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
 
   let options: ts.CompilerOptions = {};
-  if (configPath) {
-    const config = ts.readConfigFile(configPath, ts.sys.readFile);
-    if (config.error) throw new Error(`Cannot read ${configPath}: ${formatDiagnostic(config.error)}`);
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, resolve(configPath, ".."));
-    if (parsed.errors.length > 0) {
-      throw new Error(`Cannot parse ${configPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
-    }
-    options = parsed.options;
+  const config = ts.readConfigFile(canonicalPath, ts.sys.readFile);
+  if (config.error) throw new Error(`Cannot read ${canonicalPath}: ${formatDiagnostic(config.error)}`);
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, resolve(canonicalPath, ".."));
+  if (parsed.errors.length > 0) {
+    throw new Error(`Cannot parse ${canonicalPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
   }
+  options = parsed.options;
 
   return {
     ...options,
@@ -1805,7 +1758,8 @@ function sourceHref(relativePath: string): string {
 }
 
 function matchesComponentPattern(id: string, title: string, patterns: readonly string[]): boolean {
-  return matchesAny(title, patterns) || matchesAny(id, patterns);
+  // Ordered matching so a later negation pattern re-includes earlier matches.
+  return micromatch.match([title, id], patterns).length > 0;
 }
 
 function createVisibilityByTarget(
@@ -1814,10 +1768,11 @@ function createVisibilityByTarget(
   excludeFilePatterns: readonly string[],
   excludeComponentPatterns: readonly string[],
 ): ReadonlyMap<string, ComponentVisibility> {
+  const excludeFileRules = excludeFilePatterns.length > 0 ? ignore().add([...excludeFilePatterns]) : undefined;
   const visibility = new Map<string, ComponentVisibility>();
   for (const definition of definitions) {
     const hidden =
-      matchesAny(definition.relativePath, excludeFilePatterns) ||
+      (excludeFileRules?.ignores(definition.relativePath) ?? false) ||
       matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
     visibility.set(definition.id, {
       boundaryVisible: !hidden,
@@ -2094,17 +2049,48 @@ function createGraph(
   return { groups: [], nodes, edges };
 }
 
-export async function generateReactComponentStructureGraph(
-  options: GenerateReactComponentStructureOptions,
-): Promise<DiagramGraph> {
+function focusGraphOnRoots(graph: DiagramGraph, rootPatterns: readonly string[]): DiagramGraph {
+  const roots = graph.nodes.filter(({ id, title }) =>
+    rootPatterns.some((pattern) => matchesComponentPattern(id, title, [pattern])),
+  );
+  if (roots.length === 0) {
+    throw new Error(`No visible component matches the --root pattern: ${rootPatterns.join(", ")}`);
+  }
+
+  const reachable = new Set(roots.map(({ id }) => id));
+  const targetsBySource = new Map<string, string[]>();
+  for (const { source, target } of graph.edges) {
+    targetsBySource.set(source, [...(targetsBySource.get(source) ?? []), target]);
+  }
+  const queue = [...reachable];
+  while (queue.length > 0) {
+    const current = queue.pop() as string;
+    for (const target of targetsBySource.get(current) ?? []) {
+      if (!reachable.has(target)) {
+        reachable.add(target);
+        queue.push(target);
+      }
+    }
+  }
+
+  return {
+    ...graph,
+    nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
+    edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
+  };
+}
+
+export async function buildComponentGraph(options: ComponentGraphOptions): Promise<DiagramGraph> {
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
   const scopePath = await realpath(options.scopePath);
-  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, defaultAnalysisExcludeFilePatterns);
+  if (!(await lstat(scopePath)).isDirectory()) throw new Error(`Base must be a directory: ${options.scopePath}`);
+  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
+  const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
 
   const program = ts.createProgram({
     rootNames: sourceFilePaths,
-    options: readCompilerOptions(scopePath, options.tsconfigPath),
+    options: compilerOptions,
   });
   const selectedPaths = new Set(sourceFilePaths);
   const sourceFiles = program
@@ -2150,5 +2136,8 @@ export async function generateReactComponentStructureGraph(
     options.excludeComponentPatterns ?? [],
   );
   const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
-  return createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  const graph = createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  return options.rootPatterns && options.rootPatterns.length > 0
+    ? focusGraphOnRoots(graph, [...options.rootPatterns])
+    : graph;
 }

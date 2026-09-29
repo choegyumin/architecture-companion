@@ -3,7 +3,7 @@ import { defineConfig, type Options } from "tsup";
 import {
   dependencyCruiserBundleBanner,
   dependencyCruiserBundlingPlugin,
-} from "./src/plugins/diagram-generators/js-module-dependency-graph/tooling/dependency-cruiser-bundling";
+} from "./src/plugins/diagram-generators/js-module-dependency-graph/packaging/dependency-cruiser-bundling";
 
 const nodeBundleOptions = {
   bundle: true,
@@ -25,8 +25,8 @@ export default defineConfig([
       "runtime/cli/validate-schemas": "src/cli/validate-schemas.ts",
       "runtime/cli/view-annotations": "src/cli/view-annotations.ts",
       "runtime/cli/view-generators": "src/cli/view-generators.ts",
-      "runtime/diagram-generators/react-component-structure/cli/run":
-        "src/plugins/diagram-generators/react-component-structure/cli/run.ts",
+      "runtime/diagram-generators/react-component-structure/run":
+        "src/plugins/diagram-generators/react-component-structure/run.ts",
     },
     banner: {
       js: [
@@ -42,8 +42,8 @@ export default defineConfig([
   {
     ...nodeBundleOptions,
     entry: {
-      "runtime/diagram-generators/js-module-dependency-graph/generate":
-        "src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
+      "runtime/diagram-generators/js-module-dependency-graph/run":
+        "src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
     },
     banner: { js: dependencyCruiserBundleBanner },
     esbuildPlugins: [dependencyCruiserBundlingPlugin],

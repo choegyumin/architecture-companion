@@ -1,4 +1,4 @@
-import { executeReactComponentStructureCommand } from "../command";
+import { executeReactComponentStructureCommand } from "./cli/command";
 
 async function main(): Promise<void> {
   try {

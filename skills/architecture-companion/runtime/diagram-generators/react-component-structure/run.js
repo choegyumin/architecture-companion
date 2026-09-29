@@ -36,6 +36,814 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// node_modules/.pnpm/ignore@7.0.10/node_modules/ignore/index.js
+var require_ignore = __commonJS({
+  "node_modules/.pnpm/ignore@7.0.10/node_modules/ignore/index.js"(exports, module) {
+    "use strict";
+    function makeArray(subject) {
+      return Array.isArray(subject) ? subject : [subject];
+    }
+    var UNDEFINED = void 0;
+    var EMPTY = "";
+    var SPACE = " ";
+    var ESCAPE = "\\";
+    var REGEX_LITERAL_SPECIAL = /[.*+?()[\]{}^$|\\/]/;
+    var REGEX_TEST_BLANK_LINE = /^\uFEFF? *$/;
+    var REGEX_INVALID_TRAILING_BACKSLASH = /(?:[^\\]|^)\\$/;
+    var REGEX_REPLACE_LEADING_EXCAPED_EXCLAMATION = /^\\!/;
+    var REGEX_REPLACE_LEADING_EXCAPED_HASH = /^\\#/;
+    var REGEX_SPLITALL_CRLF = /\r?\n/g;
+    var DOUBLE_SLASH = "//";
+    var SLASH_CODE = 47;
+    var DOT_CODE = 46;
+    var SLASH = "/";
+    var TMP_KEY_IGNORE = "node-ignore";
+    if (typeof Symbol !== "undefined") {
+      TMP_KEY_IGNORE = /* @__PURE__ */ Symbol.for("node-ignore");
+    }
+    var KEY_IGNORE = TMP_KEY_IGNORE;
+    var define = (object, key, value) => {
+      Object.defineProperty(object, key, { value });
+      return value;
+    };
+    var RETURN_FALSE = () => false;
+    var cleanRangeBackSlash = (slashes) => {
+      const { length } = slashes;
+      return slashes.slice(0, length - length % 2);
+    };
+    var POSIX_CLASSES = {
+      alnum: "0-9A-Za-z",
+      alpha: "A-Za-z",
+      blank: " \\t",
+      cntrl: "\\x00-\\x1f\\x7f",
+      digit: "0-9",
+      graph: "!-.0-~",
+      lower: "a-z",
+      print: " -.0-~",
+      punct: "!-.:-@\\[-`{-~",
+      // git's `sane-ctype.h` classifies \v and \f as control, not space,
+      //   unlike C's `isspace`
+      space: " \\t\\n\\r",
+      upper: "A-Z",
+      xdigit: "0-9A-Fa-f"
+    };
+    var CLASS_MEMBERS_TO_ESCAPE = "\\]^-[";
+    var escapeMember = (char) => CLASS_MEMBERS_TO_ESCAPE.indexOf(char) < 0 ? char : ESCAPE + char;
+    var NON_SLASH = "(?!\\/)";
+    var classSource = (negated, body) => {
+      if (negated) {
+        return `[^\\/${body}]`;
+      }
+      const source = `[${body}]`;
+      return new RegExp(source).test("/") ? NON_SLASH + source : source;
+    };
+    var scanBracket = (pattern, start) => {
+      const { length } = pattern;
+      let index = start + 1;
+      let negated = EMPTY;
+      const lead = pattern[index];
+      if (lead === "!" || lead === "^") {
+        negated = "^";
+        index++;
+      }
+      let body = EMPTY;
+      let prev = EMPTY;
+      for (; ; ) {
+        const char = pattern[index];
+        if (char === UNDEFINED) {
+          return null;
+        }
+        if (char === ESCAPE) {
+          const escaped = pattern[index + 1];
+          if (escaped === UNDEFINED) {
+            return null;
+          }
+          body += escapeMember(escaped);
+          prev = escaped;
+          index++;
+        } else if (char === "-" && prev && index + 1 < length && pattern[index + 1] !== "]") {
+          index++;
+          let to = pattern[index];
+          if (to === ESCAPE) {
+            to = pattern[index += 1];
+          }
+          if (prev <= to) {
+            body += `-${escapeMember(to)}`;
+          }
+          prev = EMPTY;
+        } else if (char === "[" && pattern[index + 1] === ":") {
+          const nameStart = index + 2;
+          let end = nameStart;
+          while (end < length && pattern[end] !== "]") {
+            end++;
+          }
+          if (end === length) {
+            return null;
+          }
+          if (end > nameStart && pattern[end - 1] === ":") {
+            const expanded = POSIX_CLASSES[pattern.slice(nameStart, end - 1)];
+            if (expanded === UNDEFINED) {
+              return null;
+            }
+            body += expanded;
+            prev = EMPTY;
+            index = end;
+          } else {
+            body += escapeMember("[");
+            prev = "[";
+            index = nameStart - 2;
+          }
+        } else {
+          body += escapeMember(char);
+          prev = char;
+        }
+        index++;
+        if (pattern[index] === "]") {
+          return {
+            end: index,
+            source: classSource(negated, body)
+          };
+        }
+      }
+    };
+    var NEVER_MATCH = "[]";
+    var PLACEHOLDER = "\0";
+    var REGEX_RESTORE_PLACEHOLDER = new RegExp(
+      `${PLACEHOLDER}(\\d+)${PLACEHOLDER}`,
+      "g"
+    );
+    var TRAILING_WILDCARD = "\uE000";
+    var extractBrackets = (pattern) => {
+      const sources = [];
+      const hold = (source) => `${PLACEHOLDER}${sources.push(source) - 1}${PLACEHOLDER}`;
+      const { length } = pattern;
+      let out = EMPTY;
+      let index = 0;
+      while (index < length) {
+        const char = pattern[index];
+        if (char === ESCAPE) {
+          const escaped = pattern[index + 1];
+          if (escaped === "*" || escaped === "[" || escaped === SPACE || escaped === ESCAPE) {
+            out += pattern.slice(index, index + 2);
+          } else {
+            out += hold(
+              REGEX_LITERAL_SPECIAL.test(escaped) ? ESCAPE + escaped : escaped
+            );
+          }
+          index += 2;
+        } else if (char === PLACEHOLDER) {
+          out += hold(`[${PLACEHOLDER}]`);
+          index++;
+        } else if (char === "[") {
+          const scanned = scanBracket(pattern, index);
+          if (scanned === null) {
+            out += hold(NEVER_MATCH);
+            index = length;
+          } else {
+            out += hold(scanned.source);
+            index = scanned.end + 1;
+          }
+        } else {
+          out += char;
+          index++;
+        }
+      }
+      return {
+        source: out,
+        sources
+      };
+    };
+    var DIRECT = null;
+    var REGEX_INNER_SLASH = /\/(?!$)/;
+    var REPLACERS = [
+      [
+        // Remove BOM
+        // TODO:
+        // Other similar zero-width characters?
+        /^\uFEFF/,
+        () => EMPTY,
+        "\uFEFF"
+      ],
+      [
+        // A trailing line terminator, left on when a whole file's contents are
+        //   added as one pattern rather than split into lines. git never sees one
+        //   -- it reads a `.gitignore` line by line -- so it is not part of the
+        //   pattern and is dropped here, apart from the trailing-space trimming,
+        //   which follows git in touching spaces and nothing else.
+        /[\r\n]+$/,
+        () => EMPTY
+      ],
+      // > Trailing spaces are ignored unless they are quoted with backslash ("\")
+      [
+        // Only spaces, never tabs or other whitespace: git trims a trailing run
+        //   of `' '` and nothing else (dir.c, `trim_trailing_spaces`, a single
+        //   `case ' '`), so a pattern ending in a tab keeps it as a literal.
+        // (a\ ) -> (a )
+        // (a  ) -> (a)
+        // (a ) -> (a)
+        // (a \ ) -> (a  )
+        /((?:\\\\)*?)(\\? +)$/,
+        (_, m1, m2) => m1 + (m2.indexOf("\\") === 0 ? SPACE : EMPTY)
+      ],
+      // Replace (\ ) with ' '
+      // Only a space: an escaped tab or other whitespace is already a literal by
+      //   the time it reaches here, and a bare tab must be left as one, not turned
+      //   into a space.
+      // (\ ) -> ' '
+      // (\\ ) -> '\\ '
+      // (\\\ ) -> '\\ '
+      [
+        /(\\+?) /g,
+        (_, m1) => {
+          const { length } = m1;
+          return m1.slice(0, length - length % 2) + SPACE;
+        }
+      ],
+      // Escape metacharacters
+      // which is written down by users but means special for regular expressions.
+      // > There are 12 characters with special meanings:
+      // > - the backslash \,
+      // > - the caret ^,
+      // > - the dollar sign $,
+      // > - the period or dot .,
+      // > - the vertical bar or pipe symbol |,
+      // > - the question mark ?,
+      // > - the asterisk or star *,
+      // > - the plus sign +,
+      // > - the opening parenthesis (,
+      // > - the closing parenthesis ),
+      // > - and the opening square bracket [,
+      // > - the opening curly brace {,
+      // > These special characters are often called "metacharacters".
+      [
+        /[\\$.|*+(){^]/g,
+        (match) => `\\${match}`
+      ],
+      [
+        // > a question mark (?) matches a single character
+        /(?!\\)\?/g,
+        () => "[^/]",
+        "?"
+      ],
+      // leading slash
+      [
+        // > A leading slash matches the beginning of the pathname.
+        // > For example, "/*.c" matches "cat-file.c" but not "mozilla-sha1/sha1.c".
+        // A leading slash matches the beginning of the pathname
+        /^\//,
+        () => "^",
+        SLASH
+      ],
+      // replace special metacharacter slash after the leading slash
+      [
+        /\//g,
+        () => "\\/",
+        SLASH
+      ],
+      [
+        // > A leading "**" followed by a slash means match in all directories.
+        // > For example, "**/foo" matches file or directory "foo" anywhere,
+        // > the same as pattern "foo".
+        // > "**/foo/bar" matches file or directory "bar" anywhere that is directly
+        // >   under directory "foo".
+        // Notice that the '*'s have been replaced as '\\*'
+        /^\^*(?:\\\*\\\*\\\/)+/,
+        // '**/foo' <-> 'foo'
+        () => "^(?:.*\\/)?",
+        "*"
+      ],
+      // starting
+      [
+        // there will be no leading '/'
+        //   (which has been replaced by section "leading slash")
+        // If starts with '**', adding a '^' to the regular expression also works
+        DIRECT,
+        (source, pattern) => {
+          if (!source || source[0] === "^") {
+            return source;
+          }
+          const anchor = !REGEX_INNER_SLASH.test(pattern) ? "(?:^|\\/)" : "^";
+          return anchor + source;
+        }
+      ],
+      // two globstars
+      [
+        // Use lookahead assertions so that we could match more than one `'/**'`
+        /\\\/\\\*\\\*(?=\\\/|$)/g,
+        // Zero, one or several directories
+        // should not use '*', or it will be replaced by the next replacer
+        // Check if it is not the last `'/**'`
+        (_, index, str) => index + 6 < str.length ? str.slice(index + 6) === "\\/" ? "(?:\\/[^\\/]+)+" : "(?:\\/[^\\/]+)*" : "\\/.+",
+        "*"
+      ],
+      // normal intermediate wildcards
+      [
+        // Never replace escaped '*'
+        // ignore rule '\*' will match the path '*'
+        // 'abc.*/' -> go
+        // 'abc.*'  -> skip this rule,
+        //    coz trailing single wildcard will be handed by [trailing wildcard]
+        /(^|[^\\]+)(\\\*)+(?=.+)/g,
+        // '*.js' matches '.js'
+        // '*.js' doesn't match 'abc'
+        (_, p1, p2) => {
+          const unescaped = p2.replace(/\\\*/g, "[^\\/]*");
+          return p1 + unescaped;
+        },
+        "*"
+      ],
+      // trailing wildcard, held apart from a literal star
+      [
+        // The step above leaves a trailing `*` alone, so a single `\*` is all that
+        //   can be left at the end here. Whether it is a wildcard or a literal
+        //   turns on the backslashes the user put in front of it: the escaper has
+        //   since doubled every one, so what stands here is those `2N` doubled
+        //   backslashes and then the star's own escape. An even number of the
+        //   original `N` leaves the star unescaped -- a wildcard -- and an odd
+        //   number escapes it -- a literal. This runs while the two are still
+        //   distinct, before the unescape steps below collapse the literal onto
+        //   the very `\*` a wildcard leaves behind.
+        /(^|[^\\])((?:\\\\)*)\\\*$/,
+        (match, p1, p2) => (
+          // `p2` holds the doubled user backslashes; half of them is `N`.
+          p2.length / 2 % 2 === 0 ? p1 + p2 + TRAILING_WILDCARD : match
+        ),
+        "*"
+      ],
+      [
+        // unescape, revert step 3 except for back slash
+        // For example, if a user escape a '\\*',
+        // after step 3, the result will be '\\\\\\*'
+        /\\\\\\(?=[$.|*+(){^])/g,
+        () => ESCAPE,
+        ESCAPE + ESCAPE
+      ],
+      [
+        // '\\\\' -> '\\'
+        /\\\\/g,
+        () => ESCAPE,
+        ESCAPE + ESCAPE
+      ],
+      [
+        // Every real bracket expression -- POSIX classes included -- has already
+        //   been held aside by `extractBrackets`, so the only `[` left in the
+        //   pattern is an escaped, literal one.
+        // `\` is escaped by step 3
+        /\\\[([^\]/]*?)(\\*)($|\])/g,
+        // '\\[bar]' -> '\\\\[bar\\]'
+        (match, range, endEscape, close) => `\\[${range}${cleanRangeBackSlash(endEscape)}${close}`,
+        "["
+      ],
+      // ending
+      [
+        // 'js' will not match 'js.'
+        // 'ab' will not match 'abc'
+        DIRECT,
+        // WTF!
+        // https://git-scm.com/docs/gitignore
+        // changes in [2.22.1](https://git-scm.com/docs/gitignore/2.22.1)
+        // which re-fixes #24, #38
+        // > If there is a separator at the end of the pattern then the pattern
+        // > will only match directories, otherwise the pattern can match both
+        // > files and directories.
+        // 'js*' will not match 'a.js'
+        // 'js/' will not match 'a.js'
+        // 'js' will match 'a.js' and 'a.js/'
+        (source) => {
+          const last = source[source.length - 1];
+          if (!last || last === TRAILING_WILDCARD) {
+            return source;
+          }
+          return last === SLASH ? `${source}$` : `${source}(?=$|\\/$)`;
+        }
+      ]
+    ];
+    var REGEX_REPLACE_TRAILING_WILDCARD = /(^|\\\/)?\uE000$/;
+    var MODE_IGNORE = "regex";
+    var MODE_CHECK_IGNORE = "checkRegex";
+    var UNDERSCORE = "_";
+    var TRAILING_WILD_CARD_REPLACERS = {
+      [MODE_IGNORE](_, p1) {
+        const prefix = p1 ? `${p1}[^/]+` : "[^/]*";
+        return `${prefix}(?=$|\\/$)`;
+      },
+      [MODE_CHECK_IGNORE](_, p1) {
+        const prefix = p1 ? `${p1}[^/]*` : "[^/]*";
+        return `${prefix}(?=$|\\/$)`;
+      }
+    };
+    var WILDCARD = "[^\\/]*";
+    var separatorAfter = (run, at) => {
+      let separator = EMPTY;
+      for (let index = at + 1; index < run.length && !run[index].wildcard; index++) {
+        separator += run[index].single;
+      }
+      return separator;
+    };
+    var pinWildcards = (source) => {
+      if (source.indexOf(WILDCARD) < 0) {
+        return source;
+      }
+      const tokens = [];
+      const { length } = source;
+      let index = 0;
+      while (index < length) {
+        const char = source[index];
+        if (source.startsWith(WILDCARD, index)) {
+          tokens.push({ wildcard: true });
+          index += WILDCARD.length;
+        } else if (char === "[") {
+          let end = index + 1;
+          if (source[end] === "^") {
+            end++;
+          }
+          if (source[end] === "]") {
+            end++;
+          }
+          while (end < length && source[end] !== "]") {
+            end += source[end] === ESCAPE ? 2 : 1;
+          }
+          end++;
+          tokens.push({ single: source.slice(index, end) });
+          index = end;
+        } else if (char === ESCAPE) {
+          tokens.push({ single: source.slice(index, index + 2) });
+          index += 2;
+        } else if (char === "(") {
+          let depth = 0;
+          let end = index;
+          do {
+            if (source[end] === ESCAPE) {
+              end++;
+            } else if (source[end] === "(") {
+              depth++;
+            } else if (source[end] === ")") {
+              depth--;
+            }
+            end++;
+          } while (end < length && depth > 0);
+          if ("*+?".indexOf(source[end]) >= 0) {
+            end++;
+          }
+          tokens.push({ boundary: source.slice(index, end) });
+          index = end;
+        } else if (char === "^" || char === "$") {
+          tokens.push({ boundary: char });
+          index++;
+        } else {
+          tokens.push({ single: char });
+          index++;
+        }
+      }
+      let out = EMPTY;
+      let run = [];
+      const flush = () => {
+        let lastWildcard;
+        run.forEach((token, at) => {
+          if (token.wildcard) {
+            lastWildcard = at;
+          }
+        });
+        run.forEach((token, at) => {
+          if (!token.wildcard) {
+            out += token.single;
+            return;
+          }
+          out += at === lastWildcard ? WILDCARD : `(?:(?!${separatorAfter(run, at)})[^\\/])*`;
+        });
+        run = [];
+      };
+      tokens.forEach((token) => {
+        if (token.boundary === void 0) {
+          run.push(token);
+          return;
+        }
+        flush();
+        out += token.boundary;
+      });
+      flush();
+      return out;
+    };
+    var makeRegexPrefix = (pattern) => {
+      const { source, sources } = extractBrackets(pattern);
+      const replaced = REPLACERS.reduce(
+        // A pass whose matcher finds nothing hands back the very string it was
+        //   given, so asking first costs a search and saves a rewrite. Ten of the
+        //   fifteen passes never fire for a typical .gitignore line, and between
+        //   them they were 45% of this chain.
+        (prev, [matcher, replacer, required]) => {
+          if (matcher === DIRECT) {
+            return replacer(prev, pattern);
+          }
+          if (required !== UNDEFINED && prev.indexOf(required) < 0) {
+            return prev;
+          }
+          return matcher.test(prev) ? prev.replace(matcher, replacer.bind(pattern)) : prev;
+        },
+        source
+      );
+      return sources.length ? replaced.replace(
+        REGEX_RESTORE_PLACEHOLDER,
+        (match, index) => sources[index]
+      ) : replaced;
+    };
+    var matchesBasename = (body) => {
+      const index = body.indexOf(SLASH);
+      return index < 0 || index === body.length - 1;
+    };
+    var basenameOf = (path) => {
+      const end = path.length - 1;
+      const index = path.lastIndexOf(
+        SLASH,
+        path[end] === SLASH ? end - 1 : end
+      );
+      return index < 0 ? path : path.slice(index + 1);
+    };
+    var parentOf = (path) => {
+      if (path.charCodeAt(0) === SLASH_CODE || path.indexOf(DOUBLE_SLASH) >= 0) {
+        const slices = path.split(SLASH).filter(Boolean);
+        slices.pop();
+        return slices.length ? slices.join(SLASH) + SLASH : EMPTY;
+      }
+      const end = path.length - 1;
+      const cut = path.lastIndexOf(
+        SLASH,
+        path.charCodeAt(end) === SLASH_CODE ? end - 1 : end
+      );
+      return cut < 0 ? EMPTY : path.slice(0, cut + 1);
+    };
+    var isString = (subject) => typeof subject === "string";
+    var checkPattern = (pattern) => pattern && isString(pattern) && !REGEX_TEST_BLANK_LINE.test(pattern) && !REGEX_INVALID_TRAILING_BACKSLASH.test(pattern) && pattern.indexOf("#") !== 0;
+    var splitPattern = (pattern) => pattern.split(REGEX_SPLITALL_CRLF).filter(Boolean);
+    var IgnoreRule = class {
+      constructor(pattern, mark, body, ignoreCase, negative, prefix) {
+        this.pattern = pattern;
+        this.mark = mark;
+        this.negative = negative;
+        define(this, "body", body);
+        define(this, "ignoreCase", ignoreCase);
+        define(this, "regexPrefix", prefix);
+      }
+      // Worked out on first use and kept behind an own property, the way `regex`
+      //   caches itself in `_regex`. Deciding it in the constructor instead would
+      //   add a fourth `defineProperty` to every rule ever built, which cost 4% of
+      //   every compile -- including the compiles of rules that are never matched
+      //   against anything.
+      get _basenameOnly() {
+        return define(this, "_basenameOnly", matchesBasename(this.body));
+      }
+      get regex() {
+        const key = UNDERSCORE + MODE_IGNORE;
+        if (this[key]) {
+          return this[key];
+        }
+        return this._make(MODE_IGNORE, key);
+      }
+      get checkRegex() {
+        const key = UNDERSCORE + MODE_CHECK_IGNORE;
+        if (this[key]) {
+          return this[key];
+        }
+        return this._make(MODE_CHECK_IGNORE, key);
+      }
+      _make(mode, key) {
+        const str = pinWildcards(this.regexPrefix.replace(
+          REGEX_REPLACE_TRAILING_WILDCARD,
+          // It does not need to bind pattern
+          TRAILING_WILD_CARD_REPLACERS[mode]
+        ));
+        const regex = this.ignoreCase ? new RegExp(str, "i") : new RegExp(str);
+        return define(this, key, regex);
+      }
+    };
+    var createRule = ({
+      pattern,
+      mark
+    }, ignoreCase) => {
+      let negative = false;
+      let body = pattern;
+      if (body.indexOf("!") === 0) {
+        negative = true;
+        body = body.substr(1);
+      }
+      body = body.replace(REGEX_REPLACE_LEADING_EXCAPED_EXCLAMATION, "!").replace(REGEX_REPLACE_LEADING_EXCAPED_HASH, "#");
+      const regexPrefix = makeRegexPrefix(body);
+      return new IgnoreRule(
+        pattern,
+        mark,
+        body,
+        ignoreCase,
+        negative,
+        regexPrefix
+      );
+    };
+    var RuleManager = class {
+      constructor(ignoreCase) {
+        this._ignoreCase = ignoreCase;
+        this._rules = [];
+        this._basenameCount = 0;
+      }
+      _add(pattern) {
+        if (pattern && pattern[KEY_IGNORE]) {
+          this._rules = this._rules.concat(pattern._rules._rules);
+          this._basenameCount += pattern._rules._basenameCount;
+          this._added = true;
+          return;
+        }
+        if (isString(pattern)) {
+          pattern = {
+            pattern
+          };
+        }
+        if (checkPattern(pattern.pattern)) {
+          const rule = createRule(pattern, this._ignoreCase);
+          this._added = true;
+          this._rules.push(rule);
+          if (matchesBasename(rule.body)) {
+            this._basenameCount++;
+          }
+        }
+      }
+      // @param {Array<string> | string | Ignore} pattern
+      add(pattern) {
+        this._added = false;
+        makeArray(
+          isString(pattern) ? splitPattern(pattern) : pattern
+        ).forEach(this._add, this);
+        return this._added;
+      }
+      // Test one single path without recursively checking parent directories
+      //
+      // - checkUnignored `boolean` whether should check if the path is unignored,
+      //   setting `checkUnignored` to `false` could reduce additional
+      //   path matching.
+      // - check `string` either `MODE_IGNORE` or `MODE_CHECK_IGNORE`
+      // @returns {TestResult} true if a file is ignored
+      test(path, checkUnignored, mode) {
+        let ignored = false;
+        let unignored = false;
+        let matchedRule;
+        const rules = this._rules;
+        const { length } = rules;
+        const shortcut = this._basenameCount * 2 >= length;
+        const basename2 = shortcut ? basenameOf(path) : path;
+        for (let index = 0; index < length; index++) {
+          const rule = rules[index];
+          const { negative } = rule;
+          const skip = unignored === negative && ignored !== unignored || negative && !ignored && !unignored && !checkUnignored;
+          if (!skip && rule[mode].test(
+            shortcut && rule._basenameOnly ? basename2 : path
+          )) {
+            ignored = !negative;
+            unignored = negative;
+            matchedRule = negative ? UNDEFINED : rule;
+          }
+        }
+        const ret = {
+          ignored,
+          unignored
+        };
+        if (matchedRule) {
+          ret.rule = matchedRule;
+        }
+        return ret;
+      }
+    };
+    var throwError = (message, Ctor) => {
+      throw new Ctor(message);
+    };
+    var checkPath = (path, originalPath, doThrow) => {
+      if (!isString(path)) {
+        return doThrow(
+          `path must be a string, but got \`${originalPath}\``,
+          TypeError
+        );
+      }
+      if (!path) {
+        return doThrow(`path must not be empty`, TypeError);
+      }
+      if (checkPath.isNotRelative(path)) {
+        const r = "`path.relative()`d";
+        return doThrow(
+          `path should be a ${r} string, but got "${originalPath}"`,
+          RangeError
+        );
+      }
+      return true;
+    };
+    var isNotRelative = (path) => {
+      const first = path.charCodeAt(0);
+      if (first === SLASH_CODE) {
+        return true;
+      }
+      if (first !== DOT_CODE) {
+        return false;
+      }
+      if (path.length === 1) {
+        return true;
+      }
+      const second = path.charCodeAt(1);
+      if (second === SLASH_CODE) {
+        return true;
+      }
+      if (second !== DOT_CODE) {
+        return false;
+      }
+      return path.length === 2 || path.charCodeAt(2) === SLASH_CODE;
+    };
+    checkPath.isNotRelative = isNotRelative;
+    checkPath.convert = (p) => p;
+    var Ignore = class {
+      constructor({
+        ignorecase = true,
+        ignoreCase = ignorecase,
+        allowRelativePaths = false
+      } = {}) {
+        define(this, KEY_IGNORE, true);
+        this._rules = new RuleManager(ignoreCase);
+        this._strictPathCheck = !allowRelativePaths;
+        this._initCache();
+      }
+      _initCache() {
+        this._ignoreCache = /* @__PURE__ */ Object.create(null);
+        this._testCache = /* @__PURE__ */ Object.create(null);
+      }
+      add(pattern) {
+        if (this._rules.add(pattern)) {
+          this._initCache();
+        }
+        return this;
+      }
+      // legacy
+      addPattern(pattern) {
+        return this.add(pattern);
+      }
+      // @returns {TestResult}
+      _test(originalPath, cache, checkUnignored) {
+        const path = originalPath && checkPath.convert(originalPath);
+        checkPath(
+          path,
+          originalPath,
+          this._strictPathCheck ? throwError : RETURN_FALSE
+        );
+        return this._t(path, cache, checkUnignored);
+      }
+      checkIgnore(path) {
+        if (path.charCodeAt(path.length - 1) !== SLASH_CODE) {
+          return this.test(path);
+        }
+        const parentPath = parentOf(path);
+        if (parentPath) {
+          const parent = this._t(parentPath, this._testCache, true);
+          if (parent.ignored) {
+            return parent;
+          }
+        }
+        return this._rules.test(path, false, MODE_CHECK_IGNORE);
+      }
+      _t(path, cache, checkUnignored) {
+        if (path in cache) {
+          return cache[path];
+        }
+        const parentPath = parentOf(path);
+        const parent = parentPath ? this._t(parentPath, cache, checkUnignored) : UNDEFINED;
+        return cache[path] = parent && parent.ignored ? parent : this._rules.test(path, checkUnignored, MODE_IGNORE);
+      }
+      ignores(path) {
+        return this._test(path, this._ignoreCache, false).ignored;
+      }
+      createFilter() {
+        return (path) => !this.ignores(path);
+      }
+      filter(paths) {
+        return makeArray(paths).filter(this.createFilter());
+      }
+      // @returns {TestResult}
+      test(path) {
+        return this._test(path, this._testCache, true);
+      }
+    };
+    var factory = (options) => new Ignore(options);
+    var isPathValid = (path) => checkPath(path && checkPath.convert(path), path, RETURN_FALSE);
+    var setupWindows = () => {
+      const makePosix = (str) => /^\\\\\?\\/.test(str) || /["<>|\u0000-\u001F]+/u.test(str) ? str : str.replace(/\\/g, "/");
+      checkPath.convert = makePosix;
+      const REGEX_TEST_WINDOWS_PATH_ABSOLUTE = /^[a-z]:\//i;
+      checkPath.isNotRelative = (path) => REGEX_TEST_WINDOWS_PATH_ABSOLUTE.test(path) || isNotRelative(path);
+    };
+    if (
+      // Detect `process` so that it can run in browsers.
+      typeof process !== "undefined" && process.platform === "win32"
+    ) {
+      setupWindows();
+    }
+    module.exports = factory;
+    factory.default = factory;
+    module.exports.isPathValid = isPathValid;
+    define(module.exports, /* @__PURE__ */ Symbol.for("setupWindows"), setupWindows);
+  }
+});
+
 // node_modules/.pnpm/braces@3.0.3/node_modules/braces/lib/utils.js
 var require_utils = __commonJS({
   "node_modules/.pnpm/braces@3.0.3/node_modules/braces/lib/utils.js"(exports) {
@@ -10950,7 +11758,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         getAccessibleSortedChildDirectories,
         fileSystemEntryExists,
-        realpath: realpath2,
+        realpath: realpath3,
         setTimeout: setTimeout2,
         clearTimeout: clearTimeout2
       }) {
@@ -11126,7 +11934,7 @@ ${lanes.join("\n")}
         function updateChildWatches(parentDir, parentDirPath, options) {
           const parentWatcher = cache.get(parentDirPath);
           if (!parentWatcher) return false;
-          const target = normalizePath(realpath2(parentDir));
+          const target = normalizePath(realpath3(parentDir));
           let hasChanges;
           let newChildWatches;
           if (filePathComparer(target, parentDir) === 0) {
@@ -11137,7 +11945,7 @@ ${lanes.join("\n")}
                 /* Directory */
               ) ? mapDefined(getAccessibleSortedChildDirectories(parentDir), (child) => {
                 const childFullName = getNormalizedAbsolutePath(child, parentDir);
-                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath2(childFullName))) === 0 ? childFullName : void 0;
+                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath3(childFullName))) === 0 ? childFullName : void 0;
               }) : emptyArray,
               parentWatcher.childWatches,
               (child, childWatcher) => filePathComparer(child, childWatcher.dirName),
@@ -11221,7 +12029,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         fsSupportsRecursiveFsWatch,
         getAccessibleSortedChildDirectories,
-        realpath: realpath2,
+        realpath: realpath3,
         tscWatchFile,
         useNonPollingWatchers,
         tscWatchDirectory,
@@ -11361,7 +12169,7 @@ ${lanes.join("\n")}
               fileSystemEntryExists,
               getAccessibleSortedChildDirectories,
               watchDirectory: nonRecursiveWatchDirectory,
-              realpath: realpath2,
+              realpath: realpath3,
               setTimeout: setTimeout2,
               clearTimeout: clearTimeout2
             });
@@ -11600,7 +12408,7 @@ ${lanes.join("\n")}
             // (ref: https://github.com/nodejs/node/pull/2649 and https://github.com/Microsoft/TypeScript/issues/4643)
             fsSupportsRecursiveFsWatch,
             getAccessibleSortedChildDirectories: (path) => getAccessibleFileSystemEntries(path).directories,
-            realpath: realpath2,
+            realpath: realpath3,
             tscWatchFile: process.env.TSC_WATCHFILE,
             useNonPollingWatchers: !!process.env.TSC_NONPOLLING_WATCHER,
             tscWatchDirectory: process.env.TSC_WATCHDIRECTORY,
@@ -11621,7 +12429,7 @@ ${lanes.join("\n")}
             writeOutputIsTTY() {
               return process.stdout.isTTY;
             },
-            readFile,
+            readFile: readFile2,
             writeFile: writeFile22,
             watchFile: watchFile2,
             watchDirectory,
@@ -11674,7 +12482,7 @@ ${lanes.join("\n")}
             enableCPUProfiler,
             disableCPUProfiler,
             cpuProfilingEnabled: () => !!activeSession || contains(process.execArgv, "--cpu-prof") || contains(process.execArgv, "--prof"),
-            realpath: realpath2,
+            realpath: realpath3,
             debugMode: !!process.env.NODE_INSPECTOR_IPC || !!process.env.VSCODE_INSPECTOR_OPTIONS || some(process.execArgv, (arg) => /^--(?:inspect|debug)(?:-brk)?(?:=\d+)?$/i.test(arg)) || !!process.recordreplay,
             tryEnableSourceMapsForHost() {
               try {
@@ -11827,7 +12635,7 @@ ${lanes.join("\n")}
               callback
             );
           }
-          function readFile(fileName, _encoding) {
+          function readFile2(fileName, _encoding) {
             let buffer;
             try {
               buffer = _fs.readFileSync(fileName);
@@ -11906,7 +12714,7 @@ ${lanes.join("\n")}
             }
           }
           function readDirectory(path, extensions, excludes, includes, depth) {
-            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath2);
+            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath3);
           }
           function fileSystemEntryExists(path, entryKind) {
             const stat2 = statSync(path);
@@ -11942,7 +12750,7 @@ ${lanes.join("\n")}
           function fsRealPathHandlingLongPath(path) {
             return path.length < 260 ? _fs.realpathSync.native(path) : _fs.realpathSync(path);
           }
-          function realpath2(path) {
+          function realpath3(path) {
             try {
               return fsRealpath(path);
             } catch {
@@ -12415,11 +13223,11 @@ ${lanes.join("\n")}
           return toComponents;
         }
         const components = toComponents.slice(start);
-        const relative3 = [];
+        const relative4 = [];
         for (; start < fromComponents.length; start++) {
-          relative3.push("..");
+          relative4.push("..");
         }
-        return ["", ...relative3, ...components];
+        return ["", ...relative4, ...components];
       }
       function getRelativePathFromDirectory(fromDirectory, to, getCanonicalFileNameOrIgnoreCase) {
         Debug.assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, "Paths must either both be absolute or both be relative");
@@ -26021,7 +26829,7 @@ ${lanes.join("\n")}
       function getRegexFromPattern(pattern, useCaseSensitiveFileNames2) {
         return new RegExp(pattern, useCaseSensitiveFileNames2 ? "" : "i");
       }
-      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath2) {
+      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath3) {
         path = normalizePath(path);
         currentDirectory = normalizePath(currentDirectory);
         const patterns = getFileMatcherPatterns(path, excludes, includes, useCaseSensitiveFileNames2, currentDirectory);
@@ -26036,7 +26844,7 @@ ${lanes.join("\n")}
         }
         return flatten(results);
         function visitDirectory(path2, absolutePath, depth2) {
-          const canonicalPath = toCanonical(realpath2(absolutePath));
+          const canonicalPath = toCanonical(realpath3(absolutePath));
           if (visited.has(canonicalPath)) return;
           visited.set(canonicalPath, true);
           const { files, directories } = getFileSystemEntries(path2);
@@ -48383,7 +49191,7 @@ ${lanes.join("\n")}
         const possibleOption = getSpellingSuggestion(unknownOption, diagnostics.optionDeclarations, getOptionName);
         return possibleOption ? createDiagnosticForNodeInSourceFileOrCompilerDiagnostic(sourceFile, node, diagnostics.unknownDidYouMeanDiagnostic, unknownOptionErrorText || unknownOption, possibleOption.name) : createDiagnosticForNodeInSourceFileOrCompilerDiagnostic(sourceFile, node, diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
       }
-      function parseCommandLineWorker(diagnostics, commandLine, readFile) {
+      function parseCommandLineWorker(diagnostics, commandLine, readFile2) {
         const options = {};
         let watchOptions;
         const fileNames = [];
@@ -48431,7 +49239,7 @@ ${lanes.join("\n")}
           }
         }
         function parseResponseFile(fileName) {
-          const text = tryReadFile(fileName, readFile || ((fileName2) => sys.readFile(fileName2)));
+          const text = tryReadFile(fileName, readFile2 || ((fileName2) => sys.readFile(fileName2)));
           if (!isString(text)) {
             errors.push(text);
             return;
@@ -48534,8 +49342,8 @@ ${lanes.join("\n")}
         unknownDidYouMeanDiagnostic: Diagnostics.Unknown_compiler_option_0_Did_you_mean_1,
         optionTypeMismatchDiagnostic: Diagnostics.Compiler_option_0_expects_an_argument
       };
-      function parseCommandLine(commandLine, readFile) {
-        return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile);
+      function parseCommandLine(commandLine, readFile2) {
+        return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile2);
       }
       function getOptionFromName(optionName, allowShort) {
         return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
@@ -48617,8 +49425,8 @@ ${lanes.join("\n")}
           watchOptionsToExtend
         );
       }
-      function readConfigFile(fileName, readFile) {
-        const textOrDiagnostic = tryReadFile(fileName, readFile);
+      function readConfigFile(fileName, readFile2) {
+        const textOrDiagnostic = tryReadFile(fileName, readFile2);
         return isString(textOrDiagnostic) ? parseConfigFileTextToJson(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
       }
       function parseConfigFileTextToJson(fileName, jsonText) {
@@ -48633,14 +49441,14 @@ ${lanes.join("\n")}
           error: jsonSourceFile.parseDiagnostics.length ? jsonSourceFile.parseDiagnostics[0] : void 0
         };
       }
-      function readJsonConfigFile(fileName, readFile) {
-        const textOrDiagnostic = tryReadFile(fileName, readFile);
+      function readJsonConfigFile(fileName, readFile2) {
+        const textOrDiagnostic = tryReadFile(fileName, readFile2);
         return isString(textOrDiagnostic) ? parseJsonText(fileName, textOrDiagnostic) : { fileName, parseDiagnostics: [textOrDiagnostic] };
       }
-      function tryReadFile(fileName, readFile) {
+      function tryReadFile(fileName, readFile2) {
         let text;
         try {
-          text = readFile(fileName);
+          text = readFile2(fileName);
         } catch (e) {
           return createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, e.message);
         }
@@ -56898,9 +57706,9 @@ ${lanes.join("\n")}
               if (!startsWithDirectory(target, realPathDirectory, getCanonicalFileName)) {
                 return;
               }
-              const relative3 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
+              const relative4 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
               for (const symlinkDirectory of symlinkDirectories) {
-                const option = resolvePath(symlinkDirectory, relative3);
+                const option = resolvePath(symlinkDirectory, relative4);
                 const result2 = cb(option, target === referenceRedirect);
                 shouldFilterIgnoredPaths = true;
                 if (result2) return result2;
@@ -126737,7 +127545,7 @@ ${lanes.join("\n")}
           }
         }
         function createImportCallExpressionAMD(arg, containsLexicalThis) {
-          const resolve2 = factory2.createUniqueName("resolve");
+          const resolve3 = factory2.createUniqueName("resolve");
           const reject = factory2.createUniqueName("reject");
           const parameters = [
             factory2.createParameterDeclaration(
@@ -126746,7 +127554,7 @@ ${lanes.join("\n")}
               /*dotDotDotToken*/
               void 0,
               /*name*/
-              resolve2
+              resolve3
             ),
             factory2.createParameterDeclaration(
               /*modifiers*/
@@ -126763,7 +127571,7 @@ ${lanes.join("\n")}
                 factory2.createIdentifier("require"),
                 /*typeArguments*/
                 void 0,
-                [factory2.createArrayLiteralExpression([arg || factory2.createOmittedExpression()]), resolve2, reject]
+                [factory2.createArrayLiteralExpression([arg || factory2.createOmittedExpression()]), resolve3, reject]
               )
             )
           ]);
@@ -137758,7 +138566,7 @@ ${lanes.join("\n")}
           addOrDeleteFileOrDirectory,
           addOrDeleteFile,
           clearCache,
-          realpath: host.realpath && realpath2
+          realpath: host.realpath && realpath3
         };
         function toPath3(fileName) {
           return toPath(fileName, currentDirectory, getCanonicalFileName);
@@ -137869,7 +138677,7 @@ ${lanes.join("\n")}
           const rootResult = tryReadDirectory2(rootDir, rootDirPath);
           let rootSymLinkResult;
           if (rootResult !== void 0) {
-            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath2);
+            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath3);
           }
           return host.readDirectory(rootDir, extensions, excludes, includes, depth);
           function getFileSystemEntries(dir) {
@@ -137898,7 +138706,7 @@ ${lanes.join("\n")}
             return result;
           }
         }
-        function realpath2(s) {
+        function realpath3(s) {
           return host.realpath ? host.realpath(s) : s;
         }
         function clearFirstAncestorEntry(fileOrDirectoryPath) {
@@ -138298,12 +139106,12 @@ ${lanes.join("\n")}
       function createCompilerHost(options, setParentNodes) {
         return createCompilerHostWorker(options, setParentNodes);
       }
-      function createGetSourceFile(readFile, setParentNodes) {
+      function createGetSourceFile(readFile2, setParentNodes) {
         return (fileName, languageVersionOrOptions, onError) => {
           let text;
           try {
             mark("beforeIORead");
-            text = readFile(fileName);
+            text = readFile2(fileName);
             mark("afterIORead");
             measure("I/O Read", "beforeIORead", "afterIORead");
           } catch (e) {
@@ -138353,7 +139161,7 @@ ${lanes.join("\n")}
           return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
         }
         const newLine = getNewLineCharacter(options);
-        const realpath2 = system.realpath && ((path) => system.realpath(path));
+        const realpath3 = system.realpath && ((path) => system.realpath(path));
         const compilerHost = {
           getSourceFile: createGetSourceFile((fileName) => compilerHost.readFile(fileName), setParentNodes),
           getDefaultLibLocation,
@@ -138373,7 +139181,7 @@ ${lanes.join("\n")}
           directoryExists: (directoryName) => system.directoryExists(directoryName),
           getEnvironmentVariable: (name) => system.getEnvironmentVariable ? system.getEnvironmentVariable(name) : "",
           getDirectories: (path) => system.getDirectories(path),
-          realpath: realpath2,
+          realpath: realpath3,
           readDirectory: (path, extensions, include, exclude, depth) => system.readDirectory(path, extensions, include, exclude, depth),
           createDirectory: (d) => system.createDirectory(d),
           createHash: maybeBind(system, system.createHash)
@@ -139207,7 +140015,7 @@ ${lanes.join("\n")}
           getRedirectFromOutput,
           forEachResolvedProjectReference: forEachResolvedProjectReference2
         });
-        const readFile = host.readFile.bind(host);
+        const readFile2 = host.readFile.bind(host);
         (_e = tracing) == null ? void 0 : _e.push(tracing.Phase.Program, "shouldProgramCreateNewSourceFiles", { hasOldProgram: !!oldProgram });
         const shouldCreateNewSourceFile = shouldProgramCreateNewSourceFiles(oldProgram, options);
         (_f = tracing) == null ? void 0 : _f.pop();
@@ -139433,7 +140241,7 @@ ${lanes.join("\n")}
           shouldTransformImportCall,
           emitBuildInfo,
           fileExists,
-          readFile,
+          readFile: readFile2,
           directoryExists,
           getSymlinkCache,
           realpath: (_o = host.realpath) == null ? void 0 : _o.bind(host),
@@ -202032,9 +202840,9 @@ ${options.prefix}` : "\n" : options.prefix
             if (this.host.realpath) {
               Debug.assert(!!this.containingProjects.length);
               const project = this.containingProjects[0];
-              const realpath2 = this.host.realpath(this.path);
-              if (realpath2) {
-                this.realpath = project.toPath(realpath2);
+              const realpath3 = this.host.realpath(this.path);
+              if (realpath3) {
+                this.realpath = project.toPath(realpath3);
                 if (this.realpath !== this.path) {
                   project.projectService.realpathToScriptInfos.add(this.realpath, this);
                 }
@@ -206056,9 +206864,9 @@ ${options.prefix}` : "\n" : options.prefix
           this.filenameToScriptInfo.delete(info.path);
           this.filenameToScriptInfoVersion.set(info.path, info.textStorage.version);
           this.stopWatchingScriptInfo(info);
-          const realpath2 = info.getRealpathIfDifferent();
-          if (realpath2) {
-            this.realpathToScriptInfos.remove(realpath2, info);
+          const realpath3 = info.getRealpathIfDifferent();
+          if (realpath3) {
+            this.realpathToScriptInfos.remove(realpath3, info);
           }
           info.closeSourceMapFileWatcher();
         }
@@ -206947,9 +207755,9 @@ All files are: ${JSON.stringify(names)}`,
         getSymlinkedProjects(info) {
           let projects;
           if (this.realpathToScriptInfos) {
-            const realpath2 = info.getRealpathIfDifferent();
-            if (realpath2) {
-              forEach(this.realpathToScriptInfos.get(realpath2), combineProjects);
+            const realpath3 = info.getRealpathIfDifferent();
+            if (realpath3) {
+              forEach(this.realpathToScriptInfos.get(realpath3), combineProjects);
             }
             forEach(this.realpathToScriptInfos.get(info.path), combineProjects);
           }
@@ -213481,8 +214289,8 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
         installPackage(options) {
           this.packageInstallId++;
           const request = { kind: "installPackage", ...options, id: this.packageInstallId };
-          const promise = new Promise((resolve2, reject) => {
-            (this.packageInstalledPromise ?? (this.packageInstalledPromise = /* @__PURE__ */ new Map())).set(this.packageInstallId, { resolve: resolve2, reject });
+          const promise = new Promise((resolve3, reject) => {
+            (this.packageInstalledPromise ?? (this.packageInstalledPromise = /* @__PURE__ */ new Map())).set(this.packageInstallId, { resolve: resolve3, reject });
           });
           this.installer.send(request);
           return promise;
@@ -213764,17 +214572,18 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
   }
 });
 
-// src/plugins/diagram-generators/react-component-structure/command.ts
+// src/plugins/diagram-generators/react-component-structure/cli/command.ts
 import { mkdir, mkdtemp, writeFile } from "fs/promises";
 import { tmpdir } from "os";
-import { dirname, join as join2 } from "path";
+import { dirname as dirname2, join as join2 } from "path";
 
-// src/plugins/diagram-generators/react-component-structure/generator.ts
+// src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts
+var import_ignore2 = __toESM(require_ignore(), 1);
 var import_micromatch = __toESM(require_micromatch(), 1);
 var import_typescript = __toESM(require_typescript(), 1);
 import { createHash } from "crypto";
-import { readdir, realpath, stat } from "fs/promises";
-import { basename, extname, isAbsolute as isAbsolute2, join, relative as relative2, resolve } from "path";
+import { lstat, realpath as realpath2 } from "fs/promises";
+import { basename, extname as extname2, relative as relative3, resolve as resolve2 } from "path";
 
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";
@@ -213785,68 +214594,113 @@ function isPathInside(parentPath, candidatePath) {
   const relativePath = relative(parentPath, candidatePath);
   return relativePath === "" || relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath);
 }
-
-// src/plugins/diagram-generators/react-component-structure/generator.ts
-var sourceExtensions = /* @__PURE__ */ new Set([".js", ".jsx", ".ts", ".tsx"]);
-var defaultAnalysisExcludeFilePatterns = [
-  "**/node_modules/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/coverage/**",
-  "**/.next/**",
-  "**/.output/**",
-  "**/out/**",
-  "**/__tests__/**",
-  "**/*.test.{js,jsx,ts,tsx}",
-  "**/*.spec.{js,jsx,ts,tsx}",
-  "**/*.d.ts",
-  "**/*.generated.{js,jsx,ts,tsx}",
-  "**/*.gen.{js,jsx,ts,tsx}"
-];
-function matchesAny(value, patterns) {
-  return patterns.length > 0 && import_micromatch.default.isMatch(value, patterns, { dot: true });
+function isMissingPathError(error) {
+  return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
-async function collectSourceFiles(scopePath, sourcePaths, excludeFilePatterns) {
+
+// src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts
+var import_ignore = __toESM(require_ignore(), 1);
+import { readdir, readFile, realpath, stat } from "fs/promises";
+import { dirname, extname, isAbsolute as isAbsolute2, join, relative as relative2, resolve } from "path";
+var sourceExtensions = /* @__PURE__ */ new Set([".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"]);
+var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
+async function readIgnoreFileContents(ignoreFilePath) {
+  let contents;
+  try {
+    contents = await readFile(ignoreFilePath, "utf8");
+  } catch (error) {
+    if (isMissingPathError(error)) return void 0;
+    throw error;
+  }
+  return contents;
+}
+function addIgnoreRules(rules, contents) {
+  return contents === void 0 ? rules : (0, import_ignore.default)().add(rules).add(contents);
+}
+async function collectInheritedIgnoreRules(scopePath, directoryPath) {
+  let rules = (0, import_ignore.default)();
+  const directoryRelativePath = relative2(scopePath, directoryPath);
+  let currentPath = scopePath;
+  for (const segment of ["", ...directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : []]) {
+    if (segment) currentPath = join(currentPath, segment);
+    rules = addIgnoreRules(rules, await readIgnoreFileContents(join(currentPath, ".gitignore")));
+  }
+  return rules;
+}
+function isPathIgnored(rules, relativePath, isDirectory) {
+  return rules.ignores(relativePath) || isDirectory && rules.ignores(`${relativePath}/`);
+}
+async function collectSourceFiles(scopePath, sourcePaths) {
   const files = /* @__PURE__ */ new Set();
-  async function visit(candidatePath) {
-    const resolvedPath = await realpath(candidatePath);
-    if (!isPathInside(scopePath, resolvedPath)) {
-      throw new Error(`Source path must stay inside the scope: ${candidatePath}`);
-    }
-    const relativePath = toPosixPath(relative2(scopePath, resolvedPath));
-    if (relativePath && matchesAny(relativePath, excludeFilePatterns)) return;
-    const candidateStat = await stat(resolvedPath);
-    if (candidateStat.isDirectory()) {
-      const entries = await readdir(resolvedPath, { withFileTypes: true });
-      for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
-        if (entry.isDirectory() || entry.isFile()) await visit(join(resolvedPath, entry.name));
-      }
-      return;
-    }
-    if (!candidateStat.isFile()) return;
+  async function visitFile(resolvedPath) {
     if (!sourceExtensions.has(extname(resolvedPath))) return;
     files.add(resolvedPath);
   }
+  async function visitDirectory(directoryPath, inheritedRules) {
+    const directoryRules = addIgnoreRules(
+      inheritedRules,
+      await readIgnoreFileContents(join(directoryPath, ".gitignore"))
+    );
+    for (const entry of await readdir(directoryPath, { withFileTypes: true })) {
+      if (!entry.isDirectory() && !entry.isFile()) continue;
+      const resolvedPath = await realpath(join(directoryPath, entry.name));
+      if (!isPathInside(scopePath, resolvedPath)) {
+        throw new Error(`Source path must stay inside the base: ${join(directoryPath, entry.name)}`);
+      }
+      const relativePath = toPosixPath(relative2(scopePath, resolvedPath));
+      if (entry.isDirectory()) {
+        if (alwaysIgnoredDirectoryNames.has(entry.name)) continue;
+        if (relativePath && isPathIgnored(directoryRules, relativePath, true)) continue;
+        await visitDirectory(resolvedPath, directoryRules);
+        continue;
+      }
+      if (relativePath && isPathIgnored(directoryRules, relativePath, false)) continue;
+      await visitFile(resolvedPath);
+    }
+  }
   for (const sourcePath of sourcePaths) {
-    await visit(isAbsolute2(sourcePath) ? sourcePath : resolve(scopePath, sourcePath));
+    const resolvedRoot = await realpath(isAbsolute2(sourcePath) ? sourcePath : resolve(scopePath, sourcePath));
+    if (!isPathInside(scopePath, resolvedRoot)) {
+      throw new Error(`Source path must stay inside the base: ${sourcePath}`);
+    }
+    const inheritedRules = resolvedRoot === scopePath ? (0, import_ignore.default)() : await collectInheritedIgnoreRules(scopePath, dirname(resolvedRoot));
+    const rootStat = await stat(resolvedRoot);
+    if (rootStat.isDirectory()) {
+      await visitDirectory(resolvedRoot, inheritedRules);
+    } else if (rootStat.isFile()) {
+      await visitFile(resolvedRoot);
+    }
   }
   return [...files].toSorted();
 }
+
+// src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts
 function formatDiagnostic(diagnostic) {
   return import_typescript.default.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
 }
-function readCompilerOptions(scopePath, tsconfigPath) {
-  const configPath = tsconfigPath ? isAbsolute2(tsconfigPath) ? tsconfigPath : resolve(scopePath, tsconfigPath) : import_typescript.default.findConfigFile(scopePath, import_typescript.default.sys.fileExists, "tsconfig.json");
-  let options = {};
-  if (configPath) {
-    const config = import_typescript.default.readConfigFile(configPath, import_typescript.default.sys.readFile);
-    if (config.error) throw new Error(`Cannot read ${configPath}: ${formatDiagnostic(config.error)}`);
-    const parsed = import_typescript.default.parseJsonConfigFileContent(config.config, import_typescript.default.sys, resolve(configPath, ".."));
-    if (parsed.errors.length > 0) {
-      throw new Error(`Cannot parse ${configPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
-    }
-    options = parsed.options;
+async function readCompilerOptions(scopePath, tsconfigPath) {
+  const candidatePath = resolve2(scopePath, tsconfigPath ?? "tsconfig.json");
+  let canonicalPath;
+  try {
+    canonicalPath = await realpath2(candidatePath);
+  } catch (error) {
+    if (isMissingPathError(error) && tsconfigPath === void 0) return {};
+    throw error;
   }
+  if (!isPathInside(scopePath, canonicalPath)) {
+    throw new Error(`TypeScript config must stay inside the base: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
+  if (!(await lstat(canonicalPath)).isFile()) {
+    throw new Error(`TypeScript config must be a file: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
+  let options = {};
+  const config = import_typescript.default.readConfigFile(canonicalPath, import_typescript.default.sys.readFile);
+  if (config.error) throw new Error(`Cannot read ${canonicalPath}: ${formatDiagnostic(config.error)}`);
+  const parsed = import_typescript.default.parseJsonConfigFileContent(config.config, import_typescript.default.sys, resolve2(canonicalPath, ".."));
+  if (parsed.errors.length > 0) {
+    throw new Error(`Cannot parse ${canonicalPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
+  }
+  options = parsed.options;
   return {
     ...options,
     allowJs: true,
@@ -213959,7 +214813,7 @@ function isComponentName(name) {
   return /^[A-Z]/.test(name);
 }
 function defaultExportName(sourceFile) {
-  const fileName = basename(sourceFile.fileName, extname(sourceFile.fileName));
+  const fileName = basename(sourceFile.fileName, extname2(sourceFile.fileName));
   const words = fileName.split(/[^a-zA-Z0-9]+/).filter(Boolean);
   const name = words.map((word) => `${word.at(0)?.toUpperCase()}${word.slice(1)}`).join("");
   return name || "DefaultExport";
@@ -213980,7 +214834,7 @@ function collectComponentDefinitions(sourceFiles, scopePath, checker) {
   function addDefinition(sourceFile, declaration, name, symbol, functionLike, renderRoots, body, classComponent, identityName = name) {
     if (!isComponentName(name)) return;
     if (renderRoots.length === 0 || !renderRoots.some((root) => containsReactOutput(root, checker))) return;
-    const relativePath = toPosixPath(relative2(scopePath, sourceFile.fileName));
+    const relativePath = toPosixPath(relative3(scopePath, sourceFile.fileName));
     const id = createComponentId(relativePath, identityName);
     if (definitionIds.has(id)) throw new Error(`Duplicate React component identity: ${id}`);
     definitionIds.add(id);
@@ -215071,12 +215925,13 @@ function sourceHref(relativePath) {
   return `source:///${relativePath.split("/").map(encodeURIComponent).join("/")}`;
 }
 function matchesComponentPattern(id, title, patterns) {
-  return matchesAny(title, patterns) || matchesAny(id, patterns);
+  return import_micromatch.default.match([title, id], patterns).length > 0;
 }
 function createVisibilityByTarget(definitions, externalTargets, excludeFilePatterns, excludeComponentPatterns) {
+  const excludeFileRules = excludeFilePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludeFilePatterns]) : void 0;
   const visibility = /* @__PURE__ */ new Map();
   for (const definition of definitions) {
-    const hidden = matchesAny(definition.relativePath, excludeFilePatterns) || matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
+    const hidden = (excludeFileRules?.ignores(definition.relativePath) ?? false) || matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
     visibility.set(definition.id, {
       boundaryVisible: !hidden,
       implementationAnalyzed: !hidden
@@ -215288,17 +216143,47 @@ function createGraph(definitions, externalTargets, visibleNodeIds, relationships
   const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
   return { groups: [], nodes, edges };
 }
-async function generateReactComponentStructureGraph(options) {
+function focusGraphOnRoots(graph, rootPatterns) {
+  const roots = graph.nodes.filter(
+    ({ id, title }) => rootPatterns.some((pattern) => matchesComponentPattern(id, title, [pattern]))
+  );
+  if (roots.length === 0) {
+    throw new Error(`No visible component matches the --root pattern: ${rootPatterns.join(", ")}`);
+  }
+  const reachable = new Set(roots.map(({ id }) => id));
+  const targetsBySource = /* @__PURE__ */ new Map();
+  for (const { source, target } of graph.edges) {
+    targetsBySource.set(source, [...targetsBySource.get(source) ?? [], target]);
+  }
+  const queue = [...reachable];
+  while (queue.length > 0) {
+    const current = queue.pop();
+    for (const target of targetsBySource.get(current) ?? []) {
+      if (!reachable.has(target)) {
+        reachable.add(target);
+        queue.push(target);
+      }
+    }
+  }
+  return {
+    ...graph,
+    nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
+    edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target))
+  };
+}
+async function buildComponentGraph(options) {
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
-  const scopePath = await realpath(options.scopePath);
-  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, defaultAnalysisExcludeFilePatterns);
+  const scopePath = await realpath2(options.scopePath);
+  if (!(await lstat(scopePath)).isDirectory()) throw new Error(`Base must be a directory: ${options.scopePath}`);
+  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
+  const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
   const program = import_typescript.default.createProgram({
     rootNames: sourceFilePaths,
-    options: readCompilerOptions(scopePath, options.tsconfigPath)
+    options: compilerOptions
   });
   const selectedPaths = new Set(sourceFilePaths);
-  const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedPaths.has(resolve(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
+  const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedPaths.has(resolve2(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
   const syntaxErrors = sourceFiles.flatMap((sourceFile) => program.getSyntacticDiagnostics(sourceFile));
   if (syntaxErrors.length > 0) {
     throw new Error(`Cannot analyze selected source: ${syntaxErrors.map(formatDiagnostic).join("\n")}`);
@@ -215334,12 +216219,13 @@ async function generateReactComponentStructureGraph(options) {
     options.excludeComponentPatterns ?? []
   );
   const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
-  return createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  const graph = createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
+  return options.rootPatterns && options.rootPatterns.length > 0 ? focusGraphOnRoots(graph, [...options.rootPatterns]) : graph;
 }
 
-// src/plugins/diagram-generators/react-component-structure/command.ts
-var usage = `Usage: react-component-structure --scope <directory> --source <path> [--source <path> ...]
-  [--tsconfig <path>] [--exclude-file <glob> ...] [--exclude-component <glob> ...]`;
+// src/plugins/diagram-generators/react-component-structure/cli/command.ts
+var usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
 function readValue(args, index, option) {
   const value = args.at(index + 1);
   if (!value || value.startsWith("--")) throw new Error(`${option} requires a value.
@@ -215352,30 +216238,33 @@ function parseArguments(args) {
   const sourcePaths = [];
   const excludeFilePatterns = [];
   const excludeComponentPatterns = [];
+  const rootPatterns = [];
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
-    if (option === "--scope") {
-      if (scopePath) throw new Error(`--scope may be provided only once.
+    if (option === "--base") {
+      if (scopePath) throw new Error(`--base may be provided only once.
 ${usage}`);
       scopePath = readValue(args, index, option);
-      index += 1;
-    } else if (option === "--source") {
-      sourcePaths.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--tsconfig") {
       if (tsconfigPath) throw new Error(`--tsconfig may be provided only once.
 ${usage}`);
       tsconfigPath = readValue(args, index, option);
       index += 1;
-    } else if (option === "--exclude-file") {
+    } else if (option === "--exclude-path") {
       excludeFilePatterns.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--exclude-component") {
       excludeComponentPatterns.push(readValue(args, index, option));
       index += 1;
-    } else {
-      throw new Error(`Unknown argument: ${option ?? ""}
+    } else if (option === "--root") {
+      rootPatterns.push(readValue(args, index, option));
+      index += 1;
+    } else if (option.startsWith("--")) {
+      throw new Error(`Unknown argument: ${option}
 ${usage}`);
+    } else {
+      sourcePaths.push(option);
     }
   }
   if (!scopePath || sourcePaths.length === 0) throw new Error(usage);
@@ -215384,25 +216273,26 @@ ${usage}`);
     sourcePaths,
     ...tsconfigPath ? { tsconfigPath } : {},
     ...excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {},
-    ...excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}
+    ...excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {},
+    ...rootPatterns.length > 0 ? { rootPatterns } : {}
   };
 }
 async function executeReactComponentStructureCommand(args, environment) {
   const options = parseArguments(args);
-  const graph = await generateReactComponentStructureGraph(options);
+  const graph = await buildComponentGraph(options);
   const resolvedOutputPath = join2(
     await mkdtemp(join2(tmpdir(), "architecture-companion-react-components-")),
     "graph.json"
   );
-  await mkdir(dirname(resolvedOutputPath), { recursive: true });
+  await mkdir(dirname2(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(graph, void 0, 2)}
 `);
-  environment.writeStdout(`${resolvedOutputPath}
+  environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}
 `);
   return resolvedOutputPath;
 }
 
-// src/plugins/diagram-generators/react-component-structure/cli/run.ts
+// src/plugins/diagram-generators/react-component-structure/run.ts
 async function main() {
   try {
     await executeReactComponentStructureCommand(process.argv.slice(2), {
