@@ -70,7 +70,6 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.2",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-turbo": "^2.8.14",
     "happy-dom": "^20.8.3",
     "lefthook": "^2.1.14",
     "oxlint": "^1.78.0",
