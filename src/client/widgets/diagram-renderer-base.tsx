@@ -1,5 +1,5 @@
 import { ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
@@ -27,6 +27,7 @@ export type DiagramRendererProps = Readonly<{
 type DiagramRendererBaseProps = DiagramRendererProps &
   Readonly<{
     calculateLayout: (diagram: Diagram, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
+    children?: ReactNode;
     buildRenderModel: (
       diagram: Diagram,
       layout: DiagramLayout,
@@ -50,6 +51,7 @@ type DiagramContentProps = DiagramRendererBaseProps & Readonly<{ ariaLabel: stri
 function DiagramRendererContent({
   ariaLabel,
   annotations,
+  children,
   diagram,
   onOpenSource,
   calculateLayout,
@@ -173,6 +175,7 @@ function DiagramRendererContent({
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
         <DiagramLinksPanel links={diagram.links ?? []} onOpenSource={onOpenSource} />
       </DiagramCanvas>
+      {children}
       {state.status === "measuring" || state.status === "layouting" ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted-foreground">
           Laying out…
@@ -193,6 +196,7 @@ function DiagramRendererContent({
 export function DiagramRendererBase({
   ariaLabel,
   annotations,
+  children,
   diagram,
   onOpenSource,
   calculateLayout,
@@ -215,7 +219,9 @@ export function DiagramRendererBase({
         onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
-      />
+      >
+        {children}
+      </DiagramRendererContent>
     </ReactFlowProvider>
   );
 }
