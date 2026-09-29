@@ -86,8 +86,8 @@ function toElkInput(
       // The default BRANDES_KOEPF aligns the deepest vertical spine to keep it straight,
       // which roots trees at a side edge. LINEAR_SEGMENTS balances layers instead.
       "elk.layered.nodePlacement.strategy": "LINEAR_SEGMENTS",
-      "elk.spacing.nodeNode": "64",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "112",
+      "elk.spacing.nodeNode": "112",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "176",
     },
     children: [
       ...diagram.groups
