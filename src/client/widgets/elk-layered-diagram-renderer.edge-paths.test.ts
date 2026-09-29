@@ -1,4 +1,4 @@
-import { toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
+import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
 
 describe("toPolylinePath", () => {
   it("joins every point with line segments", () => {
@@ -44,5 +44,39 @@ describe("toSplinePath", () => {
 
   it("rejects paths with fewer than two points", () => {
     expect(() => toSplinePath([{ x: 0, y: 0 }])).toThrow("A spline edge path requires at least two points.");
+  });
+});
+
+describe("toBezierPath", () => {
+  it("sways a horizontal-dominant edge with flow-axis handles", () => {
+    expect(
+      toBezierPath([
+        { x: 0, y: 0 },
+        { x: 200, y: 100 },
+      ]),
+    ).toBe("M 0 0 C 96.0 0.0 104.0 100.0 200.0 100.0");
+  });
+
+  it("keeps handles on the vertical axis for vertical-dominant edges", () => {
+    expect(
+      toBezierPath([
+        { x: 0, y: 0 },
+        { x: 100, y: 200 },
+      ]),
+    ).toBe("M 0 0 C 0.0 96.0 100.0 104.0 100.0 200.0");
+  });
+
+  it("smooths multi-point routes like a spline instead of cutting corners", () => {
+    expect(
+      toBezierPath([
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 },
+      ]),
+    ).toBe("M 0 0 C 16.7 0.0 83.3 -16.7 100.0 0.0 C 116.7 16.7 100.0 83.3 100.0 100.0");
+  });
+
+  it("rejects paths with fewer than two points", () => {
+    expect(() => toBezierPath([{ x: 0, y: 0 }])).toThrow("A bezier edge path requires at least two points.");
   });
 });

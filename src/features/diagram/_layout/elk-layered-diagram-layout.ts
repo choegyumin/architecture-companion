@@ -18,6 +18,7 @@ export const elkLayeredDiagramLayoutConfigSchema = z
     id: z.literal("elk-layered"),
     options: z
       .object({
+        bezierEdges: z.boolean().optional(),
         direction: z.enum(["UP", "DOWN", "LEFT", "RIGHT"]).optional(),
         edgeRouting: z.enum(["ORTHOGONAL", "POLY_LINE", "SPLINES"]).optional(),
         nudgeObstacleNodes: z.boolean().optional(),
@@ -294,6 +295,21 @@ function shiftRect(rect: Rect, plane: Plane, delta: number): Rect {
   };
 }
 
+function toNodeRects(layout: DiagramLayout): ReadonlyMap<string, Rect> {
+  const groupOrigins = resolveGroupOrigins(layout.groups);
+  const rects = new Map<string, Rect>();
+  for (const node of layout.nodes) {
+    const parentOrigin = node.parentId ? (groupOrigins.get(node.parentId) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+    const origin = { x: parentOrigin.x + node.position.x, y: parentOrigin.y + node.position.y };
+    rects.set(node.id, {
+      id: node.id,
+      min: origin,
+      max: { x: origin.x + node.size.width, y: origin.y + node.size.height },
+    });
+  }
+  return rects;
+}
+
 function toStraightEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
@@ -335,16 +351,7 @@ export function straightenLayeredEdges(
   }
 
   const nodeParents = new Map(layout.nodes.map(({ id, parentId }) => [id, parentId]));
-  const rects = new Map<string, Rect>();
-  for (const node of layout.nodes) {
-    const parentOrigin = node.parentId ? (groupOrigins.get(node.parentId) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
-    const origin = { x: parentOrigin.x + node.position.x, y: parentOrigin.y + node.position.y };
-    rects.set(node.id, {
-      id: node.id,
-      min: origin,
-      max: { x: origin.x + node.size.width, y: origin.y + node.size.height },
-    });
-  }
+  const rects = toNodeRects(layout);
 
   const shifted = new Map<string, number>();
   for (const edge of graph.edges) {
@@ -428,5 +435,12 @@ export async function layoutElkLayeredDiagram(
     edges: collectElkEdges(output).map((edge) => toDiagramLayoutEdge(edge, elements.groupOrigins, edgeRouting)),
     initialView: toViewportPolicy(diagram, direction),
   };
-  return options?.nudgeObstacleNodes === true ? straightenLayeredEdges(diagram, layout, direction) : layout;
+  if (options?.nudgeObstacleNodes === true) return straightenLayeredEdges(diagram, layout, direction);
+  if (options?.bezierEdges === true) {
+    // Border-to-border segments without obstacle nudging; the renderer sways
+    // each two-point edge into a natural bezier and smooths any leftover route.
+    const edges = toStraightEdges(diagram, layout, toNodeRects(layout));
+    return { ...layout, edges: edges.map((edge) => ({ ...edge, routing: "bezier" as const })) };
+  }
+  return layout;
 }

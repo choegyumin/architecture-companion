@@ -124,6 +124,20 @@ describe("ELK layered diagram layout", () => {
     expect(orthogonal.edges.at(0)).not.toHaveProperty("routing");
   });
 
+  it("routes border-to-border bezier edges when bezierEdges is set", async () => {
+    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+      bezierEdges: true,
+    });
+
+    expect(result.edges).toEqual([
+      expect.objectContaining({
+        id: "source-target",
+        routing: "bezier",
+        points: [expect.any(Object), expect.any(Object)],
+      }),
+    ]);
+  });
+
   it("keeps the fitted viewport even when the graph has multiple roots", async () => {
     const diagram = {
       ...directionDiagram,

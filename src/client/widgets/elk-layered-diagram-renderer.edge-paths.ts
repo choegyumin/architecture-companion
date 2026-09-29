@@ -33,3 +33,25 @@ export function toSplinePath(points: readonly DiagramLayoutPoint[]): string {
   }
   return path;
 }
+
+// Draws a border-to-border segment as a natural cubic bezier: handles stick to
+// the segment's dominant axis, so edges leave and enter cards along the flow
+// direction and sway smoothly instead of following the routed polyline. Edges
+// that kept more points (unresolvable, message) fall back to spline smoothing.
+export function toBezierPath(points: readonly DiagramLayoutPoint[]): string {
+  const start = points.at(0);
+  const end = points.at(1);
+  if (!start || !end) throw new Error("A bezier edge path requires at least two points.");
+  if (points.length > 2) return toSplinePath(points);
+
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const sign = horizontal ? Math.sign(dx) || 1 : Math.sign(dy) || 1;
+  const handle = Math.min(96, Math.max(32, Math.hypot(dx, dy) * 0.45));
+  const firstControl = horizontal
+    ? { x: start.x + sign * handle, y: start.y }
+    : { x: start.x, y: start.y + sign * handle };
+  const secondControl = horizontal ? { x: end.x - sign * handle, y: end.y } : { x: end.x, y: end.y - sign * handle };
+  return `M ${start.x} ${start.y} C ${firstControl.x.toFixed(1)} ${firstControl.y.toFixed(1)} ${secondControl.x.toFixed(1)} ${secondControl.y.toFixed(1)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
+}

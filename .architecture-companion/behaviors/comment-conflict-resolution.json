@@ -6,7 +6,7 @@
     "id": "elk-layered",
     "options": {
       "direction": "RIGHT",
-      "edgeRouting": "SPLINES"
+      "bezierEdges": true
     }
   },
   "links": [
