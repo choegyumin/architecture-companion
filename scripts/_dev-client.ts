@@ -7,7 +7,7 @@ async function startDevelopmentClient(): Promise<void> {
   const vite = await createServer({
     cacheDir: getDevelopmentCacheDirectory(),
     server: {
-      open: true,
+      open: false,
       proxy: {
         "/api": {
           target: backend.url,
