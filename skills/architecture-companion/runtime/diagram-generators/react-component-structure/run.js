@@ -11758,7 +11758,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         getAccessibleSortedChildDirectories,
         fileSystemEntryExists,
-        realpath: realpath2,
+        realpath: realpath3,
         setTimeout: setTimeout2,
         clearTimeout: clearTimeout2
       }) {
@@ -11934,7 +11934,7 @@ ${lanes.join("\n")}
         function updateChildWatches(parentDir, parentDirPath, options) {
           const parentWatcher = cache.get(parentDirPath);
           if (!parentWatcher) return false;
-          const target = normalizePath(realpath2(parentDir));
+          const target = normalizePath(realpath3(parentDir));
           let hasChanges;
           let newChildWatches;
           if (filePathComparer(target, parentDir) === 0) {
@@ -11945,7 +11945,7 @@ ${lanes.join("\n")}
                 /* Directory */
               ) ? mapDefined(getAccessibleSortedChildDirectories(parentDir), (child) => {
                 const childFullName = getNormalizedAbsolutePath(child, parentDir);
-                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath2(childFullName))) === 0 ? childFullName : void 0;
+                return !isIgnoredPath(childFullName, options) && filePathComparer(childFullName, normalizePath(realpath3(childFullName))) === 0 ? childFullName : void 0;
               }) : emptyArray,
               parentWatcher.childWatches,
               (child, childWatcher) => filePathComparer(child, childWatcher.dirName),
@@ -12029,7 +12029,7 @@ ${lanes.join("\n")}
         getCurrentDirectory,
         fsSupportsRecursiveFsWatch,
         getAccessibleSortedChildDirectories,
-        realpath: realpath2,
+        realpath: realpath3,
         tscWatchFile,
         useNonPollingWatchers,
         tscWatchDirectory,
@@ -12169,7 +12169,7 @@ ${lanes.join("\n")}
               fileSystemEntryExists,
               getAccessibleSortedChildDirectories,
               watchDirectory: nonRecursiveWatchDirectory,
-              realpath: realpath2,
+              realpath: realpath3,
               setTimeout: setTimeout2,
               clearTimeout: clearTimeout2
             });
@@ -12408,7 +12408,7 @@ ${lanes.join("\n")}
             // (ref: https://github.com/nodejs/node/pull/2649 and https://github.com/Microsoft/TypeScript/issues/4643)
             fsSupportsRecursiveFsWatch,
             getAccessibleSortedChildDirectories: (path) => getAccessibleFileSystemEntries(path).directories,
-            realpath: realpath2,
+            realpath: realpath3,
             tscWatchFile: process.env.TSC_WATCHFILE,
             useNonPollingWatchers: !!process.env.TSC_NONPOLLING_WATCHER,
             tscWatchDirectory: process.env.TSC_WATCHDIRECTORY,
@@ -12482,7 +12482,7 @@ ${lanes.join("\n")}
             enableCPUProfiler,
             disableCPUProfiler,
             cpuProfilingEnabled: () => !!activeSession || contains(process.execArgv, "--cpu-prof") || contains(process.execArgv, "--prof"),
-            realpath: realpath2,
+            realpath: realpath3,
             debugMode: !!process.env.NODE_INSPECTOR_IPC || !!process.env.VSCODE_INSPECTOR_OPTIONS || some(process.execArgv, (arg) => /^--(?:inspect|debug)(?:-brk)?(?:=\d+)?$/i.test(arg)) || !!process.recordreplay,
             tryEnableSourceMapsForHost() {
               try {
@@ -12714,7 +12714,7 @@ ${lanes.join("\n")}
             }
           }
           function readDirectory(path, extensions, excludes, includes, depth) {
-            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath2);
+            return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, process.cwd(), depth, getAccessibleFileSystemEntries, realpath3);
           }
           function fileSystemEntryExists(path, entryKind) {
             const stat2 = statSync(path);
@@ -12750,7 +12750,7 @@ ${lanes.join("\n")}
           function fsRealPathHandlingLongPath(path) {
             return path.length < 260 ? _fs.realpathSync.native(path) : _fs.realpathSync(path);
           }
-          function realpath2(path) {
+          function realpath3(path) {
             try {
               return fsRealpath(path);
             } catch {
@@ -13223,11 +13223,11 @@ ${lanes.join("\n")}
           return toComponents;
         }
         const components = toComponents.slice(start);
-        const relative3 = [];
+        const relative4 = [];
         for (; start < fromComponents.length; start++) {
-          relative3.push("..");
+          relative4.push("..");
         }
-        return ["", ...relative3, ...components];
+        return ["", ...relative4, ...components];
       }
       function getRelativePathFromDirectory(fromDirectory, to, getCanonicalFileNameOrIgnoreCase) {
         Debug.assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, "Paths must either both be absolute or both be relative");
@@ -26829,7 +26829,7 @@ ${lanes.join("\n")}
       function getRegexFromPattern(pattern, useCaseSensitiveFileNames2) {
         return new RegExp(pattern, useCaseSensitiveFileNames2 ? "" : "i");
       }
-      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath2) {
+      function matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath3) {
         path = normalizePath(path);
         currentDirectory = normalizePath(currentDirectory);
         const patterns = getFileMatcherPatterns(path, excludes, includes, useCaseSensitiveFileNames2, currentDirectory);
@@ -26844,7 +26844,7 @@ ${lanes.join("\n")}
         }
         return flatten(results);
         function visitDirectory(path2, absolutePath, depth2) {
-          const canonicalPath = toCanonical(realpath2(absolutePath));
+          const canonicalPath = toCanonical(realpath3(absolutePath));
           if (visited.has(canonicalPath)) return;
           visited.set(canonicalPath, true);
           const { files, directories } = getFileSystemEntries(path2);
@@ -57706,9 +57706,9 @@ ${lanes.join("\n")}
               if (!startsWithDirectory(target, realPathDirectory, getCanonicalFileName)) {
                 return;
               }
-              const relative3 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
+              const relative4 = getRelativePathFromDirectory(realPathDirectory, target, getCanonicalFileName);
               for (const symlinkDirectory of symlinkDirectories) {
-                const option = resolvePath(symlinkDirectory, relative3);
+                const option = resolvePath(symlinkDirectory, relative4);
                 const result2 = cb(option, target === referenceRedirect);
                 shouldFilterIgnoredPaths = true;
                 if (result2) return result2;
@@ -127545,7 +127545,7 @@ ${lanes.join("\n")}
           }
         }
         function createImportCallExpressionAMD(arg, containsLexicalThis) {
-          const resolve2 = factory2.createUniqueName("resolve");
+          const resolve3 = factory2.createUniqueName("resolve");
           const reject = factory2.createUniqueName("reject");
           const parameters = [
             factory2.createParameterDeclaration(
@@ -127554,7 +127554,7 @@ ${lanes.join("\n")}
               /*dotDotDotToken*/
               void 0,
               /*name*/
-              resolve2
+              resolve3
             ),
             factory2.createParameterDeclaration(
               /*modifiers*/
@@ -127571,7 +127571,7 @@ ${lanes.join("\n")}
                 factory2.createIdentifier("require"),
                 /*typeArguments*/
                 void 0,
-                [factory2.createArrayLiteralExpression([arg || factory2.createOmittedExpression()]), resolve2, reject]
+                [factory2.createArrayLiteralExpression([arg || factory2.createOmittedExpression()]), resolve3, reject]
               )
             )
           ]);
@@ -138566,7 +138566,7 @@ ${lanes.join("\n")}
           addOrDeleteFileOrDirectory,
           addOrDeleteFile,
           clearCache,
-          realpath: host.realpath && realpath2
+          realpath: host.realpath && realpath3
         };
         function toPath3(fileName) {
           return toPath(fileName, currentDirectory, getCanonicalFileName);
@@ -138677,7 +138677,7 @@ ${lanes.join("\n")}
           const rootResult = tryReadDirectory2(rootDir, rootDirPath);
           let rootSymLinkResult;
           if (rootResult !== void 0) {
-            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath2);
+            return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames2, currentDirectory, depth, getFileSystemEntries, realpath3);
           }
           return host.readDirectory(rootDir, extensions, excludes, includes, depth);
           function getFileSystemEntries(dir) {
@@ -138706,7 +138706,7 @@ ${lanes.join("\n")}
             return result;
           }
         }
-        function realpath2(s) {
+        function realpath3(s) {
           return host.realpath ? host.realpath(s) : s;
         }
         function clearFirstAncestorEntry(fileOrDirectoryPath) {
@@ -139161,7 +139161,7 @@ ${lanes.join("\n")}
           return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
         }
         const newLine = getNewLineCharacter(options);
-        const realpath2 = system.realpath && ((path) => system.realpath(path));
+        const realpath3 = system.realpath && ((path) => system.realpath(path));
         const compilerHost = {
           getSourceFile: createGetSourceFile((fileName) => compilerHost.readFile(fileName), setParentNodes),
           getDefaultLibLocation,
@@ -139181,7 +139181,7 @@ ${lanes.join("\n")}
           directoryExists: (directoryName) => system.directoryExists(directoryName),
           getEnvironmentVariable: (name) => system.getEnvironmentVariable ? system.getEnvironmentVariable(name) : "",
           getDirectories: (path) => system.getDirectories(path),
-          realpath: realpath2,
+          realpath: realpath3,
           readDirectory: (path, extensions, include, exclude, depth) => system.readDirectory(path, extensions, include, exclude, depth),
           createDirectory: (d) => system.createDirectory(d),
           createHash: maybeBind(system, system.createHash)
@@ -202840,9 +202840,9 @@ ${options.prefix}` : "\n" : options.prefix
             if (this.host.realpath) {
               Debug.assert(!!this.containingProjects.length);
               const project = this.containingProjects[0];
-              const realpath2 = this.host.realpath(this.path);
-              if (realpath2) {
-                this.realpath = project.toPath(realpath2);
+              const realpath3 = this.host.realpath(this.path);
+              if (realpath3) {
+                this.realpath = project.toPath(realpath3);
                 if (this.realpath !== this.path) {
                   project.projectService.realpathToScriptInfos.add(this.realpath, this);
                 }
@@ -206864,9 +206864,9 @@ ${options.prefix}` : "\n" : options.prefix
           this.filenameToScriptInfo.delete(info.path);
           this.filenameToScriptInfoVersion.set(info.path, info.textStorage.version);
           this.stopWatchingScriptInfo(info);
-          const realpath2 = info.getRealpathIfDifferent();
-          if (realpath2) {
-            this.realpathToScriptInfos.remove(realpath2, info);
+          const realpath3 = info.getRealpathIfDifferent();
+          if (realpath3) {
+            this.realpathToScriptInfos.remove(realpath3, info);
           }
           info.closeSourceMapFileWatcher();
         }
@@ -207755,9 +207755,9 @@ All files are: ${JSON.stringify(names)}`,
         getSymlinkedProjects(info) {
           let projects;
           if (this.realpathToScriptInfos) {
-            const realpath2 = info.getRealpathIfDifferent();
-            if (realpath2) {
-              forEach(this.realpathToScriptInfos.get(realpath2), combineProjects);
+            const realpath3 = info.getRealpathIfDifferent();
+            if (realpath3) {
+              forEach(this.realpathToScriptInfos.get(realpath3), combineProjects);
             }
             forEach(this.realpathToScriptInfos.get(info.path), combineProjects);
           }
@@ -214289,8 +214289,8 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
         installPackage(options) {
           this.packageInstallId++;
           const request = { kind: "installPackage", ...options, id: this.packageInstallId };
-          const promise = new Promise((resolve2, reject) => {
-            (this.packageInstalledPromise ?? (this.packageInstalledPromise = /* @__PURE__ */ new Map())).set(this.packageInstallId, { resolve: resolve2, reject });
+          const promise = new Promise((resolve3, reject) => {
+            (this.packageInstalledPromise ?? (this.packageInstalledPromise = /* @__PURE__ */ new Map())).set(this.packageInstallId, { resolve: resolve3, reject });
           });
           this.installer.send(request);
           return promise;
@@ -214572,18 +214572,18 @@ Additional information: BADCLIENT: Bad error code, ${badCode} not found in range
   }
 });
 
-// src/plugins/diagram-generators/react-component-structure/command.ts
+// src/plugins/diagram-generators/react-component-structure/cli/command.ts
 import { mkdir, mkdtemp, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { dirname as dirname2, join as join2 } from "path";
 
-// src/plugins/diagram-generators/react-component-structure/generator.ts
-var import_ignore = __toESM(require_ignore(), 1);
+// src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts
+var import_ignore2 = __toESM(require_ignore(), 1);
 var import_micromatch = __toESM(require_micromatch(), 1);
 var import_typescript = __toESM(require_typescript(), 1);
 import { createHash } from "crypto";
-import { lstat, readdir, readFile, realpath, stat } from "fs/promises";
-import { basename, dirname, extname, isAbsolute as isAbsolute2, join, relative as relative2, resolve } from "path";
+import { lstat, realpath as realpath2 } from "fs/promises";
+import { basename, extname as extname2, relative as relative3, resolve as resolve2 } from "path";
 
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";
@@ -214598,7 +214598,10 @@ function isMissingPathError(error) {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
-// src/plugins/diagram-generators/react-component-structure/generator.ts
+// src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts
+var import_ignore = __toESM(require_ignore(), 1);
+import { readdir, readFile, realpath, stat } from "fs/promises";
+import { dirname, extname, isAbsolute as isAbsolute2, join, relative as relative2, resolve } from "path";
 var sourceExtensions = /* @__PURE__ */ new Set([".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"]);
 var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
 async function readIgnoreFileContents(ignoreFilePath) {
@@ -214670,14 +214673,16 @@ async function collectSourceFiles(scopePath, sourcePaths) {
   }
   return [...files].toSorted();
 }
+
+// src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts
 function formatDiagnostic(diagnostic) {
   return import_typescript.default.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
 }
 async function readCompilerOptions(scopePath, tsconfigPath) {
-  const candidatePath = resolve(scopePath, tsconfigPath ?? "tsconfig.json");
+  const candidatePath = resolve2(scopePath, tsconfigPath ?? "tsconfig.json");
   let canonicalPath;
   try {
-    canonicalPath = await realpath(candidatePath);
+    canonicalPath = await realpath2(candidatePath);
   } catch (error) {
     if (isMissingPathError(error) && tsconfigPath === void 0) return {};
     throw error;
@@ -214691,7 +214696,7 @@ async function readCompilerOptions(scopePath, tsconfigPath) {
   let options = {};
   const config = import_typescript.default.readConfigFile(canonicalPath, import_typescript.default.sys.readFile);
   if (config.error) throw new Error(`Cannot read ${canonicalPath}: ${formatDiagnostic(config.error)}`);
-  const parsed = import_typescript.default.parseJsonConfigFileContent(config.config, import_typescript.default.sys, resolve(canonicalPath, ".."));
+  const parsed = import_typescript.default.parseJsonConfigFileContent(config.config, import_typescript.default.sys, resolve2(canonicalPath, ".."));
   if (parsed.errors.length > 0) {
     throw new Error(`Cannot parse ${canonicalPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
   }
@@ -214808,7 +214813,7 @@ function isComponentName(name) {
   return /^[A-Z]/.test(name);
 }
 function defaultExportName(sourceFile) {
-  const fileName = basename(sourceFile.fileName, extname(sourceFile.fileName));
+  const fileName = basename(sourceFile.fileName, extname2(sourceFile.fileName));
   const words = fileName.split(/[^a-zA-Z0-9]+/).filter(Boolean);
   const name = words.map((word) => `${word.at(0)?.toUpperCase()}${word.slice(1)}`).join("");
   return name || "DefaultExport";
@@ -214829,7 +214834,7 @@ function collectComponentDefinitions(sourceFiles, scopePath, checker) {
   function addDefinition(sourceFile, declaration, name, symbol, functionLike, renderRoots, body, classComponent, identityName = name) {
     if (!isComponentName(name)) return;
     if (renderRoots.length === 0 || !renderRoots.some((root) => containsReactOutput(root, checker))) return;
-    const relativePath = toPosixPath(relative2(scopePath, sourceFile.fileName));
+    const relativePath = toPosixPath(relative3(scopePath, sourceFile.fileName));
     const id = createComponentId(relativePath, identityName);
     if (definitionIds.has(id)) throw new Error(`Duplicate React component identity: ${id}`);
     definitionIds.add(id);
@@ -215923,7 +215928,7 @@ function matchesComponentPattern(id, title, patterns) {
   return import_micromatch.default.match([title, id], patterns).length > 0;
 }
 function createVisibilityByTarget(definitions, externalTargets, excludeFilePatterns, excludeComponentPatterns) {
-  const excludeFileRules = excludeFilePatterns.length > 0 ? (0, import_ignore.default)().add([...excludeFilePatterns]) : void 0;
+  const excludeFileRules = excludeFilePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludeFilePatterns]) : void 0;
   const visibility = /* @__PURE__ */ new Map();
   for (const definition of definitions) {
     const hidden = (excludeFileRules?.ignores(definition.relativePath) ?? false) || matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
@@ -216166,9 +216171,9 @@ function focusGraphOnRoots(graph, rootPatterns) {
     edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target))
   };
 }
-async function generateReactComponentStructureGraph(options) {
+async function buildComponentGraph(options) {
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
-  const scopePath = await realpath(options.scopePath);
+  const scopePath = await realpath2(options.scopePath);
   if (!(await lstat(scopePath)).isDirectory()) throw new Error(`Base must be a directory: ${options.scopePath}`);
   const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
@@ -216178,7 +216183,7 @@ async function generateReactComponentStructureGraph(options) {
     options: compilerOptions
   });
   const selectedPaths = new Set(sourceFilePaths);
-  const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedPaths.has(resolve(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
+  const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedPaths.has(resolve2(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
   const syntaxErrors = sourceFiles.flatMap((sourceFile) => program.getSyntacticDiagnostics(sourceFile));
   if (syntaxErrors.length > 0) {
     throw new Error(`Cannot analyze selected source: ${syntaxErrors.map(formatDiagnostic).join("\n")}`);
@@ -216218,7 +216223,7 @@ async function generateReactComponentStructureGraph(options) {
   return options.rootPatterns && options.rootPatterns.length > 0 ? focusGraphOnRoots(graph, [...options.rootPatterns]) : graph;
 }
 
-// src/plugins/diagram-generators/react-component-structure/command.ts
+// src/plugins/diagram-generators/react-component-structure/cli/command.ts
 var usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
   [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
 function readValue(args, index, option) {
@@ -216274,7 +216279,7 @@ ${usage}`);
 }
 async function executeReactComponentStructureCommand(args, environment) {
   const options = parseArguments(args);
-  const graph = await generateReactComponentStructureGraph(options);
+  const graph = await buildComponentGraph(options);
   const resolvedOutputPath = join2(
     await mkdtemp(join2(tmpdir(), "architecture-companion-react-components-")),
     "graph.json"
@@ -216287,7 +216292,7 @@ async function executeReactComponentStructureCommand(args, environment) {
   return resolvedOutputPath;
 }
 
-// src/plugins/diagram-generators/react-component-structure/cli/run.ts
+// src/plugins/diagram-generators/react-component-structure/run.ts
 async function main() {
   try {
     await executeReactComponentStructureCommand(process.argv.slice(2), {

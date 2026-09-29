@@ -5778,13 +5778,13 @@ var init_dependency_cruiser_reporters = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/assert-validity.mjs
-function isObject(pObject) {
+function isObject2(pObject) {
   return typeof pObject === "object" && !Array.isArray(pObject) && pObject !== null;
 }
 function deepMerge(pTarget, pSource) {
   const lOutput = structuredClone(pTarget);
   for (const lKey in pSource) {
-    if (isObject(pSource[lKey])) {
+    if (isObject2(pSource[lKey])) {
       if (lKey in pTarget) {
         lOutput[lKey] = deepMerge(pTarget[lKey], pSource[lKey]);
       } else {
@@ -5889,7 +5889,7 @@ function get(pObject, pPath, pDefault) {
   }
   return lReturnValue;
 }
-function set(pObject, pPath, pValue) {
+function set2(pObject, pPath, pValue) {
   const lPathArray = pPath.match(/([^[.\]])+/g);
   lPathArray.reduce((pPreviousObject, pKey, pIndex) => {
     if (pIndex === lPathArray.length - 1) {
@@ -5920,7 +5920,7 @@ function normalizeREProperties(pPropertyContainer, pREProperties = RE_PROPERTIES
   const lPropertyContainer = structuredClone(pPropertyContainer);
   for (const lProperty of pREProperties) {
     if (has(lPropertyContainer, lProperty)) {
-      set(
+      set2(
         lPropertyContainer,
         lProperty,
         normalizeToREAsString(get(lPropertyContainer, lProperty))
@@ -217169,7 +217169,7 @@ function getASTCached(pFileName) {
 function clearCache() {
   CACHE.clear();
 }
-var import_meta, swc, SWC_PARSE_OPTIONS, CACHE, isAvailable, version;
+var import_meta, swc, SWC_PARSE_OPTIONS, CACHE, isAvailable, version2;
 var init_parse = __esm({
   async "node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/swc/parse.mjs"() {
     "use strict";
@@ -217189,7 +217189,7 @@ var init_parse = __esm({
     };
     CACHE = /* @__PURE__ */ new Map();
     isAvailable = () => swc !== false;
-    version = () => `@swc/core@${swc.version}`;
+    version2 = () => `@swc/core@${swc.version}`;
   }
 });
 
@@ -217369,24 +217369,24 @@ function getTranspiler(pTranspilerWrapper) {
         preProcess(pSource, pTranspilerWrapper, pTranspilerOptions)
       ) : pSource
     );
-    return compile(lPreProcessedSource, {}).js.code;
+    return compile2(lPreProcessedSource, {}).js.code;
   };
 }
 function svelteWrap(pTranspilerWrapper) {
   return {
-    isAvailable: () => Boolean(compile),
+    isAvailable: () => Boolean(compile2),
     version: () => `svelte/compiler@${VERSION}`,
     transpile: getTranspiler(pTranspilerWrapper)
   };
 }
-var import_meta5, compile, VERSION, MAJOR_VERSION;
+var import_meta5, compile2, VERSION, MAJOR_VERSION;
 var init_svelte_wrap = __esm({
   async "node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/transpile/svelte-wrap.mjs"() {
     "use strict";
     init_svelte_preprocess();
     init_dependency_cruiser_try_import();
     import_meta5 = __toESM(require_meta(), 1);
-    ({ compile, VERSION } = await tryImport(
+    ({ compile: compile2, VERSION } = await tryImport(
       "svelte/compiler",
       import_meta5.default.supportedTranspilers.svelte
     ));
@@ -218794,7 +218794,7 @@ var init_meta = __esm({
     import_meta7 = __toESM(require_meta(), 1);
     swcWrap = {
       isAvailable: () => isAvailable(),
-      version: () => version()
+      version: () => version2()
     };
     coffeeScriptWrap2 = coffeeScriptWrap(false);
     svelteWrap2 = svelteWrap(dependency_cruiser_javascript_wrap_default);
@@ -219642,7 +219642,7 @@ var init_main = __esm({
 import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import { extname as extname2 } from "path";
-function hash(pString) {
+function hash2(pString) {
   return createHash("sha1").update(pString).digest("base64");
 }
 function getFileHashSync(pFileName) {
@@ -219651,7 +219651,7 @@ function getFileHashSync(pFileName) {
   }
   let lHashedFileName = "file not found";
   try {
-    lHashedFileName = hash(readFileSync(pFileName, "utf8"));
+    lHashedFileName = hash2(readFileSync(pFileName, "utf8"));
   } catch {
   }
   HASHES_CACHE.set(pFileName, lHashedFileName);
@@ -220620,7 +220620,7 @@ var init_path_to_posix = __esm({
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/utl/find-all-files.mjs
 import { readdirSync, statSync, readFileSync as readFileSync2 } from "fs";
-import { join, relative } from "path/posix";
+import { join, relative as relative2 } from "path/posix";
 function fileIsDirectory(pFullPathToFile, pBaseDirectory) {
   const lStat = statSync(join(pBaseDirectory, pFullPathToFile), {
     throwIfNoEntry: false
@@ -220636,7 +220636,7 @@ function readIgnoreFile(pFileName) {
 }
 function normalizeDirectoryName(pDirectoryName, pBaseDirectory) {
   return pathToPosix(
-    relative(pBaseDirectory, join(pBaseDirectory, pDirectoryName))
+    relative2(pBaseDirectory, join(pBaseDirectory, pDirectoryName))
   );
 }
 function createIgnoreRule(pDirectoryName, pIgnoreFileContents, pAdditionalIgnorePatterns = []) {
@@ -225075,9 +225075,9 @@ var normalize_exports2 = {};
 __export(normalize_exports2, {
   default: () => normalizeFileAndDirectoryArray
 });
-import { isAbsolute, normalize, relative as relative2 } from "path";
+import { isAbsolute as isAbsolute2, normalize, relative as relative3 } from "path";
 function relativize(pFileDirectory) {
-  return isAbsolute(pFileDirectory) ? normalize(relative2(process.cwd(), pFileDirectory)) : pFileDirectory;
+  return isAbsolute2(pFileDirectory) ? normalize(relative3(process.cwd(), pFileDirectory)) : pFileDirectory;
 }
 function normalizeFileAndDirectoryArray(pFileAndDirectoryArray) {
   return pFileAndDirectoryArray.map(relativize);
@@ -234376,7 +234376,7 @@ var require_route = __commonJS({
   "node_modules/.pnpm/color-convert@2.0.1/node_modules/color-convert/route.js"(exports, module) {
     "use strict";
     var conversions = require_conversions();
-    function buildGraph2() {
+    function buildGraph() {
       const graph = {};
       const models = Object.keys(conversions);
       for (let len = models.length, i = 0; i < len; i++) {
@@ -234390,7 +234390,7 @@ var require_route = __commonJS({
       return graph;
     }
     function deriveBFS(fromModel) {
-      const graph = buildGraph2();
+      const graph = buildGraph();
       const queue = [fromModel];
       graph[fromModel].distance = 0;
       while (queue.length) {
@@ -235467,10 +235467,10 @@ var require_match_path_async = __commonJS({
 var json5_exports = {};
 __export(json5_exports, {
   default: () => json5_default,
-  parse: () => parse,
+  parse: () => parse3,
   stringify: () => stringify
 });
-function parse(text) {
+function parse3(text) {
   const result = import_typescript2.default.parseConfigFileTextToJson("tsconfig.json", text);
   if (result.error) {
     throw new Error(import_typescript2.default.flattenDiagnosticMessageText(result.error.messageText, "\n"));
@@ -235485,7 +235485,7 @@ var init_json5 = __esm({
   "architecture-companion:json5"() {
     "use strict";
     import_typescript2 = __toESM(require_typescript());
-    json5_default = { parse, stringify };
+    json5_default = { parse: parse3, stringify };
   }
 });
 
@@ -236413,7 +236413,7 @@ __export(normalize_exports3, {
   default: () => normalizeResolveOptions
 });
 import fs from "fs";
-function omit(pObject, pProperty) {
+function omit2(pObject, pProperty) {
   const lObject = structuredClone(pObject);
   delete lObject[pProperty];
   return lObject;
@@ -236477,7 +236477,7 @@ async function compileResolveOptions(pResolveOptions, pTSConfig, pResolveOptions
   return {
     ...DEFAULT_RESOLVE_OPTIONS,
     ...lResolveOptions,
-    ...omit(pResolveOptionsFromDCConfig, "cachedInputFileSystem"),
+    ...omit2(pResolveOptionsFromDCConfig, "cachedInputFileSystem"),
     ...pResolveOptions,
     ...getNonOverridableResolveOptions(
       pResolveOptionsFromDCConfig?.cachedInputFileSystem?.cacheDuration ?? DEFAULT_CACHE_DURATION
@@ -236881,7 +236881,7 @@ function isValidBase(base2) {
   if (base2 === void 0) base2 = {};
   return isFunc(base2.ExpressionStatement) && isFunc(base2.SpreadElement) && isFunc(base2.Identifier);
 }
-function extend(base2) {
+function extend2(base2) {
   if (base2 === void 0) base2 = {};
   if (!isValidBase(base2)) {
     throw Error("Invalid visitor base object.");
@@ -237059,7 +237059,7 @@ var init_extract_es6_deps = __esm({
     init_walk();
     init_acorn_jsx_walk();
     init_estree_helpers();
-    extend(base);
+    extend2(base);
   }
 });
 
@@ -237486,10 +237486,10 @@ function stringToBigInt(str) {
   }
   return BigInt(str.replace(/_/g, ""));
 }
-function parse4(input2, options) {
+function parse6(input2, options) {
   return Parser.parse(input2, options);
 }
-var astralIdentifierCodes, astralIdentifierStartCodes, nonASCIIidentifierChars, nonASCIIidentifierStartChars, reservedWords, ecma5AndLessKeywords, keywords$1, keywordRelationalOperator, nonASCIIidentifierStart, nonASCIIidentifier, TokenType, beforeExpr, startsExpr, keywords, types$1, lineBreak, lineBreakG, nonASCIIwhitespace, skipWhiteSpace, ref, hasOwnProperty, toString, hasOwn, isArray, regexpCache, loneSurrogate, Position, SourceLocation, defaultOptions, warnedAboutEcmaVersion, SCOPE_TOP, SCOPE_FUNCTION, SCOPE_ASYNC, SCOPE_GENERATOR, SCOPE_ARROW, SCOPE_SIMPLE_CATCH, SCOPE_SUPER, SCOPE_DIRECT_SUPER, SCOPE_CLASS_STATIC_BLOCK, SCOPE_CLASS_FIELD_INIT, SCOPE_SWITCH, SCOPE_VAR, BIND_NONE, BIND_VAR, BIND_LEXICAL, BIND_FUNCTION, BIND_SIMPLE_CATCH, BIND_OUTSIDE, Parser, prototypeAccessors, pp$9, literal, DestructuringErrors, pp$8, loopLabel, switchLabel, empty$1, FUNC_STATEMENT, FUNC_HANGING_STATEMENT, FUNC_NULLABLE_ID, pp$7, TokContext, types, pp$6, pp$5, empty, pp$4, pp$3, Scope, Node, pp$2, scriptValuesAddedInUnicode, ecma9BinaryProperties, ecma10BinaryProperties, ecma11BinaryProperties, ecma12BinaryProperties, ecma13BinaryProperties, ecma14BinaryProperties, unicodeBinaryProperties, ecma14BinaryPropertiesOfStrings, unicodeBinaryPropertiesOfStrings, unicodeGeneralCategoryValues, ecma9ScriptValues, ecma10ScriptValues, ecma11ScriptValues, ecma12ScriptValues, ecma13ScriptValues, ecma14ScriptValues, unicodeScriptValues, data, ecmaVersion, i, list2, pp$1, BranchID, RegExpValidationState, CharSetNone, CharSetOk, CharSetString, Token, pp, INVALID_TEMPLATE_ESCAPE_ERROR, version2;
+var astralIdentifierCodes, astralIdentifierStartCodes, nonASCIIidentifierChars, nonASCIIidentifierStartChars, reservedWords, ecma5AndLessKeywords, keywords$1, keywordRelationalOperator, nonASCIIidentifierStart, nonASCIIidentifier, TokenType, beforeExpr, startsExpr, keywords, types$1, lineBreak, lineBreakG, nonASCIIwhitespace, skipWhiteSpace, ref, hasOwnProperty, toString, hasOwn, isArray, regexpCache, loneSurrogate, Position, SourceLocation, defaultOptions, warnedAboutEcmaVersion, SCOPE_TOP, SCOPE_FUNCTION, SCOPE_ASYNC, SCOPE_GENERATOR, SCOPE_ARROW, SCOPE_SIMPLE_CATCH, SCOPE_SUPER, SCOPE_DIRECT_SUPER, SCOPE_CLASS_STATIC_BLOCK, SCOPE_CLASS_FIELD_INIT, SCOPE_SWITCH, SCOPE_VAR, BIND_NONE, BIND_VAR, BIND_LEXICAL, BIND_FUNCTION, BIND_SIMPLE_CATCH, BIND_OUTSIDE, Parser, prototypeAccessors, pp$9, literal2, DestructuringErrors, pp$8, loopLabel, switchLabel, empty$1, FUNC_STATEMENT, FUNC_HANGING_STATEMENT, FUNC_NULLABLE_ID, pp$7, TokContext, types, pp$6, pp$5, empty, pp$4, pp$3, Scope, Node, pp$2, scriptValuesAddedInUnicode, ecma9BinaryProperties, ecma10BinaryProperties, ecma11BinaryProperties, ecma12BinaryProperties, ecma13BinaryProperties, ecma14BinaryProperties, unicodeBinaryProperties, ecma14BinaryPropertiesOfStrings, unicodeBinaryPropertiesOfStrings, unicodeGeneralCategoryValues, ecma9ScriptValues, ecma10ScriptValues, ecma11ScriptValues, ecma12ScriptValues, ecma13ScriptValues, ecma14ScriptValues, unicodeScriptValues, data, ecmaVersion, i, list2, pp$1, BranchID, RegExpValidationState, CharSetNone, CharSetOk, CharSetString, Token, pp, INVALID_TEMPLATE_ESCAPE_ERROR, version3;
 var init_acorn = __esm({
   "node_modules/.pnpm/acorn@8.18.0/node_modules/acorn/dist/acorn.mjs"() {
     "use strict";
@@ -237832,7 +237832,7 @@ var init_acorn = __esm({
       this.privateNameStack = [];
     };
     prototypeAccessors = { inFunction: { configurable: true }, inGenerator: { configurable: true }, inAsync: { configurable: true }, canAwait: { configurable: true }, allowReturn: { configurable: true }, allowSuper: { configurable: true }, allowDirectSuper: { configurable: true }, treatFunctionsAsVar: { configurable: true }, allowNewDotTarget: { configurable: true }, allowUsing: { configurable: true }, inClassStaticBlock: { configurable: true } };
-    Parser.prototype.parse = function parse2() {
+    Parser.prototype.parse = function parse4() {
       var this$1$1 = this;
       var node2 = this.options.program || this.startNode();
       this.nextToken();
@@ -237906,7 +237906,7 @@ var init_acorn = __esm({
     prototypeAccessors.inClassStaticBlock.get = function() {
       return (this.currentVarScope().flags & SCOPE_CLASS_STATIC_BLOCK) > 0;
     };
-    Parser.extend = function extend2() {
+    Parser.extend = function extend3() {
       var plugins = [], len = arguments.length;
       while (len--) plugins[len] = arguments[len];
       var cls = this;
@@ -237915,7 +237915,7 @@ var init_acorn = __esm({
       }
       return cls;
     };
-    Parser.parse = function parse3(input2, options) {
+    Parser.parse = function parse5(input2, options) {
       return new this(options, input2).parse();
     };
     Parser.parseExpressionAt = function parseExpressionAt(input2, pos, options) {
@@ -237928,7 +237928,7 @@ var init_acorn = __esm({
     };
     Object.defineProperties(Parser.prototype, prototypeAccessors);
     pp$9 = Parser.prototype;
-    literal = /^(?:'((?:\\[^]|[^'\\])*?)'|"((?:\\[^]|[^"\\])*?)")/;
+    literal2 = /^(?:'((?:\\[^]|[^'\\])*?)'|"((?:\\[^]|[^"\\])*?)")/;
     pp$9.strictDirective = function(start) {
       if (this.options.ecmaVersion < 5) {
         return false;
@@ -237936,7 +237936,7 @@ var init_acorn = __esm({
       for (; ; ) {
         skipWhiteSpace.lastIndex = start;
         start += skipWhiteSpace.exec(this.input)[0].length;
-        var match4 = literal.exec(this.input.slice(start));
+        var match4 = literal2.exec(this.input.slice(start));
         if (!match4) {
           return false;
         }
@@ -242876,10 +242876,10 @@ var init_acorn = __esm({
       }
       return this.finishToken(type, word);
     };
-    version2 = "8.18.0";
+    version3 = "8.18.0";
     Parser.acorn = {
       Parser,
-      version: version2,
+      version: version3,
       defaultOptions,
       Position,
       SourceLocation,
@@ -242910,7 +242910,7 @@ function noop() {
 function isSpace(ch) {
   return ch < 14 && ch > 8 || ch === 32 || ch === 160 || isNewLine(ch);
 }
-function parse7(input2, options) {
+function parse9(input2, options) {
   return LooseParser.parse(input2, options);
 }
 var dummyValue, LooseParser, lp$2, lp$1, lp;
@@ -243059,14 +243059,14 @@ var init_acorn_loose = __esm({
       }
       return true;
     };
-    LooseParser.prototype.extend = function extend3(name, f) {
+    LooseParser.prototype.extend = function extend4(name, f) {
       this[name] = f(this[name]);
     };
-    LooseParser.prototype.parse = function parse5() {
+    LooseParser.prototype.parse = function parse7() {
       this.next();
       return this.parseTopLevel();
     };
-    LooseParser.extend = function extend4() {
+    LooseParser.extend = function extend5() {
       var plugins = [], len = arguments.length;
       while (len--) plugins[len] = arguments[len];
       var cls = this;
@@ -243075,7 +243075,7 @@ var init_acorn_loose = __esm({
       }
       return cls;
     };
-    LooseParser.parse = function parse6(input2, options) {
+    LooseParser.parse = function parse8(input2, options) {
       return new this(input2, options).parse();
     };
     LooseParser.BaseParser = Parser;
@@ -250981,9 +250981,9 @@ function getASTFromSource(pFileRecord, pTranspileOptions) {
         allowNamespacedObjects: true
       });
     }
-    return parse4(lJavaScriptSource, ACORN_OPTIONS);
+    return parse6(lJavaScriptSource, ACORN_OPTIONS);
   } catch {
-    return parse7(lJavaScriptSource, ACORN_OPTIONS);
+    return parse9(lJavaScriptSource, ACORN_OPTIONS);
   }
 }
 function getASTCached2(pFileName, pTranspileOptions) {
@@ -253580,7 +253580,7 @@ var require_picomatch2 = __commonJS({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/resolve/module-classifiers.mjs
-import { isAbsolute as isAbsolute2, resolve as path_resolve } from "path";
+import { isAbsolute as isAbsolute3, resolve as path_resolve } from "path";
 import { join as posix_join } from "path/posix";
 function isScoped(pModuleName) {
   return pModuleName.startsWith("@");
@@ -253598,7 +253598,7 @@ function isExternalModule(pResolvedModuleName, pModuleFolderNames = ["node_modul
     // hence we'll have to test for them in different fashion as well.
     // reference: https://webpack.js.org/configuration/resolve/#resolve-modules
     (pModuleFolderName) => {
-      if (isAbsolute2(pModuleFolderName)) {
+      if (isAbsolute3(pModuleFolderName)) {
         return path_resolve(pBaseDirectory, pResolvedModuleName).startsWith(
           pModuleFolderName
         );
@@ -253754,10 +253754,10 @@ var init_is_built_in = __esm({
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/resolve/resolve-amd.mjs
 import { accessSync, constants } from "fs";
-import { relative as relative3, join as join8 } from "path";
+import { relative as relative4, join as join8 } from "path";
 function guessPath(pBaseDirectory, pFileDirectory, pStrippedModuleName) {
   return pathToPosix(
-    relative3(pBaseDirectory, join8(pFileDirectory, pStrippedModuleName))
+    relative4(pBaseDirectory, join8(pFileDirectory, pStrippedModuleName))
   );
 }
 function guessLikelyPath(pBaseDirectory, pFileDirectory, pStrippedModuleName) {
@@ -253848,7 +253848,7 @@ var init_resolve = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/resolve/resolve-cjs.mjs
-import { relative as relative4 } from "path";
+import { relative as relative5 } from "path";
 function addResolutionAttributes(pBaseDirectory, pModuleName, pFileDirectory, pResolveOptions) {
   const lReturnValue = {};
   if (isBuiltin(pModuleName, pResolveOptions)) {
@@ -253856,7 +253856,7 @@ function addResolutionAttributes(pBaseDirectory, pModuleName, pFileDirectory, pR
   } else {
     try {
       lReturnValue.resolved = pathToPosix(
-        relative4(
+        relative5(
           pBaseDirectory,
           resolve(pModuleName, pFileDirectory, pResolveOptions)
         )
@@ -254202,7 +254202,7 @@ var init_merge_manifests = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/resolve/get-manifest.mjs
-import { join as join11, dirname, sep } from "path";
+import { join as join11, dirname, sep as sep2 } from "path";
 import { readFileSync as readFileSync6 } from "fs";
 function getSingleManifest(pFileDirectory) {
   if (SINGLE_MANIFEST_CACHE.has(pFileDirectory)) {
@@ -254256,7 +254256,7 @@ function getIntermediatePaths(pFileDirectory, pBaseDirectory) {
   return lReturnValue;
 }
 function getCombinedManifests(pFileDirectory, pBaseDirectory) {
-  if (!pFileDirectory.startsWith(pBaseDirectory) || pBaseDirectory.endsWith(sep)) {
+  if (!pFileDirectory.startsWith(pBaseDirectory) || pBaseDirectory.endsWith(sep2)) {
     throw new Error(
       `Unexpected Error: Unusual baseDir passed to package reading function: '${pBaseDirectory}'
 Please file a bug: https://github.com/sverweij/dependency-cruiser/issues/new?template=bug-report.md&title=Unexpected Error: Unusual baseDir passed to package reading function: '${pBaseDirectory}'`
@@ -254298,7 +254298,7 @@ var init_get_manifest = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/extract/resolve/index.mjs
-import { extname as extname5, resolve as path_resolve2, relative as relative5 } from "path";
+import { extname as extname5, resolve as path_resolve2, relative as relative6 } from "path";
 import monkeyPatchedModule from "module";
 function resolveModule(pModule, pBaseDirectory, pFileDirectory, pResolveOptions) {
   let lReturnValue = null;
@@ -254332,7 +254332,7 @@ function resolveYarnVirtual(pBaseDirectory, pPath) {
     const lResolvedAbsolute = path_resolve2(pBaseDirectory, pPath);
     const lResolvedVirtual = pnpAPI.resolveVirtual(lResolvedAbsolute);
     if (lResolvedVirtual) {
-      const lResolvedRelative = relative5(pBaseDirectory, lResolvedVirtual);
+      const lResolvedRelative = relative6(pBaseDirectory, lResolvedVirtual);
       return pathToPosix(lResolvedRelative);
     }
   }
@@ -254981,7 +254981,7 @@ var init_dependents = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/validate/matchers.mjs
-import { dirname as dirname3, resolve as resolve3, sep as sep2 } from "path/posix";
+import { dirname as dirname3, resolve as resolve3, sep as sep3 } from "path/posix";
 function propertyEquals(pRule, pDependency, pProperty) {
   if (Object.hasOwn(pRule.to, pProperty)) {
     return pDependency[pProperty] === pRule.to[pProperty];
@@ -255121,8 +255121,8 @@ function matchesAncestor(pRule, pModule, pDependency) {
     if (pDependency.coreModule || pDependency.couldNotResolve) {
       return false;
     }
-    const lModulePath = dirname3(resolve3(pModule.source)) + sep2;
-    const lDependencyPath = dirname3(resolve3(pDependency.resolved)) + sep2;
+    const lModulePath = dirname3(resolve3(pModule.source)) + sep3;
+    const lDependencyPath = dirname3(resolve3(pDependency.resolved)) + sep3;
     const lDoesMatchAncestor = lModulePath.startsWith(lDependencyPath) && lModulePath.length > lDependencyPath.length;
     if (pRule.to.ancestor) {
       return lDoesMatchAncestor;
@@ -255784,18 +255784,18 @@ var init_analyze_modules = __esm({
 });
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/analyze/derive/folders/utl.mjs
-import { sep as sep3 } from "path/posix";
+import { sep as sep4 } from "path/posix";
 function findFolderByName(pAllFolders, pName) {
   return pAllFolders.find((pFolder) => pFolder.name === pName);
 }
 function getAfferentCouplings(pModule, pDirname) {
   return pModule.dependents.filter(
-    (pDependent) => !pDependent.startsWith(pDirname.concat(sep3))
+    (pDependent) => !pDependent.startsWith(pDirname.concat(sep4))
   );
 }
 function getEfferentCouplings(pModule, pDirname) {
   return pModule.dependencies.filter(
-    (pDependency) => !pDependency.resolved.startsWith(pDirname.concat(sep3))
+    (pDependency) => !pDependency.resolved.startsWith(pDirname.concat(sep4))
   );
 }
 function getParentFolders(pPath) {
@@ -256811,883 +256811,15 @@ var require_ignore2 = __commonJS({
   }
 });
 
-// src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts
-import { parseArgs } from "util";
-var usage = "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--exclude-path <glob> ...] <source-path>...";
-async function executeGenerateJsModuleDependencyGraphCommand(args, environment) {
-  const { positionals, values } = parseArgs({
-    args: [...args],
-    allowPositionals: true,
-    options: {
-      base: { type: "string" },
-      "exclude-path": { type: "string", multiple: true },
-      tsconfig: { type: "string" }
-    },
-    strict: true
-  });
-  if (!values.base || positionals.length === 0) throw new Error(usage);
-  const graphPath = await environment.writeGraph({
-    scopePath: values.base,
-    sourcePaths: positionals,
-    ...values["exclude-path"] ? { exclude: values["exclude-path"] } : {},
-    ...values.tsconfig ? { tsConfigPath: values.tsconfig } : {}
-  });
-  environment.writeStdout(`${JSON.stringify({ graphPath })}
-`);
-}
-
-// src/plugins/diagram-generators/js-module-dependency-graph/generator.ts
+// src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts
 import { mkdtemp as mkdtemp2, writeFile as writeFile3 } from "fs/promises";
 import { tmpdir as tmpdir2 } from "os";
 import { join as join17 } from "path";
+import { parseArgs } from "util";
 
-// src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts
-import { lstat, mkdtemp, realpath, rm, writeFile as writeFile2 } from "fs/promises";
-import { tmpdir } from "os";
-import { dirname as dirname6, join as join14, resolve as resolve5 } from "path";
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/format.mjs
-init_assert_validity();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/normalize.mjs
-init_helpers();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/defaults.mjs
-var defaults_default = {
-  validate: false,
-  maxDepth: 0,
-  moduleSystems: ["es6", "cjs", "tsd", "amd"],
-  detectJSDocImports: false,
-  detectProcessBuiltinModuleCalls: false,
-  skipAnalysisNotInRules: false,
-  tsPreCompilationDeps: false,
-  preserveSymlinks: false,
-  combinedDependencies: false,
-  externalModuleResolutionStrategy: "node_modules",
-  exoticRequireStrings: []
-};
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/normalize.mjs
-init_array_util();
-var DEFAULT_CACHE_FOLDER = "node_modules/.cache/dependency-cruiser";
-var DEFAULT_CACHE_STRATEGY = "metadata";
-function normalizeFilterOption(pFilterOption) {
-  let lReturnValue = pFilterOption || {};
-  if (typeof lReturnValue === "string" || Array.isArray(lReturnValue)) {
-    lReturnValue = {
-      path: lReturnValue
-    };
-  }
-  return normalizeREProperties(lReturnValue, ["path"]);
-}
-function normalizeReporterOptions(pReporterOptions) {
-  const lNormalizeableOptions = [
-    "archi.collapsePattern",
-    "archi.filters.includeOnly.path",
-    "archi.filters.focus.path",
-    "archi.filters.exclude.path",
-    "dot.collapsePattern",
-    "dot.filters.includeOnly.path",
-    "dot.filters.focus.path",
-    "dot.filters.exclude.path",
-    "ddot.collapsePattern",
-    "ddot.filters.includeOnly.path",
-    "ddot.filters.focus.path",
-    "ddot.filters.exclude.path"
-  ];
-  return normalizeREProperties(pReporterOptions, lNormalizeableOptions);
-}
-function normalizeFilterOptions(pOptions, pFilterOptionKeys) {
-  const lReturnValue = { ...pOptions };
-  for (const lFilterOptionKey of pFilterOptionKeys) {
-    if (pOptions[lFilterOptionKey]) {
-      lReturnValue[lFilterOptionKey] = normalizeFilterOption(
-        lReturnValue[lFilterOptionKey]
-      );
-    }
-  }
-  return lReturnValue;
-}
-function normalizeCollapse(pCollapse) {
-  let lReturnValue = pCollapse;
-  const lOneOrMoreNonSlashes = "[^/]+";
-  const lFolderPattern = `${lOneOrMoreNonSlashes}/`;
-  const lFolderBelowNodeModules = `node_modules/${lOneOrMoreNonSlashes}`;
-  const lSingleDigitRe = /^\d$/;
-  if (typeof pCollapse === "number" || lSingleDigitRe.test(pCollapse)) {
-    lReturnValue = `${lFolderBelowNodeModules}|^${lFolderPattern.repeat(
-      Number.parseInt(pCollapse, 10)
-    )}`;
-  }
-  return lReturnValue;
-}
-function normalizeFocusDepth(pFormatOptions) {
-  const lFormatOptions = structuredClone(pFormatOptions);
-  if (Object.hasOwn(lFormatOptions, "focusDepth")) {
-    if (lFormatOptions?.focus) {
-      lFormatOptions.focus.depth = Number.parseInt(
-        lFormatOptions.focusDepth,
-        10
-      );
-    }
-    delete lFormatOptions.focusDepth;
-  }
-  return lFormatOptions;
-}
-function hasMetricsRule(pRule) {
-  return Object.hasOwn(pRule?.to ?? {}, "moreUnstable") || (pRule?.scope ?? "module") === "folder";
-}
-function ruleSetHasMetricsRule(pRuleSet) {
-  const lRuleSet = pRuleSet || {};
-  return (lRuleSet.forbidden || []).some(hasMetricsRule) || (lRuleSet.allowed || []).some(hasMetricsRule);
-}
-function getReporterSection(pOutputType) {
-  return ["x-dot-webpage", "dot-webpage"].includes(pOutputType) ? "dot" : pOutputType;
-}
-function reporterShowsMetrics(pOptions) {
-  return (pOptions.reporterOptions?.[getReporterSection(pOptions?.outputType)]?.showMetrics ?? false) === true;
-}
-function shouldCalculateMetrics(pOptions) {
-  return pOptions.metrics || pOptions.outputType === "metrics" || reporterShowsMetrics(pOptions) || ruleSetHasMetricsRule(pOptions.ruleSet);
-}
-function normalizeCacheOptions(pCacheOptions) {
-  let lNormalizedCacheOptions = pCacheOptions;
-  if (typeof pCacheOptions === "string") {
-    lNormalizedCacheOptions = {
-      folder: pCacheOptions
-    };
-  }
-  if (pCacheOptions === true) {
-    lNormalizedCacheOptions = {};
-  }
-  return {
-    folder: DEFAULT_CACHE_FOLDER,
-    strategy: DEFAULT_CACHE_STRATEGY,
-    ...lNormalizedCacheOptions
-  };
-}
-function normalizeCruiseOptions(pOptions, pFileAndDirectoryArray = []) {
-  let lReturnValue = {
-    baseDir: process.cwd(),
-    ...defaults_default,
-    ...pOptions,
-    args: pFileAndDirectoryArray.join(" ")
-  };
-  lReturnValue.maxDepth = Number.parseInt(lReturnValue.maxDepth, 10);
-  lReturnValue.moduleSystems = uniq(lReturnValue.moduleSystems);
-  if (Object.hasOwn(lReturnValue, "collapse")) {
-    lReturnValue.collapse = normalizeCollapse(lReturnValue.collapse);
-  }
-  lReturnValue.doNotFollow = normalizeFilterOption(lReturnValue.doNotFollow);
-  lReturnValue.exclude = normalizeFilterOption(lReturnValue.exclude);
-  lReturnValue.extraExtensionsToScan = lReturnValue.extraExtensionsToScan || [];
-  lReturnValue = normalizeFilterOptions(lReturnValue, [
-    "focus",
-    "includeOnly",
-    "reaches",
-    "highlight"
-  ]);
-  lReturnValue.exoticRequireStrings = uniq(lReturnValue.exoticRequireStrings);
-  if (lReturnValue.reporterOptions) {
-    lReturnValue.reporterOptions = normalizeReporterOptions(
-      lReturnValue.reporterOptions
-    );
-  }
-  lReturnValue.metrics = shouldCalculateMetrics(pOptions);
-  if (lReturnValue.cache) {
-    lReturnValue.cache = normalizeCacheOptions(lReturnValue.cache);
-  }
-  if (lReturnValue.detectJSDocImports) {
-    lReturnValue.parser = "tsc";
-  }
-  return normalizeFocusDepth(lReturnValue);
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
-init_dependency_cruiser_reporters();
-await init_summarize();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/filter-bank.mjs
-init_add_focus();
-init_indexed_module_graph();
-init_match_facade();
-function includeOnly(pModules, pIncludeFilter) {
-  return pIncludeFilter.path ? pModules.filter((pModule) => moduleMatchesFilter(pModule, pIncludeFilter)).map((pModule) => ({
-    ...pModule,
-    dependencies: pModule.dependencies.filter(
-      (pDependency) => dependencyMatchesFilter(pDependency, pIncludeFilter)
-    )
-  })) : pModules;
-}
-function exclude(pModules, pExcludeFilter) {
-  return pExcludeFilter.path ? pModules.filter((pModule) => !moduleMatchesFilter(pModule, pExcludeFilter)).map((pModule) => ({
-    ...pModule,
-    dependencies: pModule.dependencies.filter(
-      (pDependency) => !dependencyMatchesFilter(pDependency, pExcludeFilter)
-    )
-  })) : pModules;
-}
-function filterReaches(pModules, pReachesFilter) {
-  const lModuleNamesToReach = /* @__PURE__ */ new Set();
-  for (const lModule of pModules) {
-    if (moduleMatchesFilter(lModule, pReachesFilter)) {
-      lModuleNamesToReach.add(lModule.source);
-    }
-  }
-  const lReachingModules = /* @__PURE__ */ new Set();
-  const lIndexedModules = new IndexedModuleGraph(pModules);
-  for (const lModuleToReach of lModuleNamesToReach) {
-    for (const lDependent of lIndexedModules.findTransitiveDependents(
-      lModuleToReach
-    )) {
-      lReachingModules.add(lDependent);
-    }
-  }
-  return pModules.filter(({ source }) => lReachingModules.has(source)).map((pModule) => ({
-    ...pModule,
-    matchesReaches: lModuleNamesToReach.has(pModule.source),
-    dependencies: pModule.dependencies.filter(
-      ({ resolved }) => lReachingModules.has(resolved)
-    )
-  }));
-}
-function tagHighlight(pModules, pHighlightFilter) {
-  return pModules.map((pModule) => ({
-    ...pModule,
-    matchesHighlight: moduleMatchesFilter(pModule, pHighlightFilter)
-  }));
-}
-function applyFilters(pModules, pFilters) {
-  if (pFilters) {
-    let lReturnValue = structuredClone(pModules);
-    if (pFilters.exclude) {
-      lReturnValue = exclude(lReturnValue, pFilters.exclude);
-    }
-    if (pFilters.includeOnly) {
-      lReturnValue = includeOnly(lReturnValue, pFilters.includeOnly);
-    }
-    if (pFilters.focus) {
-      lReturnValue = addFocus(lReturnValue, pFilters.focus);
-    }
-    if (pFilters.reaches) {
-      lReturnValue = filterReaches(lReturnValue, pFilters.reaches);
-    }
-    if (pFilters.highlight) {
-      lReturnValue = tagHighlight(lReturnValue, pFilters.highlight);
-    }
-    return lReturnValue;
-  }
-  return pModules;
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-modules.mjs
-init_compare();
-init_array_util();
-function mergeModule(pLeftModule, pRightModule) {
-  return {
-    ...pLeftModule,
-    ...pRightModule,
-    dependencies: uniqBy(
-      pLeftModule.dependencies.concat(pRightModule.dependencies),
-      (pDependency) => pDependency.resolved
-    ),
-    rules: pLeftModule.rules.concat(pRightModule?.rules ?? []).sort(compareRules),
-    valid: pLeftModule.valid && pRightModule.valid,
-    consolidated: pLeftModule.consolidated || pRightModule.consolidated
-  };
-}
-function mergeModules(pSourceString, pModules) {
-  let lReturnValue = {
-    dependencies: [],
-    rules: [],
-    valid: true
-  };
-  for (const lModule of pModules) {
-    if (lModule.source === pSourceString) {
-      lReturnValue = mergeModule(lReturnValue, lModule);
-    }
-  }
-  return lReturnValue;
-}
-function consolidateModules(pModules) {
-  const lProcessed = /* @__PURE__ */ new Set();
-  const lReturnValue = [];
-  for (const lModule of pModules) {
-    if (!lProcessed.has(lModule.source)) {
-      lReturnValue.push(mergeModules(lModule.source, pModules));
-      lProcessed.add(lModule.source);
-    }
-  }
-  return lReturnValue;
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-module-dependencies.mjs
-init_compare();
-init_array_util();
-function mergeDependency(pLeftDependency, pRightDependency) {
-  return {
-    ...pLeftDependency,
-    ...pRightDependency,
-    dependencyTypes: uniq(
-      pLeftDependency.dependencyTypes.concat(pRightDependency.dependencyTypes)
-    ),
-    rules: pLeftDependency.rules.concat(pRightDependency?.rules ?? []).sort(compareRules),
-    valid: pLeftDependency.valid && pRightDependency.valid
-  };
-}
-function mergeDependencies(pResolvedName, pDependencies) {
-  let lReturnValue = {
-    dependencyTypes: [],
-    rules: [],
-    valid: true
-  };
-  for (const lDependency of pDependencies) {
-    if (lDependency.resolved === pResolvedName) {
-      lReturnValue = mergeDependency(lReturnValue, lDependency);
-    }
-  }
-  return lReturnValue;
-}
-function consolidateDependencies(pDependencies) {
-  const lProcessed = /* @__PURE__ */ new Set();
-  const lReturnValue = [];
-  for (const lDependency of pDependencies) {
-    if (!lProcessed.has(lDependency.resolved)) {
-      lReturnValue.push(mergeDependencies(lDependency.resolved, pDependencies));
-      lProcessed.add(lDependency.resolved);
-    }
-  }
-  return lReturnValue;
-}
-function consolidateModuleDependencies(pModule) {
-  return {
-    ...pModule,
-    dependencies: consolidateDependencies(pModule.dependencies)
-  };
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-to-pattern.mjs
-init_regex_util();
-function squashDependencyToPattern(pCollapsePattern) {
-  return (pDependency) => {
-    const lCollapseMatch = getCachedRegExp(pCollapsePattern).exec(
-      pDependency.resolved
-    );
-    return {
-      ...pDependency,
-      resolved: lCollapseMatch ? lCollapseMatch[0] : pDependency.resolved
-    };
-  };
-}
-function determineConsolidatedness(pConsolidated, pCollapseMatch, pSource) {
-  let lReturnValue = false;
-  if (pConsolidated === true) {
-    lReturnValue = true;
-  } else {
-    lReturnValue = pCollapseMatch ? pCollapseMatch[0] !== pSource : false;
-  }
-  return lReturnValue;
-}
-function squashModuleToPattern(pCollapsePattern) {
-  return (pModule) => {
-    const lCollapseMatch = getCachedRegExp(pCollapsePattern).exec(
-      pModule.source
-    );
-    return {
-      ...pModule,
-      source: lCollapseMatch ? lCollapseMatch[0] : pModule.source,
-      consolidated: determineConsolidatedness(
-        pModule.consolidated,
-        lCollapseMatch,
-        pModule.source
-      ),
-      dependencies: pModule.dependencies.map(
-        squashDependencyToPattern(pCollapsePattern)
-      )
-    };
-  };
-}
-function consolidateToPattern(pModules, pCollapsePattern) {
-  return consolidateModules(
-    pModules.map(squashModuleToPattern(pCollapsePattern))
-  ).map(consolidateModuleDependencies);
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
-init_compare();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/strip-self-transitions.mjs
-function stripSelfTransitions(pModule) {
-  return {
-    ...pModule,
-    dependencies: pModule.dependencies.filter(
-      (pDependency) => pModule.source !== pDependency.resolved
-    )
-  };
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
-init_bus();
-function reSummarizeResults(pResult, pFormatOptions) {
-  let lModules = applyFilters(pResult.modules, pFormatOptions);
-  if (Object.hasOwn(pFormatOptions, "collapse")) {
-    lModules = consolidateToPattern(lModules, pFormatOptions.collapse).sort(compareModules).map(stripSelfTransitions);
-  }
-  return {
-    ...pResult,
-    summary: {
-      ...pResult.summary,
-      ...summarize(
-        lModules,
-        {
-          ...pResult.summary.optionsUsed,
-          ...pFormatOptions
-        },
-        (pResult.summary.optionsUsed.args || "").split(" "),
-        // TODO: apply filters to the folders too
-        pResult.folders
-      ),
-      environment: pResult.summary.environment
-    },
-    modules: lModules
-  };
-}
-function getReporterSection2(pOutputType) {
-  return ["x-dot-webpage", "dot-webpage"].includes(pOutputType) ? "dot" : pOutputType;
-}
-async function reportWrap(pResult, pFormatOptions) {
-  bus.debug("report: get");
-  const lReportFunction = await getReporter(pFormatOptions.outputType);
-  const lReportOptions = pResult.summary.optionsUsed?.reporterOptions?.[getReporterSection2(pFormatOptions.outputType)] ?? {};
-  bus.debug("report: execute");
-  return lReportFunction(
-    reSummarizeResults(pResult, pFormatOptions),
-    // passing format options here so reporters that read collapse patterns
-    // from the result take the one passed in the format options instead
-    Object.hasOwn(pFormatOptions, "collapse") ? { ...lReportOptions, collapsePattern: pFormatOptions.collapse } : lReportOptions
-  );
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/schema/cruise-result.validate.mjs
-var or = new RegExp("^plugin:[^:]+$", "u");
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/format.mjs
-init_utl();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/cruise.mjs
-init_assert_validity();
-init_bus();
-init_regex_util();
-var TOTAL_STEPS = 10;
-function c(pComplete, pTotal = TOTAL_STEPS) {
-  return { complete: pComplete / pTotal };
-}
-async function cruise(pFileAndDirectoryArray, pCruiseOptions, pResolveOptions, pTranspileOptions) {
-  bus.summary("startup: parse options", c(1));
-  const lCruiseOptionsValid = assertCruiseOptionsValid(pCruiseOptions);
-  const lCruiseOptions = normalizeCruiseOptions(
-    lCruiseOptionsValid,
-    pFileAndDirectoryArray
-  );
-  let lCache = null;
-  if (lCruiseOptions.cache) {
-    bus.summary(
-      `cache: check freshness with ${lCruiseOptions.cache.strategy}`,
-      c(2)
-    );
-    const { default: Cache2 } = await init_cache().then(() => cache_exports);
-    lCache = new Cache2(
-      lCruiseOptions.cache.strategy,
-      lCruiseOptions.cache.compress
-    );
-    const lCachedResults = await lCache.read(lCruiseOptions.cache.folder);
-    if (await lCache.canServeFromCache(lCruiseOptions, lCachedResults)) {
-      bus.summary("report: from cache", c(8));
-      return await reportWrap(lCachedResults, lCruiseOptions);
-    }
-  }
-  bus.summary("startup: import analytical modules", c(3));
-  const [
-    { default: normalizeRuleSet2 },
-    { default: assertRuleSetValid2 },
-    { default: normalizeFilesAndDirectories },
-    { default: normalizeResolveOptions2 },
-    { default: extract5 },
-    { default: analyze2 }
-  ] = await Promise.all([
-    // despite rule set parsing being behind an if, it's the 'normal' use case
-    // for dependency-cruiser, so import it unconditionally nonetheless
-    Promise.resolve().then(() => (init_normalize(), normalize_exports)),
-    Promise.resolve().then(() => (init_assert_validity2(), assert_validity_exports)),
-    Promise.resolve().then(() => (init_normalize2(), normalize_exports2)),
-    init_normalize3().then(() => normalize_exports3),
-    init_extract4().then(() => extract_exports),
-    init_analyze().then(() => analyze_exports)
-  ]);
-  if (lCruiseOptions.ruleSet) {
-    bus.summary("startup: parse rule set", c(4));
-    lCruiseOptions.ruleSet = normalizeRuleSet2(
-      assertRuleSetValid2(lCruiseOptions.ruleSet)
-    );
-  }
-  const lNormalizedFileAndDirectoryArray = normalizeFilesAndDirectories(
-    pFileAndDirectoryArray
-  );
-  bus.summary("startup: get resolve options", c(5));
-  const lNormalizedResolveOptions = await normalizeResolveOptions2(
-    pResolveOptions,
-    lCruiseOptions,
-    pTranspileOptions?.tsConfig
-  );
-  bus.summary("extract", c(6));
-  const lExtractionResult = extract5(
-    lNormalizedFileAndDirectoryArray,
-    lCruiseOptions,
-    lNormalizedResolveOptions,
-    pTranspileOptions
-  );
-  bus.summary("analyze", c(7));
-  const lCruiseResult = analyze2(
-    lExtractionResult,
-    lCruiseOptions,
-    lNormalizedFileAndDirectoryArray
-  );
-  if (lCruiseOptions.cache) {
-    bus.summary("cache: save", c(8));
-    await lCache.write(lCruiseOptions.cache.folder, lCruiseResult);
-  }
-  bus.summary("report", c(9));
-  const lResult = await reportWrap(lCruiseResult, lCruiseOptions);
-  bus.debug("end: clear regex cache");
-  clearRegExpCache();
-  return lResult;
-}
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/index.mjs
-await init_meta();
-await init_meta();
-
-// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/config-utl/extract-ts-config.mjs
-init_dependency_cruiser_try_import();
-var import_meta18 = __toESM(require_meta(), 1);
-import { dirname as dirname5, resolve as resolve4 } from "path";
-var typescript6 = await tryImport(
-  "typescript",
-  import_meta18.default.supportedTranspilers.typescript
-);
-var FORMAT_DIAGNOSTICS_HOST = {
-  getCanonicalFileName(pFileName) {
-    let lReturnValue = pFileName.toLowerCase();
-    if (typescript6?.sys?.useCaseSensitiveFileNames ?? false) {
-      lReturnValue = pFileName;
-    }
-    return lReturnValue;
-  },
-  getCurrentDirectory() {
-    return process.cwd();
-  },
-  getNewLine() {
-    return "\n";
-  }
-};
-function extractTSConfig(pTSConfigFileName) {
-  let lReturnValue = {};
-  if (typescript6) {
-    const lConfig = typescript6.readConfigFile(
-      pTSConfigFileName,
-      typescript6.sys.readFile
-    );
-    if (typeof lConfig.error !== "undefined") {
-      throw new TypeError(
-        typescript6.formatDiagnostics([lConfig.error], FORMAT_DIAGNOSTICS_HOST)
-      );
-    }
-    lReturnValue = typescript6.parseJsonConfigFileContent(
-      lConfig.config,
-      typescript6.sys,
-      dirname5(resolve4(pTSConfigFileName)),
-      {},
-      pTSConfigFileName
-    );
-    if (lReturnValue.errors.length > 0) {
-      throw new Error(
-        typescript6.formatDiagnostics(
-          lReturnValue.errors,
-          FORMAT_DIAGNOSTICS_HOST
-        )
-      );
-    }
-  }
-  return lReturnValue;
-}
-
-// src/shared/node/path.ts
-import { isAbsolute as isAbsolute3, relative as relative6, sep as sep4 } from "path";
-function toPosixPath(path2) {
-  return path2.split(sep4).join("/");
-}
-function isPathInside(parentPath, candidatePath) {
-  const relativePath = relative6(parentPath, candidatePath);
-  return relativePath === "" || relativePath !== ".." && !relativePath.startsWith(`..${sep4}`) && !isAbsolute3(relativePath);
-}
-function isMissingPathError(error62) {
-  return error62 instanceof Error && "code" in error62 && error62.code === "ENOENT";
-}
-
-// src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts
-var externalDependencyTypes = /* @__PURE__ */ new Set([
-  "npm",
-  "npm-bundled",
-  "npm-dev",
-  "npm-no-pkg",
-  "npm-optional",
-  "npm-peer",
-  "npm-unknown"
-]);
-var importConditionNames = ["node", "import", "default"];
-var requireConditionNames = ["node", "require", "default"];
-var typesConditionNames = ["types", "node", "import", "default"];
-var resolverExtensions = [
-  ".ts",
-  ".tsx",
-  ".mts",
-  ".cts",
-  ".d.ts",
-  ".d.mts",
-  ".d.cts",
-  ".js",
-  ".jsx",
-  ".mjs",
-  ".cjs",
-  ".json"
-];
-function packageNameFromSpecifier(specifier) {
-  if (specifier.startsWith("#") || specifier.startsWith(".") || specifier.startsWith("/")) return null;
-  if (specifier.startsWith("@")) {
-    const [scope, name2] = specifier.split("/");
-    return scope && name2 ? `${scope}/${name2}` : null;
-  }
-  const [name] = specifier.split("/");
-  return name || null;
-}
-function packageNameFromResolvedPath(resolvedPath) {
-  const segments = toPosixPath(resolvedPath).split("/");
-  const nodeModulesIndex = segments.lastIndexOf("node_modules");
-  if (nodeModulesIndex === -1) return null;
-  const firstSegment = segments.at(nodeModulesIndex + 1);
-  if (!firstSegment) return null;
-  if (!firstSegment.startsWith("@")) return firstSegment;
-  const secondSegment = segments.at(nodeModulesIndex + 2);
-  return secondSegment ? `${firstSegment}/${secondSegment}` : null;
-}
-function dependencyKind(dependency) {
-  return dependency.typeOnly || dependency.preCompilationOnly ? "type-only" : "runtime";
-}
-function isExternalDependency(dependency) {
-  return dependency.dependencyTypes.some((type) => externalDependencyTypes.has(type));
-}
-function isCoreDependency(dependency) {
-  return dependency.coreModule || dependency.dependencyTypes.includes("core");
-}
-async function resolveTsConfigPath(scopePath, tsConfigPath) {
-  const candidatePath = resolve5(scopePath, tsConfigPath ?? "tsconfig.json");
-  let canonicalPath;
-  try {
-    canonicalPath = await realpath(candidatePath);
-  } catch (error62) {
-    if (isMissingPathError(error62) && tsConfigPath === void 0) return void 0;
-    throw error62;
-  }
-  if (!isPathInside(scopePath, canonicalPath)) {
-    throw new Error(`TypeScript config must stay inside the base: ${tsConfigPath ?? "tsconfig.json"}`);
-  }
-  if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
-  return canonicalPath;
-}
-async function prepareTsConfig(tsConfigPath) {
-  if (!tsConfigPath) return { compilerOptions: void 0, fileName: void 0, temporaryDirectory: void 0 };
-  const compilerOptions = extractTSConfig(tsConfigPath);
-  if (compilerOptions.options.baseUrl || !compilerOptions.options.paths) {
-    return { compilerOptions, fileName: tsConfigPath, temporaryDirectory: void 0 };
-  }
-  const temporaryDirectory = await mkdtemp(join14(tmpdir(), "architecture-companion-tsconfig-"));
-  const compatibilityConfigPath = join14(temporaryDirectory, "tsconfig.json");
-  await writeFile2(
-    compatibilityConfigPath,
-    `${JSON.stringify(
-      {
-        compilerOptions: {
-          baseUrl: dirname6(tsConfigPath),
-          paths: compilerOptions.options.paths
-        }
-      },
-      null,
-      2
-    )}
-`
-  );
-  return {
-    compilerOptions: {
-      ...compilerOptions,
-      options: { ...compilerOptions.options, baseUrl: dirname6(tsConfigPath) }
-    },
-    fileName: compatibilityConfigPath,
-    temporaryDirectory
-  };
-}
-function readCruiseResult(output2) {
-  if (typeof output2 === "string") {
-    throw new Error("dependency-cruiser returned formatted output instead of graph data.");
-  }
-  return output2;
-}
-async function cruisePass(scopePath, sourcePaths, tsConfig, conditionNames, mainFields) {
-  const result = await cruise(
-    [...sourcePaths],
-    {
-      baseDir: scopePath,
-      detectJSDocImports: true,
-      doNotFollow: "(^|/)node_modules/",
-      progress: { type: "none" },
-      skipAnalysisNotInRules: true,
-      tsPreCompilationDeps: "specify",
-      ...tsConfig.fileName ? { tsConfig: { fileName: tsConfig.fileName } } : {}
-    },
-    {
-      conditionNames: [...conditionNames],
-      exportsFields: ["exports"],
-      extensions: [...resolverExtensions],
-      mainFields: [...mainFields],
-      mainFiles: ["index"]
-    },
-    tsConfig.compilerOptions ? { tsConfig: tsConfig.compilerOptions } : void 0
-  );
-  return readCruiseResult(result.output);
-}
-function dependencyKey(dependency) {
-  return JSON.stringify([
-    dependency.module,
-    dependency.moduleSystem,
-    dependency.dynamic,
-    dependency.exoticallyRequired,
-    dependency.typeOnly ?? false,
-    dependency.preCompilationOnly ?? false
-  ]);
-}
-function resolutionPreference(sourcePath, dependencies) {
-  if (dependencies.some((dependency) => dependencyKind(dependency) === "type-only")) {
-    return ["types", "import", "require"];
-  }
-  if (sourcePath.endsWith(".cts") || sourcePath.endsWith(".cjs")) return ["require", "import", "types"];
-  if (sourcePath.endsWith(".mts") || sourcePath.endsWith(".mjs")) return ["import", "require", "types"];
-  if (dependencies.some(({ moduleSystem }) => moduleSystem === "cjs")) return ["require", "import", "types"];
-  return ["import", "require", "types"];
-}
-function chooseDependency(sourcePath, candidates) {
-  const availableCandidates = Object.values(candidates).filter(
-    (candidate) => candidate !== void 0
-  );
-  const fallbackCandidate = availableCandidates.at(0);
-  if (!fallbackCandidate) throw new Error(`dependency-cruiser omitted dependency data for ${sourcePath}.`);
-  const preference = resolutionPreference(sourcePath, availableCandidates);
-  return preference.map((pass) => candidates[pass]).find((candidate) => candidate && !candidate.couldNotResolve) ?? preference.map((pass) => candidates[pass]).find((candidate) => candidate !== void 0) ?? fallbackCandidate;
-}
-function mergeCruiseResults(results) {
-  const modulesByPass = Object.fromEntries(
-    Object.entries(results).map(([pass, result]) => [
-      pass,
-      new Map(result.modules.map((module) => [module.source, module]))
-    ])
-  );
-  const sourcePaths = new Set(Object.values(results).flatMap(({ modules }) => modules.map(({ source }) => source)));
-  return [...sourcePaths].toSorted().map((sourcePath) => {
-    const baseModule = modulesByPass.import.get(sourcePath) ?? modulesByPass.require.get(sourcePath) ?? modulesByPass.types.get(sourcePath);
-    if (!baseModule) throw new Error(`dependency-cruiser omitted module data for ${sourcePath}.`);
-    const candidatesByKey = /* @__PURE__ */ new Map();
-    for (const pass of ["import", "require", "types"]) {
-      for (const dependency of modulesByPass[pass].get(sourcePath)?.dependencies ?? []) {
-        const key = dependencyKey(dependency);
-        candidatesByKey.set(key, { ...candidatesByKey.get(key), [pass]: dependency });
-      }
-    }
-    return {
-      ...baseModule,
-      dependencies: [...candidatesByKey.entries()].toSorted(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([, candidates]) => chooseDependency(sourcePath, candidates))
-    };
-  });
-}
-async function cruiseDependencies(scopePath, sourcePaths, tsConfigPath) {
-  const tsConfig = await prepareTsConfig(tsConfigPath);
-  try {
-    const importResult = await cruisePass(scopePath, sourcePaths, tsConfig, importConditionNames, [
-      "module",
-      "main",
-      "types",
-      "typings"
-    ]);
-    const requireResult = await cruisePass(scopePath, sourcePaths, tsConfig, requireConditionNames, [
-      "main",
-      "module",
-      "types",
-      "typings"
-    ]);
-    const typesResult = await cruisePass(scopePath, sourcePaths, tsConfig, typesConditionNames, [
-      "types",
-      "typings",
-      "module",
-      "main"
-    ]);
-    return mergeCruiseResults({ import: importResult, require: requireResult, types: typesResult });
-  } finally {
-    if (tsConfig.temporaryDirectory) await rm(tsConfig.temporaryDirectory, { recursive: true });
-  }
-}
-async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath) {
-  const sourceByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
-  const modules = await cruiseDependencies(
-    scopePath,
-    discoveredSources.map(({ relativePath }) => relativePath),
-    tsConfigPath
-  );
-  const analyzedModules = [];
-  for (const module of modules) {
-    let absoluteSourcePath;
-    try {
-      absoluteSourcePath = await realpath(resolve5(scopePath, module.source));
-    } catch (error62) {
-      if (isMissingPathError(error62)) continue;
-      throw error62;
-    }
-    if (!sourceByPath.has(absoluteSourcePath)) continue;
-    const dependencies = [];
-    for (const dependency of module.dependencies) {
-      if (dependency.couldNotResolve || isCoreDependency(dependency)) continue;
-      const kind = dependencyKind(dependency);
-      let localTargetPath;
-      try {
-        const canonicalResolvedPath = await realpath(resolve5(scopePath, dependency.resolved));
-        if (sourceByPath.has(canonicalResolvedPath)) localTargetPath = canonicalResolvedPath;
-      } catch (error62) {
-        if (!isMissingPathError(error62)) throw error62;
-      }
-      if (localTargetPath) {
-        dependencies.push({ kind, target: { type: "local-module", absolutePath: localTargetPath } });
-        continue;
-      }
-      if (!isExternalDependency(dependency)) continue;
-      const packageName = packageNameFromResolvedPath(dependency.resolved) ?? packageNameFromSpecifier(dependency.module);
-      if (packageName) {
-        dependencies.push({ kind, target: { type: "external-package", packageName } });
-      }
-    }
-    analyzedModules.push({ absolutePath: absoluteSourcePath, dependencies });
-  }
-  return analyzedModules;
-}
-
-// src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts
-import { readFile as readFile2 } from "fs/promises";
-import { basename, dirname as dirname7, join as join15, relative as relative7 } from "path";
+// src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts
+import { readFile as readFile3 } from "fs/promises";
+import { basename, dirname as dirname8, join as join16, relative as relative8 } from "path";
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -257796,7 +256928,7 @@ __export(external_exports, {
   clone: () => clone,
   codec: () => codec,
   coerce: () => coerce_exports,
-  compile: () => compile2,
+  compile: () => compile,
   config: () => config,
   core: () => core_exports2,
   creditCard: () => creditCard2,
@@ -257831,7 +256963,7 @@ __export(external_exports, {
   gt: () => _gt,
   gte: () => _gte,
   guid: () => guid2,
-  hash: () => hash2,
+  hash: () => hash,
   hex: () => hex2,
   hostname: () => hostname2,
   httpUrl: () => httpUrl,
@@ -257853,7 +256985,7 @@ __export(external_exports, {
   ksuid: () => ksuid2,
   lazy: () => lazy,
   length: () => _length,
-  literal: () => literal2,
+  literal: () => literal,
   locales: () => locales_exports,
   looseObject: () => looseObject,
   looseRecord: () => looseRecord,
@@ -257865,7 +256997,7 @@ __export(external_exports, {
   maxLength: () => _maxLength,
   maxSize: () => _maxSize,
   memoizer: () => memoizer,
-  meta: () => meta14,
+  meta: () => meta2,
   mime: () => _mime,
   minLength: () => _minLength,
   minSize: () => _minSize,
@@ -257887,7 +257019,7 @@ __export(external_exports, {
   optional: () => optional,
   output: () => output,
   overwrite: () => _overwrite,
-  parse: () => parse9,
+  parse: () => parse2,
   parseAsync: () => parseAsync2,
   partialRecord: () => partialRecord,
   pipe: () => pipe,
@@ -257910,7 +257042,7 @@ __export(external_exports, {
   safeEncodeAsync: () => safeEncodeAsync2,
   safeParse: () => safeParse2,
   safeParseAsync: () => safeParseAsync2,
-  set: () => set2,
+  set: () => set,
   setErrorMap: () => setErrorMap,
   size: () => _size,
   slugify: () => _slugify,
@@ -258207,7 +257339,7 @@ __export(core_exports2, {
   base64urlCharset: () => base64urlCharset,
   canParseURL: () => canParseURL,
   clone: () => clone,
-  compile: () => compile2,
+  compile: () => compile,
   compileFn: () => compileFn,
   config: () => config,
   createStandardJSONSchemaMethod: () => createStandardJSONSchemaMethod,
@@ -258238,8 +257370,8 @@ __export(core_exports2, {
   locales: () => locales_exports,
   memoizer: () => memoizer,
   mergeValues: () => mergeValues,
-  meta: () => meta13,
-  parse: () => parse8,
+  meta: () => meta,
+  parse: () => parse,
   parseAsync: () => parseAsync,
   parseURLObject: () => parseURLObject,
   prettifyError: () => prettifyError,
@@ -258265,7 +257397,7 @@ __export(core_exports2, {
   validate: () => validate,
   validateAsync: () => validateAsync,
   validateURL: () => validateURL,
-  version: () => version3,
+  version: () => version,
   withParser: () => withParser
 });
 
@@ -258302,7 +257434,7 @@ __export(util_exports, {
   esc: () => esc,
   escapeRegex: () => escapeRegex,
   explicitlyAborted: () => explicitlyAborted,
-  extend: () => extend5,
+  extend: () => extend,
   finalizeIssue: () => finalizeIssue,
   floatSafeRemainder: () => floatSafeRemainder,
   getElementAtPath: () => getElementAtPath,
@@ -258313,7 +257445,7 @@ __export(util_exports, {
   hexToUint8Array: () => hexToUint8Array,
   hide: () => hide,
   installLazyProp: () => installLazyProp,
-  isObject: () => isObject2,
+  isObject: () => isObject,
   isPlainObject: () => isPlainObject,
   issue: () => issue,
   joinValues: () => joinValues,
@@ -258325,7 +257457,7 @@ __export(util_exports, {
   nullish: () => nullish,
   numKeys: () => numKeys,
   objectClone: () => objectClone,
-  omit: () => omit2,
+  omit: () => omit,
   optionalKeys: () => optionalKeys,
   own: () => own,
   parsedType: () => parsedType,
@@ -258537,7 +257669,7 @@ function slugify(input2) {
 }
 var captureStackTrace = "captureStackTrace" in Error ? Error.captureStackTrace : (..._args) => {
 };
-function isObject2(data2) {
+function isObject(data2) {
   return typeof data2 === "object" && data2 !== null && !Array.isArray(data2);
 }
 var allowsEval = /* @__PURE__ */ cached(() => {
@@ -258556,7 +257688,7 @@ var allowsEval = /* @__PURE__ */ cached(() => {
   }
 });
 function isPlainObject(o) {
-  if (isObject2(o) === false)
+  if (isObject(o) === false)
     return false;
   const ctor = o.constructor;
   if (ctor === void 0)
@@ -258564,7 +257696,7 @@ function isPlainObject(o) {
   if (typeof ctor !== "function")
     return true;
   const prot = ctor.prototype;
-  if (isObject2(prot) === false)
+  if (isObject(prot) === false)
     return false;
   if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
     return false;
@@ -258748,7 +257880,7 @@ function maskedKeys(schema, mask) {
   }
   return keys;
 }
-function omit2(schema, mask) {
+function omit(schema, mask) {
   const currDef = schema._zod.def;
   const checks = currDef.checks;
   const hasChecks = checks && checks.length > 0;
@@ -258760,7 +257892,7 @@ function omit2(schema, mask) {
   mirrorShape(newShape, schema, Reflect.ownKeys(sourceShape(schema)).filter((key) => !omitted.has(key)));
   return clone(schema, mergeDefs(currDef, { shape: newShape, checks: [] }));
 }
-function extend5(schema, shape) {
+function extend(schema, shape) {
   if (!isPlainObject(shape)) {
     throw new Error("Invalid input to extend: expected a plain object");
   }
@@ -259446,7 +258578,7 @@ var _parse = (_Err) => {
   };
   return fn;
 };
-var parse8 = /* @__PURE__ */ _parse($ZodRealError);
+var parse = /* @__PURE__ */ _parse($ZodRealError);
 var _parseAsync = (_Err) => {
   const fn = async (schema, value, _ctx, params) => {
     const ctx = _ctx ? { ..._ctx, async: true } : { async: true };
@@ -260276,7 +259408,7 @@ ${content.join("\n")}
 };
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/core/versions.js
-var version3 = {
+var version = {
   major: 4,
   minor: 6,
   patch: 5
@@ -260288,7 +259420,7 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   inst ?? (inst = {});
   inst._zod.def = def;
   inst._zod.bag = inst._zod.bag || {};
-  inst._zod.version = version3;
+  inst._zod.version = version;
   const defChecks = inst._zod.def.checks;
   const checks = inst._zod.traits.has("$ZodCheck") ? [inst, ...defChecks ?? []] : defChecks?.length ? [...defChecks] : [];
   for (const ch of checks) {
@@ -261212,7 +260344,7 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
     }
     return propValues;
   });
-  const isObject3 = isObject2;
+  const isObject3 = isObject;
   const catchall = def.catchall;
   let value;
   const memo2 = globalConfig.memoizer;
@@ -261356,7 +260488,7 @@ var $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) =>
     return doc.compile();
   };
   let fastpass;
-  const isObject3 = isObject2;
+  const isObject3 = isObject;
   const jit = !globalConfig.jitless;
   const allowsEval2 = allowsEval;
   const fastEnabled = jit && allowsEval2.value;
@@ -261573,7 +260705,7 @@ var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnio
   const disc = cached(() => discriminatorMap(def));
   inst._zod.parse = (payload, ctx) => {
     const input2 = payload.value;
-    if (!isObject2(input2)) {
+    if (!isObject(input2)) {
       payload.issues.push({
         code: "invalid_type",
         expected: "object",
@@ -262571,10 +261703,10 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
       throw new Error("implement() must be called with a function");
     }
     return Object.defineProperty(function(...args) {
-      const parsedArgs = inst._def.input ? parse8(inst._def.input, args) : args;
+      const parsedArgs = inst._def.input ? parse(inst._def.input, args) : args;
       const result = Reflect.apply(func, this, parsedArgs);
       if (inst._def.output) {
-        return parse8(inst._def.output, result);
+        return parse(inst._def.output, result);
       }
       return result;
     }, "_zod", { value: inst._zod, enumerable: false });
@@ -270613,7 +269745,7 @@ function compileValidator(schema, parser) {
     return parser;
   }
 }
-function compile2(schema, options) {
+function compile(schema, options) {
   try {
     const parser = compileFn(schema);
     const clone2 = withParser(schema, parser);
@@ -273168,7 +272300,7 @@ function describe(description) {
   return ch;
 }
 // @__NO_SIDE_EFFECTS__
-function meta13(metadata) {
+function meta(metadata) {
   const ch = new $ZodCheck({ check: "meta" });
   ch._zod.onattach = [
     (inst) => {
@@ -274721,7 +273853,7 @@ __export(schemas_exports2, {
   float64: () => float64,
   function: () => _function,
   guid: () => guid2,
-  hash: () => hash2,
+  hash: () => hash,
   hex: () => hex2,
   hostname: () => hostname2,
   httpUrl: () => httpUrl,
@@ -274739,12 +273871,12 @@ __export(schemas_exports2, {
   keyof: () => keyof,
   ksuid: () => ksuid2,
   lazy: () => lazy,
-  literal: () => literal2,
+  literal: () => literal,
   looseObject: () => looseObject,
   looseRecord: () => looseRecord,
   mac: () => mac2,
   map: () => map,
-  meta: () => meta14,
+  meta: () => meta2,
   nan: () => nan,
   nanoid: () => nanoid2,
   nativeEnum: () => nativeEnum,
@@ -274764,7 +273896,7 @@ __export(schemas_exports2, {
   readonly: () => readonly,
   record: () => record,
   refine: () => refine,
-  set: () => set2,
+  set: () => set,
   strictObject: () => strictObject,
   string: () => string2,
   stringFormat: () => stringFormat,
@@ -274873,7 +274005,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, void 0
 });
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/parse.js
-var parse9 = /* @__PURE__ */ _parse(ZodRealError);
+var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
 var safeParseAsync2 = /* @__PURE__ */ _safeParseAsync(ZodRealError);
@@ -275010,7 +274142,7 @@ var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
     util_exports.own(this, "~standard", value);
   },
   parse: function _parse2(data2, params) {
-    return parse9(this, data2, params, { callee: _parse2 });
+    return parse2(this, data2, params, { callee: _parse2 });
   },
   parseAsync: async function _parseAsync2(data2, params) {
     return await parseAsync2(this, data2, params, { callee: _parseAsync2 });
@@ -275421,7 +274553,7 @@ function hex2(_params) {
 function currencyCode2(_params) {
   return _stringFormat(ZodCustomStringFormat, "currency_code", currencyCode, _params);
 }
-function hash2(alg, params) {
+function hash(alg, params) {
   const enc = params?.enc ?? "hex";
   const format3 = `${alg}_${enc}`;
   const regex = regexes_exports[format3];
@@ -275928,7 +275060,7 @@ var ZodSet = /* @__PURE__ */ $constructor("ZodSet", (inst, def) => {
   inst.max = (...args) => inst.check(_maxSize(...args));
   inst.size = (...args) => inst.check(_size(...args));
 });
-function set2(valueType, params) {
+function set(valueType, params) {
   return new ZodSet({
     type: "set",
     valueType,
@@ -276002,7 +275134,7 @@ var ZodLiteral = /* @__PURE__ */ $constructor("ZodLiteral", (inst, def) => {
     }
   });
 });
-function literal2(value, params) {
+function literal(value, params) {
   return new ZodLiteral({
     type: "literal",
     values: Array.isArray(value) ? value : [value],
@@ -276302,7 +275434,7 @@ function superRefine(fn, params) {
   return _superRefine(fn, params);
 }
 var describe2 = describe;
-var meta14 = meta13;
+var meta2 = meta;
 var ZodInstanceOf = /* @__PURE__ */ $constructor("ZodInstanceOf", (inst, def) => {
   ZodCustom.init(inst, def);
 }, {
@@ -277442,7 +276574,951 @@ var diagramGraphSchema = external_exports.object({
   edges: external_exports.array(diagramEdgeSchema).readonly()
 }).strict();
 
-// src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts
+// src/shared/node/path.ts
+import { isAbsolute, relative, sep } from "path";
+function toPosixPath(path2) {
+  return path2.split(sep).join("/");
+}
+function isPathInside(parentPath, candidatePath) {
+  const relativePath = relative(parentPath, candidatePath);
+  return relativePath === "" || relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath);
+}
+function isMissingPathError(error62) {
+  return error62 instanceof Error && "code" in error62 && error62.code === "ENOENT";
+}
+
+// src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts
+import { lstat, mkdtemp, realpath, rm, writeFile as writeFile2 } from "fs/promises";
+import { tmpdir } from "os";
+import { dirname as dirname6, join as join14, resolve as resolve5 } from "path";
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/format.mjs
+init_assert_validity();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/normalize.mjs
+init_helpers();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/defaults.mjs
+var defaults_default = {
+  validate: false,
+  maxDepth: 0,
+  moduleSystems: ["es6", "cjs", "tsd", "amd"],
+  detectJSDocImports: false,
+  detectProcessBuiltinModuleCalls: false,
+  skipAnalysisNotInRules: false,
+  tsPreCompilationDeps: false,
+  preserveSymlinks: false,
+  combinedDependencies: false,
+  externalModuleResolutionStrategy: "node_modules",
+  exoticRequireStrings: []
+};
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/options/normalize.mjs
+init_array_util();
+var DEFAULT_CACHE_FOLDER = "node_modules/.cache/dependency-cruiser";
+var DEFAULT_CACHE_STRATEGY = "metadata";
+function normalizeFilterOption(pFilterOption) {
+  let lReturnValue = pFilterOption || {};
+  if (typeof lReturnValue === "string" || Array.isArray(lReturnValue)) {
+    lReturnValue = {
+      path: lReturnValue
+    };
+  }
+  return normalizeREProperties(lReturnValue, ["path"]);
+}
+function normalizeReporterOptions(pReporterOptions) {
+  const lNormalizeableOptions = [
+    "archi.collapsePattern",
+    "archi.filters.includeOnly.path",
+    "archi.filters.focus.path",
+    "archi.filters.exclude.path",
+    "dot.collapsePattern",
+    "dot.filters.includeOnly.path",
+    "dot.filters.focus.path",
+    "dot.filters.exclude.path",
+    "ddot.collapsePattern",
+    "ddot.filters.includeOnly.path",
+    "ddot.filters.focus.path",
+    "ddot.filters.exclude.path"
+  ];
+  return normalizeREProperties(pReporterOptions, lNormalizeableOptions);
+}
+function normalizeFilterOptions(pOptions, pFilterOptionKeys) {
+  const lReturnValue = { ...pOptions };
+  for (const lFilterOptionKey of pFilterOptionKeys) {
+    if (pOptions[lFilterOptionKey]) {
+      lReturnValue[lFilterOptionKey] = normalizeFilterOption(
+        lReturnValue[lFilterOptionKey]
+      );
+    }
+  }
+  return lReturnValue;
+}
+function normalizeCollapse(pCollapse) {
+  let lReturnValue = pCollapse;
+  const lOneOrMoreNonSlashes = "[^/]+";
+  const lFolderPattern = `${lOneOrMoreNonSlashes}/`;
+  const lFolderBelowNodeModules = `node_modules/${lOneOrMoreNonSlashes}`;
+  const lSingleDigitRe = /^\d$/;
+  if (typeof pCollapse === "number" || lSingleDigitRe.test(pCollapse)) {
+    lReturnValue = `${lFolderBelowNodeModules}|^${lFolderPattern.repeat(
+      Number.parseInt(pCollapse, 10)
+    )}`;
+  }
+  return lReturnValue;
+}
+function normalizeFocusDepth(pFormatOptions) {
+  const lFormatOptions = structuredClone(pFormatOptions);
+  if (Object.hasOwn(lFormatOptions, "focusDepth")) {
+    if (lFormatOptions?.focus) {
+      lFormatOptions.focus.depth = Number.parseInt(
+        lFormatOptions.focusDepth,
+        10
+      );
+    }
+    delete lFormatOptions.focusDepth;
+  }
+  return lFormatOptions;
+}
+function hasMetricsRule(pRule) {
+  return Object.hasOwn(pRule?.to ?? {}, "moreUnstable") || (pRule?.scope ?? "module") === "folder";
+}
+function ruleSetHasMetricsRule(pRuleSet) {
+  const lRuleSet = pRuleSet || {};
+  return (lRuleSet.forbidden || []).some(hasMetricsRule) || (lRuleSet.allowed || []).some(hasMetricsRule);
+}
+function getReporterSection(pOutputType) {
+  return ["x-dot-webpage", "dot-webpage"].includes(pOutputType) ? "dot" : pOutputType;
+}
+function reporterShowsMetrics(pOptions) {
+  return (pOptions.reporterOptions?.[getReporterSection(pOptions?.outputType)]?.showMetrics ?? false) === true;
+}
+function shouldCalculateMetrics(pOptions) {
+  return pOptions.metrics || pOptions.outputType === "metrics" || reporterShowsMetrics(pOptions) || ruleSetHasMetricsRule(pOptions.ruleSet);
+}
+function normalizeCacheOptions(pCacheOptions) {
+  let lNormalizedCacheOptions = pCacheOptions;
+  if (typeof pCacheOptions === "string") {
+    lNormalizedCacheOptions = {
+      folder: pCacheOptions
+    };
+  }
+  if (pCacheOptions === true) {
+    lNormalizedCacheOptions = {};
+  }
+  return {
+    folder: DEFAULT_CACHE_FOLDER,
+    strategy: DEFAULT_CACHE_STRATEGY,
+    ...lNormalizedCacheOptions
+  };
+}
+function normalizeCruiseOptions(pOptions, pFileAndDirectoryArray = []) {
+  let lReturnValue = {
+    baseDir: process.cwd(),
+    ...defaults_default,
+    ...pOptions,
+    args: pFileAndDirectoryArray.join(" ")
+  };
+  lReturnValue.maxDepth = Number.parseInt(lReturnValue.maxDepth, 10);
+  lReturnValue.moduleSystems = uniq(lReturnValue.moduleSystems);
+  if (Object.hasOwn(lReturnValue, "collapse")) {
+    lReturnValue.collapse = normalizeCollapse(lReturnValue.collapse);
+  }
+  lReturnValue.doNotFollow = normalizeFilterOption(lReturnValue.doNotFollow);
+  lReturnValue.exclude = normalizeFilterOption(lReturnValue.exclude);
+  lReturnValue.extraExtensionsToScan = lReturnValue.extraExtensionsToScan || [];
+  lReturnValue = normalizeFilterOptions(lReturnValue, [
+    "focus",
+    "includeOnly",
+    "reaches",
+    "highlight"
+  ]);
+  lReturnValue.exoticRequireStrings = uniq(lReturnValue.exoticRequireStrings);
+  if (lReturnValue.reporterOptions) {
+    lReturnValue.reporterOptions = normalizeReporterOptions(
+      lReturnValue.reporterOptions
+    );
+  }
+  lReturnValue.metrics = shouldCalculateMetrics(pOptions);
+  if (lReturnValue.cache) {
+    lReturnValue.cache = normalizeCacheOptions(lReturnValue.cache);
+  }
+  if (lReturnValue.detectJSDocImports) {
+    lReturnValue.parser = "tsc";
+  }
+  return normalizeFocusDepth(lReturnValue);
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
+init_dependency_cruiser_reporters();
+await init_summarize();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/filter-bank.mjs
+init_add_focus();
+init_indexed_module_graph();
+init_match_facade();
+function includeOnly(pModules, pIncludeFilter) {
+  return pIncludeFilter.path ? pModules.filter((pModule) => moduleMatchesFilter(pModule, pIncludeFilter)).map((pModule) => ({
+    ...pModule,
+    dependencies: pModule.dependencies.filter(
+      (pDependency) => dependencyMatchesFilter(pDependency, pIncludeFilter)
+    )
+  })) : pModules;
+}
+function exclude(pModules, pExcludeFilter) {
+  return pExcludeFilter.path ? pModules.filter((pModule) => !moduleMatchesFilter(pModule, pExcludeFilter)).map((pModule) => ({
+    ...pModule,
+    dependencies: pModule.dependencies.filter(
+      (pDependency) => !dependencyMatchesFilter(pDependency, pExcludeFilter)
+    )
+  })) : pModules;
+}
+function filterReaches(pModules, pReachesFilter) {
+  const lModuleNamesToReach = /* @__PURE__ */ new Set();
+  for (const lModule of pModules) {
+    if (moduleMatchesFilter(lModule, pReachesFilter)) {
+      lModuleNamesToReach.add(lModule.source);
+    }
+  }
+  const lReachingModules = /* @__PURE__ */ new Set();
+  const lIndexedModules = new IndexedModuleGraph(pModules);
+  for (const lModuleToReach of lModuleNamesToReach) {
+    for (const lDependent of lIndexedModules.findTransitiveDependents(
+      lModuleToReach
+    )) {
+      lReachingModules.add(lDependent);
+    }
+  }
+  return pModules.filter(({ source }) => lReachingModules.has(source)).map((pModule) => ({
+    ...pModule,
+    matchesReaches: lModuleNamesToReach.has(pModule.source),
+    dependencies: pModule.dependencies.filter(
+      ({ resolved }) => lReachingModules.has(resolved)
+    )
+  }));
+}
+function tagHighlight(pModules, pHighlightFilter) {
+  return pModules.map((pModule) => ({
+    ...pModule,
+    matchesHighlight: moduleMatchesFilter(pModule, pHighlightFilter)
+  }));
+}
+function applyFilters(pModules, pFilters) {
+  if (pFilters) {
+    let lReturnValue = structuredClone(pModules);
+    if (pFilters.exclude) {
+      lReturnValue = exclude(lReturnValue, pFilters.exclude);
+    }
+    if (pFilters.includeOnly) {
+      lReturnValue = includeOnly(lReturnValue, pFilters.includeOnly);
+    }
+    if (pFilters.focus) {
+      lReturnValue = addFocus(lReturnValue, pFilters.focus);
+    }
+    if (pFilters.reaches) {
+      lReturnValue = filterReaches(lReturnValue, pFilters.reaches);
+    }
+    if (pFilters.highlight) {
+      lReturnValue = tagHighlight(lReturnValue, pFilters.highlight);
+    }
+    return lReturnValue;
+  }
+  return pModules;
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-modules.mjs
+init_compare();
+init_array_util();
+function mergeModule(pLeftModule, pRightModule) {
+  return {
+    ...pLeftModule,
+    ...pRightModule,
+    dependencies: uniqBy(
+      pLeftModule.dependencies.concat(pRightModule.dependencies),
+      (pDependency) => pDependency.resolved
+    ),
+    rules: pLeftModule.rules.concat(pRightModule?.rules ?? []).sort(compareRules),
+    valid: pLeftModule.valid && pRightModule.valid,
+    consolidated: pLeftModule.consolidated || pRightModule.consolidated
+  };
+}
+function mergeModules(pSourceString, pModules) {
+  let lReturnValue = {
+    dependencies: [],
+    rules: [],
+    valid: true
+  };
+  for (const lModule of pModules) {
+    if (lModule.source === pSourceString) {
+      lReturnValue = mergeModule(lReturnValue, lModule);
+    }
+  }
+  return lReturnValue;
+}
+function consolidateModules(pModules) {
+  const lProcessed = /* @__PURE__ */ new Set();
+  const lReturnValue = [];
+  for (const lModule of pModules) {
+    if (!lProcessed.has(lModule.source)) {
+      lReturnValue.push(mergeModules(lModule.source, pModules));
+      lProcessed.add(lModule.source);
+    }
+  }
+  return lReturnValue;
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-module-dependencies.mjs
+init_compare();
+init_array_util();
+function mergeDependency(pLeftDependency, pRightDependency) {
+  return {
+    ...pLeftDependency,
+    ...pRightDependency,
+    dependencyTypes: uniq(
+      pLeftDependency.dependencyTypes.concat(pRightDependency.dependencyTypes)
+    ),
+    rules: pLeftDependency.rules.concat(pRightDependency?.rules ?? []).sort(compareRules),
+    valid: pLeftDependency.valid && pRightDependency.valid
+  };
+}
+function mergeDependencies(pResolvedName, pDependencies) {
+  let lReturnValue = {
+    dependencyTypes: [],
+    rules: [],
+    valid: true
+  };
+  for (const lDependency of pDependencies) {
+    if (lDependency.resolved === pResolvedName) {
+      lReturnValue = mergeDependency(lReturnValue, lDependency);
+    }
+  }
+  return lReturnValue;
+}
+function consolidateDependencies(pDependencies) {
+  const lProcessed = /* @__PURE__ */ new Set();
+  const lReturnValue = [];
+  for (const lDependency of pDependencies) {
+    if (!lProcessed.has(lDependency.resolved)) {
+      lReturnValue.push(mergeDependencies(lDependency.resolved, pDependencies));
+      lProcessed.add(lDependency.resolved);
+    }
+  }
+  return lReturnValue;
+}
+function consolidateModuleDependencies(pModule) {
+  return {
+    ...pModule,
+    dependencies: consolidateDependencies(pModule.dependencies)
+  };
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/consolidate-to-pattern.mjs
+init_regex_util();
+function squashDependencyToPattern(pCollapsePattern) {
+  return (pDependency) => {
+    const lCollapseMatch = getCachedRegExp(pCollapsePattern).exec(
+      pDependency.resolved
+    );
+    return {
+      ...pDependency,
+      resolved: lCollapseMatch ? lCollapseMatch[0] : pDependency.resolved
+    };
+  };
+}
+function determineConsolidatedness(pConsolidated, pCollapseMatch, pSource) {
+  let lReturnValue = false;
+  if (pConsolidated === true) {
+    lReturnValue = true;
+  } else {
+    lReturnValue = pCollapseMatch ? pCollapseMatch[0] !== pSource : false;
+  }
+  return lReturnValue;
+}
+function squashModuleToPattern(pCollapsePattern) {
+  return (pModule) => {
+    const lCollapseMatch = getCachedRegExp(pCollapsePattern).exec(
+      pModule.source
+    );
+    return {
+      ...pModule,
+      source: lCollapseMatch ? lCollapseMatch[0] : pModule.source,
+      consolidated: determineConsolidatedness(
+        pModule.consolidated,
+        lCollapseMatch,
+        pModule.source
+      ),
+      dependencies: pModule.dependencies.map(
+        squashDependencyToPattern(pCollapsePattern)
+      )
+    };
+  };
+}
+function consolidateToPattern(pModules, pCollapsePattern) {
+  return consolidateModules(
+    pModules.map(squashModuleToPattern(pCollapsePattern))
+  ).map(consolidateModuleDependencies);
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
+init_compare();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/graph-utl/strip-self-transitions.mjs
+function stripSelfTransitions(pModule) {
+  return {
+    ...pModule,
+    dependencies: pModule.dependencies.filter(
+      (pDependency) => pModule.source !== pDependency.resolved
+    )
+  };
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/report-wrap.mjs
+init_bus();
+function reSummarizeResults(pResult, pFormatOptions) {
+  let lModules = applyFilters(pResult.modules, pFormatOptions);
+  if (Object.hasOwn(pFormatOptions, "collapse")) {
+    lModules = consolidateToPattern(lModules, pFormatOptions.collapse).sort(compareModules).map(stripSelfTransitions);
+  }
+  return {
+    ...pResult,
+    summary: {
+      ...pResult.summary,
+      ...summarize(
+        lModules,
+        {
+          ...pResult.summary.optionsUsed,
+          ...pFormatOptions
+        },
+        (pResult.summary.optionsUsed.args || "").split(" "),
+        // TODO: apply filters to the folders too
+        pResult.folders
+      ),
+      environment: pResult.summary.environment
+    },
+    modules: lModules
+  };
+}
+function getReporterSection2(pOutputType) {
+  return ["x-dot-webpage", "dot-webpage"].includes(pOutputType) ? "dot" : pOutputType;
+}
+async function reportWrap(pResult, pFormatOptions) {
+  bus.debug("report: get");
+  const lReportFunction = await getReporter(pFormatOptions.outputType);
+  const lReportOptions = pResult.summary.optionsUsed?.reporterOptions?.[getReporterSection2(pFormatOptions.outputType)] ?? {};
+  bus.debug("report: execute");
+  return lReportFunction(
+    reSummarizeResults(pResult, pFormatOptions),
+    // passing format options here so reporters that read collapse patterns
+    // from the result take the one passed in the format options instead
+    Object.hasOwn(pFormatOptions, "collapse") ? { ...lReportOptions, collapsePattern: pFormatOptions.collapse } : lReportOptions
+  );
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/schema/cruise-result.validate.mjs
+var or = new RegExp("^plugin:[^:]+$", "u");
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/format.mjs
+init_utl();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/cruise.mjs
+init_assert_validity();
+init_bus();
+init_regex_util();
+var TOTAL_STEPS = 10;
+function c(pComplete, pTotal = TOTAL_STEPS) {
+  return { complete: pComplete / pTotal };
+}
+async function cruise(pFileAndDirectoryArray, pCruiseOptions, pResolveOptions, pTranspileOptions) {
+  bus.summary("startup: parse options", c(1));
+  const lCruiseOptionsValid = assertCruiseOptionsValid(pCruiseOptions);
+  const lCruiseOptions = normalizeCruiseOptions(
+    lCruiseOptionsValid,
+    pFileAndDirectoryArray
+  );
+  let lCache = null;
+  if (lCruiseOptions.cache) {
+    bus.summary(
+      `cache: check freshness with ${lCruiseOptions.cache.strategy}`,
+      c(2)
+    );
+    const { default: Cache2 } = await init_cache().then(() => cache_exports);
+    lCache = new Cache2(
+      lCruiseOptions.cache.strategy,
+      lCruiseOptions.cache.compress
+    );
+    const lCachedResults = await lCache.read(lCruiseOptions.cache.folder);
+    if (await lCache.canServeFromCache(lCruiseOptions, lCachedResults)) {
+      bus.summary("report: from cache", c(8));
+      return await reportWrap(lCachedResults, lCruiseOptions);
+    }
+  }
+  bus.summary("startup: import analytical modules", c(3));
+  const [
+    { default: normalizeRuleSet2 },
+    { default: assertRuleSetValid2 },
+    { default: normalizeFilesAndDirectories },
+    { default: normalizeResolveOptions2 },
+    { default: extract5 },
+    { default: analyze2 }
+  ] = await Promise.all([
+    // despite rule set parsing being behind an if, it's the 'normal' use case
+    // for dependency-cruiser, so import it unconditionally nonetheless
+    Promise.resolve().then(() => (init_normalize(), normalize_exports)),
+    Promise.resolve().then(() => (init_assert_validity2(), assert_validity_exports)),
+    Promise.resolve().then(() => (init_normalize2(), normalize_exports2)),
+    init_normalize3().then(() => normalize_exports3),
+    init_extract4().then(() => extract_exports),
+    init_analyze().then(() => analyze_exports)
+  ]);
+  if (lCruiseOptions.ruleSet) {
+    bus.summary("startup: parse rule set", c(4));
+    lCruiseOptions.ruleSet = normalizeRuleSet2(
+      assertRuleSetValid2(lCruiseOptions.ruleSet)
+    );
+  }
+  const lNormalizedFileAndDirectoryArray = normalizeFilesAndDirectories(
+    pFileAndDirectoryArray
+  );
+  bus.summary("startup: get resolve options", c(5));
+  const lNormalizedResolveOptions = await normalizeResolveOptions2(
+    pResolveOptions,
+    lCruiseOptions,
+    pTranspileOptions?.tsConfig
+  );
+  bus.summary("extract", c(6));
+  const lExtractionResult = extract5(
+    lNormalizedFileAndDirectoryArray,
+    lCruiseOptions,
+    lNormalizedResolveOptions,
+    pTranspileOptions
+  );
+  bus.summary("analyze", c(7));
+  const lCruiseResult = analyze2(
+    lExtractionResult,
+    lCruiseOptions,
+    lNormalizedFileAndDirectoryArray
+  );
+  if (lCruiseOptions.cache) {
+    bus.summary("cache: save", c(8));
+    await lCache.write(lCruiseOptions.cache.folder, lCruiseResult);
+  }
+  bus.summary("report", c(9));
+  const lResult = await reportWrap(lCruiseResult, lCruiseOptions);
+  bus.debug("end: clear regex cache");
+  clearRegExpCache();
+  return lResult;
+}
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/index.mjs
+await init_meta();
+await init_meta();
+
+// node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/config-utl/extract-ts-config.mjs
+init_dependency_cruiser_try_import();
+var import_meta18 = __toESM(require_meta(), 1);
+import { dirname as dirname5, resolve as resolve4 } from "path";
+var typescript6 = await tryImport(
+  "typescript",
+  import_meta18.default.supportedTranspilers.typescript
+);
+var FORMAT_DIAGNOSTICS_HOST = {
+  getCanonicalFileName(pFileName) {
+    let lReturnValue = pFileName.toLowerCase();
+    if (typescript6?.sys?.useCaseSensitiveFileNames ?? false) {
+      lReturnValue = pFileName;
+    }
+    return lReturnValue;
+  },
+  getCurrentDirectory() {
+    return process.cwd();
+  },
+  getNewLine() {
+    return "\n";
+  }
+};
+function extractTSConfig(pTSConfigFileName) {
+  let lReturnValue = {};
+  if (typescript6) {
+    const lConfig = typescript6.readConfigFile(
+      pTSConfigFileName,
+      typescript6.sys.readFile
+    );
+    if (typeof lConfig.error !== "undefined") {
+      throw new TypeError(
+        typescript6.formatDiagnostics([lConfig.error], FORMAT_DIAGNOSTICS_HOST)
+      );
+    }
+    lReturnValue = typescript6.parseJsonConfigFileContent(
+      lConfig.config,
+      typescript6.sys,
+      dirname5(resolve4(pTSConfigFileName)),
+      {},
+      pTSConfigFileName
+    );
+    if (lReturnValue.errors.length > 0) {
+      throw new Error(
+        typescript6.formatDiagnostics(
+          lReturnValue.errors,
+          FORMAT_DIAGNOSTICS_HOST
+        )
+      );
+    }
+  }
+  return lReturnValue;
+}
+
+// src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts
+var externalDependencyTypes = /* @__PURE__ */ new Set([
+  "npm",
+  "npm-bundled",
+  "npm-dev",
+  "npm-no-pkg",
+  "npm-optional",
+  "npm-peer",
+  "npm-unknown"
+]);
+var importConditionNames = ["node", "import", "default"];
+var requireConditionNames = ["node", "require", "default"];
+var typesConditionNames = ["types", "node", "import", "default"];
+var resolverExtensions = [
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".d.ts",
+  ".d.mts",
+  ".d.cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".json"
+];
+function packageNameFromSpecifier(specifier) {
+  if (specifier.startsWith("#") || specifier.startsWith(".") || specifier.startsWith("/")) return null;
+  if (specifier.startsWith("@")) {
+    const [scope, name2] = specifier.split("/");
+    return scope && name2 ? `${scope}/${name2}` : null;
+  }
+  const [name] = specifier.split("/");
+  return name || null;
+}
+function packageNameFromResolvedPath(resolvedPath) {
+  const segments = toPosixPath(resolvedPath).split("/");
+  const nodeModulesIndex = segments.lastIndexOf("node_modules");
+  if (nodeModulesIndex === -1) return null;
+  const firstSegment = segments.at(nodeModulesIndex + 1);
+  if (!firstSegment) return null;
+  if (!firstSegment.startsWith("@")) return firstSegment;
+  const secondSegment = segments.at(nodeModulesIndex + 2);
+  return secondSegment ? `${firstSegment}/${secondSegment}` : null;
+}
+function dependencyKind(dependency) {
+  return dependency.typeOnly || dependency.preCompilationOnly ? "type-only" : "runtime";
+}
+function isExternalDependency(dependency) {
+  return dependency.dependencyTypes.some((type) => externalDependencyTypes.has(type));
+}
+function isCoreDependency(dependency) {
+  return dependency.coreModule || dependency.dependencyTypes.includes("core");
+}
+async function resolveTsConfigPath(scopePath, tsConfigPath) {
+  const candidatePath = resolve5(scopePath, tsConfigPath ?? "tsconfig.json");
+  let canonicalPath;
+  try {
+    canonicalPath = await realpath(candidatePath);
+  } catch (error62) {
+    if (isMissingPathError(error62) && tsConfigPath === void 0) return void 0;
+    throw error62;
+  }
+  if (!isPathInside(scopePath, canonicalPath)) {
+    throw new Error(`TypeScript config must stay inside the base: ${tsConfigPath ?? "tsconfig.json"}`);
+  }
+  if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
+  return canonicalPath;
+}
+async function prepareTsConfig(tsConfigPath) {
+  if (!tsConfigPath) return { compilerOptions: void 0, fileName: void 0, temporaryDirectory: void 0 };
+  const compilerOptions = extractTSConfig(tsConfigPath);
+  if (compilerOptions.options.baseUrl || !compilerOptions.options.paths) {
+    return { compilerOptions, fileName: tsConfigPath, temporaryDirectory: void 0 };
+  }
+  const temporaryDirectory = await mkdtemp(join14(tmpdir(), "architecture-companion-tsconfig-"));
+  const compatibilityConfigPath = join14(temporaryDirectory, "tsconfig.json");
+  await writeFile2(
+    compatibilityConfigPath,
+    `${JSON.stringify(
+      {
+        compilerOptions: {
+          baseUrl: dirname6(tsConfigPath),
+          paths: compilerOptions.options.paths
+        }
+      },
+      null,
+      2
+    )}
+`
+  );
+  return {
+    compilerOptions: {
+      ...compilerOptions,
+      options: { ...compilerOptions.options, baseUrl: dirname6(tsConfigPath) }
+    },
+    fileName: compatibilityConfigPath,
+    temporaryDirectory
+  };
+}
+function readCruiseResult(output2) {
+  if (typeof output2 === "string") {
+    throw new Error("dependency-cruiser returned formatted output instead of graph data.");
+  }
+  return output2;
+}
+async function cruisePass(scopePath, sourcePaths, tsConfig, conditionNames, mainFields) {
+  const result = await cruise(
+    [...sourcePaths],
+    {
+      baseDir: scopePath,
+      detectJSDocImports: true,
+      doNotFollow: "(^|/)node_modules/",
+      progress: { type: "none" },
+      skipAnalysisNotInRules: true,
+      tsPreCompilationDeps: "specify",
+      ...tsConfig.fileName ? { tsConfig: { fileName: tsConfig.fileName } } : {}
+    },
+    {
+      conditionNames: [...conditionNames],
+      exportsFields: ["exports"],
+      extensions: [...resolverExtensions],
+      mainFields: [...mainFields],
+      mainFiles: ["index"]
+    },
+    tsConfig.compilerOptions ? { tsConfig: tsConfig.compilerOptions } : void 0
+  );
+  return readCruiseResult(result.output);
+}
+function dependencyKey(dependency) {
+  return JSON.stringify([
+    dependency.module,
+    dependency.moduleSystem,
+    dependency.dynamic,
+    dependency.exoticallyRequired,
+    dependency.typeOnly ?? false,
+    dependency.preCompilationOnly ?? false
+  ]);
+}
+function resolutionPreference(sourcePath, dependencies) {
+  if (dependencies.some((dependency) => dependencyKind(dependency) === "type-only")) {
+    return ["types", "import", "require"];
+  }
+  if (sourcePath.endsWith(".cts") || sourcePath.endsWith(".cjs")) return ["require", "import", "types"];
+  if (sourcePath.endsWith(".mts") || sourcePath.endsWith(".mjs")) return ["import", "require", "types"];
+  if (dependencies.some(({ moduleSystem }) => moduleSystem === "cjs")) return ["require", "import", "types"];
+  return ["import", "require", "types"];
+}
+function chooseDependency(sourcePath, candidates) {
+  const availableCandidates = Object.values(candidates).filter(
+    (candidate) => candidate !== void 0
+  );
+  const fallbackCandidate = availableCandidates.at(0);
+  if (!fallbackCandidate) throw new Error(`dependency-cruiser omitted dependency data for ${sourcePath}.`);
+  const preference = resolutionPreference(sourcePath, availableCandidates);
+  return preference.map((pass) => candidates[pass]).find((candidate) => candidate && !candidate.couldNotResolve) ?? preference.map((pass) => candidates[pass]).find((candidate) => candidate !== void 0) ?? fallbackCandidate;
+}
+function mergeCruiseResults(results) {
+  const modulesByPass = Object.fromEntries(
+    Object.entries(results).map(([pass, result]) => [
+      pass,
+      new Map(result.modules.map((module) => [module.source, module]))
+    ])
+  );
+  const sourcePaths = new Set(Object.values(results).flatMap(({ modules }) => modules.map(({ source }) => source)));
+  return [...sourcePaths].toSorted().map((sourcePath) => {
+    const baseModule = modulesByPass.import.get(sourcePath) ?? modulesByPass.require.get(sourcePath) ?? modulesByPass.types.get(sourcePath);
+    if (!baseModule) throw new Error(`dependency-cruiser omitted module data for ${sourcePath}.`);
+    const candidatesByKey = /* @__PURE__ */ new Map();
+    for (const pass of ["import", "require", "types"]) {
+      for (const dependency of modulesByPass[pass].get(sourcePath)?.dependencies ?? []) {
+        const key = dependencyKey(dependency);
+        candidatesByKey.set(key, { ...candidatesByKey.get(key), [pass]: dependency });
+      }
+    }
+    return {
+      ...baseModule,
+      dependencies: [...candidatesByKey.entries()].toSorted(([left], [right]) => left < right ? -1 : left > right ? 1 : 0).map(([, candidates]) => chooseDependency(sourcePath, candidates))
+    };
+  });
+}
+async function cruiseDependencies(scopePath, sourcePaths, tsConfigPath) {
+  const tsConfig = await prepareTsConfig(tsConfigPath);
+  try {
+    const importResult = await cruisePass(scopePath, sourcePaths, tsConfig, importConditionNames, [
+      "module",
+      "main",
+      "types",
+      "typings"
+    ]);
+    const requireResult = await cruisePass(scopePath, sourcePaths, tsConfig, requireConditionNames, [
+      "main",
+      "module",
+      "types",
+      "typings"
+    ]);
+    const typesResult = await cruisePass(scopePath, sourcePaths, tsConfig, typesConditionNames, [
+      "types",
+      "typings",
+      "module",
+      "main"
+    ]);
+    return mergeCruiseResults({ import: importResult, require: requireResult, types: typesResult });
+  } finally {
+    if (tsConfig.temporaryDirectory) await rm(tsConfig.temporaryDirectory, { recursive: true });
+  }
+}
+async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath) {
+  const sourceByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
+  const modules = await cruiseDependencies(
+    scopePath,
+    discoveredSources.map(({ relativePath }) => relativePath),
+    tsConfigPath
+  );
+  const analyzedModules = [];
+  for (const module of modules) {
+    let absoluteSourcePath;
+    try {
+      absoluteSourcePath = await realpath(resolve5(scopePath, module.source));
+    } catch (error62) {
+      if (isMissingPathError(error62)) continue;
+      throw error62;
+    }
+    if (!sourceByPath.has(absoluteSourcePath)) continue;
+    const dependencies = [];
+    for (const dependency of module.dependencies) {
+      if (dependency.couldNotResolve || isCoreDependency(dependency)) continue;
+      const kind = dependencyKind(dependency);
+      let localTargetPath;
+      try {
+        const canonicalResolvedPath = await realpath(resolve5(scopePath, dependency.resolved));
+        if (sourceByPath.has(canonicalResolvedPath)) localTargetPath = canonicalResolvedPath;
+      } catch (error62) {
+        if (!isMissingPathError(error62)) throw error62;
+      }
+      if (localTargetPath) {
+        dependencies.push({ kind, target: { type: "local-module", absolutePath: localTargetPath } });
+        continue;
+      }
+      if (!isExternalDependency(dependency)) continue;
+      const packageName = packageNameFromResolvedPath(dependency.resolved) ?? packageNameFromSpecifier(dependency.module);
+      if (packageName) {
+        dependencies.push({ kind, target: { type: "external-package", packageName } });
+      }
+    }
+    analyzedModules.push({ absolutePath: absoluteSourcePath, dependencies });
+  }
+  return analyzedModules;
+}
+
+// src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts
+var import_ignore2 = __toESM(require_ignore2(), 1);
+import { lstat as lstat2, readdir, readFile as readFile2, realpath as realpath2 } from "fs/promises";
+import { dirname as dirname7, extname as extname7, join as join15, relative as relative7, resolve as resolve6 } from "path";
+var sourceExtensions = [".tsx", ".mts", ".cts", ".ts", ".jsx", ".mjs", ".cjs", ".js"];
+var sourceExtensionSet = new Set(sourceExtensions);
+var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
+async function resolveScopePath(scopePath) {
+  const resolvedPath = await realpath2(resolve6(scopePath));
+  if (!(await lstat2(resolvedPath)).isDirectory()) throw new Error(`Base must be a directory: ${scopePath}`);
+  return resolvedPath;
+}
+async function resolveSourceRoots(scopePath, sourcePaths) {
+  if (sourcePaths.length === 0) throw new Error("At least one source path is required.");
+  return Promise.all(
+    sourcePaths.map(async (sourcePath) => {
+      const resolvedPath = await realpath2(resolve6(scopePath, sourcePath));
+      if (!isPathInside(scopePath, resolvedPath)) {
+        throw new Error(`Source path must stay inside the base: ${sourcePath}`);
+      }
+      return resolvedPath;
+    })
+  );
+}
+async function readIgnoreFileContents(ignoreFilePath) {
+  let contents;
+  try {
+    contents = await readFile2(ignoreFilePath, "utf8");
+  } catch (error62) {
+    if (isMissingPathError(error62)) return void 0;
+    throw error62;
+  }
+  return contents;
+}
+function addRules(rules, contents) {
+  return contents === void 0 ? rules : (0, import_ignore2.default)().add(rules).add(contents);
+}
+async function collectInheritedRules(scopePath, directoryPath) {
+  let rules = (0, import_ignore2.default)();
+  const directoryRelativePath = relative7(scopePath, directoryPath);
+  let currentPath = scopePath;
+  for (const segment of ["", ...directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : []]) {
+    if (segment) currentPath = join15(currentPath, segment);
+    rules = addRules(rules, await readIgnoreFileContents(join15(currentPath, ".gitignore")));
+  }
+  return rules;
+}
+function isPathIgnored(testRules, relativePath, isDirectory) {
+  return testRules.ignores(relativePath) || isDirectory && testRules.ignores(`${relativePath}/`);
+}
+async function collectSourceFiles(scopePath, sourcePaths, excludePatterns) {
+  const sourceRoots = await resolveSourceRoots(scopePath, sourcePaths);
+  const inlineRules = excludePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludePatterns]) : void 0;
+  const discoveredSources = /* @__PURE__ */ new Map();
+  const visitedDirectories = /* @__PURE__ */ new Set();
+  async function visitFile(resolvedPath) {
+    const relativePath = toPosixPath(relative7(scopePath, resolvedPath));
+    if (!sourceExtensionSet.has(extname7(relativePath))) return;
+    discoveredSources.set(resolvedPath, { absolutePath: resolvedPath, relativePath });
+  }
+  async function visitDirectory(directoryPath, inheritedRules) {
+    if (visitedDirectories.has(directoryPath)) return;
+    visitedDirectories.add(directoryPath);
+    const directoryRules = addRules(inheritedRules, await readIgnoreFileContents(join15(directoryPath, ".gitignore")));
+    const testRules = inlineRules ? (0, import_ignore2.default)().add(directoryRules).add(inlineRules) : directoryRules;
+    for (const entry of await readdir(directoryPath)) {
+      const canonicalPath = await realpath2(join15(directoryPath, entry));
+      if (!isPathInside(scopePath, canonicalPath)) {
+        const relativePath = toPosixPath(relative7(scopePath, join15(directoryPath, entry)));
+        throw new Error(`Source path resolves outside the base: ${relativePath}`);
+      }
+      const entryRelativePath = toPosixPath(relative7(scopePath, canonicalPath));
+      const entryStat = await lstat2(canonicalPath);
+      if (entryStat.isDirectory()) {
+        if (alwaysIgnoredDirectoryNames.has(entry)) continue;
+        if (isPathIgnored(testRules, entryRelativePath, true)) continue;
+        await visitDirectory(canonicalPath, directoryRules);
+        continue;
+      }
+      if (!entryStat.isFile()) continue;
+      if (isPathIgnored(testRules, entryRelativePath, false)) continue;
+      await visitFile(canonicalPath);
+    }
+  }
+  for (const sourceRoot of sourceRoots) {
+    const inheritedRules = sourceRoot === scopePath ? (0, import_ignore2.default)() : await collectInheritedRules(scopePath, dirname7(sourceRoot));
+    const rootStat = await lstat2(sourceRoot);
+    if (rootStat.isDirectory()) {
+      await visitDirectory(sourceRoot, inheritedRules);
+    } else if (rootStat.isFile()) {
+      await visitFile(sourceRoot);
+    }
+  }
+  const files = [...discoveredSources.values()].toSorted(
+    (left, right) => left.relativePath < right.relativePath ? -1 : left.relativePath > right.relativePath ? 1 : 0
+  );
+  if (files.length === 0) throw new Error("No JavaScript or TypeScript source files remained after filtering.");
+  return files;
+}
+
+// src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts
 function compareById(left, right) {
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
@@ -277463,11 +277539,11 @@ function dependencyEdgeId(source, target, kind) {
   return `dependency:${encodeURIComponent(source)}:${encodeURIComponent(target)}:${kind}`;
 }
 async function findLocalBoundary(scopePath, sourcePath) {
-  let currentPath = dirname7(sourcePath);
+  let currentPath = dirname8(sourcePath);
   while (isPathInside(scopePath, currentPath)) {
     try {
-      const manifest = JSON.parse(await readFile2(join15(currentPath, "package.json"), "utf8"));
-      const relativeRootPath = toPosixPath(relative7(scopePath, currentPath)) || ".";
+      const manifest = JSON.parse(await readFile3(join16(currentPath, "package.json"), "utf8"));
+      const relativeRootPath = toPosixPath(relative8(scopePath, currentPath)) || ".";
       return {
         kind: currentPath === scopePath ? "scope" : "package",
         name: typeof manifest.name === "string" && manifest.name ? manifest.name : relativeRootPath,
@@ -277478,7 +277554,7 @@ async function findLocalBoundary(scopePath, sourcePath) {
       if (!isMissingPathError(error62)) throw error62;
     }
     if (currentPath === scopePath) break;
-    currentPath = dirname7(currentPath);
+    currentPath = dirname8(currentPath);
   }
   return {
     kind: "scope",
@@ -277505,12 +277581,12 @@ async function buildLocalGrouping(scopePath, discoveredSources) {
         }
       });
     }
-    const relativeDirectoryPath = toPosixPath(relative7(boundary.rootPath, dirname7(absolutePath)));
+    const relativeDirectoryPath = toPosixPath(relative8(boundary.rootPath, dirname8(absolutePath)));
     let accumulatedDirectory = "";
     for (const segment of relativeDirectoryPath ? relativeDirectoryPath.split("/") : []) {
       accumulatedDirectory = accumulatedDirectory ? `${accumulatedDirectory}/${segment}` : segment;
       const scopeRelativeDirectory = toPosixPath(
-        relative7(scopePath, join15(boundary.rootPath, ...accumulatedDirectory.split("/")))
+        relative8(scopePath, join16(boundary.rootPath, ...accumulatedDirectory.split("/")))
       );
       const id = directoryGroupId(scopeRelativeDirectory);
       descriptorsById.set(id, {
@@ -277535,7 +277611,7 @@ async function buildLocalGrouping(scopePath, discoveredSources) {
   }
   return { groups, groupIdByFile };
 }
-async function buildGraph(scopePath, discoveredSources, analyzedModules) {
+async function buildDiagramGraph(scopePath, discoveredSources, analyzedModules) {
   const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
   const groups = new Map(localGrouping.groups.map((group) => [group.id, group]));
   const localNodeByPath = /* @__PURE__ */ new Map();
@@ -277592,127 +277668,49 @@ async function buildGraph(scopePath, discoveredSources, analyzedModules) {
     edges: [...edges.values()].toSorted(compareById)
   });
 }
-
-// src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts
-var import_ignore2 = __toESM(require_ignore2(), 1);
-import { lstat as lstat2, readdir, readFile as readFile3, realpath as realpath2 } from "fs/promises";
-import { dirname as dirname8, extname as extname7, join as join16, relative as relative8, resolve as resolve6 } from "path";
-var sourceExtensions = [".tsx", ".mts", ".cts", ".ts", ".jsx", ".mjs", ".cjs", ".js"];
-var sourceExtensionSet = new Set(sourceExtensions);
-var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
-async function resolveScopePath(scopePath) {
-  const resolvedPath = await realpath2(resolve6(scopePath));
-  if (!(await lstat2(resolvedPath)).isDirectory()) throw new Error(`Base must be a directory: ${scopePath}`);
-  return resolvedPath;
-}
-async function resolveSourceRoots(scopePath, sourcePaths) {
-  if (sourcePaths.length === 0) throw new Error("At least one source path is required.");
-  return Promise.all(
-    sourcePaths.map(async (sourcePath) => {
-      const resolvedPath = await realpath2(resolve6(scopePath, sourcePath));
-      if (!isPathInside(scopePath, resolvedPath)) {
-        throw new Error(`Source path must stay inside the base: ${sourcePath}`);
-      }
-      return resolvedPath;
-    })
-  );
-}
-async function readIgnoreFileContents(ignoreFilePath) {
-  let contents;
-  try {
-    contents = await readFile3(ignoreFilePath, "utf8");
-  } catch (error62) {
-    if (isMissingPathError(error62)) return void 0;
-    throw error62;
-  }
-  return contents;
-}
-function addRules(rules, contents) {
-  return contents === void 0 ? rules : (0, import_ignore2.default)().add(rules).add(contents);
-}
-async function collectInheritedRules(scopePath, directoryPath) {
-  let rules = (0, import_ignore2.default)();
-  const directoryRelativePath = relative8(scopePath, directoryPath);
-  let currentPath = scopePath;
-  for (const segment of ["", ...directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : []]) {
-    if (segment) currentPath = join16(currentPath, segment);
-    rules = addRules(rules, await readIgnoreFileContents(join16(currentPath, ".gitignore")));
-  }
-  return rules;
-}
-function isPathIgnored(testRules, relativePath, isDirectory) {
-  return testRules.ignores(relativePath) || isDirectory && testRules.ignores(`${relativePath}/`);
-}
-async function discoverSourceFiles(scopePath, sourcePaths, excludePatterns) {
-  const sourceRoots = await resolveSourceRoots(scopePath, sourcePaths);
-  const inlineRules = excludePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludePatterns]) : void 0;
-  const discoveredSources = /* @__PURE__ */ new Map();
-  const visitedDirectories = /* @__PURE__ */ new Set();
-  async function visitFile(resolvedPath) {
-    const relativePath = toPosixPath(relative8(scopePath, resolvedPath));
-    if (!sourceExtensionSet.has(extname7(relativePath))) return;
-    discoveredSources.set(resolvedPath, { absolutePath: resolvedPath, relativePath });
-  }
-  async function visitDirectory(directoryPath, inheritedRules) {
-    if (visitedDirectories.has(directoryPath)) return;
-    visitedDirectories.add(directoryPath);
-    const directoryRules = addRules(inheritedRules, await readIgnoreFileContents(join16(directoryPath, ".gitignore")));
-    const testRules = inlineRules ? (0, import_ignore2.default)().add(directoryRules).add(inlineRules) : directoryRules;
-    for (const entry of await readdir(directoryPath)) {
-      const canonicalPath = await realpath2(join16(directoryPath, entry));
-      if (!isPathInside(scopePath, canonicalPath)) {
-        const relativePath = toPosixPath(relative8(scopePath, join16(directoryPath, entry)));
-        throw new Error(`Source path resolves outside the base: ${relativePath}`);
-      }
-      const entryRelativePath = toPosixPath(relative8(scopePath, canonicalPath));
-      const entryStat = await lstat2(canonicalPath);
-      if (entryStat.isDirectory()) {
-        if (alwaysIgnoredDirectoryNames.has(entry)) continue;
-        if (isPathIgnored(testRules, entryRelativePath, true)) continue;
-        await visitDirectory(canonicalPath, directoryRules);
-        continue;
-      }
-      if (!entryStat.isFile()) continue;
-      if (isPathIgnored(testRules, entryRelativePath, false)) continue;
-      await visitFile(canonicalPath);
-    }
-  }
-  for (const sourceRoot of sourceRoots) {
-    const inheritedRules = sourceRoot === scopePath ? (0, import_ignore2.default)() : await collectInheritedRules(scopePath, dirname8(sourceRoot));
-    const rootStat = await lstat2(sourceRoot);
-    if (rootStat.isDirectory()) {
-      await visitDirectory(sourceRoot, inheritedRules);
-    } else if (rootStat.isFile()) {
-      await visitFile(sourceRoot);
-    }
-  }
-  const files = [...discoveredSources.values()].toSorted(
-    (left, right) => left.relativePath < right.relativePath ? -1 : left.relativePath > right.relativePath ? 1 : 0
-  );
-  if (files.length === 0) throw new Error("No JavaScript or TypeScript source files remained after filtering.");
-  return files;
-}
-
-// src/plugins/diagram-generators/js-module-dependency-graph/generator.ts
-async function generateJsModuleDependencyGraph(options) {
+async function buildModuleGraph(options) {
   const scopePath = await resolveScopePath(options.scopePath);
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
-  const files = await discoverSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);
-  const modules = await analyzeModuleDependencies(scopePath, files, tsConfigPath);
-  return buildGraph(scopePath, files, modules);
+  const discoveredSources = await collectSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);
+  const analyzedModules = await analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath);
+  return buildDiagramGraph(scopePath, discoveredSources, analyzedModules);
 }
+
+// src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts
+var usage = "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--exclude-path <glob> ...] <source-path>...";
 async function writeJsModuleDependencyGraph(options) {
-  const graph = await generateJsModuleDependencyGraph(options);
+  const graph = await buildModuleGraph(options);
   const temporaryDirectory = await mkdtemp2(join17(tmpdir2(), "architecture-companion-js-module-dependency-graph-"));
   const graphPath = join17(temporaryDirectory, "graph.json");
   await writeFile3(graphPath, `${JSON.stringify(graph, null, 2)}
 `);
   return graphPath;
 }
+async function executeJsModuleDependencyGraphCommand(args, environment) {
+  const { positionals, values } = parseArgs({
+    args: [...args],
+    allowPositionals: true,
+    options: {
+      base: { type: "string" },
+      "exclude-path": { type: "string", multiple: true },
+      tsconfig: { type: "string" }
+    },
+    strict: true
+  });
+  if (!values.base || positionals.length === 0) throw new Error(usage);
+  const graphPath = await environment.writeGraph({
+    scopePath: values.base,
+    sourcePaths: positionals,
+    ...values["exclude-path"] ? { exclude: values["exclude-path"] } : {},
+    ...values.tsconfig ? { tsConfigPath: values.tsconfig } : {}
+  });
+  environment.writeStdout(`${JSON.stringify({ graphPath })}
+`);
+}
 
-// src/plugins/diagram-generators/js-module-dependency-graph/generate.ts
+// src/plugins/diagram-generators/js-module-dependency-graph/run.ts
 try {
-  await executeGenerateJsModuleDependencyGraphCommand(process.argv.slice(2), {
+  await executeJsModuleDependencyGraphCommand(process.argv.slice(2), {
     writeGraph: writeJsModuleDependencyGraph,
     writeStdout: (output2) => process.stdout.write(output2)
   });
