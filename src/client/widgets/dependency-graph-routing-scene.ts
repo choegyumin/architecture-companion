@@ -464,11 +464,11 @@ export function createRoutingQuery(
   sources: readonly RoutingTerminal[];
   targets: readonly RoutingTerminal[];
 }> {
-  // A mixed group's aggregate rolls up exactly its loose direct nodes, so the
-  // endpoint resolves to their bundle instead of the outer group border.
-  const resolve = (elementId: string) => scene.bundles.get(elementId)?.id ?? elementId;
-  const sourceId = resolve(projection.sourceId);
-  const targetId = resolve(projection.targetId);
+  // Aggregate endpoints are always whole groups (or single outside nodes), so
+  // every corridor attaches to the group border. The loose-node bundles inside
+  // mixed groups stay routing obstacles only: no projection ever targets them.
+  const sourceId = projection.sourceId;
+  const targetId = projection.targetId;
   const exempt = new Set<string>();
   for (const id of [sourceId, targetId]) {
     for (let parent = scene.parents.get(id); parent; parent = scene.parents.get(parent)) exempt.add(parent);
