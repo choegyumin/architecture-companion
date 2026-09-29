@@ -1,5 +1,6 @@
-import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-diagram-layout";
+import { layoutElkLayeredDiagram, straightenLayeredEdges } from "@/features/diagram/_layout/elk-layered-diagram-layout";
 import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const diagramBase = {
   groups: [],
@@ -165,6 +166,188 @@ describe("ELK layered diagram layout", () => {
         id: "uses-payment-client",
         points: [expect.any(Object), expect.any(Object)],
       }),
+    ]);
+  });
+
+  it("keeps ELK routing and node placement when nudgeObstacleNodes is omitted", async () => {
+    const diagram = {
+      ...diagramBase,
+      nodes: [
+        { id: "source", type: "default", kind: "source", title: "Source" },
+        { id: "obstacle", type: "default", kind: "component", title: "Obstacle" },
+        { id: "target", type: "default", kind: "target", title: "Target" },
+      ],
+      edges: [
+        { id: "source-obstacle", type: "default", source: "source", target: "obstacle" },
+        { id: "obstacle-target", type: "default", source: "obstacle", target: "target" },
+        { id: "source-target", type: "default", source: "source", target: "target" },
+      ],
+    } satisfies DiagramGraph;
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 100, height: 100 }]));
+
+    const defaults = await layoutElkLayeredDiagram(diagram, nodeSizes);
+    const nudged = await layoutElkLayeredDiagram(diagram, nodeSizes, { nudgeObstacleNodes: true });
+
+    // The three-node column shares one x, so the long source-target sightline runs
+    // through the obstacle; the flag must move it off that line.
+    const defaultObstacleX = defaults.nodes.find(({ id }) => id === "obstacle")?.position.x;
+    expect(nudged.nodes.find(({ id }) => id === "obstacle")?.position.x).not.toBe(defaultObstacleX);
+    expect(nudged.edges.find(({ id }) => id === "source-target")?.points).toHaveLength(2);
+  });
+});
+
+function toStraightenedLayout(
+  nodes: ReadonlyArray<{ id: string; x: number; y: number; width: number; height: number; parentId?: string }>,
+  edges: ReadonlyArray<{ id: string }>,
+  groups: ReadonlyArray<{ id: string; x: number; y: number; width: number; height: number; parentId?: string }> = [],
+): DiagramLayout {
+  return {
+    nodes: nodes.map((node) => ({
+      id: node.id,
+      ...(node.parentId ? { parentId: node.parentId } : {}),
+      position: { x: node.x, y: node.y },
+      size: { width: node.width, height: node.height },
+    })),
+    groups: groups.map((group) => ({
+      id: group.id,
+      ...(group.parentId ? { parentId: group.parentId } : {}),
+      position: { x: group.x, y: group.y },
+      size: { width: group.width, height: group.height },
+    })),
+    edges: edges.map((edge) => ({
+      id: edge.id,
+      points: [
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+      ],
+    })),
+    initialView: { mode: "fit" },
+  };
+}
+
+function toStraightenedGraph(edgeSpecs: ReadonlyArray<{ id: string; source: string; target: string }>): DiagramGraph {
+  return {
+    groups: [],
+    nodes: [],
+    edges: edgeSpecs.map((edge) => ({ ...edge, type: "default" })),
+  } as unknown as DiagramGraph;
+}
+
+describe("straightenLayeredEdges", () => {
+  it("replaces a clear edge with a single border-to-border segment and leaves nodes in place", () => {
+    const layout = toStraightenedLayout(
+      [
+        { id: "source", x: 0, y: 0, width: 100, height: 100 },
+        { id: "target", x: 0, y: 600, width: 100, height: 100 },
+      ],
+      [{ id: "source-target" }],
+    );
+
+    const result = straightenLayeredEdges(
+      toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]),
+      layout,
+      "DOWN",
+    );
+
+    expect(result.edges).toEqual([
+      {
+        id: "source-target",
+        points: [
+          { x: 50, y: 100 },
+          { x: 50, y: 600 },
+        ],
+      },
+    ]);
+    expect(result.nodes.map(({ id, position }) => [id, position])).toEqual([
+      ["source", { x: 0, y: 0 }],
+      ["target", { x: 0, y: 600 }],
+    ]);
+  });
+
+  it("nudges an obstacle node clear of the sightline", () => {
+    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const layout = toStraightenedLayout(
+      [
+        { id: "source", x: 0, y: 0, width: 100, height: 100 },
+        { id: "obstacle", x: 0, y: 300, width: 100, height: 100 },
+        { id: "target", x: 0, y: 600, width: 100, height: 100 },
+      ],
+      [{ id: "source-target" }],
+    );
+
+    const result = straightenLayeredEdges(graph, layout, "DOWN");
+    const obstacle = result.nodes.find(({ id }) => id === "obstacle");
+
+    // The sightline runs at x = 50; the obstacle center starts on it, so it must
+    // move by half-width + clearance = 90.
+    expect(obstacle?.position.x).toBe(90);
+    expect(result.edges.find(({ id }) => id === "source-target")?.points).toEqual([
+      { x: 50, y: 100 },
+      { x: 50, y: 600 },
+    ]);
+  });
+
+  it("keeps a nudged node inside its parent group", () => {
+    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const layout = toStraightenedLayout(
+      [
+        { id: "source", x: 0, y: 0, width: 100, height: 100 },
+        { id: "obstacle", x: 0, y: 50, width: 100, height: 100, parentId: "group" },
+        { id: "target", x: 0, y: 600, width: 100, height: 100 },
+      ],
+      [{ id: "source-target" }],
+      [{ id: "group", x: 0, y: 250, width: 200, height: 300 }],
+    );
+
+    const result = straightenLayeredEdges(graph, layout, "DOWN");
+    const obstacle = result.nodes.find(({ id }) => id === "obstacle");
+
+    // Group spans x in [0, 200]; the widest allowed center is 200 - 16 - 50 = 134,
+    // so the requested 90px nudge clamps to 84.
+    expect(obstacle?.position.x).toBe(84);
+  });
+
+  it("nudges along the vertical axis for horizontal flow directions", () => {
+    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const layout = toStraightenedLayout(
+      [
+        { id: "source", x: 0, y: 0, width: 100, height: 100 },
+        { id: "obstacle", x: 300, y: 0, width: 100, height: 100 },
+        { id: "target", x: 600, y: 0, width: 100, height: 100 },
+      ],
+      [{ id: "source-target" }],
+    );
+
+    const result = straightenLayeredEdges(graph, layout, "RIGHT");
+    const obstacle = result.nodes.find(({ id }) => id === "obstacle");
+
+    expect(obstacle?.position.y).toBe(90);
+    expect(result.edges.find(({ id }) => id === "source-target")?.points).toEqual([
+      { x: 100, y: 50 },
+      { x: 600, y: 50 },
+    ]);
+  });
+
+  it("keeps edges it cannot resolve on their original points", () => {
+    const layout = toStraightenedLayout(
+      [{ id: "source", x: 0, y: 0, width: 100, height: 100 }],
+      [{ id: "source-target" }],
+    );
+
+    const result = straightenLayeredEdges(
+      toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]),
+      layout,
+      "DOWN",
+    );
+
+    expect(result.edges).toEqual([
+      {
+        id: "source-target",
+        points: [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+        ],
+      },
     ]);
   });
 });
