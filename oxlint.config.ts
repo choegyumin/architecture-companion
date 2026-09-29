@@ -203,10 +203,6 @@ export default defineConfig({
       specifier: require.resolve("eslint-plugin-simple-import-sort"),
     },
     {
-      name: "turbo",
-      specifier: require.resolve("eslint-plugin-turbo"),
-    },
-    {
       name: "boundaries",
       specifier: require.resolve("eslint-plugin-boundaries"),
     },
@@ -279,7 +275,6 @@ export default defineConfig({
     "no-empty": ["error", { allowEmptyCatch: true }],
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
-    "turbo/no-undeclared-env-vars": "warn",
     "import/first": "error",
     "import/newline-after-import": "error",
     "import/no-cycle": ["error", { ignoreExternal: false, ignoreTypes: false }],
