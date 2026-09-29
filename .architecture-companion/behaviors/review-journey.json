@@ -5,7 +5,7 @@
   "layout": {
     "id": "elk-layered",
     "options": {
-      "direction": "RIGHT"
+      "bezierEdges": true
     }
   },
   "links": [

@@ -4,7 +4,7 @@ const validBehavior = {
   id: "checkout",
   title: "Checkout workflow",
   generator: "built-in:freeform",
-  layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+  layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
   graph: {
     groups: [],
     nodes: [

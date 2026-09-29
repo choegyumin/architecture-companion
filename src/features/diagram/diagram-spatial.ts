@@ -18,6 +18,7 @@ export type DiagramLayoutNode = Readonly<{
 export type DiagramLayoutEdge = Readonly<{
   id: string;
   points: readonly DiagramLayoutPoint[];
+  routing?: "spline" | "bezier";
 }>;
 
 export type DiagramLayoutGroup = Readonly<{
