@@ -4,8 +4,20 @@ import { basename, dirname, join, relative } from "node:path";
 import { type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
-import type { AnalyzedModule, DependencyKind } from "./analyze-module-dependencies";
-import type { DiscoveredSourceFile } from "./discover-source-files";
+import {
+  type AnalyzedModule,
+  analyzeModuleDependencies,
+  type DependencyKind,
+  resolveTsConfigPath,
+} from "./analyze-module-dependencies";
+import { collectSourceFiles, type DiscoveredSourceFile, resolveScopePath } from "./collect-source-files";
+
+export type ModuleGraphOptions = Readonly<{
+  scopePath: string;
+  sourcePaths: readonly string[];
+  exclude?: readonly string[];
+  tsConfigPath?: string;
+}>;
 
 type LocalBoundary = Readonly<{
   kind: "package" | "scope";
@@ -145,7 +157,7 @@ async function buildLocalGrouping(
   return { groups, groupIdByFile };
 }
 
-export async function buildGraph(
+async function buildDiagramGraph(
   scopePath: string,
   discoveredSources: readonly DiscoveredSourceFile[],
   analyzedModules: readonly AnalyzedModule[],
@@ -211,4 +223,12 @@ export async function buildGraph(
     nodes: [...externalNodes.values(), ...nodes].toSorted(compareById),
     edges: [...edges.values()].toSorted(compareById),
   });
+}
+
+export async function buildModuleGraph(options: ModuleGraphOptions): Promise<DiagramGraph> {
+  const scopePath = await resolveScopePath(options.scopePath);
+  const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
+  const discoveredSources = await collectSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);
+  const analyzedModules = await analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath);
+  return buildDiagramGraph(scopePath, discoveredSources, analyzedModules);
 }

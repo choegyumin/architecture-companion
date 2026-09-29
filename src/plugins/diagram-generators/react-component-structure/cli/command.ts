@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { generateReactComponentStructureGraph, type GenerateReactComponentStructureOptions } from "./generator";
+import { buildComponentGraph, type ComponentGraphOptions } from "../analysis/build-component-graph";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
   [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
@@ -11,7 +11,7 @@ type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
 }>;
 
-type ParsedArguments = GenerateReactComponentStructureOptions;
+type ParsedArguments = ComponentGraphOptions;
 
 function readValue(args: readonly string[], index: number, option: string): string {
   const value = args.at(index + 1);
@@ -69,7 +69,7 @@ export async function executeReactComponentStructureCommand(
   environment: CommandEnvironment,
 ): Promise<string> {
   const options = parseArguments(args);
-  const graph = await generateReactComponentStructureGraph(options);
+  const graph = await buildComponentGraph(options);
   const resolvedOutputPath = join(
     await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")),
     "graph.json",

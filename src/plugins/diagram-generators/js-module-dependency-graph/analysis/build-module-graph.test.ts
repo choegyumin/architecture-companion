@@ -1,8 +1,8 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { generateJsModuleDependencyGraph, writeJsModuleDependencyGraph } from "./generator";
+import { buildModuleGraph } from "./build-module-graph";
 
 async function writeFixtureFile(rootPath: string, relativePath: string, content: string): Promise<void> {
   const filePath = join(rootPath, relativePath);
@@ -65,7 +65,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "dist/built.js", "export const built = true;\n");
       await writeFixtureFile(rootPath, ".gitignore", "*.test.ts\n*.generated.ts\ndist/\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src"],
         exclude: ["src/ignored.ts"],
@@ -135,7 +135,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "packages/nested/package.json", '{"name":"nested-package","type":"module"}\n');
       await writeFixtureFile(rootPath, "packages/nested/index.ts", "export const nested = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["root.ts", "src", "packages/nested"],
       });
@@ -182,7 +182,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/client/index.ts", "export const client = true;\n");
       await writeFixtureFile(rootPath, "src/server/index.ts", "export const server = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src/index.ts", "src/client", "src/server"],
       });
@@ -217,7 +217,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "scripts/build.ts", "export const build = true;\n");
       await writeFixtureFile(rootPath, "src/index.ts", "export const source = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src", "scripts"],
       });
@@ -251,7 +251,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "packages/nested/index.ts", "export const index = true;\n");
       await writeFixtureFile(rootPath, "packages/nested/lib/value.ts", "export const value = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["packages/nested"],
       });
@@ -283,7 +283,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/index.ts", 'import { aliased } from "@/aliased";\nexport { aliased };\n');
       await writeFixtureFile(rootPath, "src/aliased.ts", "export const aliased = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src"],
         tsConfigPath: "tsconfig.json",
@@ -339,7 +339,7 @@ describe("JavaScript module dependency graph generator", () => {
         'const required = require("require-condition-package");\nexport { required };\n',
       );
 
-      const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+      const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
       const externalNodeIds = graph.nodes
         .filter(({ kind }) => kind === "External package")
         .map(({ id }) => id)
@@ -370,7 +370,7 @@ describe("JavaScript module dependency graph generator", () => {
       await chmod(join(rootPath, "dist"), 0o000);
 
       try {
-        const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["."] });
+        const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["."] });
         expect(graph.nodes.filter(({ id }) => id.startsWith("file:"))).toEqual([
           expect.objectContaining({ id: "file:src/index.ts" }),
         ]);
@@ -386,7 +386,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "dist/built.js", "export const built = true;\n");
       await writeFixtureFile(rootPath, "dist/nested.js", "export const nested = true;\n");
 
-      const namedFile = await generateJsModuleDependencyGraph({
+      const namedFile = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["dist/built.js"],
       });
@@ -394,7 +394,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       // A named directory root is not filtered itself, but gitignore's
       // parent-directory inheritance still applies to its descendants.
-      await expect(generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["dist"] })).rejects.toThrow(
+      await expect(buildModuleGraph({ scopePath: rootPath, sourcePaths: ["dist"] })).rejects.toThrow(
         "No JavaScript or TypeScript source files remained after filtering.",
       );
     });
@@ -408,7 +408,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/generated/helper.ts", "export const helper = true;\n");
       await writeFixtureFile(rootPath, "src/other.ts", "export const other = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src"],
         exclude: ["!src/legacy.ts", "src/other.ts"],
@@ -424,7 +424,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
       await writeFixtureFile(rootPath, "src/local/helper.ts", "export const helper = true;\n");
 
-      const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+      const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
 
       expect(graph.nodes.map(({ id }) => id)).toEqual(["file:src/index.ts"]);
     });
@@ -479,7 +479,7 @@ describe("JavaScript module dependency graph generator", () => {
         ].join("\n"),
       );
 
-      const graph = await generateJsModuleDependencyGraph({
+      const graph = await buildModuleGraph({
         scopePath: rootPath,
         sourcePaths: ["src"],
         tsConfigPath: "tsconfig.json",
@@ -510,7 +510,7 @@ describe("JavaScript module dependency graph generator", () => {
       );
       await writeFixtureFile(rootPath, "src/types.js", "export {};\n");
 
-      const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+      const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
 
       expect(graph.edges).toContainEqual(
         expect.objectContaining({
@@ -534,11 +534,11 @@ describe("JavaScript module dependency graph generator", () => {
         await symlink(join(outsideRoot, "tsconfig.json"), join(rootPath, "tsconfig.json"));
 
         await expect(
-          generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"], tsConfigPath: "tsconfig.json" }),
+          buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"], tsConfigPath: "tsconfig.json" }),
         ).rejects.toThrow("TypeScript config must stay inside the base");
 
         await rm(join(rootPath, "tsconfig.json"));
-        await expect(generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] })).rejects.toThrow(
+        await expect(buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] })).rejects.toThrow(
           "Source path resolves outside the base",
         );
       } finally {
@@ -554,7 +554,7 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/a.ts->file:src/b.ts", 'import "../c.js";\n');
       await writeFixtureFile(rootPath, "src/c.ts", "export {};\n");
 
-      const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+      const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
       const collidingEdges = graph.edges.filter(({ source }) =>
         ["file:src/a.ts", "file:src/a.ts->file:src/b.ts"].includes(source),
       );
@@ -587,7 +587,7 @@ describe("JavaScript module dependency graph generator", () => {
       const changeWorkingDirectory = vi.spyOn(process, "chdir");
 
       try {
-        await generateJsModuleDependencyGraph({
+        await buildModuleGraph({
           scopePath: rootPath,
           sourcePaths: ["src"],
           tsConfigPath: "tsconfig.json",
@@ -596,33 +596,6 @@ describe("JavaScript module dependency graph generator", () => {
       } finally {
         changeWorkingDirectory.mockRestore();
       }
-    });
-  });
-
-  it("returns deterministic graph data and writes only the graph candidate to a temporary file", async () => {
-    await withFixture(async (rootPath) => {
-      await writeFixtureFile(rootPath, "src/index.js", 'import { value } from "./value.js";\nexport { value };\n');
-      await writeFixtureFile(rootPath, "src/value.js", "export const value = 1;\n");
-      const options = { scopePath: rootPath, sourcePaths: ["src"] } as const;
-
-      const [firstGraph, secondGraph] = await Promise.all([
-        generateJsModuleDependencyGraph(options),
-        generateJsModuleDependencyGraph(options),
-      ]);
-      const graphPath = await writeJsModuleDependencyGraph(options);
-      const writtenGraph = JSON.parse(await readFile(graphPath, "utf8"));
-
-      expect(secondGraph).toEqual(firstGraph);
-      expect(writtenGraph).toEqual(firstGraph);
-      expect(writtenGraph).toEqual({
-        groups: expect.any(Array),
-        nodes: expect.any(Array),
-        edges: expect.any(Array),
-      });
-      expect(writtenGraph).not.toHaveProperty("id");
-      expect(writtenGraph).not.toHaveProperty("title");
-      expect(writtenGraph).not.toHaveProperty("generator");
-      expect(writtenGraph).not.toHaveProperty("layout");
     });
   });
 });

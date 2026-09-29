@@ -1,11 +1,10 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 
-import { executeReactComponentStructureCommand } from "./command";
-import { generateReactComponentStructureGraph } from "./generator";
+import { buildComponentGraph } from "./build-component-graph";
 
 async function withFixture(
   files: Readonly<Record<string, string>>,
@@ -84,7 +83,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(graph.nodes.every((node) => !("kind" in node))).toBe(true);
@@ -121,7 +120,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Frame", kind: "direct-render", label: undefined },
@@ -154,8 +153,8 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const first = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
-        const second = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const first = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const second = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         const contentId = first.nodes.find(({ title }) => title === "Content")?.id;
         const relationship = first.edges.find(({ target }) => target === contentId);
         const repeatedRelationship = second.edges.find(({ target }) => target === contentId);
@@ -193,7 +192,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Frame", kind: "direct-render", label: undefined },
@@ -220,7 +219,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
@@ -255,7 +254,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Layout", kind: "direct-render", label: undefined },
@@ -301,7 +300,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual([
           "App",
@@ -370,7 +369,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
@@ -436,7 +435,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.some(({ title }) => title === "darkTheme")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
@@ -501,7 +500,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.some(({ title }) => title === "format")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
@@ -541,7 +540,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
@@ -589,7 +588,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
@@ -652,7 +651,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
@@ -718,7 +717,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
@@ -795,7 +794,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
@@ -836,7 +835,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App"]);
         expect(graph.edges).toEqual([]);
@@ -861,7 +860,7 @@ describe("React component structure generator", () => {
         "src/child.tsx": `export function Child() { return <main />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title)).toEqual(["Child"]);
         expect(graph.edges).toEqual([]);
@@ -879,7 +878,7 @@ describe("React component structure generator", () => {
         "src/child.tsx": `export function Child() { return <main />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
         expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
@@ -917,8 +916,8 @@ describe("React component structure generator", () => {
         "src/tsx-component.tsx": `export function TsxComponent() { return <div />; }`,
       },
       async (scopePath) => {
-        const first = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
-        const second = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const first = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const second = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(second).toEqual(first);
         expect(first.nodes.map(({ title }) => title).toSorted()).toEqual([
@@ -955,8 +954,8 @@ describe("React component structure generator", () => {
         "src/panel.tsx": `export function Panel() { return <section />; }`,
       },
       async (scopePath) => {
-        const first = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
-        const second = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const first = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const second = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         const appId = "component:src/app.tsx#App";
         const defaultButtonId = "component:src/button.tsx#default";
         const namedButtonId = "component:src/button.tsx#Button";
@@ -995,7 +994,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         const defaultPageId = "component:src/profile-page.tsx#default";
 
         expect(graph.nodes.filter(({ title }) => title === "ProfilePage")).toHaveLength(2);
@@ -1027,7 +1026,7 @@ describe("React component structure generator", () => {
         "src/panel.jsx": `export function Panel() { return <section />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes).toContainEqual(
           expect.objectContaining({ id: "component:src/dialog.jsx#default", title: "Dialog" }),
@@ -1048,7 +1047,7 @@ describe("React component structure generator", () => {
         "src/not-a-function.ts": `export default function () { return 1; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
       },
@@ -1064,7 +1063,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["component:src/button.tsx#default"],
@@ -1086,7 +1085,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        await expect(generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+        await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
           "Duplicate React component identity: component:src/card.tsx#Card",
         );
       },
@@ -1122,7 +1121,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "QuotedLayout", kind: "direct-render", label: undefined },
@@ -1152,7 +1151,7 @@ describe("React component structure generator", () => {
         "src/index.ts": `export { Button as RenamedButton } from "./button";`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button"]);
         expect(edgeFacts(graph)).toEqual([
@@ -1177,7 +1176,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         const external = graph.nodes.find(({ title }) => title === "Button");
 
         expect(external).toMatchObject({ id: "external:ui-kit#Button", title: "Button" });
@@ -1207,7 +1206,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual([
           "component:src/app.tsx#App",
@@ -1239,7 +1238,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual([
           "component:src/app.tsx#App",
@@ -1264,7 +1263,7 @@ describe("React component structure generator", () => {
         "src/second-barrel.ts": `export { PrimaryButton as ActionButton } from "./first-barrel";`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
@@ -1285,7 +1284,7 @@ describe("React component structure generator", () => {
         "src/barrel.ts": `export * from "ui-kit";`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
@@ -1310,7 +1309,7 @@ describe("React component structure generator", () => {
         "src/forward-default.ts": `export { default } from "ui-kit";`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
@@ -1338,7 +1337,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes).toContainEqual(
           expect.objectContaining({ id: "external:ui-kit#Tabs.Root", title: "Tabs.Root" }),
@@ -1392,7 +1391,7 @@ describe("React component structure generator", () => {
         "src/content.tsx": `export function Content() { return <main />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
@@ -1422,7 +1421,7 @@ describe("React component structure generator", () => {
         "src/child.tsx": `export function Child() { return <main />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
         expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
@@ -1438,10 +1437,10 @@ describe("React component structure generator", () => {
         "src/skipped.tsx": `export function Skipped() { return <div />; }`,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
 
-        const named = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src/skipped.tsx"] });
+        const named = await buildComponentGraph({ scopePath, sourcePaths: ["src/skipped.tsx"] });
         expect(named.nodes.map(({ title }) => title)).toEqual(["Skipped"]);
       },
     );
@@ -1454,14 +1453,14 @@ describe("React component structure generator", () => {
         "src/hidden.tsx": `export function Hidden() { return <div />; }`,
       },
       async (scopePath) => {
-        const fileFiltered = await generateReactComponentStructureGraph({
+        const fileFiltered = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeFilePatterns: ["src/*.tsx", "!src/kept.tsx"],
         });
         expect(fileFiltered.nodes.map(({ title }) => title)).toEqual(["Kept"]);
 
-        const componentFiltered = await generateReactComponentStructureGraph({
+        const componentFiltered = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["component:src/*", "!component:src/kept.tsx#Kept"],
@@ -1493,8 +1492,8 @@ describe("React component structure generator", () => {
       async (scopePath) => {
         const common = { scopePath, sourcePaths: ["src"] } as const;
         const [componentFiltered, fileFiltered] = await Promise.all([
-          generateReactComponentStructureGraph({ ...common, excludeComponentPatterns: ["Layout"] }),
-          generateReactComponentStructureGraph({ ...common, excludeFilePatterns: ["src/layout.tsx"] }),
+          buildComponentGraph({ ...common, excludeComponentPatterns: ["Layout"] }),
+          buildComponentGraph({ ...common, excludeFilePatterns: ["src/layout.tsx"] }),
         ]);
 
         for (const graph of [componentFiltered, fileFiltered]) {
@@ -1531,7 +1530,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Frame"],
@@ -1567,7 +1566,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Hidden"],
@@ -1599,7 +1598,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Wrapper"],
@@ -1647,7 +1646,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.some(({ title }) => title === "A")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
@@ -1686,7 +1685,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Wrapper"],
@@ -1715,7 +1714,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Hidden"],
@@ -1744,7 +1743,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Hidden"],
@@ -1775,7 +1774,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Layout"],
@@ -1807,7 +1806,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["ExternalLayout"],
@@ -1838,7 +1837,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["external:@base-ui/react#*"],
@@ -1867,7 +1866,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const graph = await generateReactComponentStructureGraph({
+        const graph = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["Hidden"],
@@ -1890,8 +1889,8 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const baseline = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
-        const filtered = await generateReactComponentStructureGraph({
+        const baseline = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const filtered = await buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["B"],
@@ -1910,47 +1909,12 @@ describe("React component structure generator", () => {
   it("rejects filters that would violate the nonempty Diagram.graph schema", async () => {
     await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
       await expect(
-        generateReactComponentStructureGraph({
+        buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           excludeComponentPatterns: ["**"],
         }),
       ).rejects.toThrow("No React component definitions remain after filtering.");
-    });
-  });
-
-  it("rejects caller-selected output paths", async () => {
-    await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
-      const outputs: string[] = [];
-
-      await expect(
-        executeReactComponentStructureCommand(["--base", scopePath, "src", "--output", "tracked.json"], {
-          writeStdout: (output) => outputs.push(output),
-        }),
-      ).rejects.toThrow("Unknown argument: --output");
-      expect(outputs).toEqual([]);
-    });
-  });
-
-  it("writes only a graph candidate to a temporary file through the command seam", async () => {
-    await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
-      const outputs: string[] = [];
-      const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src"], {
-        writeStdout: (output) => outputs.push(output),
-      });
-
-      try {
-        const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
-        expect(outputs).toEqual([`${JSON.stringify({ graphPath: graphPath })}\n`]);
-        expect(graph).toEqual({
-          groups: [],
-          nodes: [expect.objectContaining({ type: "default", title: "App" })],
-          edges: [],
-        });
-        expect(graph.nodes.at(0)).not.toHaveProperty("kind");
-      } finally {
-        await rm(dirname(graphPath), { recursive: true });
-      }
     });
   });
 
@@ -1974,7 +1938,7 @@ describe("React component structure generator", () => {
 
   it("keeps only components reachable from a selected root", async () => {
     await withFixture(rootChainFiles, async (scopePath) => {
-      const graph = await generateReactComponentStructureGraph({
+      const graph = await buildComponentGraph({
         scopePath,
         sourcePaths: ["src"],
         rootPatterns: ["Layout"],
@@ -1989,7 +1953,7 @@ describe("React component structure generator", () => {
 
   it("matches roots by stable component ID and unions multiple patterns", async () => {
     await withFixture(rootChainFiles, async (scopePath) => {
-      const graph = await generateReactComponentStructureGraph({
+      const graph = await buildComponentGraph({
         scopePath,
         sourcePaths: ["src"],
         rootPatterns: ["component:src/app.tsx#App", "component:src/content.tsx#Content"],
@@ -2003,27 +1967,12 @@ describe("React component structure generator", () => {
   it("fails when no visible component matches a root pattern", async () => {
     await withFixture(rootChainFiles, async (scopePath) => {
       await expect(
-        generateReactComponentStructureGraph({
+        buildComponentGraph({
           scopePath,
           sourcePaths: ["src"],
           rootPatterns: ["Missing"],
         }),
       ).rejects.toThrow("No visible component matches the --root pattern: Missing");
-    });
-  });
-
-  it("applies --root through the command seam", async () => {
-    await withFixture(rootChainFiles, async (scopePath) => {
-      const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "Layout"], {
-        writeStdout: () => undefined,
-      });
-
-      try {
-        const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
-        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
-      } finally {
-        await rm(dirname(graphPath), { recursive: true });
-      }
     });
   });
 });

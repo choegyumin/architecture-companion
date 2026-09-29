@@ -9,15 +9,17 @@ Use this generator when the review question asks which JavaScript or TypeScript 
 
 ## Run the generator
 
-The generator directory contains `generate.js` in an installed Architecture Companion distribution. Run it with the explicit review scope and one or more selected source paths:
+The generator directory contains `run.js` in an installed Architecture Companion distribution. Run it with the explicit review scope and one or more selected source paths:
 
 ```sh
-node "<generator-directory>/generate.js" \
+node "<generator-directory>/run.js" \
   --base "<absolute-scope>" \
   [--tsconfig "<scope-relative-tsconfig>"] \
   [--exclude-path "<glob>" ...] \
   <scope-relative-source-path>...
 ```
+
+The source entry point is `run.ts`, bundled as `run.js`. It connects the CLI command and temporary graph writer in `cli/command.ts` to the module graph builder in `analysis/build-module-graph.ts`. The analysis directory collects source files, resolves dependencies, and builds graph data; `packaging/dependency-cruiser-bundling.ts` configures dependency-cruiser bundling.
 
 Source paths may name files or directories but must stay inside the scope. When `--tsconfig` is omitted, the generator uses `<scope>/tsconfig.json` if it exists. Repeat `--exclude-path` for additional patterns. Patterns use forward-slash base-relative paths in gitignore syntax.
 

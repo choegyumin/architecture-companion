@@ -11,12 +11,13 @@ Use this generator for a source-level view of how React components in selected J
 
 The source checkout contains:
 
-- `generator.ts`: importable analyzer seam that returns a `Diagram.graph` candidate;
-- `command.ts`: argument parsing and temporary graph-file output seam;
-- `cli/run.ts`: thin source-checkout executable;
-- `generator.test.ts`: focused behavior tests.
+- `run.ts`: executable entry point and process-level error handling;
+- `cli/command.ts`: argument parsing, temporary graph-file output, and stdout handling;
+- `analysis/build-component-graph.ts`: importable analyzer that returns a `Diagram.graph` candidate;
+- `analysis/collect-source-files.ts`: source discovery and gitignore filtering;
+- `cli/command.test.ts` and `analysis/build-component-graph.test.ts`: command and analysis behavior tests.
 
-The installed distribution contains this guide and the bundled `cli/run.js` executable. It does not require package installation in the consumer project.
+The installed distribution contains this guide and the bundled `run.js` executable. It does not require package installation in the consumer project.
 
 ## Analysis tools
 
@@ -27,7 +28,7 @@ The installed distribution contains this guide and the bundled `cli/run.js` exec
 Run the executable adjacent to this guide. In an installed distribution:
 
 ```sh
-node "<generator-path>/cli/run.js" \
+node "<generator-path>/run.js" \
   --base "<absolute-consumer-scope>" \
   "src"
 ```
@@ -35,7 +36,7 @@ node "<generator-path>/cli/run.js" \
 From this repository's source checkout:
 
 ```sh
-pnpm exec tsx "<generator-path>/cli/run.ts" \
+pnpm exec tsx "<generator-path>/run.ts" \
   --base "<absolute-consumer-scope>" \
   "src"
 ```

@@ -72,7 +72,7 @@ function isPathIgnored(testRules: Ignore, relativePath: string, isDirectory: boo
   return testRules.ignores(relativePath) || (isDirectory && testRules.ignores(`${relativePath}/`));
 }
 
-export async function discoverSourceFiles(
+export async function collectSourceFiles(
   scopePath: string,
   sourcePaths: readonly string[],
   excludePatterns: readonly string[],
