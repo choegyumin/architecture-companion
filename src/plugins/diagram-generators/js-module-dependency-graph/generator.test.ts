@@ -63,10 +63,11 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/model.generated.ts", "export const generated = 1;\n");
       await writeFixtureFile(rootPath, "src/hidden.test.ts", "export const hidden = true;\n");
       await writeFixtureFile(rootPath, "dist/built.js", "export const built = true;\n");
+      await writeFixtureFile(rootPath, ".gitignore", "*.test.ts\n*.generated.ts\ndist/\n");
 
       const graph = await generateJsModuleDependencyGraph({
         scopePath: rootPath,
-        sourcePaths: ["src", "dist"],
+        sourcePaths: ["src"],
         exclude: ["src/ignored.ts"],
       });
 
@@ -352,7 +353,7 @@ describe("JavaScript module dependency graph generator", () => {
     });
   });
 
-  it("excludes test, generated, and build paths before analysis", async () => {
+  it("excludes gitignored paths before analysis", async () => {
     await withFixture(async (rootPath) => {
       await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
       await writeFixtureFile(rootPath, "src/example.spec.d.ts", "export type Spec = true;\n");
@@ -361,6 +362,11 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "test/helper.ts", "export const test = true;\n");
       await writeFixtureFile(rootPath, "tests/helper.ts", "export const tests = true;\n");
       await writeFixtureFile(rootPath, "dist/hidden.ts", "export const hidden = true;\n");
+      await writeFixtureFile(
+        rootPath,
+        ".gitignore",
+        "src/example.spec.d.ts\nsrc/model.generated.d.ts\nsrc/generated/\ntest/\ntests/\ndist/\n",
+      );
       await chmod(join(rootPath, "dist"), 0o000);
 
       try {
@@ -371,6 +377,56 @@ describe("JavaScript module dependency graph generator", () => {
       } finally {
         await chmod(join(rootPath, "dist"), 0o755);
       }
+    });
+  });
+
+  it("collects explicitly selected gitignored files but filters their descendants", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, ".gitignore", "dist/\n");
+      await writeFixtureFile(rootPath, "dist/built.js", "export const built = true;\n");
+      await writeFixtureFile(rootPath, "dist/nested.js", "export const nested = true;\n");
+
+      const namedFile = await generateJsModuleDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["dist/built.js"],
+      });
+      expect(namedFile.nodes.map(({ id }) => id)).toEqual(["file:dist/built.js"]);
+
+      // A named directory root is not filtered itself, but gitignore's
+      // parent-directory inheritance still applies to its descendants.
+      await expect(generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["dist"] })).rejects.toThrow(
+        "No JavaScript or TypeScript source files remained after filtering.",
+      );
+    });
+  });
+
+  it("lets inline exclude patterns override gitignore with negation ordering", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, ".gitignore", "src/legacy.ts\nsrc/generated/\n");
+      await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
+      await writeFixtureFile(rootPath, "src/legacy.ts", "export const legacy = true;\n");
+      await writeFixtureFile(rootPath, "src/generated/helper.ts", "export const helper = true;\n");
+      await writeFixtureFile(rootPath, "src/other.ts", "export const other = true;\n");
+
+      const graph = await generateJsModuleDependencyGraph({
+        scopePath: rootPath,
+        sourcePaths: ["src"],
+        exclude: ["!src/legacy.ts", "src/other.ts"],
+      });
+
+      expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual(["file:src/index.ts", "file:src/legacy.ts"]);
+    });
+  });
+
+  it("respects nested gitignore files while looking up no further than the base", async () => {
+    await withFixture(async (rootPath) => {
+      await writeFixtureFile(rootPath, "src/.gitignore", "local/\n");
+      await writeFixtureFile(rootPath, "src/index.ts", "export const value = true;\n");
+      await writeFixtureFile(rootPath, "src/local/helper.ts", "export const helper = true;\n");
+
+      const graph = await generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] });
+
+      expect(graph.nodes.map(({ id }) => id)).toEqual(["file:src/index.ts"]);
     });
   });
 

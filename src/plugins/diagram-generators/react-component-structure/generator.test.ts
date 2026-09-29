@@ -1430,10 +1430,51 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("respects gitignore files during collection while explicitly selected paths bypass them", async () => {
+    await withFixture(
+      {
+        ".gitignore": "src/skipped.tsx\n",
+        "src/app.tsx": `export function App() { return <App />; }`,
+        "src/skipped.tsx": `export function Skipped() { return <div />; }`,
+      },
+      async (scopePath) => {
+        const graph = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src"] });
+        expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+
+        const named = await generateReactComponentStructureGraph({ scopePath, sourcePaths: ["src/skipped.tsx"] });
+        expect(named.nodes.map(({ title }) => title)).toEqual(["Skipped"]);
+      },
+    );
+  });
+
+  it("re-includes earlier exclude matches with a later negation pattern", async () => {
+    await withFixture(
+      {
+        "src/kept.tsx": `export function Kept() { return <div />; }`,
+        "src/hidden.tsx": `export function Hidden() { return <div />; }`,
+      },
+      async (scopePath) => {
+        const fileFiltered = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeFilePatterns: ["src/*.tsx", "!src/kept.tsx"],
+        });
+        expect(fileFiltered.nodes.map(({ title }) => title)).toEqual(["Kept"]);
+
+        const componentFiltered = await generateReactComponentStructureGraph({
+          scopePath,
+          sourcePaths: ["src"],
+          excludeComponentPatterns: ["component:src/*", "!component:src/kept.tsx#Kept"],
+        });
+        expect(componentFiltered.nodes.map(({ title }) => title)).toEqual(["Kept"]);
+      },
+    );
+  });
+
   it("collapses component and file filters through the same parent-supplied path", async () => {
     await withFixture(
       {
-        "dist/built.tsx": `export function Built() { return <div />; }`,
+        ".gitignore": "*.test.tsx\n*.generated.tsx\n",
         "src/app.tsx": `
           import { Content } from "./content";
           import { Layout } from "./layout";
@@ -1450,7 +1491,7 @@ describe("React component structure generator", () => {
         `,
       },
       async (scopePath) => {
-        const common = { scopePath, sourcePaths: ["src", "dist"] } as const;
+        const common = { scopePath, sourcePaths: ["src"] } as const;
         const [componentFiltered, fileFiltered] = await Promise.all([
           generateReactComponentStructureGraph({ ...common, excludeComponentPatterns: ["Layout"] }),
           generateReactComponentStructureGraph({ ...common, excludeFilePatterns: ["src/layout.tsx"] }),

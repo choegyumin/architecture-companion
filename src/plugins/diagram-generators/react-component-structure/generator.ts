@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { lstat, readdir, realpath, stat } from "node:fs/promises";
-import { basename, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { lstat, readdir, readFile, realpath, stat } from "node:fs/promises";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 
+import ignore, { type Ignore } from "ignore";
 import micromatch from "micromatch";
 import ts from "typescript";
 
@@ -11,21 +12,7 @@ import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/pat
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"]);
-const defaultAnalysisExcludeFilePatterns = [
-  "**/node_modules/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/coverage/**",
-  "**/.next/**",
-  "**/.output/**",
-  "**/out/**",
-  "**/__tests__/**",
-  "**/*.test.{js,jsx,ts,tsx}",
-  "**/*.spec.{js,jsx,ts,tsx}",
-  "**/*.d.ts",
-  "**/*.generated.{js,jsx,ts,tsx}",
-  "**/*.gen.{js,jsx,ts,tsx}",
-] as const;
+const alwaysIgnoredDirectoryNames = new Set([".git", "node_modules"]);
 
 export type ReactComponentRelationshipKind = "direct-render" | "node-prop" | "render-prop" | "component-prop";
 
@@ -142,42 +129,92 @@ type AnalysisContext = Readonly<{
   analyzedUseIds: Set<string>;
 }>;
 
-function matchesAny(value: string, patterns: readonly string[]): boolean {
-  return patterns.length > 0 && micromatch.isMatch(value, patterns, { dot: true });
+async function readIgnoreFileContents(ignoreFilePath: string): Promise<string | undefined> {
+  let contents: string;
+  try {
+    contents = await readFile(ignoreFilePath, "utf8");
+  } catch (error) {
+    if (isMissingPathError(error)) return undefined;
+    throw error;
+  }
+  return contents;
 }
 
-async function collectSourceFiles(
-  scopePath: string,
-  sourcePaths: readonly string[],
-  excludeFilePatterns: readonly string[],
-): Promise<readonly string[]> {
+function addIgnoreRules(rules: Ignore, contents: string | undefined): Ignore {
+  // Later rules win, so a child .gitignore is appended after everything it inherits.
+  return contents === undefined ? rules : ignore().add(rules).add(contents);
+}
+
+/**
+ * Builds the inherited rules for the directories from the base down to, but
+ * excluding, the given directory, so a nested source root still inherits the
+ * `.gitignore` files of its ancestors. Lookup never goes above the base.
+ */
+async function collectInheritedIgnoreRules(scopePath: string, directoryPath: string): Promise<Ignore> {
+  let rules = ignore();
+  const directoryRelativePath = relative(scopePath, directoryPath);
+
+  let currentPath = scopePath;
+  for (const segment of ["", ...(directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : [])]) {
+    if (segment) currentPath = join(currentPath, segment);
+    rules = addIgnoreRules(rules, await readIgnoreFileContents(join(currentPath, ".gitignore")));
+  }
+  return rules;
+}
+
+function isPathIgnored(rules: Ignore, relativePath: string, isDirectory: boolean): boolean {
+  return rules.ignores(relativePath) || (isDirectory && rules.ignores(`${relativePath}/`));
+}
+
+async function collectSourceFiles(scopePath: string, sourcePaths: readonly string[]): Promise<readonly string[]> {
   const files = new Set<string>();
 
-  async function visit(candidatePath: string): Promise<void> {
-    const resolvedPath = await realpath(candidatePath);
-    if (!isPathInside(scopePath, resolvedPath)) {
-      throw new Error(`Source path must stay inside the base: ${candidatePath}`);
-    }
-
-    const relativePath = toPosixPath(relative(scopePath, resolvedPath));
-    if (relativePath && matchesAny(relativePath, excludeFilePatterns)) return;
-
-    const candidateStat = await stat(resolvedPath);
-    if (candidateStat.isDirectory()) {
-      const entries = await readdir(resolvedPath, { withFileTypes: true });
-      for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
-        if (entry.isDirectory() || entry.isFile()) await visit(join(resolvedPath, entry.name));
-      }
-      return;
-    }
-
-    if (!candidateStat.isFile()) return;
+  async function visitFile(resolvedPath: string): Promise<void> {
     if (!sourceExtensions.has(extname(resolvedPath))) return;
     files.add(resolvedPath);
   }
 
+  async function visitDirectory(directoryPath: string, inheritedRules: Ignore): Promise<void> {
+    const directoryRules = addIgnoreRules(
+      inheritedRules,
+      await readIgnoreFileContents(join(directoryPath, ".gitignore")),
+    );
+
+    for (const entry of await readdir(directoryPath, { withFileTypes: true })) {
+      if (!entry.isDirectory() && !entry.isFile()) continue;
+      const resolvedPath = await realpath(join(directoryPath, entry.name));
+      if (!isPathInside(scopePath, resolvedPath)) {
+        throw new Error(`Source path must stay inside the base: ${join(directoryPath, entry.name)}`);
+      }
+
+      const relativePath = toPosixPath(relative(scopePath, resolvedPath));
+      if (entry.isDirectory()) {
+        if (alwaysIgnoredDirectoryNames.has(entry.name)) continue;
+        if (relativePath && isPathIgnored(directoryRules, relativePath, true)) continue;
+        await visitDirectory(resolvedPath, directoryRules);
+        continue;
+      }
+      if (relativePath && isPathIgnored(directoryRules, relativePath, false)) continue;
+      await visitFile(resolvedPath);
+    }
+  }
+
   for (const sourcePath of sourcePaths) {
-    await visit(isAbsolute(sourcePath) ? sourcePath : resolve(scopePath, sourcePath));
+    const resolvedRoot = await realpath(isAbsolute(sourcePath) ? sourcePath : resolve(scopePath, sourcePath));
+    if (!isPathInside(scopePath, resolvedRoot)) {
+      throw new Error(`Source path must stay inside the base: ${sourcePath}`);
+    }
+
+    // Walk roots are explicit selections: the root itself bypasses every
+    // ignore rule, while its descendants are matched normally.
+    const inheritedRules =
+      resolvedRoot === scopePath ? ignore() : await collectInheritedIgnoreRules(scopePath, dirname(resolvedRoot));
+    const rootStat = await stat(resolvedRoot);
+    if (rootStat.isDirectory()) {
+      await visitDirectory(resolvedRoot, inheritedRules);
+    } else if (rootStat.isFile()) {
+      await visitFile(resolvedRoot);
+    }
   }
 
   return [...files].toSorted();
@@ -1813,7 +1850,8 @@ function sourceHref(relativePath: string): string {
 }
 
 function matchesComponentPattern(id: string, title: string, patterns: readonly string[]): boolean {
-  return matchesAny(title, patterns) || matchesAny(id, patterns);
+  // Ordered matching so a later negation pattern re-includes earlier matches.
+  return micromatch.match([title, id], patterns).length > 0;
 }
 
 function createVisibilityByTarget(
@@ -1822,10 +1860,11 @@ function createVisibilityByTarget(
   excludeFilePatterns: readonly string[],
   excludeComponentPatterns: readonly string[],
 ): ReadonlyMap<string, ComponentVisibility> {
+  const excludeFileRules = excludeFilePatterns.length > 0 ? ignore().add([...excludeFilePatterns]) : undefined;
   const visibility = new Map<string, ComponentVisibility>();
   for (const definition of definitions) {
     const hidden =
-      matchesAny(definition.relativePath, excludeFilePatterns) ||
+      (excludeFileRules?.ignores(definition.relativePath) ?? false) ||
       matchesComponentPattern(definition.id, definition.name, excludeComponentPatterns);
     visibility.set(definition.id, {
       boundaryVisible: !hidden,
@@ -2139,7 +2178,7 @@ export async function generateReactComponentStructureGraph(
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
   const scopePath = await realpath(options.scopePath);
   if (!(await lstat(scopePath)).isDirectory()) throw new Error(`Base must be a directory: ${options.scopePath}`);
-  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, defaultAnalysisExcludeFilePatterns);
+  const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
   const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
 
