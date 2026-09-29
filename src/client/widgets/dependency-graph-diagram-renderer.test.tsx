@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-graph-diagram-renderer";
@@ -69,6 +70,7 @@ const layout = {
 vi.mock("@/client/widgets/diagram-renderer-base", () => ({
   DiagramRendererBase: ({
     buildRenderModel,
+    children,
     diagram,
     onOpenSource,
     onGroupActivate,
@@ -82,6 +84,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
     ) => ReturnType<
       typeof import("@/client/widgets/dependency-graph-diagram-renderer.react-flow").buildDependencyGraphDiagramReactFlowRenderModel
     >;
+    children?: ReactNode;
     diagram: Diagram;
     onOpenSource: (href: string) => void;
     onGroupActivate?: (id: string) => void;
@@ -99,10 +102,11 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
           {group?.type === "labeled-group" ? String(Boolean(group.data.activatable)) : "false"}
         </output>
         <button onClick={() => onNodeActivate?.("one")}>Select node</button>
-        <button onClick={() => onPaneActivate?.()}>Clear focus</button>
+        <button onClick={() => onPaneActivate?.()}>Select pane</button>
         {aggregate?.type === "route" && aggregate.data?.labelAction ? (
           <button onClick={aggregate.data.labelAction.onActivate}>{aggregate.data.labelAction.ariaLabel}</button>
         ) : null}
+        {children}
       </div>
     );
   },
@@ -118,17 +122,21 @@ describe("dependency graph focus", () => {
 
     expect(visible.textContent?.split("|")).toHaveLength(1);
     expect(screen.getByTestId("group-activatable")).toHaveTextContent("true");
+    expect(screen.queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
     expect(visible.textContent?.split("|")).toHaveLength(2);
     expect(visible).toHaveTextContent("one-two");
+    expect(screen.getByText("Focused on Source")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Select node" }));
     expect(visible.textContent?.split("|")).toHaveLength(2);
     expect(visible).toHaveTextContent("one-other|one-two");
+    expect(screen.getByText("Focused on One")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Clear focus" }));
+    await userEvent.click(screen.getByRole("button", { name: "Select pane" }));
     await userEvent.click(screen.getByRole("button", { name: "Show 2 edges from source to target" }));
     expect(visible).toHaveTextContent("one-other|two-other");
+    expect(screen.getByText("2 edges: One → Other")).toBeInTheDocument();
 
     rerender(
       <DependencyGraphDiagramRenderer
@@ -142,13 +150,14 @@ describe("dependency graph focus", () => {
     expect(screen.queryByRole("button", { name: "Show 2 edges from source to target" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
     await userEvent.click(screen.getByRole("button", { name: "Select node" }));
-    await userEvent.click(screen.getByRole("button", { name: "Clear focus" }));
+    await userEvent.click(screen.getByRole("button", { name: "Select pane" }));
     expect(visible).toHaveTextContent("one-other|two-other");
 
     rerender(<DependencyGraphDiagramRenderer {...props} commentEnabled={false} />);
     expect(visible).toHaveTextContent("one-other|two-other");
     await userEvent.click(screen.getByRole("button", { name: "Clear focus" }));
     expect(visible.textContent?.split("|")).toHaveLength(1);
+    expect(screen.queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
   });
 
   it("does not enable focus when the Comment toggle is on during management", async () => {
