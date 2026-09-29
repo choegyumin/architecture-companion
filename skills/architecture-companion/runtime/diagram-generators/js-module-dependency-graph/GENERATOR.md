@@ -13,15 +13,15 @@ The generator directory contains `generate.js` in an installed Architecture Comp
 
 ```sh
 node "<generator-directory>/generate.js" \
-  --scope "<absolute-scope>" \
-  [--ts-config "<scope-relative-tsconfig>"] \
-  [--exclude "<glob>" ...] \
+  --base "<absolute-scope>" \
+  [--tsconfig "<scope-relative-tsconfig>"] \
+  [--exclude-path "<glob>" ...] \
   <scope-relative-source-path>...
 ```
 
-Source paths may name files or directories but must stay inside the scope. When `--ts-config` is omitted, the generator uses `<scope>/tsconfig.json` if it exists. Repeat `--exclude` for additional file-path globs. Globs use forward-slash scope-relative paths.
+Source paths may name files or directories but must stay inside the scope. When `--tsconfig` is omitted, the generator uses `<scope>/tsconfig.json` if it exists. Repeat `--exclude-path` for additional patterns. Patterns use forward-slash base-relative paths in gitignore syntax.
 
-The generator always excludes test files, `__tests__`, common build output directories, `__generated__`, and `*.generated.*` or `*.gen.*` source files. A matching file node and its incident edges are removed. No descendant, synthetic shortcut edge, or unresolved dependency is inferred.
+File discovery respects `.gitignore` files inside the base: nested files apply, and lookup never goes above the base. `.git` and `node_modules` directories are always skipped. An explicitly given source path is never filtered itself, but its descendants are matched normally, including gitignore's parent-directory inheritance. `--exclude-path` patterns are applied after every `.gitignore` file, so they can override it, and a later `!` pattern re-includes earlier matches. A path excluded together with its parent directory cannot be re-included. Unlike the previous micromatch globs, brace expansion such as `{test,spec}` is unavailable, and a pattern without a slash now matches at every depth. A matching file node and its incident edges are removed. No descendant, synthetic shortcut edge, or unresolved dependency is inferred.
 
 On success, stdout contains one JSON line:
 
@@ -38,7 +38,7 @@ The referenced file contains only a `Diagram.graph` candidate with `groups`, `no
 3. Preserve, revise, or replace the existing graph according to the review request. Preserve unrelated diagrams and stable IDs for unchanged concepts.
 4. Keep local source modules as nodes, identified by their source files. Directory groups and nested package boundaries organize the normalized local hierarchy. When that hierarchy has one top-level local group, the generator omits it and promotes its direct files and child groups. When it has multiple top-level local roots, the generator preserves each group. External packages remain in their own independent group and never affect this local-root decision; never expand their internals.
 5. Unmarked dependency edges are runtime dependencies. Edges with kind `type-only` exist only before TypeScript compilation.
-6. When adopting the candidate, set the diagram's `generator` to `built-in:js-module-dependency-graph`. Record free-form `generatorInstructions` that state the invocation runs from the consumer scope root and include the complete command. Replace the session-specific absolute generator directory with `<generator-directory>`, use `--scope "."`, and keep every option and selected source path unchanged.
+6. When adopting the candidate, set the diagram's `generator` to `built-in:js-module-dependency-graph`. Record free-form `generatorInstructions` that state the invocation runs from the consumer scope root and include the complete command. Replace the session-specific absolute generator directory with `<generator-directory>`, use `--base "."`, and keep every option and selected source path unchanged.
 7. Preserve or choose the surrounding diagram `id`, `title`, and `layout` separately.
 8. Validate the complete Architecture Companion artifact through the standard validation command before review.
 
