@@ -7,7 +7,8 @@ export type GenerateJsModuleDependencyGraphCommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
 }>;
 
-const usage = "Usage: node generate.js --scope <scope> [--ts-config <path>] [--exclude <glob> ...] <source-path>...";
+const usage =
+  "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--exclude-path <glob> ...] <source-path>...";
 
 export async function executeGenerateJsModuleDependencyGraphCommand(
   args: readonly string[],
@@ -17,20 +18,20 @@ export async function executeGenerateJsModuleDependencyGraphCommand(
     args: [...args],
     allowPositionals: true,
     options: {
-      exclude: { type: "string", multiple: true },
-      scope: { type: "string" },
-      "ts-config": { type: "string" },
+      base: { type: "string" },
+      "exclude-path": { type: "string", multiple: true },
+      tsconfig: { type: "string" },
     },
     strict: true,
   });
 
-  if (!values.scope || positionals.length === 0) throw new Error(usage);
+  if (!values.base || positionals.length === 0) throw new Error(usage);
 
   const graphPath = await environment.writeGraph({
-    scopePath: values.scope,
+    scopePath: values.base,
     sourcePaths: positionals,
-    ...(values.exclude ? { exclude: values.exclude } : {}),
-    ...(values["ts-config"] ? { tsConfigPath: values["ts-config"] } : {}),
+    ...(values["exclude-path"] ? { exclude: values["exclude-path"] } : {}),
+    ...(values.tsconfig ? { tsConfigPath: values.tsconfig } : {}),
   });
   environment.writeStdout(`${JSON.stringify({ graphPath })}\n`);
 }

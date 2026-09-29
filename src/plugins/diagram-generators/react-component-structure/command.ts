@@ -4,8 +4,8 @@ import { dirname, join } from "node:path";
 
 import { generateReactComponentStructureGraph, type GenerateReactComponentStructureOptions } from "./generator";
 
-const usage = `Usage: react-component-structure --scope <directory> --source <path> [--source <path> ...]
-  [--tsconfig <path>] [--exclude-file <glob> ...] [--exclude-component <glob> ...]`;
+const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
@@ -28,25 +28,24 @@ function parseArguments(args: readonly string[]): ParsedArguments {
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
-    if (option === "--scope") {
-      if (scopePath) throw new Error(`--scope may be provided only once.\n${usage}`);
+    if (option === "--base") {
+      if (scopePath) throw new Error(`--base may be provided only once.\n${usage}`);
       scopePath = readValue(args, index, option);
-      index += 1;
-    } else if (option === "--source") {
-      sourcePaths.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--tsconfig") {
       if (tsconfigPath) throw new Error(`--tsconfig may be provided only once.\n${usage}`);
       tsconfigPath = readValue(args, index, option);
       index += 1;
-    } else if (option === "--exclude-file") {
+    } else if (option === "--exclude-path") {
       excludeFilePatterns.push(readValue(args, index, option));
       index += 1;
     } else if (option === "--exclude-component") {
       excludeComponentPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option.startsWith("--")) {
+      throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
-      throw new Error(`Unknown argument: ${option ?? ""}\n${usage}`);
+      sourcePaths.push(option);
     }
   }
 

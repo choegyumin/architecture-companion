@@ -28,24 +28,24 @@ Run the executable adjacent to this guide. In an installed distribution:
 
 ```sh
 node "<generator-path>/cli/run.js" \
-  --scope "<absolute-consumer-scope>" \
-  --source "src"
+  --base "<absolute-consumer-scope>" \
+  "src"
 ```
 
 From this repository's source checkout:
 
 ```sh
 pnpm exec tsx "<generator-path>/cli/run.ts" \
-  --scope "<absolute-consumer-scope>" \
-  --source "src"
+  --base "<absolute-consumer-scope>" \
+  "src"
 ```
 
 Arguments are generator-specific:
 
-- `--scope <directory>`: required explicit consumer scope used for source links and path containment;
-- `--source <path>`: required and repeatable file or directory, absolute or relative to the scope;
+- `--base <directory>`: required explicit consumer scope used for source links and path containment;
+- `<source-path>...`: required positional source paths, files or directories, absolute or relative to the scope;
 - `--tsconfig <path>`: optional TypeScript configuration, absolute or relative to the scope; otherwise the nearest scope `tsconfig.json` is used;
-- `--exclude-file <glob>`: optional and repeatable scope-relative file-path exclusion;
+- `--exclude-path <glob>`: optional and repeatable scope-relative file-path exclusion;
 - `--exclude-component <glob>`: optional and repeatable component-title or stable component-ID exclusion. For example, `external:@base-ui/react#*` hides every boundary from that package without hiding same-named local wrappers.
 
 Tests, declaration files, generated files, dependency directories, and common build-output directories are excluded from analysis by default. Explicit file and component globs are applied after the selected local source is analyzed. Both selectors use the same transparent collapse: a matching component boundary and the implementation-created components beneath it are omitted, while statically confirmed values supplied by its parent pass through to the nearest visible owner. For example, filtering `Layout` from `App → Layout → Content` produces `App → Content`; `Layout` and components created inside `Layout` do not remain in the graph candidate. Hidden elements are never written to the output JSON. Generation fails if filtering leaves no visible local component because the current `Diagram.graph` schema requires at least one node.

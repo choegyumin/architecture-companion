@@ -12,11 +12,11 @@ function createEnvironment() {
 }
 
 describe("JavaScript module dependency graph generator command", () => {
-  it.each([[[]], [["--scope", "/scope"]], [["src"]]])("requires a scope and at least one source path", async (args) => {
+  it.each([[[]], [["--base", "/base"]], [["src"]]])("requires a base and at least one source path", async (args) => {
     const { environment, outputs } = createEnvironment();
 
     await expect(executeGenerateJsModuleDependencyGraphCommand(args, environment)).rejects.toThrow(
-      "Usage: node generate.js",
+      "Usage: js-module-dependency-graph",
     );
     expect(environment.writeGraph).not.toHaveBeenCalled();
     expect(outputs).toEqual([]);
@@ -27,13 +27,13 @@ describe("JavaScript module dependency graph generator command", () => {
 
     await executeGenerateJsModuleDependencyGraphCommand(
       [
-        "--scope",
-        "/scope",
-        "--ts-config",
+        "--base",
+        "/base",
+        "--tsconfig",
         "configs/tsconfig.json",
-        "--exclude",
+        "--exclude-path",
         "src/generated/**",
-        "--exclude",
+        "--exclude-path",
         "src/legacy.ts",
         "src",
         "scripts/build.ts",
@@ -42,7 +42,7 @@ describe("JavaScript module dependency graph generator command", () => {
     );
 
     expect(environment.writeGraph).toHaveBeenCalledExactlyOnceWith({
-      scopePath: "/scope",
+      scopePath: "/base",
       sourcePaths: ["src", "scripts/build.ts"],
       tsConfigPath: "configs/tsconfig.json",
       exclude: ["src/generated/**", "src/legacy.ts"],

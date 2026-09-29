@@ -1869,7 +1869,7 @@ describe("React component structure generator", () => {
       const outputs: string[] = [];
 
       await expect(
-        executeReactComponentStructureCommand(["--scope", scopePath, "--source", "src", "--output", "tracked.json"], {
+        executeReactComponentStructureCommand(["--base", scopePath, "src", "--output", "tracked.json"], {
           writeStdout: (output) => outputs.push(output),
         }),
       ).rejects.toThrow("Unknown argument: --output");
@@ -1880,7 +1880,7 @@ describe("React component structure generator", () => {
   it("writes only a graph candidate to a temporary file through the command seam", async () => {
     await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
       const outputs: string[] = [];
-      const graphPath = await executeReactComponentStructureCommand(["--scope", scopePath, "--source", "src"], {
+      const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src"], {
         writeStdout: (output) => outputs.push(output),
       });
 
