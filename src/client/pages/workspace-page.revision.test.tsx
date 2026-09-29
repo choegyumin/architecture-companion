@@ -23,7 +23,7 @@ function artifact(label: string): Artifact {
       {
         title: "Workflow",
         generator: "built-in:freeform",
-        layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
           nodes: [{ type: "default", id: "submit", kind: "trigger", title: `${label} workflow` }],

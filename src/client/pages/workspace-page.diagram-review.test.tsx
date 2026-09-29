@@ -93,7 +93,7 @@ const designArtifact = {
     {
       title: "Workflow",
       generator: "built-in:freeform",
-      layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
         nodes: [
@@ -114,7 +114,7 @@ const processArtifact = {
       id: "invite-member",
       title: "Invite member",
       generator: "built-in:freeform",
-      layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
         nodes: [
@@ -134,7 +134,7 @@ const processArtifact = {
       id: "remove-member",
       title: "Remove member",
       generator: "built-in:freeform",
-      layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
         nodes: [{ type: "default", id: "remove", kind: "trigger", title: "Member removal requested" }],
@@ -203,7 +203,7 @@ describe("design (architecture·implementation) review", () => {
       designs: [
         {
           ...checkoutDiagram,
-          layout: { id: "elk-layered", options: { direction: "DIAGONAL" } },
+          layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
         },
       ],
     };

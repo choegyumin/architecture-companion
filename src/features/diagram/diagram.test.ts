@@ -82,7 +82,7 @@ describe("diagram parsing", () => {
   it("preserves provider-owned layout options", () => {
     const diagram = {
       ...validDiagram,
-      layout: { id: "elk-layered", options: { direction: "RIGHT" } },
+      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
     };
 
     expect(parseDiagram(diagram)).toEqual(diagram);
@@ -122,7 +122,7 @@ describe("diagram parsing", () => {
   it("rejects unsupported layout configurations", () => {
     expect(() => parseDiagram({ ...validDiagram, layout: { id: "unknown" } })).toThrow("Invalid diagram");
     expect(() =>
-      parseDiagram({ ...validDiagram, layout: { id: "elk-layered", options: { direction: "DIAGONAL" } } }),
+      parseDiagram({ ...validDiagram, layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } } }),
     ).toThrow("Invalid diagram");
     expect(() => parseDiagram({ ...validDiagram, layout: { id: "elk-layered", options: { spacing: 24 } } })).toThrow(
       "Invalid diagram",

@@ -6,8 +6,10 @@
   "layout": {
     "id": "elk-layered",
     "options": {
-      "direction": "DOWN",
-      "nudgeObstacleNodes": true
+      "nudgeObstacleNodes": true,
+      "elk": {
+        "direction": "DOWN"
+      }
     }
   },
   "graph": {
