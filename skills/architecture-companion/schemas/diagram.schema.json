@@ -31,14 +31,46 @@
             "options": {
               "type": "object",
               "properties": {
-                "direction": {
-                  "type": "string",
-                  "enum": [
-                    "UP",
-                    "DOWN",
-                    "LEFT",
-                    "RIGHT"
-                  ]
+                "nudgeObstacleNodes": {
+                  "type": "boolean"
+                },
+                "bezierEdges": {
+                  "type": "boolean"
+                },
+                "elk": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "type": "string",
+                      "enum": [
+                        "UP",
+                        "DOWN",
+                        "LEFT",
+                        "RIGHT"
+                      ]
+                    },
+                    "layered.edgeRouting": {
+                      "type": "string",
+                      "enum": [
+                        "ORTHOGONAL",
+                        "POLY_LINE",
+                        "SPLINES"
+                      ]
+                    },
+                    "layered.nodePlacement.strategy": {
+                      "type": "string",
+                      "enum": [
+                        "BRANDES_KOEPF",
+                        "LINEAR_SEGMENTS",
+                        "SIMPLE",
+                        "MIN_WIDTH",
+                        "INTERACTIVE"
+                      ]
+                    }
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  }
                 }
               },
               "additionalProperties": false

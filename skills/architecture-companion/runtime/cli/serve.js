@@ -23190,10 +23190,41 @@ var EMPTY_GROUP_SIZE = {
 };
 
 // src/features/diagram/_layout/elk-layered-diagram-layout.ts
+var DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"];
+var EDGE_ROUTINGS = ["ORTHOGONAL", "POLY_LINE", "SPLINES"];
+var NODE_PLACEMENT_STRATEGIES = ["BRANDES_KOEPF", "LINEAR_SEGMENTS", "SIMPLE", "MIN_WIDTH", "INTERACTIVE"];
+var VERIFIED_ELK_OPTION_KEYS = ["direction", "layered.edgeRouting", "layered.nodePlacement.strategy"];
+var DESIGN_OWNED_ELK_OPTION = /^elk\.(padding$|spacing\.|layered\.spacing\.)/;
+var elkOptionMapSchema = external_exports.object({
+  direction: external_exports.enum(DIRECTIONS).optional(),
+  "layered.edgeRouting": external_exports.enum(EDGE_ROUTINGS).optional(),
+  "layered.nodePlacement.strategy": external_exports.enum(NODE_PLACEMENT_STRATEGIES).optional()
+}).catchall(external_exports.string()).superRefine((options, ctx) => {
+  for (const key of Object.keys(options)) {
+    if (VERIFIED_ELK_OPTION_KEYS.includes(key)) continue;
+    if (!key.startsWith("_.")) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: "Unverified elk options must use the raw `_.` prefix with the full option id."
+      });
+      continue;
+    }
+    if (DESIGN_OWNED_ELK_OPTION.test(`elk.${key.slice(2)}`)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: "Padding and spacing options are design-owned and cannot be set."
+      });
+    }
+  }
+});
 var elkLayeredDiagramLayoutConfigSchema = external_exports.object({
   id: external_exports.literal("elk-layered"),
   options: external_exports.object({
-    direction: external_exports.enum(["UP", "DOWN", "LEFT", "RIGHT"]).optional()
+    nudgeObstacleNodes: external_exports.boolean().optional(),
+    bezierEdges: external_exports.boolean().optional(),
+    elk: elkOptionMapSchema.optional()
   }).strict().optional()
 }).strict();
 var GROUP_PADDING2 = { top: 96, right: 32, bottom: 32, left: 32 };
