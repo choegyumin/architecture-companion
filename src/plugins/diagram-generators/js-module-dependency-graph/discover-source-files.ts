@@ -38,7 +38,7 @@ function isDirectoryExcluded(relativeDirectoryPath: string, excludeGlobs: readon
 
 export async function resolveScopePath(scopePath: string): Promise<string> {
   const resolvedPath = await realpath(resolve(scopePath));
-  if (!(await lstat(resolvedPath)).isDirectory()) throw new Error(`Scope must be a directory: ${scopePath}`);
+  if (!(await lstat(resolvedPath)).isDirectory()) throw new Error(`Base must be a directory: ${scopePath}`);
   return resolvedPath;
 }
 
@@ -49,7 +49,7 @@ async function resolveSourceRoots(scopePath: string, sourcePaths: readonly strin
     sourcePaths.map(async (sourcePath) => {
       const resolvedPath = await realpath(resolve(scopePath, sourcePath));
       if (!isPathInside(scopePath, resolvedPath)) {
-        throw new Error(`Source path must stay within the scope: ${sourcePath}`);
+        throw new Error(`Source path must stay inside the base: ${sourcePath}`);
       }
       return resolvedPath;
     }),
@@ -72,7 +72,7 @@ export async function discoverSourceFiles(
 
     const canonicalPath = await realpath(candidatePath);
     if (!isPathInside(scopePath, canonicalPath)) {
-      throw new Error(`Source path resolves outside the scope: ${lexicalRelativePath}`);
+      throw new Error(`Source path resolves outside the base: ${lexicalRelativePath}`);
     }
 
     const candidateStat = await lstat(canonicalPath);

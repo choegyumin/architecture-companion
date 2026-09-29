@@ -1,16 +1,16 @@
 import { createHash } from "node:crypto";
-import { readdir, realpath, stat } from "node:fs/promises";
+import { lstat, readdir, realpath, stat } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative, resolve } from "node:path";
 
 import micromatch from "micromatch";
 import ts from "typescript";
 
 import type { DefaultDiagramEdge, DefaultDiagramNode, DiagramGraph } from "@/features/diagram/diagram-graph";
-import { isPathInside, toPosixPath } from "@/shared/node/path";
+import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
-const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
+const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs"]);
 const defaultAnalysisExcludeFilePatterns = [
   "**/node_modules/**",
   "**/dist/**",
@@ -156,7 +156,7 @@ async function collectSourceFiles(
   async function visit(candidatePath: string): Promise<void> {
     const resolvedPath = await realpath(candidatePath);
     if (!isPathInside(scopePath, resolvedPath)) {
-      throw new Error(`Source path must stay inside the scope: ${candidatePath}`);
+      throw new Error(`Source path must stay inside the base: ${candidatePath}`);
     }
 
     const relativePath = toPosixPath(relative(scopePath, resolvedPath));
@@ -187,23 +187,30 @@ function formatDiagnostic(diagnostic: ts.Diagnostic): string {
   return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
 }
 
-function readCompilerOptions(scopePath: string, tsconfigPath?: string): ts.CompilerOptions {
-  const configPath = tsconfigPath
-    ? isAbsolute(tsconfigPath)
-      ? tsconfigPath
-      : resolve(scopePath, tsconfigPath)
-    : ts.findConfigFile(scopePath, ts.sys.fileExists, "tsconfig.json");
+async function readCompilerOptions(scopePath: string, tsconfigPath?: string): Promise<ts.CompilerOptions> {
+  const candidatePath = resolve(scopePath, tsconfigPath ?? "tsconfig.json");
+  let canonicalPath: string;
+  try {
+    canonicalPath = await realpath(candidatePath);
+  } catch (error) {
+    if (isMissingPathError(error) && tsconfigPath === undefined) return {};
+    throw error;
+  }
+  if (!isPathInside(scopePath, canonicalPath)) {
+    throw new Error(`TypeScript config must stay inside the base: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
+  if (!(await lstat(canonicalPath)).isFile()) {
+    throw new Error(`TypeScript config must be a file: ${tsconfigPath ?? "tsconfig.json"}`);
+  }
 
   let options: ts.CompilerOptions = {};
-  if (configPath) {
-    const config = ts.readConfigFile(configPath, ts.sys.readFile);
-    if (config.error) throw new Error(`Cannot read ${configPath}: ${formatDiagnostic(config.error)}`);
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, resolve(configPath, ".."));
-    if (parsed.errors.length > 0) {
-      throw new Error(`Cannot parse ${configPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
-    }
-    options = parsed.options;
+  const config = ts.readConfigFile(canonicalPath, ts.sys.readFile);
+  if (config.error) throw new Error(`Cannot read ${canonicalPath}: ${formatDiagnostic(config.error)}`);
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, resolve(canonicalPath, ".."));
+  if (parsed.errors.length > 0) {
+    throw new Error(`Cannot parse ${canonicalPath}: ${parsed.errors.map(formatDiagnostic).join("\n")}`);
   }
+  options = parsed.options;
 
   return {
     ...options,
@@ -2131,12 +2138,14 @@ export async function generateReactComponentStructureGraph(
 ): Promise<DiagramGraph> {
   if (options.sourcePaths.length === 0) throw new Error("At least one source path is required.");
   const scopePath = await realpath(options.scopePath);
+  if (!(await lstat(scopePath)).isDirectory()) throw new Error(`Base must be a directory: ${options.scopePath}`);
   const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths, defaultAnalysisExcludeFilePatterns);
   if (sourceFilePaths.length === 0) throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
+  const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
 
   const program = ts.createProgram({
     rootNames: sourceFilePaths,
-    options: readCompilerOptions(scopePath, options.tsconfigPath),
+    options: compilerOptions,
   });
   const selectedPaths = new Set(sourceFilePaths);
   const sourceFiles = program

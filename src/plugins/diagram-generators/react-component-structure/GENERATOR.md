@@ -5,7 +5,7 @@ description: Builds a React component structure graph from confirmed direct rend
 
 # React Component Structure Diagram Generator
 
-Use this generator for a source-level view of how React components in selected JS, JSX, TS, and TSX paths compose one another. The graph is not a reconstructed runtime render tree.
+Use this generator for a source-level view of how React components in selected JavaScript and TypeScript source paths compose one another. The graph is not a reconstructed runtime render tree.
 
 ## Files and execution
 
@@ -20,7 +20,7 @@ The installed distribution contains this guide and the bundled `cli/run.js` exec
 
 ## Analysis tools
 
-- TypeScript Compiler API parses JS, JSX, TS, and TSX, creates the project `Program`, and supplies lexical symbols, alias resolution, and module resolution.
+- TypeScript Compiler API parses JavaScript and TypeScript source, creates the project `Program`, and supplies lexical symbols, alias resolution, and module resolution.
 - `micromatch` applies generation-time file-path and component title/identity glob exclusions.
 - The analyzer adds the four React relationship rules and supplied-value consumption analysis. It does not infer runtime behavior from types alone.
 
@@ -44,7 +44,7 @@ Arguments are generator-specific:
 
 - `--base <directory>`: required explicit consumer scope used for source links and path containment;
 - `<source-path>...`: required positional source paths, files or directories, absolute or relative to the scope;
-- `--tsconfig <path>`: optional TypeScript configuration, absolute or relative to the scope; otherwise the nearest scope `tsconfig.json` is used;
+- `--tsconfig <path>`: optional TypeScript configuration, absolute or relative to the base; otherwise `<base>/tsconfig.json` is used if it exists;
 - `--exclude-path <glob>`: optional and repeatable scope-relative file-path exclusion;
 - `--exclude-component <glob>`: optional and repeatable component-title or stable component-ID exclusion. For example, `external:@base-ui/react#*` hides every boundary from that package without hiding same-named local wrappers.
 - `--root <glob>`: optional and repeatable component-title or stable component-ID selection. When provided, the graph keeps only the selected components and every component they compose, directly or transitively; everything else is pruned with its edges. Multiple patterns union their reachable sets. Generation fails when no visible component matches a provided pattern.
@@ -53,7 +53,13 @@ Tests, declaration files, generated files, dependency directories, and common bu
 
 ## Output contract
 
-Successful execution creates an untracked operating-system temporary directory and prints its absolute graph-file path followed by a newline. That file contains only a strict graph candidate:
+Successful execution creates an untracked operating-system temporary directory and prints one JSON line containing the absolute graph-file path:
+
+```json
+{ "graphPath": "/temporary/path/graph.json" }
+```
+
+That file contains only a strict graph candidate:
 
 ```json
 {

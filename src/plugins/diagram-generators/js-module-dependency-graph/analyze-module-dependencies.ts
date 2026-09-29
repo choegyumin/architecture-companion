@@ -107,7 +107,7 @@ export async function resolveTsConfigPath(
   }
 
   if (!isPathInside(scopePath, canonicalPath)) {
-    throw new Error(`TypeScript config must stay within the scope: ${tsConfigPath ?? "tsconfig.json"}`);
+    throw new Error(`TypeScript config must stay inside the base: ${tsConfigPath ?? "tsconfig.json"}`);
   }
   if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
   return canonicalPath;

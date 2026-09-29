@@ -479,11 +479,11 @@ describe("JavaScript module dependency graph generator", () => {
 
         await expect(
           generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"], tsConfigPath: "tsconfig.json" }),
-        ).rejects.toThrow("TypeScript config must stay within the scope");
+        ).rejects.toThrow("TypeScript config must stay inside the base");
 
         await rm(join(rootPath, "tsconfig.json"));
         await expect(generateJsModuleDependencyGraph({ scopePath: rootPath, sourcePaths: ["src"] })).rejects.toThrow(
-          "Source path resolves outside the scope",
+          "Source path resolves outside the base",
         );
       } finally {
         await rm(outsideRoot, { recursive: true });

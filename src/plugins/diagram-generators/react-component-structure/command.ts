@@ -76,6 +76,6 @@ export async function executeReactComponentStructureCommand(
   );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(graph, undefined, 2)}\n`);
-  environment.writeStdout(`${resolvedOutputPath}\n`);
+  environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}\n`);
   return resolvedOutputPath;
 }

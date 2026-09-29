@@ -887,7 +887,7 @@ describe("React component structure generator", () => {
     );
   });
 
-  it("supports JS, JSX, TS, and TSX component definitions", async () => {
+  it("supports every JavaScript and TypeScript source extension", async () => {
     await withFixture(
       {
         "src/js-component.js": `
@@ -901,8 +901,18 @@ describe("React component structure generator", () => {
         `,
         "src/ts-component.ts": `
           import React from "react";
+          import { MtsComponent } from "./mts-component.mjs";
+          export function TsComponent() { return React.createElement(MtsComponent); }
+        `,
+        "src/mts-component.mts": `
+          import React from "react";
+          import { MjsComponent } from "./mjs-component.mjs";
+          export function MtsComponent() { return React.createElement(MjsComponent); }
+        `,
+        "src/mjs-component.mjs": `
+          import React from "react";
           import { TsxComponent } from "./tsx-component";
-          export function TsComponent() { return React.createElement(TsxComponent); }
+          export function MjsComponent() { return React.createElement(TsxComponent); }
         `,
         "src/tsx-component.tsx": `export function TsxComponent() { return <div />; }`,
       },
@@ -914,13 +924,17 @@ describe("React component structure generator", () => {
         expect(first.nodes.map(({ title }) => title).toSorted()).toEqual([
           "JsComponent",
           "JsxComponent",
+          "MjsComponent",
+          "MtsComponent",
           "TsComponent",
           "TsxComponent",
         ]);
         expect(edgeFacts(first)).toEqual([
           { source: "JsComponent", target: "JsxComponent", kind: "direct-render", label: undefined },
           { source: "JsxComponent", target: "TsComponent", kind: "direct-render", label: undefined },
-          { source: "TsComponent", target: "TsxComponent", kind: "direct-render", label: undefined },
+          { source: "MjsComponent", target: "TsxComponent", kind: "direct-render", label: undefined },
+          { source: "MtsComponent", target: "MjsComponent", kind: "direct-render", label: undefined },
+          { source: "TsComponent", target: "MtsComponent", kind: "direct-render", label: undefined },
         ]);
       },
     );
@@ -1886,7 +1900,7 @@ describe("React component structure generator", () => {
 
       try {
         const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
-        expect(outputs).toEqual([`${graphPath}\n`]);
+        expect(outputs).toEqual([`${JSON.stringify({ graphPath: graphPath })}\n`]);
         expect(graph).toEqual({
           groups: [],
           nodes: [expect.objectContaining({ type: "default", title: "App" })],
