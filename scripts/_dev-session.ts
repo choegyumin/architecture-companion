@@ -1,7 +1,8 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { setTimeout } from "node:timers/promises";
-import { fileURLToPath } from "node:url";
+
+export const DEVELOPMENT_SERVER_STATE_FILENAME = "server.json";
 
 export type DevelopmentServerState = Readonly<{
   url: string;
@@ -9,15 +10,14 @@ export type DevelopmentServerState = Readonly<{
   ownerPid: number;
 }>;
 
-export function getDevelopmentServerStatePath(): string {
-  return (
-    process.env.ARCHITECTURE_COMPANION_DEV_SERVER_STATE ??
-    fileURLToPath(new URL("../.vite/dev-server.json", import.meta.url))
-  );
+export function getDevelopmentCacheDirectory(): string {
+  const path = process.env.DEVELOPMENT_SERVER_STATE;
+  if (!path) throw new Error("Development server state path is required. Start with pnpm dev.");
+  return dirname(path);
 }
 
 export async function readDevelopmentServerState(
-  path = getDevelopmentServerStatePath(),
+  path = join(getDevelopmentCacheDirectory(), DEVELOPMENT_SERVER_STATE_FILENAME),
 ): Promise<DevelopmentServerState | undefined> {
   try {
     return JSON.parse(await readFile(path, "utf8")) as DevelopmentServerState;
@@ -28,7 +28,7 @@ export async function readDevelopmentServerState(
 }
 
 export async function readRunningDevelopmentServer(
-  path = getDevelopmentServerStatePath(),
+  path = join(getDevelopmentCacheDirectory(), DEVELOPMENT_SERVER_STATE_FILENAME),
 ): Promise<DevelopmentServerState | undefined> {
   const state = await readDevelopmentServerState(path);
   if (!state) return undefined;
@@ -44,7 +44,7 @@ export async function readRunningDevelopmentServer(
 }
 
 export async function waitForDevelopmentServer(
-  path = getDevelopmentServerStatePath(),
+  path = join(getDevelopmentCacheDirectory(), DEVELOPMENT_SERVER_STATE_FILENAME),
 ): Promise<DevelopmentServerState> {
   while (true) {
     const state = await readRunningDevelopmentServer(path);
@@ -55,7 +55,7 @@ export async function waitForDevelopmentServer(
 
 export async function writeDevelopmentServerState(
   state: DevelopmentServerState,
-  path = getDevelopmentServerStatePath(),
+  path = join(getDevelopmentCacheDirectory(), DEVELOPMENT_SERVER_STATE_FILENAME),
 ): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temporaryPath = `${path}.${state.pid}.tmp`;

@@ -12,9 +12,7 @@
   },
   "scripts": {
     "postinstall": "lefthook install --reset-hooks-path",
-    "dev": "tsx scripts/launch-dev.ts",
-    "dev.server": "tsx scripts/launch-dev-server.ts",
-    "dev.client": "vite --open",
+    "dev": "tsx scripts/run-dev.ts",
     "build": "tsx scripts/clean-dist.ts && tsup && vite build && tsx scripts/compose-dist.ts && tsx scripts/verify-skill.ts",
     "schema-gen": "tsx scripts/generate-schemas.ts",
     "start": "node skills/architecture-companion/runtime/cli/serve.js",

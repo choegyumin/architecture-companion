@@ -1,12 +1,15 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-async function launchDevelopment(): Promise<void> {
-  const directory = await mkdtemp(join(tmpdir(), "architecture-companion-dev-"));
+import { DEVELOPMENT_SERVER_STATE_FILENAME } from "./_dev-session";
+
+async function runDevelopment(): Promise<void> {
+  const cacheRoot = fileURLToPath(new URL("../node_modules/.vite/", import.meta.url));
+  await mkdir(cacheRoot, { recursive: true });
+  const directory = await mkdtemp(join(cacheRoot, "session-"));
 
   try {
     const child = spawn(
@@ -19,14 +22,15 @@ async function launchDevelopment(): Promise<void> {
         "first",
         "--names",
         "server,client",
-        "pnpm dev.server",
-        "pnpm dev.client",
+        "tsx scripts/_dev-server.ts",
+        "tsx scripts/_dev-client.ts",
       ],
       {
         stdio: "inherit",
         env: {
           ...process.env,
-          ARCHITECTURE_COMPANION_DEV_SERVER_STATE: join(directory, "server.json"),
+          DEVELOPMENT_SERVER_STATE: join(directory, DEVELOPMENT_SERVER_STATE_FILENAME),
+          DEVELOPMENT_SERVER_OWNER: undefined,
         },
       },
     );
@@ -43,7 +47,7 @@ async function launchDevelopment(): Promise<void> {
 }
 
 try {
-  await launchDevelopment();
+  await runDevelopment();
 } catch (error) {
   const message = error instanceof Error ? error.message : "Architecture Companion development failed to start.";
   process.stderr.write(`${message}\n`);
