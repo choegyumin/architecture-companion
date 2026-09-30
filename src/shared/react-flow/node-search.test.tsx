@@ -24,6 +24,8 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
 
 const alpha: Node = { id: "alpha", type: "card", position: { x: 0, y: 0 }, data: { label: "Alpha" } };
 const beta: Node = { id: "beta", type: "card", position: { x: 0, y: 0 }, data: { label: "Beta" } };
+type TitledNode = Node<{ label: string; title: string }, "card">;
+const titled: TitledNode = { ...alpha, type: "card", data: { label: "Hidden", title: "Readable title" } };
 
 describe("NodeSearch", () => {
   beforeEach(() => {
@@ -48,8 +50,8 @@ describe("NodeSearch", () => {
 
   it("uses getNodeLabel for both default search and result text", async () => {
     const user = userEvent.setup();
-    mocks.state.nodes = [{ ...alpha, data: { label: "Hidden", title: "Readable title" } }];
-    render(<NodeSearch getNodeLabel={(node) => (node.data as { title: string }).title} />);
+    mocks.state.nodes = [titled];
+    render(<NodeSearch<TitledNode> getNodeLabel={(node) => node.data.title} />);
 
     await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "readable");
     expect(screen.getByRole("option", { name: "Readable title" })).toBeInTheDocument();
@@ -62,21 +64,21 @@ describe("NodeSearch", () => {
 
   it("lets onSearch and onSelectNode replace the defaults while retaining the display label", async () => {
     const user = userEvent.setup();
-    const onSearch = vi.fn(() => [beta]);
-    const onSelectNode = vi.fn();
+    const onSearch = vi.fn(() => [titled]);
+    const onSelectNode = vi.fn((title: string) => title);
     render(
       <NodeSearch
-        getNodeLabel={(node) => `Result: ${node.data.label as string}`}
+        getNodeLabel={(node) => `Result: ${node.data.title.toUpperCase()}`}
         onSearch={onSearch}
-        onSelectNode={onSelectNode}
+        onSelectNode={(node) => onSelectNode(node.data.title)}
       />,
     );
 
     await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "unrelated");
     expect(onSearch).toHaveBeenLastCalledWith("unrelated");
-    await user.click(screen.getByRole("option", { name: "Result: Beta" }));
+    await user.click(screen.getByRole("option", { name: "Result: READABLE TITLE" }));
 
-    expect(onSelectNode).toHaveBeenCalledExactlyOnceWith(beta);
+    expect(onSelectNode).toHaveBeenCalledExactlyOnceWith("Readable title");
     expect(mocks.setNodes).not.toHaveBeenCalled();
     expect(mocks.fitView).not.toHaveBeenCalled();
   });

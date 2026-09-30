@@ -4,11 +4,11 @@ import { useCallback, useState } from "react";
 import { cn } from "@/shared/react/class-name";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/react-ui/command";
 
-export type NodeSearchProps = Readonly<{
+export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   className?: string;
-  getNodeLabel?: (node: Node) => string;
-  onSearch?: (searchString: string) => Node[];
-  onSelectNode?: (node: Node) => void;
+  getNodeLabel?: (node: NodeType) => string;
+  onSearch?: (searchString: string) => NodeType[];
+  onSelectNode?: (node: NodeType) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }>;
@@ -18,16 +18,16 @@ function defaultGetNodeLabel(node: Node): string {
 }
 
 // Based on https://ui.reactflow.dev/node-search; getNodeLabel drives both default search and result text.
-function NodeSearchInternal({
+function NodeSearchInternal<NodeType extends Node>({
   getNodeLabel = defaultGetNodeLabel,
   onSearch,
   onSelectNode,
   open,
   onOpenChange,
-}: NodeSearchProps) {
-  const [searchResults, setSearchResults] = useState<Node[]>([]);
+}: NodeSearchProps<NodeType>) {
+  const [searchResults, setSearchResults] = useState<NodeType[]>([]);
   const [searchString, setSearchString] = useState("");
-  const { getNodes, fitView, setNodes } = useReactFlow<Node>();
+  const { getNodes, fitView, setNodes } = useReactFlow<NodeType>();
 
   const defaultOnSearch = useCallback(
     (searchString: string) =>
@@ -45,7 +45,7 @@ function NodeSearchInternal({
   );
 
   const defaultOnSelectNode = useCallback(
-    (node: Node) => {
+    (node: NodeType) => {
       setNodes((nodes) =>
         nodes.map((candidate) => (candidate.id === node.id ? { ...candidate, selected: true } : candidate)),
       );
@@ -55,7 +55,7 @@ function NodeSearchInternal({
   );
 
   const onSelect = useCallback(
-    (node: Node) => {
+    (node: NodeType) => {
       (onSelectNode ?? defaultOnSelectNode)(node);
       setSearchString("");
       setSearchResults([]);
@@ -95,7 +95,12 @@ function NodeSearchInternal({
   );
 }
 
-export function NodeSearch({ className, open, onOpenChange, ...props }: NodeSearchProps) {
+export function NodeSearch<NodeType extends Node = Node>({
+  className,
+  open,
+  onOpenChange,
+  ...props
+}: NodeSearchProps<NodeType>) {
   const [internalOpen, setInternalOpen] = useState(false);
   const changeOpen = useCallback(
     (nextOpen: boolean) => {
@@ -111,7 +116,7 @@ export function NodeSearch({ className, open, onOpenChange, ...props }: NodeSear
       label="Search nodes"
       shouldFilter={false}
     >
-      <NodeSearchInternal {...props} onOpenChange={changeOpen} open={open ?? internalOpen} />
+      <NodeSearchInternal<NodeType> {...props} onOpenChange={changeOpen} open={open ?? internalOpen} />
     </Command>
   );
 }

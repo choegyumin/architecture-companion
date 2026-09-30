@@ -70,7 +70,7 @@ type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
-  getNodeLabel?: (node: Node) => string;
+  getNodeLabel?: (node: DiagramReactFlowNode) => string;
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
   onGroupActivate?: (groupId: string) => void;
@@ -146,7 +146,7 @@ export function DiagramCanvas({
     }
   }
 
-  function handleSearchSelect(node: Node): void {
+  function handleSearchSelect(node: DiagramReactFlowNode): void {
     if (!flowInstance) return;
     if (node.type === "card") onNodeActivate?.(node.id);
     if (node.type === "labeled-group") onGroupActivate?.(node.id);
@@ -195,7 +195,7 @@ export function DiagramCanvas({
         </Controls>
         {flowInstance && getNodeLabel ? (
           <Panel className="nodrag nopan nowheel" position="top-left">
-            <NodeSearch getNodeLabel={getNodeLabel} onSelectNode={handleSearchSelect} />
+            <NodeSearch<DiagramReactFlowNode> getNodeLabel={getNodeLabel} onSelectNode={handleSearchSelect} />
           </Panel>
         ) : null}
         {children}
