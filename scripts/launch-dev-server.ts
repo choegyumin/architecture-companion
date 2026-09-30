@@ -21,7 +21,10 @@ async function launchDevelopmentServer(args: readonly string[]): Promise<void> {
       fileURLToPath(new URL("./start-dev-server.ts", import.meta.url)),
       scopePath,
     ],
-    { stdio: "inherit" },
+    {
+      stdio: "inherit",
+      env: { ...process.env, ARCHITECTURE_COMPANION_DEV_SERVER_OWNER: String(process.pid) },
+    },
   );
 
   for (const signal of ["SIGINT", "SIGTERM"] as const) {

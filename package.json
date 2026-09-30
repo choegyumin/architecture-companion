@@ -12,9 +12,9 @@
   },
   "scripts": {
     "postinstall": "lefthook install --reset-hooks-path",
-    "dev": "concurrently --no-color --kill-others --success first --names server,client \"pnpm dev.server\" \"pnpm dev.client\"",
+    "dev": "tsx scripts/launch-dev.ts",
     "dev.server": "tsx scripts/launch-dev-server.ts",
-    "dev.client": "wait-on tcp:127.0.0.1:4318 && vite --open",
+    "dev.client": "vite --open",
     "build": "tsx scripts/clean-dist.ts && tsup && vite build && tsx scripts/compose-dist.ts && tsx scripts/verify-skill.ts",
     "schema-gen": "tsx scripts/generate-schemas.ts",
     "start": "node skills/architecture-companion/runtime/cli/serve.js",
@@ -81,7 +81,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
-    "vitest": "^3.2.4",
-    "wait-on": "^9.1.0"
+    "vitest": "^3.2.4"
   }
 }
