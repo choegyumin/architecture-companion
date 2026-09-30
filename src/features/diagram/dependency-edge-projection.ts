@@ -17,24 +17,28 @@ export type DependencyEdgeProjection =
       edgeIds: readonly string[];
     }>;
 
-type BoundaryEdge = Readonly<{ edgeId: string; sourceId: string; targetId: string }>;
-
-function aggregateEdges(edges: readonly BoundaryEdge[], reservedIds: ReadonlySet<string>): DependencyEdgeProjection[] {
-  const byEndpoints = new Map<string, { sourceId: string; targetId: string; edgeIds: string[] }>();
-  edges.forEach(({ edgeId, sourceId, targetId }) => {
-    if (sourceId === targetId) return;
-    const key = JSON.stringify([sourceId, targetId]);
-    const aggregate = byEndpoints.get(key);
-    if (aggregate) aggregate.edgeIds.push(edgeId);
-    else byEndpoints.set(key, { sourceId, targetId, edgeIds: [edgeId] });
-  });
+function createEdgeAggregator(reservedIds: ReadonlySet<string>) {
+  const byEndpoints = new Map<string, string[]>();
   const usedIds = new Set(reservedIds);
-  return [...byEndpoints.entries()].map(([key, { sourceId, targetId, edgeIds }]) => {
-    let id = `aggregate:${key}`;
-    while (usedIds.has(id)) id += ":";
-    usedIds.add(id);
-    return { type: "aggregate", id, sourceId, targetId, edgeIds };
-  });
+  const projections: DependencyEdgeProjection[] = [];
+  return {
+    projections,
+    add(edgeId: string, sourceId: string, targetId: string) {
+      if (sourceId === targetId) return;
+      const key = JSON.stringify([sourceId, targetId]);
+      const existing = byEndpoints.get(key);
+      if (existing) {
+        existing.push(edgeId);
+        return;
+      }
+      let id = `aggregate:${key}`;
+      while (usedIds.has(id)) id += ":";
+      usedIds.add(id);
+      const edgeIds = [edgeId];
+      byEndpoints.set(key, edgeIds);
+      projections.push({ type: "aggregate", id, sourceId, targetId, edgeIds });
+    },
+  };
 }
 
 export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFocus): DependencyEdgeProjection[] {
@@ -61,7 +65,8 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
         return [node.id, path.reverse()] as const;
       }),
     );
-    const overview = graph.edges.flatMap<BoundaryEdge>((edge) => {
+    const overview = createEdgeAggregator(new Set([...reservedIds, ...bundles.values()]));
+    graph.edges.forEach((edge) => {
       const source = getOrThrow(ancestors.get(edge.source), `Missing edge source: ${edge.source}`);
       const target = getOrThrow(ancestors.get(edge.target), `Missing edge target: ${edge.target}`);
       let depth = 0;
@@ -69,16 +74,14 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
       const parentId = depth ? source[depth - 1] : undefined;
       // Each relationship belongs to its lowest common scope, not every ancestor.
       // Direct nodes share one bundle there; its internal detail remains focused-only.
-      if (parentId && depth === source.length && depth === target.length) return [];
-      return [
-        {
-          edgeId: edge.id,
-          sourceId: source[depth] ?? (parentId ? bundles.get(parentId)! : edge.source),
-          targetId: target[depth] ?? (parentId ? bundles.get(parentId)! : edge.target),
-        },
-      ];
+      if (parentId && depth === source.length && depth === target.length) return;
+      overview.add(
+        edge.id,
+        source[depth] ?? (parentId ? bundles.get(parentId)! : edge.source),
+        target[depth] ?? (parentId ? bundles.get(parentId)! : edge.target),
+      );
     });
-    return aggregateEdges(overview, new Set([...reservedIds, ...bundles.values()]));
+    return overview.projections;
   }
   if (focus.type === "node") {
     getOrThrow(nodes.get(focus.id), `Missing focused diagram node: ${focus.id}`);
@@ -106,7 +109,7 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
     }),
   );
   const originals: DependencyEdgeProjection[] = [];
-  const boundary: BoundaryEdge[] = [];
+  const boundary = createEdgeAggregator(reservedIds);
   graph.edges.forEach((edge) => {
     const sourceInside = inside.has(edge.source);
     const targetInside = inside.has(edge.target);
@@ -120,11 +123,7 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
       `Missing boundary edge node: ${edge.id}`,
     );
     const outsideId = outside.groupId === focusedGroup.parentId ? outside.id : (outside.groupId ?? outside.id);
-    boundary.push(
-      sourceInside
-        ? { edgeId: edge.id, sourceId: focus.id, targetId: outsideId }
-        : { edgeId: edge.id, sourceId: outsideId, targetId: focus.id },
-    );
+    boundary.add(edge.id, sourceInside ? focus.id : outsideId, sourceInside ? outsideId : focus.id);
   });
-  return [...originals, ...aggregateEdges(boundary, reservedIds)];
+  return [...originals, ...boundary.projections];
 }

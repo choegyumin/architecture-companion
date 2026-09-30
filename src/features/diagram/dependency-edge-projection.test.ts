@@ -196,13 +196,19 @@ describe("dependency edge projection", () => {
       ...graph,
       edges: [...graph.edges, { id: 'aggregate:["app","api"]', type: "default", source: "app-a", target: "api-file" }],
     } as const satisfies DiagramGraph;
-    const projected = projectDependencyEdges(colliding);
-    const aggregate = projected.find(
-      (edge) => edge.type === "aggregate" && edge.sourceId === "app" && edge.targetId === "api",
-    );
-    expect(aggregate?.type).toBe("aggregate");
-    if (aggregate?.type !== "aggregate") throw new Error("Missing aggregate");
-    expect(aggregate.id).not.toBe('aggregate:["app","api"]');
+    for (const focus of [undefined, { type: "group", id: "app" }] as const) {
+      const projected = projectDependencyEdges(colliding, focus);
+      const aggregate = projected.find(
+        (edge) => edge.type === "aggregate" && edge.sourceId === "app" && edge.targetId === "api",
+      );
+      expect(aggregate).toEqual({
+        type: "aggregate",
+        id: 'aggregate:["app","api"]:',
+        sourceId: "app",
+        targetId: "api",
+        edgeIds: ["app-a-to-api", "app-b-to-api", "page-to-api", 'aggregate:["app","api"]'],
+      });
+    }
     expect(() => projectDependencyEdges(graph, { type: "aggregate", edgeIds: ["unknown"] })).toThrow(
       "Missing focused aggregate edge: unknown",
     );
