@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -34,6 +35,14 @@ async function withFixture(
         await writeFile(filePath, content);
       }),
     );
+    if (!Object.keys(files).some((path) => path.startsWith("node_modules/typescript/"))) {
+      await mkdir(join(scopePath, "node_modules"), { recursive: true });
+      await symlink(
+        dirname(dirname(createRequire(import.meta.url).resolve("typescript"))),
+        join(scopePath, "node_modules/typescript"),
+        "junction",
+      );
+    }
     await run(scopePath);
   } finally {
     await rm(scopePath, { recursive: true });
@@ -64,6 +73,79 @@ function externalPackageFiles(declarations: string): Readonly<Record<string, str
 }
 
 describe("React component structure generator", () => {
+  it("does not borrow fallback declarations when the installed TypeScript package is incomplete", async () => {
+    await withFixture(
+      {
+        "node_modules/typescript/package.json": JSON.stringify({ name: "typescript", main: "lib/typescript.js" }),
+        "src/app.tsx": `
+          export function Child() { return <span />; }
+          export function App() { return [1, 2].map(() => <Child />); }
+        `,
+      },
+      async (scopePath) => {
+        const compilerPath = join(scopePath, "node_modules/typescript/lib/typescript.js");
+        await mkdir(dirname(compilerPath), { recursive: true });
+        await copyFile(createRequire(import.meta.url).resolve("typescript"), compilerPath);
+
+        await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+          join("node_modules", "typescript", "lib", "lib.esnext.full.d.ts"),
+        );
+      },
+    );
+  });
+
+  it("rejects missing global types instead of silently omitting array rendering", async () => {
+    await withFixture(
+      {
+        "tsconfig.json": JSON.stringify({ compilerOptions: { jsx: "preserve", noLib: true } }),
+        "src/app.tsx": `
+          export function Child() { return <span />; }
+          export function App() { return [1, 2].map(() => <Child />); }
+        `,
+      },
+      async (scopePath) => {
+        await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+          "Cannot find global type",
+        );
+      },
+    );
+  });
+
+  it("does not borrow type packages from the generator's working directory", async () => {
+    await withFixture(
+      {
+        "tsconfig.json": JSON.stringify({ compilerOptions: { jsx: "preserve", types: ["vitest/globals"] } }),
+        "src/app.tsx": `export function App() { return <main />; }`,
+      },
+      async (scopePath) => {
+        await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+          "Cannot find type definition file for 'vitest/globals'",
+        );
+      },
+    );
+  });
+
+  it.each([{ rootPatterns: [] }, { rootPatterns: ["App"] }])(
+    "keeps flatMap rendering without a tsconfig and with roots $rootPatterns",
+    async ({ rootPatterns }) => {
+      await withFixture(
+        {
+          "src/app.tsx": `
+          export function Child() { return <span />; }
+          export function App() { return [1, 2].flatMap(() => [<Child />]); }
+        `,
+        },
+        async (scopePath) => {
+          await rm(join(scopePath, "tsconfig.json"));
+          const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns });
+          expect(edgeFacts(graph)).toEqual([
+            { source: "App", target: "Child", kind: "direct-render", label: undefined },
+          ]);
+        },
+      );
+    },
+  );
+
   it("uses the component that renders children as the visual parent", async () => {
     await withFixture(
       {

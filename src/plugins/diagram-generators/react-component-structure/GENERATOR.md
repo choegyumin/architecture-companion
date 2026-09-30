@@ -28,6 +28,10 @@ This arranges component composition relationships from top to bottom.
 
 `<generator-directory>` is the absolute path to the generator directory selected after discovery, and `<scope>` is the absolute path to the target directory specified by the user. No package installation is needed in the target project.
 
+The generator prefers the TypeScript package resolved from the target scope, including workspace ancestors, and uses that package's compiler API and standard declarations together. If none is installed, it installs the exact TypeScript version recorded from the generator's build dependencies into a per-user, versioned cache in the operating system's temporary directory. An uncached fallback requires `npm` and registry access; later runs reuse the cache. Installation scripts are disabled, and the target project's dependencies are not changed. The operating system may remove the temporary cache, requiring another download.
+
+Missing standard declarations, global types, or required compiler configuration dependencies fail generation instead of producing an incomplete graph.
+
 ```sh
 node "<generator-directory>/run.js" \
   --base "<scope>" \
