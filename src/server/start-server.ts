@@ -15,6 +15,7 @@ export type StartedServer = Readonly<{
 type StartServerOptions = Readonly<{
   hostname?: string;
   port?: number;
+  fallbackPort?: boolean;
   staticRoot?: string | false;
 }>;
 
@@ -55,8 +56,17 @@ export async function startServer(scope: ConsumerScope, options: StartServerOpti
       },
     );
 
+    const rejectStartup = (error: Error): void => {
+      void reviewUpdates.close().then(() => reject(error), reject);
+    };
+
     server.once("error", (error) => {
-      void reviewUpdates.close().finally(() => reject(error));
+      if (options.fallbackPort && "code" in error && error.code === "EADDRINUSE") {
+        server.once("error", rejectStartup);
+        server.listen(0, hostname);
+        return;
+      }
+      rejectStartup(error);
     });
   });
 }

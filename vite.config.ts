@@ -10,16 +10,9 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 4317,
-    strictPort: true,
+    strictPort: false,
     watch: {
       ignored: ["**/.architecture-companion/**", "**/src/cli/**", "**/src/server/**", "**/*.test.{ts,tsx}"],
-    },
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:4318",
-        changeOrigin: true,
-        headers: { origin: "http://127.0.0.1:4318" },
-      },
     },
   },
   build: {
