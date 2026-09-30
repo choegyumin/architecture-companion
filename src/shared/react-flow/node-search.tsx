@@ -1,5 +1,5 @@
 import { type Node, useReactFlow } from "@xyflow/react";
-import { useCallback, useRef, useState } from "react";
+import { type Ref, useCallback, useRef, useState } from "react";
 
 import { cn } from "@/shared/react/class-name";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/react-ui/command";
@@ -7,6 +7,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   className?: string;
   getNodeLabel?: (node: NodeType) => string;
+  inputRef?: Ref<HTMLInputElement>;
+  placeholder?: string;
   onSearch?: (searchString: string) => NodeType[];
   onSelectNode?: (node: NodeType) => void;
   open?: boolean;
@@ -22,6 +24,8 @@ function defaultGetNodeLabel(node: Node): unknown {
 // Based on https://ui.reactflow.dev/node-search; getNodeLabel drives both default search and result text.
 function NodeSearchInternal<NodeType extends Node>({
   getNodeLabel,
+  inputRef,
+  placeholder = "Search nodes...",
   onSearch,
   onSelectNode,
   open,
@@ -100,7 +104,8 @@ function NodeSearchInternal<NodeType extends Node>({
           if (event.key === "Escape") onOpenChange?.(false);
         }}
         onValueChange={onChange}
-        placeholder="Search nodes..."
+        placeholder={placeholder}
+        ref={inputRef}
         value={searchString}
       />
       {open && searchString ? (

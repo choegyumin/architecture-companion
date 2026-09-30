@@ -1,3 +1,5 @@
+import { addEventListener } from "@base-ui/utils/addEventListener";
+import { platform } from "@base-ui/utils/platform";
 import {
   Background,
   ControlButton,
@@ -64,7 +66,6 @@ const diagramEdgeTypes = {
 } satisfies EdgeRendererRegistry<DiagramReactFlowEdge>;
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
-const isMacOS = navigator.userAgent.includes("Macintosh");
 
 type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
@@ -96,6 +97,30 @@ export function DiagramCanvas({
   const { resolvedTheme } = useTheme();
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<DiagramReactFlowNode, DiagramReactFlowEdge>>();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const isMacOS = platform.os.mac;
+  const searchEnabled = Boolean(flowInstance && getNodeLabel);
+
+  useEffect(() => {
+    if (!searchEnabled) return;
+    return addEventListener(document, "keydown", (event) => {
+      const modifierPressed = isMacOS ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+      if (
+        !modifierPressed ||
+        event.key.toLowerCase() !== "k" ||
+        event.altKey ||
+        event.shiftKey ||
+        event.repeat ||
+        event.isComposing ||
+        event.defaultPrevented
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    });
+  }, [isMacOS, searchEnabled]);
 
   const fitView = useCallback(async () => {
     if (!flowInstance || !initialView || !canvasRef.current) return;
@@ -193,9 +218,14 @@ export function DiagramCanvas({
             <Maximize aria-hidden="true" />
           </ControlButton>
         </Controls>
-        {flowInstance && getNodeLabel ? (
+        {searchEnabled ? (
           <Panel className="nodrag nopan nowheel" position="top-left">
-            <NodeSearch<DiagramReactFlowNode> getNodeLabel={getNodeLabel} onSelectNode={handleSearchSelect} />
+            <NodeSearch<DiagramReactFlowNode>
+              getNodeLabel={getNodeLabel}
+              inputRef={searchInputRef}
+              onSelectNode={handleSearchSelect}
+              placeholder={isMacOS ? "Search nodes... (⌘K)" : "Search nodes... (Ctrl+K)"}
+            />
           </Panel>
         ) : null}
         {children}

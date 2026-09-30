@@ -10,12 +10,15 @@ const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
   const fitView = vi.fn();
   return {
+    platform: { os: { mac: false } },
     flowInstance: { screenToFlowPosition, fitView },
     nodes: [] as { id: string; type: string; parentId?: string }[],
     screenToFlowPosition,
     fitView,
   };
 });
+
+vi.mock("@base-ui/utils/platform", () => ({ platform: mocks.platform }));
 
 vi.mock("@xyflow/react", () => ({
   Background: () => null,
@@ -78,6 +81,7 @@ vi.mock("@xyflow/react", () => ({
 
 describe("diagram canvas", () => {
   beforeEach(() => {
+    mocks.platform.os.mac = false;
     mocks.screenToFlowPosition.mockClear();
     mocks.fitView.mockClear();
   });
@@ -263,5 +267,65 @@ describe("diagram canvas", () => {
 
     await user.type(input, "bounding-group");
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      os: "macOS",
+      mac: true,
+      modifier: { metaKey: true },
+      wrongModifier: { ctrlKey: true },
+      placeholder: "Search nodes... (⌘K)",
+    },
+    {
+      os: "Windows/Linux",
+      mac: false,
+      modifier: { ctrlKey: true },
+      wrongModifier: { metaKey: true },
+      placeholder: "Search nodes... (Ctrl+K)",
+    },
+  ])(
+    "focuses node search with the advertised shortcut on $os",
+    async ({ mac, modifier, wrongModifier, placeholder }) => {
+      mocks.platform.os.mac = mac;
+      const { unmount } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+      expect(input).toHaveAttribute("placeholder", placeholder);
+
+      expect(fireEvent.keyDown(document, { key: "k", ...wrongModifier })).toBe(true);
+      expect(input).not.toHaveFocus();
+
+      expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(false);
+      expect(input).toHaveFocus();
+
+      unmount();
+      expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(true);
+    },
+  );
+
+  it.each([
+    { key: "k" },
+    { key: "j", ctrlKey: true },
+    { key: "k", ctrlKey: true, metaKey: true },
+    { key: "k", ctrlKey: true, altKey: true },
+    { key: "k", ctrlKey: true, shiftKey: true },
+    { key: "k", ctrlKey: true, repeat: true },
+    { key: "k", ctrlKey: true, isComposing: true },
+  ])("does not intercept unrelated or conflicting key events: %j", async (event) => {
+    render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
+    const input = await screen.findByRole("combobox", { name: "Search nodes" });
+
+    expect(fireEvent.keyDown(document, event)).toBe(true);
+    expect(input).not.toHaveFocus();
+  });
+
+  it("stops intercepting the shortcut when search is unavailable", async () => {
+    const { rerender } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
+    await screen.findByRole("combobox", { name: "Search nodes" });
+
+    rerender(<DiagramCanvas edges={[]} nodes={[]} />);
+
+    expect(screen.queryByRole("combobox", { name: "Search nodes" })).not.toBeInTheDocument();
+    expect(fireEvent.keyDown(document, { key: "k", ctrlKey: true })).toBe(true);
   });
 });
