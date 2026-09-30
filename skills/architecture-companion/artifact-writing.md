@@ -28,9 +28,42 @@ Architecture Companion calculates coordinates and dimensions, so do not store th
 
 For each generated or regenerated diagram, set `generator` to the selected descriptor's `source` and logical `id` as `<source>:<id>`. Reading an artifact must not require that generator to be installed.
 
-Record choices that cannot be reproduced from `generator` alone as free-form text in `generatorInstructions`. Include the required inputs, options, working directory, commands, and manual steps. Preserve regeneration instructions that remain valid when editing the graph. If regeneration inputs or manual steps change, update the instructions to reflect what was actually applied.
+Every diagram must include `instructions`, a non-empty Markdown string specifying how to recreate it from current source while retaining its review purpose, analysis scope, and presentation intent. It records diagram-specific choices, not general generator usage. The goal is to apply the same criteria to current source, not to reproduce an earlier graph unchanged. These rules apply to both executable generators and manually authored diagrams.
 
-Write commands to run from the target scope root. Replace session-specific absolute generator paths with `<generator-directory>`, and record source paths relative to the scope. Use `.` for the scope when the command supports it. Apart from this path normalization, preserve the options and selected source paths used for execution.
+Use the following sections in order:
+
+- `## Purpose` (required): State the review question and what the diagram is intended to examine.
+- `## Regeneration` (required): For an executable generator, record the working directory and a complete command with all selected inputs and options. Treat the command as the source of truth for execution inputs rather than repeating them in prose. For a manually authored diagram, record the investigation targets, scope, and construction criteria instead.
+- `## Refinements` (optional): Include only when diagram-specific refinements are needed beyond the regeneration procedure. State what to change, how, and why, such as grouping, wording improvements, or intentionally omitted relationships. Provide enough detail for another agent to apply and reassess the refinements against current source.
+
+For example, the parsed field value may contain:
+
+````markdown
+## Purpose
+
+Review dependencies between checkout modules and external packages.
+
+## Regeneration
+
+Run from the scope root:
+
+```sh
+node "<generator-directory>/run.js" \
+  --base "." \
+  --exclude-path "*.test.*" \
+  "src/checkout"
+```
+
+## Refinements
+
+Add source-verified responsibility descriptions to checkout entry-point nodes to clarify their architectural roles.
+````
+
+Write commands to run from the target scope root. Replace session-specific absolute generator paths with `<generator-directory>`, and record source paths relative to the scope. Use `.` for the scope when the command supports it. Apart from this path normalization, preserve the options and selected source paths used for execution. Compose the Markdown as ordinary text and serialize the diagram as JSON so that line breaks, quotes, and backslashes are escaped correctly; no dedicated script is required.
+
+Do not repeat shared schema, validation, or ID-preservation rules, or the generator's general usage guide. Do not copy the current node and edge inventory, session-specific paths, temporary file paths, or work history into the instructions.
+
+Preserve instructions that remain valid when source changes affect only the graph. Update them when the purpose, regeneration inputs or procedure, or refinements change, so they reflect what was actually applied. The current user request takes precedence over existing instructions; revise the instructions to match the criteria used.
 
 ## Descriptions shown in the Review UI
 

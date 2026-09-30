@@ -9,6 +9,7 @@ const checkoutBehavior = {
   id: "checkout",
   title: "Checkout workflow",
   generator: "built-in:freeform",
+  instructions: "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],

@@ -8,6 +8,7 @@ function createDiagram(id: string, title: string): Diagram {
     id,
     title,
     generator: "built-in:freeform",
+    instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} workflow.`,
     layout: { id: "elk-layered" },
     graph: {
       groups: [],

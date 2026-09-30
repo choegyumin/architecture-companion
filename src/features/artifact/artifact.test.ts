@@ -4,6 +4,8 @@ const validBehavior = {
   id: "checkout",
   title: "Checkout workflow",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview checkout payment flow.\n\n## Regeneration\nRebuild submission, validation, capture, and confirmation steps.",
   layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
   graph: {
     groups: [],
@@ -121,6 +123,8 @@ describe("artifact parsing", () => {
       id: "structure",
       title: "Structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -139,6 +143,8 @@ describe("artifact parsing", () => {
       id: "structure",
       title: "Structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

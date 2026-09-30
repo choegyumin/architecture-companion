@@ -62,6 +62,8 @@ function reviewArtifact(generator: string) {
         id: "checkout",
         title: "Checkout workflow",
         generator,
+        instructions:
+          "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary with the selected generator.",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

@@ -43,9 +43,9 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
    Do not select by array order or discard entries solely because they share a logical `id`. If candidates with identical `id` and `description` remain after applying these criteria, prefer `built-in`, then `project`, then `global`.
 
-4. Read `GENERATOR.md` at the selected `path` and follow its investigation, reference, and execution instructions. File organization and entry points may differ between generators. Follow that guide for diagram-specific construction while also applying the shared authoring rules. When regenerating, use any existing `generatorInstructions` as the starting point for source scope, options, working directory, and manual steps. Adjust only what the current request or the selected generator's instructions require.
+4. Read `GENERATOR.md` at the selected `path` and follow its investigation, reference, and execution instructions. File organization and entry points may differ between generators. Follow that guide for diagram-specific construction while also applying the shared authoring rules. When regenerating, use the diagram's `instructions` to retain the review purpose and as the starting point for source scope, options, working directory, and refinements. Adjust only what the current request or the selected generator's instructions require.
 
-5. Check evidence in source code, tests, configuration, and documentation, and edit the diagram files directly. Even if a generator produces a candidate graph, compare it against the existing artifact, including manual refinements, and decide what to preserve, modify, or replace based on the request. For each generated or regenerated diagram, record the selected descriptor's `source` and `id` in `generator` as `<source>:<id>`.
+5. Check evidence in source code, tests, configuration, and documentation, and edit the diagram files directly. Even if a generator produces a candidate graph, compare it against the existing artifact, including manual refinements, and decide what to preserve, modify, or replace based on the request. For each generated or regenerated diagram, record the selected descriptor's `source` and `id` in `generator` as `<source>:<id>`. Every diagram must include `instructions` following the shared authoring rules.
 
 6. Validate the entire artifact after making changes.
 

@@ -10,6 +10,8 @@ const sequenceDiagram = {
   id: "sequence",
   title: "Sequence",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview participant interactions.\n\n## Regeneration\nRebuild lifelines and messages from the interaction flow.",
   layout: { id: "sequence" },
   graph: {
     groups: [],

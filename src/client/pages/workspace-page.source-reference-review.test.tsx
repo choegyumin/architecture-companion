@@ -16,6 +16,8 @@ const artifact = {
       id: "checkout",
       title: "Checkout workflow",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the trigger and confirmation from src/workflow.ts.",
       layout: { id: "elk-layered" },
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
       graph: {
@@ -39,6 +41,8 @@ const artifact = {
       id: "structure",
       title: "Checkout structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts and its tests.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

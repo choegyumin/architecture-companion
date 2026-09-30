@@ -60,5 +60,5 @@ On an underlying edge, an absent `kind` indicates a runtime dependency, while a 
 
 1. Read the existing diagram file first, then read the temporary candidate graph programmatically. Preserve, modify, or replace the existing graph according to the request, keeping unrelated diagrams and IDs for concepts that retain their meaning.
 2. Preserve or assign the enclosing diagram's `id` and `title`, and apply the **Diagram configuration** above.
-3. Record a complete command in `generatorInstructions` that runs from the target scope root. Use `<generator-directory>` for the generator path and `--base "."` for the scope; preserve all other options and selected source paths.
+3. Record the necessary regeneration context according to the skill's shared authoring rules.
 4. Validate the entire artifact using the skill's shared authoring procedure.

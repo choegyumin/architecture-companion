@@ -12,6 +12,8 @@ const checkoutBehavior = {
   id: "checkout",
   title: "Workflow",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],

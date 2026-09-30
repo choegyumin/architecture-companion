@@ -16,6 +16,8 @@ function artifact() {
         id: "checkout",
         title: "Checkout workflow",
         generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],
@@ -29,6 +31,8 @@ function artifact() {
         id: "structure",
         title: "Checkout structure",
         generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview checkout input ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts.",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

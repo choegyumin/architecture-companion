@@ -19,6 +19,8 @@ const diagram = {
   id: "example",
   title: "Example",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview the selected diagram layout.\n\n## Regeneration\nRebuild the example elements for the selected layout.",
   graph: { groups: [], nodes: [{ id: "node", type: "default", title: "Node" }], edges: [] },
 } as const;
 

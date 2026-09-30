@@ -23,6 +23,8 @@ function artifact(label: string): Artifact {
       {
         title: "Workflow",
         generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
@@ -37,6 +39,8 @@ function artifact(label: string): Artifact {
         id: "checkout-structure",
         title: "Checkout structure",
         generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from the current checkout components.",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],
