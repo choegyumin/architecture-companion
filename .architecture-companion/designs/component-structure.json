@@ -2,7 +2,7 @@
   "id": "component-structure",
   "title": "Component structure",
   "generator": "built-in:react-component-structure",
-  "generatorInstructions": "Generate from src/client, src/shared/react-flow, and the selected react-ui files (button.tsx, card.tsx, empty.tsx, form.tsx, tabs.tsx, theme-toggle.tsx, toggle.tsx). Exclude component identities external:@base-ui/react#* and external:lucide-react#*, root the graph at WorkspacePage, then preserve existing graph element IDs when merging.",
+  "instructions": "## Purpose\nReview how WorkspacePage composes the Review UI through local components and external component boundaries.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --exclude-component \"external:@base-ui/react#*\" \\\n  --exclude-component \"external:lucide-react#*\" \\\n  --root \"WorkspacePage\" \\\n  \"src/client\" \\\n  \"src/shared/react-flow\" \\\n  \"src/shared/react-ui/button.tsx\" \\\n  \"src/shared/react-ui/card.tsx\" \\\n  \"src/shared/react-ui/empty.tsx\" \\\n  \"src/shared/react-ui/form.tsx\" \\\n  \"src/shared/react-ui/tabs.tsx\" \\\n  \"src/shared/react-ui/theme-toggle.tsx\" \\\n  \"src/shared/react-ui/toggle.tsx\"\n```",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -237,6 +237,17 @@
       },
       {
         "type": "default",
+        "id": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
+        "title": "NodeSearch",
+        "description": "src/shared/react-flow/node-search.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/node-search.tsx"
+          }
+        ]
+      },
+      {
+        "type": "default",
         "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
         "title": "RouteEdge",
         "description": "src/shared/react-flow/route-edge.tsx",
@@ -464,6 +475,14 @@
         "target": "component:src/shared/react-ui/empty.tsx#Empty",
         "kind": "NODE (children)",
         "label": "from WorkspacePage"
+      },
+      {
+        "type": "default",
+        "id": "edge:1ff3aecad88af44e",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Panel",
+        "kind": "NODE (children)",
+        "label": "from DiagramCanvas"
       },
       {
         "type": "default",
@@ -703,6 +722,14 @@
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
         "kind": "COMPONENT (nodeTypes)",
+        "label": "from DiagramCanvas"
+      },
+      {
+        "type": "default",
+        "id": "edge:cc2631892c46930d",
+        "source": "external:@xyflow/react#Panel",
+        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
+        "kind": "NODE (children)",
         "label": "from DiagramCanvas"
       },
       {

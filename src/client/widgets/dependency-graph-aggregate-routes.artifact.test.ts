@@ -239,8 +239,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
       ["group:directory:src/client/pages", "group:directory:src/client/parts", "group:directory:src/client"],
       [
         "group:directory:src/client/widgets",
-        "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
-        "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
       ],
     ];
     const crossings: string[] = [];

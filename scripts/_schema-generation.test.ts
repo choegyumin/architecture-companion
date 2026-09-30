@@ -45,14 +45,14 @@ describe("generateSchemaSources", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./diagram.schema.json",
       type: "object",
-      required: ["id", "title", "generator", "layout", "graph"],
+      required: ["id", "title", "generator", "instructions", "layout", "graph"],
       additionalProperties: false,
       properties: {
         generator: {
           type: "string",
           pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
         },
-        generatorInstructions: { type: "string", minLength: 1 },
+        instructions: { type: "string", minLength: 1 },
         links: {
           type: "array",
           items: {

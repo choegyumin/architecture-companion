@@ -16,6 +16,8 @@ const artifact: Artifact = {
       id: "checkout",
       title: "Checkout workflow",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -29,6 +31,8 @@ const artifact: Artifact = {
       id: "checkout-structure",
       title: "Checkout structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

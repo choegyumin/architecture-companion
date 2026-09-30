@@ -16,6 +16,8 @@ const checkoutDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the page, payment form, and client relations.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [{ id: "checkout-feature", title: "Checkout feature" }],
@@ -72,6 +74,7 @@ const catalogDiagram = {
   id: "catalog-structure",
   title: "Catalog structure",
   generator: "built-in:freeform",
+  instructions: "## Purpose\nReview product browsing ownership.\n\n## Regeneration\nRebuild the catalog page boundary.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],
@@ -93,6 +96,8 @@ const designArtifact = {
     {
       title: "Workflow",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
       layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
@@ -114,6 +119,8 @@ const processArtifact = {
       id: "invite-member",
       title: "Invite member",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview member invitations.\n\n## Regeneration\nRebuild submission, eligibility, sending, and delivery steps.",
       layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
@@ -134,6 +141,8 @@ const processArtifact = {
       id: "remove-member",
       title: "Remove member",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview member removal.\n\n## Regeneration\nRebuild the removal trigger from the member workflow.",
       layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
@@ -247,6 +256,8 @@ describe("dependency graph review", () => {
           id: "dependencies",
           title: "Dependencies",
           generator: "built-in:freeform",
+          instructions:
+            "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the grouped module relations.",
           layout: { id: "dependency-graph" },
           graph: {
             groups: [
@@ -290,6 +301,8 @@ describe("process (product workflow) review", () => {
           id: "request-response",
           title: "Request response",
           generator: "built-in:freeform",
+          instructions:
+            "## Purpose\nReview client-server requests.\n\n## Regeneration\nRebuild the client and server lifelines and request message.",
           layout: { id: "sequence" },
           graph: {
             groups: [],

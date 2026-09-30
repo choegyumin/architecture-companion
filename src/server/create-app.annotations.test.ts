@@ -24,6 +24,8 @@ function artifact(title: string): Artifact {
         id: "checkout",
         title,
         generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         layout: { id: "elk-layered" },
         graph: {
           groups: [],

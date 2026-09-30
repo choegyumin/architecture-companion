@@ -2,6 +2,7 @@
   "id": "review-session-sequence",
   "title": "Review session sequence",
   "generator": "built-in:freeform",
+  "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-artifact.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer-base.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
   "layout": {
     "id": "sequence"
   },
@@ -483,7 +484,7 @@
         "type": "message",
         "source": "server",
         "target": "filesystem",
-        "label": "Read artifact file",
+        "label": "Read behavior and design diagram files",
         "messageType": "sync"
       },
       {
@@ -491,7 +492,7 @@
         "type": "message",
         "source": "filesystem",
         "target": "server",
-        "label": "artifact file",
+        "label": "Diagram file contents",
         "messageType": "return"
       },
       {
@@ -571,7 +572,7 @@
         "type": "message",
         "source": "renderer",
         "target": "canvas",
-        "label": "Build measurement nodes",
+        "label": "Render measurement nodes",
         "messageType": "sync"
       },
       {

@@ -15,7 +15,7 @@
       "type": "string",
       "pattern": "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
-    "generatorInstructions": {
+    "instructions": {
       "type": "string",
       "minLength": 1
     },
@@ -138,6 +138,7 @@
     "id",
     "title",
     "generator",
+    "instructions",
     "layout",
     "graph"
   ],

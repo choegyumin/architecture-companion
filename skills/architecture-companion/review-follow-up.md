@@ -1,34 +1,39 @@
-# Review Follow-up Rules
+# Review follow-up rules
 
-Apply these rules when the user has reviewed the artifact in the Architecture Companion Review UI and then sends a follow-up request to the coding harness. Interpret the user's current request together with the Annotations and Comments of the active artifact revision to decide the response.
+Use these rules to interpret requests received after a Review UI review alongside the active artifact revision's Annotations and Comments. Follow `SKILL.md` for the retrieval command and the procedures for authoring and further review.
 
-## Active review context
+## Retrieval results and failure handling
 
-In the result the skill queried, a non-null `artifactRevisionId` is an opaque value identifying the current artifact revision. Do not depend on its format or construct one yourself. Use only the returned `document.annotations` as the Annotations of that active revision. When both `artifactRevisionId` and `document` are `null`, no active artifact exists; when a non-null revision's `document.annotations` is empty, no Annotations are stored for that revision.
+The `artifactRevisionId` returned by `view-annotations.js` is an opaque identifier for the current artifact revision. Do not rely on its format or construct it yourself. Use only the accompanying `document.annotations` as that revision's Annotations.
 
-Each Annotation carries the following semantics.
+- If both `artifactRevisionId` and `document` are `null`, there is no active artifact.
+- If `artifactRevisionId` is present and `document.annotations` is empty, no Annotations are saved for that revision. Continue handling ordinary follow-up requests.
+- If the command fails, the presence or absence of Annotations is unknown. Do not treat the result as an empty document or substitute results from another revision or scope.
 
-- An Annotation has a single `comment`.
-- On a Product Behavior canvas, `anchor.canvasId` has the form `behavior:<behavior-id>`.
-- On a Code Design canvas, `anchor.canvasId` has the form `design:<design-id>`.
-- When the reviewer selected a group, node, or edge, `anchor.target` records its `type` and stable element `id`.
-- When the reviewer selected an aggregated dependency route, `anchor.target` has `type: "edge-set"`; `sourceId` and `targetId` identify the displayed endpoints, and `edgeIds` contains the stable IDs of all original edges represented by that aggregate.
-- `anchor.target` is absent only for a canvas-level Annotation created without selecting an element.
-- `anchor.point` is the pin's visual position and does not replace the selected element target.
+If retrieval fails but the request can be handled using only the user's message and source evidence, report the failure and proceed. For example, if retrieval failed because of an artifact validation error and the request is to fix that error, inspect the error and files and make the fix. If the request depends on saved Annotation content, ask the user to confirm the content or target rather than guessing.
 
-Find the diagram in the active artifact through the Product Behavior or Code Design ID in `canvasId`. For a group, node, or edge target, match its stable `id` inside that diagram. For an `edge-set` target, find each `edgeIds` member among the diagram's original edges; use `sourceId` and `targetId` to understand the displayed aggregate endpoints, which may be groups or nodes, not as substitutes for the original edge IDs. Runtime validation checks the Annotation structure but not whether these IDs actually exist in the active artifact. Prefer stable element or edge IDs over the point when a target exists, and never guess a missing target from a nearby position or a similar title.
+## Identifying Annotation targets
 
-## Request interpretation
+Each Annotation has one `comment`. Use `anchor.canvasId` to find the diagram in the active artifact.
 
-- The user's coding-harness message decides the action to take. Annotations and Comments are review context that supplements the request, not separate global instructions.
-- Use only Annotations from the active revision. Never carry targets, coordinates, or Comments from retained old revisions into the current artifact by guesswork.
-- Apply only the Annotations relevant to the request scope. Ask only when several Comments conflict and the user's message cannot settle the priority.
-- Answer ordinary follow-up requests even when the active Annotation document is empty.
-- When the user explicitly refers to a stored Annotation but the active document is empty or the anchor target does not exist, report the mismatch.
+- Product Behavior canvas: `behavior:<behavior-id>`
+- Code Design canvas: `design:<design-id>`
 
-## Response decision
+An Annotation attached to a selected element has an `anchor.target`. Resolve the target according to the selection type:
 
-- When only an explanation or an answer to a question is needed, investigate the relevant evidence and answer directly without modifying the artifact.
-- When a code or documentation change is requested, use the Annotations as context for location and intent; do not automatically interpret them as a diagram-change request.
-- When a diagram must change, return to the skill's **Artifact writing** procedure and preserve unrelated diagrams and retained IDs. Never copy the previous revision's Annotations into the new revision or transform their coordinates.
-- When the artifact changed or the user wants another review, run the skill's **Start the Review UI and hand off the URL** procedure and provide the validated URL.
+| Target                     | How to identify it                                                                                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Group, node, or edge       | Find it within the diagram using its `type` and stable element `id`.                                                                                                                                               |
+| Aggregated dependency path | For `type: "edge-set"`, find each underlying edge listed in `edgeIds`. `sourceId` and `targetId` identify the groups or nodes at the displayed aggregate's endpoints; they do not replace the underlying edge IDs. |
+| Entire canvas              | An Annotation created without selecting an element has no `anchor.target`.                                                                                                                                         |
+
+`anchor.point` is the pin's visual position. If there is an element target, use its ID rather than the coordinates. Runtime validation checks Annotation structure but does not check whether referenced IDs exist in the active artifact, so verify them yourself. Do not infer a missing target from a nearby position or similar title.
+
+## Interpreting requests
+
+The user's message in the coding harness determines the action to take. Annotations and Comments provide review context about location and intent; they are not separate global instructions.
+
+- Apply only Annotations from the active revision that are relevant to the requested scope. Ask only when Comments conflict and the user's message does not resolve their priority.
+- If the user explicitly refers to saved Annotations but the active document is empty or the target does not exist, report the mismatch.
+- Answer explanation requests without changing the artifact. Do not automatically interpret requests for code or documentation changes as requests for diagram changes.
+- Even when changing diagrams, do not copy Annotations from the previous revision to the new one or transform their coordinates. Do not apply targets or Comments from an old revision to the current artifact by guesswork.

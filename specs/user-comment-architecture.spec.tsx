@@ -18,6 +18,8 @@ const artifact = {
       id: "checkout",
       title: "Checkout workflow",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

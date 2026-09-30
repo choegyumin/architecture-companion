@@ -2,7 +2,7 @@
   "id": "dependency-graph",
   "title": "JavaScript module dependency graph",
   "generator": "built-in:js-module-dependency-graph",
-  "generatorInstructions": "Run from the consumer scope root:\n\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/diagram-generators/js-module-dependency-graph/packaging/**\" \\\n  \"src\"",
+  "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/diagram-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
   "layout": {
     "id": "dependency-graph"
   },
@@ -75,13 +75,33 @@
         "parentId": "group:directory:src/plugins/diagram-generators"
       },
       {
+        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "title": "analysis",
+        "parentId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph"
+      },
+      {
+        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/cli",
+        "title": "cli",
+        "parentId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph"
+      },
+      {
         "id": "group:directory:src/plugins/diagram-generators/react-component-structure",
         "title": "react-component-structure",
         "parentId": "group:directory:src/plugins/diagram-generators"
       },
       {
+        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "title": "analysis",
+        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+      },
+      {
         "id": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
         "title": "cli",
+        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+      },
+      {
+        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/packaging",
+        "title": "packaging",
         "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
       },
       {
@@ -166,6 +186,13 @@
         "type": "default"
       },
       {
+        "id": "external:cmdk",
+        "title": "cmdk",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
         "id": "external:dependency-cruiser",
         "title": "dependency-cruiser",
         "groupId": "group:external-packages",
@@ -182,6 +209,13 @@
       {
         "id": "external:hono",
         "title": "hono",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
+        "id": "external:ignore",
+        "title": "ignore",
         "groupId": "group:external-packages",
         "kind": "External package",
         "type": "default"
@@ -603,6 +637,18 @@
         ]
       },
       {
+        "id": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts",
+        "title": "elk-layered-diagram-renderer.edge-paths.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "title": "elk-layered-diagram-renderer.react-flow.tsx",
         "groupId": "group:directory:src/client/widgets",
@@ -867,110 +913,122 @@
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "title": "analyze-module-dependencies.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts"
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
-        "title": "build-graph.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "title": "build-module-graph.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts"
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
-        "title": "discover-source-files.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "title": "collect-source-files.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts"
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts",
-        "title": "generate.command.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts",
+        "title": "command.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts"
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
-        "title": "generate.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generate.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "title": "generator.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/generator.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/cli/run.ts",
+        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
         "title": "run.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/run.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "title": "build-component-graph.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "title": "collect-source-files.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts",
+        "title": "command.ts",
         "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/cli/run.ts"
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/cli/command.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/command.ts",
-        "title": "command.ts",
+        "id": "file:src/plugins/diagram-generators/react-component-structure/packaging/node-bundling.ts",
+        "title": "node-bundling.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/packaging",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/packaging/node-bundling.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/run.ts",
+        "title": "run.ts",
         "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/command.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
-        "title": "generator.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/generator.ts"
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/run.ts"
           }
         ]
       },
@@ -1287,6 +1345,18 @@
         ]
       },
       {
+        "id": "file:src/shared/react-flow/node-search.tsx",
+        "title": "node-search.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/node-search.tsx"
+          }
+        ]
+      },
+      {
         "id": "file:src/shared/react-flow/polyline-edge-label-placement.ts",
         "title": "polyline-edge-label-placement.ts",
         "groupId": "group:directory:src/shared/react-flow",
@@ -1343,6 +1413,18 @@
           {
             "text": "source",
             "href": "source:///src/shared/react-ui/card.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/command.tsx",
+        "title": "command.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/command.tsx"
           }
         ]
       },
@@ -1914,6 +1996,12 @@
         "target": "file:src/shared/react-ui/textarea.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3A%40base-ui%2Futils:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "external:@base-ui/utils"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.tsx",
@@ -1986,6 +2074,12 @@
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.tsx",
         "target": "file:src/shared/react-flow/message-edge.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/node-search.tsx"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:runtime",
@@ -2160,6 +2254,12 @@
         "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "external:lucide-react"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:external%3Areact:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
@@ -2203,6 +2303,24 @@
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
         "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/shared/react-ui/item.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fshared%2Funiversal%2Fget-or-throw.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -2508,6 +2626,13 @@
         "target": "file:src/client/widgets/sequence-diagram-renderer.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.edge-paths.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts",
+        "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
@@ -2525,6 +2650,12 @@
         "type": "default",
         "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.edge-paths.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
+        "target": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -2912,142 +3043,132 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "target": "external:dependency-cruiser"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
         "target": "file:src/features/diagram/diagram-graph.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts",
-        "kind": "type-only"
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
-        "kind": "type-only"
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:external%3Amicromatch:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
-        "target": "external:micromatch"
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "target": "external:ignore"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts",
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.command.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "kind": "type-only"
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.command.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.command.ts"
+        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
+        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerate.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Aignore:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generate.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts"
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "target": "external:ignore"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Amicromatch:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "target": "file:src/features/diagram/diagram-graph.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalyze-module-dependencies.ts:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analyze-module-dependencies.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fbuild-graph.ts:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/build-graph.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fgenerator.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fdiscover-source-files.ts:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/generator.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/discover-source-files.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcommand.ts:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/cli/run.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/command.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/command.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/generator.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:external%3Amicromatch:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "external:micromatch"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:external%3Atypescript:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Atypescript:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "external:typescript"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "file:src/features/diagram/diagram-graph.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fgenerator.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/generator.ts",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "target": "external:ignore"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/run.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fcreate-annotation-etag.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
@@ -3445,6 +3566,30 @@
         "target": "file:src/shared/react-flow/message-edge-label-placement.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:external%3A%40xyflow%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/node-search.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/node-search.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/node-search.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/node-search.tsx",
+        "target": "file:src/shared/react-ui/command.tsx"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/route-edge.tsx",
@@ -3521,6 +3666,31 @@
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/card.tsx",
+        "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:external%3Acmdk:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/command.tsx",
+        "target": "external:cmdk"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:external%3Alucide-react:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/command.tsx",
+        "target": "external:lucide-react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:external%3Areact:type-only",
+        "type": "default",
+        "source": "file:src/shared/react-ui/command.tsx",
+        "target": "external:react",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/command.tsx",
         "target": "file:src/shared/react/class-name.ts"
       },
       {

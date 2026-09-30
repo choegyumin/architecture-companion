@@ -2,6 +2,7 @@
   "id": "artifact-sync",
   "title": "Sync artifact revision",
   "generator": "built-in:freeform",
+  "instructions": "## Purpose\nReview how an open Review UI responds to artifact changes while retaining the last valid artifact and isolating comments by revision.\n\n## Regeneration\nInspect src/server/review-updates.ts, src/server/read-artifact.ts, src/server/create-artifact-revision-id.ts, src/client/data-client.ts, and src/client/pages/workspace-page.tsx. Check the revision-update scenarios in specs/user-continue-new-review.spec.tsx and the server and workspace revision tests. Reconstruct the product flow from change detection through validation, branching into retaining the current artifact or activating and displaying the new revision.",
   "layout": {
     "id": "elk-layered",
     "options": {

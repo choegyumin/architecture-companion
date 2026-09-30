@@ -1,81 +1,96 @@
-# Artifact Writing Rules
+# Artifact authoring rules
 
-Common semantics and layout rules to apply when creating or modifying diagrams. Read [`schemas/diagram.schema.json`](schemas/diagram.schema.json) and its linked JSON Schemas directly for the exact JSON structure. This document does not repeat the schemas; it explains how to choose properties and compose content.
+These authoring rules apply to all generators. See [`schemas/diagram.schema.json`](schemas/diagram.schema.json) and its referenced schemas for JSON structure and constraints. Follow the `GENERATOR.md` of the generator selected after discovery for diagram-specific construction and execution instructions.
 
-## Artifact composition and changes
+## Review questions and evidence
 
-- Each diagram is one JSON file. Store behavior diagrams in `.architecture-companion/behaviors/<id>.json` and design diagrams in `.architecture-companion/designs/<id>.json`.
-- The file name must equal the diagram `id`, and IDs are lowercase kebab-case (`^[a-z0-9][a-z0-9-]*$`) because they double as file names. Removing a diagram means deleting its file.
-- Put user-visible behavior and actor journeys in `behaviors`.
-- Put code structure, architecture, runtime interactions, data flow, and system boundaries in `designs`.
-- The artifact is the complete set of diagram files. Preserve unrelated diagram files, and never write merge instructions or partial patches.
-- Reuse existing diagrams and graph element IDs for the same concepts. Do not repurpose an existing ID for a concept whose meaning changed.
-- Record the chosen generator as `<source>:<id>` on every diagram you create or regenerate. The source must match the selected descriptor's installation location: `built-in`, `project`, or `global`; the ID is its logical generator ID. Reading the artifact must not require that generator to be installed.
-- Record reproducible regeneration context as free-form text in `generatorInstructions` when the generator depends on choices not captured by `generator`. Include selected inputs, options, working-directory assumptions, commands, or manual steps as needed, and preserve these instructions when editing the generated graph.
-- Write command-backed instructions to run from the consumer scope root. Use `<generator-directory>` for a session-specific absolute generator directory, use scope-relative paths, and use `.` for the scope when the command supports it. Preserve every option and selected source path exactly.
-- When several files belong to one change, edit them in a single continuous sequence. Every individual file stays valid on its own, so intermediate states only affect meaning, never validity.
+Each diagram should answer one central review question. Avoid repeating the same meaning across multiple elements. Split a diagram if addressing different questions makes it too complex.
 
-Make each diagram answer one central review question. Do not express the same meaning redundantly across multiple elements; when a graph grows complicated because it serves different questions, split the diagram.
+- Use Product Behavior for product behavior and journeys as observed by actors.
+- Use Code Design for code structure, responsibilities, dependencies, runtime interactions, data flow, and system boundaries.
+- Present only facts verified against the implementation as the current state. Clearly distinguish proposals and unverified assumptions.
+- Passing schema validation does not guarantee accuracy. Separately check the answer to the review question, the correspondence between evidence and explanations, and the interaction order against the source.
 
-## Element selection
+## File organization and preserving existing artifacts
 
-- `group` bundles nodes that must be understood together under a real boundary or ownership. Use `parentId` for nested boundaries.
-- `default` nodes represent general steps, states, components, services, data stores, and system entities.
-- `lifeline` nodes represent the actors, components, and services participating in a time-ordered interaction. Use `activations` when execution spans matter.
-- `fragment` nodes represent sequence control regions such as `alt`, `opt`, `loop`, and `par`, dividing their extent with `branches`.
-- `default` edges represent general relationships such as flows, dependencies, ownership, and data movement.
-- `message` edges represent time-ordered interactions between lifelines. `messageType` is one of `sync`, `async`, or `return`, and defaults to `sync` when omitted.
+An artifact is the complete set of diagram files. Store each diagram in its own JSON file.
 
-Place the explanation a review needs in the fields the Review UI displays.
+- Product Behavior: `<scope>/.architecture-companion/behaviors/<id>.json`
+- Code Design: `<scope>/.architecture-companion/designs/<id>.json`
 
-- `default` nodes display `title`, optional `kind`, `description`, and `details`. Omit `kind` when it would repeat the same category on every node.
-- `lifeline` nodes display `kind`, `title`, and `description`, but not `details`.
-- `fragment` nodes display `operator` and each branch's `guard`. Do not put the only on-screen explanation in the schema-required `kind` and `title` or in the optional `description` and `details`.
-- `default` edges display `kind` and `label`.
-- `message` edges display `label` but not `kind`. Convey the message meaning through `label`.
+The filename must match the diagram's `id`. To remove a diagram, delete its file. Save complete diagrams, not merge directives or partial patches.
 
-Structural conditions such as the group hierarchy, node `groupId`, edge endpoints, activation and fragment message references, and ID uniqueness follow the contract of the schemas and the runtime validator.
+Preserve diagrams unrelated to the request. Keep existing IDs for diagrams and graph elements whose concepts retain their meaning; do not reuse an ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own.
 
-## Layout selection
+Architecture Companion calculates coordinates and dimensions, so do not store them in the artifact.
 
-Architecture Companion computes coordinates and sizes, so the artifact never records them.
+## Generators and regeneration context
 
-### `elk-layered`
+For each generated or regenerated diagram, set `generator` to the selected descriptor's `source` and logical `id` as `<source>:<id>`. Reading an artifact must not require that generator to be installed.
 
-Use for structural diagrams and general flows. Express structure and flow mostly with groups, default nodes, and default edges. `options.direction` is one of `UP`, `DOWN`, `LEFT`, or `RIGHT`, and defaults to `DOWN` when omitted. Set a direction only when it reads better than the default.
+Every diagram must include `instructions`, a non-empty Markdown string specifying how to recreate it from current source while retaining its review purpose, analysis scope, and presentation intent. It records diagram-specific choices, not general generator usage. The goal is to apply the same criteria to current source, not to reproduce an earlier graph unchanged. These rules apply to both executable generators and manually authored diagrams.
 
-### `sequence`
+Use the following sections in order:
 
-Use only when the time-ordered interaction itself is the review subject.
+- `## Purpose` (required): State the review question and what the diagram is intended to examine.
+- `## Regeneration` (required): For an executable generator, record the working directory and a complete command with all selected inputs and options. Treat the command as the source of truth for execution inputs rather than repeating them in prose. For a manually authored diagram, record the investigation targets, scope, and construction criteria instead.
+- `## Refinements` (optional): Include only when diagram-specific refinements are needed beyond the regeneration procedure. State what to change, how, and why, such as grouping, wording improvements, or intentionally omitted relationships. Provide enough detail for another agent to apply and reassess the refinements against current source.
 
-- Include at least one lifeline.
-- Leave `groups` empty.
-- Use only lifeline and fragment nodes.
-- Use only message edges, and connect `source` and `target` to lifelines.
-- Place message edges in `graph.edges` in the actual interaction order.
-- Keep activations and fragment branches consistent with that message order.
+For example, the parsed field value may contain:
 
-The runtime validator checks the structural preconditions. Verify the actual interaction order and the diagram's review fitness separately, from the investigated evidence.
+````markdown
+## Purpose
 
-## Evidence and source references
+Review dependencies between checkout modules and external packages.
 
-Attach links close to the concept they support.
+## Regeneration
 
-- Put evidence for the whole diagram in the diagram's `links`.
-- Put evidence for a default or lifeline node in the node's `links`.
-- Put evidence for a relationship or interaction in the edge `href`.
-- Use `source:` URLs for files inside the explicit consumer scope.
-- Use `https:` URLs for external evidence.
+Run from the scope root:
 
-`source:` URLs are interpreted against the explicit consumer scope.
+```sh
+node "<generator-directory>/run.js" \
+  --base "." \
+  --exclude-path "*.test.*" \
+  "src/checkout"
+```
+
+## Refinements
+
+Add source-verified responsibility descriptions to checkout entry-point nodes to clarify their architectural roles.
+````
+
+Write commands to run from the target scope root. Replace session-specific absolute generator paths with `<generator-directory>`, and record source paths relative to the scope. Use `.` for the scope when the command supports it. Apart from this path normalization, preserve the options and selected source paths used for execution. Compose the Markdown as ordinary text and serialize the diagram as JSON so that line breaks, quotes, and backslashes are escaped correctly; no dedicated script is required.
+
+Do not repeat shared schema, validation, or ID-preservation rules, or the generator's general usage guide. Do not copy the current node and edge inventory, session-specific paths, temporary file paths, or work history into the instructions.
+
+Preserve instructions that remain valid when source changes affect only the graph. Update them when the purpose, regeneration inputs or procedure, or refinements change, so they reflect what was actually applied. The current user request takes precedence over existing instructions; revise the instructions to match the criteria used.
+
+## Descriptions shown in the Review UI
+
+Not every field allowed by the schema is displayed. Put explanations needed for review in fields that are actually shown for the underlying elements.
+
+| Element         | Displayed fields to use for explanations  | Authoring notes                                                 |
+| --------------- | ----------------------------------------- | --------------------------------------------------------------- |
+| Group           | `title`, `description`                    |                                                                 |
+| `default` node  | `title`, `kind`, `description`, `details` | Omit `kind` if every node repeats the same category.            |
+| `lifeline` node | `kind`, `title`, `description`            |                                                                 |
+| `fragment` node | `operator`, each branch's `guard`         | Put conditions needed for review in each branch's `guard`.      |
+| `default` edge  | `kind`, `label`                           | Convey the relationship's meaning through the displayed fields. |
+| `message` edge  | `label`                                   |                                                                 |
+
+## Evidence links
+
+Attach evidence close to the concept it supports. Use the diagram's `links` for evidence about the diagram as a whole, a node's `links` where supported for node evidence, and an edge's `href` for evidence about a relationship or interaction.
+
+Use `https:` URLs for external evidence. For files within the target scope, use `source:` URLs resolved relative to that scope.
 
 ```text
 source:///src/checkout/service.ts
 ```
 
-- Use the `source:` protocol without a hostname, credentials, or query string.
-- The decoded path must start with a single `/`. Do not use a leading `//`, backslashes, an empty path, or `..` path segments.
-- The installed Review UI's default opener cannot open line fragments, so do not use fragments such as `#L42`.
-- The resolved path must stay inside the consumer scope and point to an existing regular file.
+- Do not include a hostname, credentials, or a query string.
+- The decoded path must start with exactly one `/`. Do not use a leading `//`, backslashes, an empty path, or `..` path segments.
+- Do not use line fragments such as `#L42`; the default opener cannot open them.
+- Verify that the resolved path points to an existing regular file within the scope.
 
-`validate-schemas.js` checks only that links are non-empty strings; it does not check `source:` URL syntax, scope containment, or file existence. Verify every source reference yourself before finishing. Validation also does not prove that links fit the evidence or that the diagram content is accurate, so compare them against the sources and never present proposals or assumptions as current facts.
+`validate-schemas.js` only checks that links are non-empty strings. Verify `source:` URL syntax, scope containment, file existence, and the relevance of the evidence yourself.

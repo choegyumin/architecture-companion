@@ -20122,7 +20122,7 @@ var diagramSchema = external_exports.object({
   id: artifactDiagramIdSchema,
   title: external_exports.string().min(1),
   generator: diagramGeneratorReferenceSchema,
-  generatorInstructions: external_exports.string().min(1).optional(),
+  instructions: external_exports.string().min(1),
   layout: diagramLayoutConfigSchema,
   links: external_exports.array(diagramLinkSchema).readonly().optional(),
   graph: diagramGraphSchema

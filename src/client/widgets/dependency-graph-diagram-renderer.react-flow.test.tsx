@@ -6,6 +6,7 @@ const diagram = {
   id: "dependencies",
   title: "Dependencies",
   generator: "built-in:freeform",
+  instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",
   layout: { id: "dependency-graph" },
   graph: {
     groups: [

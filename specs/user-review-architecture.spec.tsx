@@ -17,6 +17,8 @@ const artifact = {
       id: "checkout",
       title: "Checkout workflow",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -28,6 +30,8 @@ const artifact = {
       id: "cancel-order",
       title: "Cancel order",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview order cancellation.\n\n## Regeneration\nRebuild the cancellation trigger from the order flow.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -41,6 +45,8 @@ const artifact = {
       id: "checkout-structure",
       title: "Checkout structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],
@@ -52,6 +58,8 @@ const artifact = {
       id: "catalog-structure",
       title: "Catalog structure",
       generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview product browsing.\n\n## Regeneration\nRebuild the page boundary from src/catalog-page.ts.",
       layout: { id: "elk-layered" },
       graph: {
         groups: [],

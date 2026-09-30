@@ -10,6 +10,8 @@ const checkoutBehavior = {
   id: "checkout",
   title: "Checkout",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview order submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [],

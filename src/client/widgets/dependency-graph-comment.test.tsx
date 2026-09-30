@@ -21,6 +21,8 @@ const diagram = {
   id: "dependencies",
   title: "Dependencies",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
   layout: { id: "dependency-graph" },
   graph: {
     groups: [

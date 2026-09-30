@@ -4,6 +4,8 @@ const validDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
   generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview checkout responsibilities and dependencies.\n\n## Regeneration\nInspect the checkout page and payment client and map their verified relationships.",
   layout: { id: "elk-layered" },
   graph: {
     groups: [{ id: "checkout", title: "Checkout" }],
@@ -70,13 +72,35 @@ describe("diagram parsing", () => {
     expect(parseDiagram(diagram)).toEqual(diagram);
   });
 
-  it("preserves free-form generator instructions for reproducible regeneration", () => {
+  it("preserves Markdown regeneration instructions through JSON serialization", () => {
     const diagram = {
       ...validDiagram,
-      generatorInstructions: "Regenerate from the consumer scope root using tsconfig.json and the selected src tree.",
+      instructions: [
+        "## Purpose",
+        "Review checkout module dependencies.",
+        "",
+        "## Regeneration",
+        "Run from the scope root:",
+        "",
+        "```sh",
+        'node "<generator-directory>/run.js" \\',
+        '  --base "." \\',
+        '  "src/checkout"',
+        "```",
+      ].join("\n"),
     } as const;
 
-    expect(parseDiagram(diagram)).toEqual(diagram);
+    expect(parseDiagram(JSON.parse(JSON.stringify(diagram)))).toEqual(diagram);
+  });
+
+  it.each([undefined, "", 42, null])("rejects missing or invalid regeneration instructions: %j", (instructions) => {
+    expect(() => parseDiagram({ ...validDiagram, instructions })).toThrow("Invalid diagram");
+  });
+
+  it("rejects the replaced generatorInstructions field", () => {
+    expect(() => parseDiagram({ ...validDiagram, generatorInstructions: "Regenerate from src." })).toThrow(
+      "Invalid diagram",
+    );
   });
 
   it("preserves provider-owned layout options", () => {
