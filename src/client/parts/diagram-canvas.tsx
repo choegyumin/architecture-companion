@@ -7,6 +7,7 @@ import {
   type Node,
   type NodeProps,
   type OnNodesChange,
+  Panel,
   ReactFlow,
   type ReactFlowInstance,
 } from "@xyflow/react";
@@ -22,7 +23,7 @@ import {
   useState,
 } from "react";
 
-import { DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
+import { DIAGRAM_FIT_VIEW_OPTIONS, DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
@@ -31,6 +32,7 @@ import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fr
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import { MessageEdge, type MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
+import { NodeSearch } from "@/shared/react-flow/node-search";
 import { RouteEdge, type RouteReactFlowEdge } from "@/shared/react-flow/route-edge";
 import { useTheme } from "@/shared/react-ui/theme-context";
 
@@ -68,6 +70,7 @@ type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
+  getNodeLabel?: (node: Node) => string;
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
   onGroupActivate?: (groupId: string) => void;
@@ -81,6 +84,7 @@ export function DiagramCanvas({
   children,
   className,
   edges,
+  getNodeLabel,
   nodes,
   onCanvasClick,
   onGroupActivate,
@@ -142,6 +146,13 @@ export function DiagramCanvas({
     }
   }
 
+  function handleSearchSelect(node: Node): void {
+    if (!flowInstance) return;
+    if (node.type === "card") onNodeActivate?.(node.id);
+    if (node.type === "labeled-group") onGroupActivate?.(node.id);
+    void flowInstance.fitView({ ...DIAGRAM_FIT_VIEW_OPTIONS, nodes: [{ id: node.id }], duration: 500 });
+  }
+
   return (
     <div
       aria-label="Diagram canvas"
@@ -182,6 +193,11 @@ export function DiagramCanvas({
             <Maximize aria-hidden="true" />
           </ControlButton>
         </Controls>
+        {flowInstance && getNodeLabel ? (
+          <Panel className="nodrag nopan nowheel" position="top-left">
+            <NodeSearch getNodeLabel={getNodeLabel} onSelectNode={handleSearchSelect} />
+          </Panel>
+        ) : null}
         {children}
       </ReactFlow>
     </div>

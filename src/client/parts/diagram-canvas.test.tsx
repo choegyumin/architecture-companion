@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps, MouseEvent, ReactNode } from "react";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,9 +8,12 @@ import { DiagramCanvas } from "@/client/parts/diagram-canvas";
 
 const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
+  const fitView = vi.fn();
   return {
-    flowInstance: { screenToFlowPosition },
+    flowInstance: { screenToFlowPosition, fitView },
+    nodes: [] as { id: string; type: string; parentId?: string }[],
     screenToFlowPosition,
+    fitView,
   };
 });
 
@@ -17,6 +21,8 @@ vi.mock("@xyflow/react", () => ({
   Background: () => null,
   ControlButton: ({ children, ...props }: ComponentProps<"button">) => <button {...props}>{children}</button>,
   Controls: ({ children }: { children: ReactNode }) => <>{children}</>,
+  Panel: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useReactFlow: () => ({ getNodes: () => mocks.nodes }),
   ReactFlow: ({
     children,
     edges,
@@ -34,6 +40,7 @@ vi.mock("@xyflow/react", () => ({
     onNodeClick?: (event: MouseEvent<Element>, node: { id: string; type: string }) => void;
     onPaneClick?: (event: MouseEvent<Element>) => void;
   }) => {
+    mocks.nodes = [...nodes];
     useEffect(() => {
       onInit(mocks.flowInstance);
     }, [onInit]);
@@ -72,6 +79,7 @@ vi.mock("@xyflow/react", () => ({
 describe("diagram canvas", () => {
   beforeEach(() => {
     mocks.screenToFlowPosition.mockClear();
+    mocks.fitView.mockClear();
   });
 
   it("converts canvas clicks to flow coordinates and forwards them", async () => {
@@ -205,5 +213,55 @@ describe("diagram canvas", () => {
 
     expect(mocks.screenToFlowPosition).not.toHaveBeenCalled();
     expect(onCanvasClick).not.toHaveBeenCalled();
+  });
+
+  it("searches visible nodes and groups, activates them, and fits the selected shape without selecting it", async () => {
+    const user = userEvent.setup();
+    const onNodeActivate = vi.fn();
+    const onGroupActivate = vi.fn();
+    const labels = new Map([
+      ["file", "File"],
+      ["group", "Group"],
+    ]);
+    render(
+      <DiagramCanvas
+        edges={[]}
+        getNodeLabel={(node) => labels.get(node.id) ?? ""}
+        nodes={[
+          { id: "file", type: "card", position: { x: 0, y: 0 }, data: { label: "File" } },
+          { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Group" } },
+          { id: "bounding-group:group", type: "bounding-group", position: { x: 0, y: 0 }, data: {} },
+        ]}
+        onGroupActivate={onGroupActivate}
+        onNodeActivate={onNodeActivate}
+      />,
+    );
+    const input = await screen.findByRole("combobox", { name: "Search nodes" });
+
+    await user.type(input, "GROUP");
+    expect(screen.getByRole("option", { name: "Group" })).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "Group" }));
+    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
+    expect(mocks.fitView).toHaveBeenNthCalledWith(1, {
+      nodes: [{ id: "group" }],
+      minZoom: 0.01,
+      maxZoom: 1,
+      padding: "24px",
+      duration: 500,
+    });
+
+    await user.type(input, "file{Enter}");
+    expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
+    expect(mocks.fitView).toHaveBeenNthCalledWith(2, {
+      nodes: [{ id: "file" }],
+      minZoom: 0.01,
+      maxZoom: 1,
+      padding: "24px",
+      duration: 500,
+    });
+    expect(mocks.nodes.every((node) => !("selected" in node))).toBe(true);
+
+    await user.type(input, "bounding-group");
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 });
