@@ -396,6 +396,38 @@ describe("aggregate dependency routing at its public seam", () => {
     expect(onBundleFace).toBe(false);
   });
 
+  it("attaches internal aggregates to the loose-node bundle in both directions", () => {
+    const layout = layoutOf(
+      [group("mixed", 0, 0, 600, 400), group("inner", 20, 180, 200, 200, "mixed")],
+      [node("loose", 300, 40, 120, 80, "mixed")],
+    );
+    const routes = routeAggregateDependencyEdges(
+      [edge("out", "bundle:mixed", "inner"), edge("in", "inner", "bundle:mixed")],
+      layout,
+    );
+    const outgoing = routeFor(routes, "out");
+    const incoming = routeFor(routes, "in");
+    expect(outgoing.routing.stage).toBe("normal");
+    expect(incoming.routing.stage).toBe("normal");
+    expectConnected(outgoing, box(268, 8, 452, 152), box(20, 180, 220, 380));
+    expectConnected(incoming, box(20, 180, 220, 380), box(268, 8, 452, 152));
+    expect(entersBox(outgoing.path, box(300, 40, 420, 120))).toBe(false);
+    expect(entersBox(incoming.path, box(300, 40, 420, 120))).toBe(false);
+  });
+
+  it("keeps bundle endpoints connected when routing scene construction exceeds its budget", () => {
+    const layout = layoutOf(
+      [group("mixed", 0, 0, 600, 400), group("inner", 20, 180, 200, 200, "mixed")],
+      [
+        node("loose", 300, 40, 120, 80, "mixed"),
+        ...Array.from({ length: 2_000 }, (_, index) => node(`extra-${index}`, 1000 + index * 100, 0, 80, 80)),
+      ],
+    );
+    const route = routeFor(routeAggregateDependencyEdges([edge("out", "bundle:mixed", "inner")], layout), "out");
+    expect(route.routing).toEqual({ stage: "direct", reason: "scene-limit" });
+    expectConnected(route, box(268, 8, 452, 152), box(20, 180, 220, 380));
+  });
+
   it("lets a node endpoint be reached through its own virtual envelope", () => {
     const layout = layoutOf(
       [group("source", -300, 200, 100, 100)],

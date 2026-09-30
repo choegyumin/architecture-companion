@@ -1,4 +1,5 @@
 import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
+import { annotationTargetSchema } from "@/features/annotation/annotation-document";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import type { Diagram } from "@/features/diagram/diagram";
 
@@ -48,7 +49,7 @@ describe("dependency graph React Flow adapter", () => {
     const card = model.nodes.find((node) => node.id === "a");
     if (card?.type !== "card") throw new Error("Missing card");
 
-    expect(model.edges).toHaveLength(1);
+    expect(model.edges).toHaveLength(2);
     expect(aggregate.markerEnd).toMatchObject({ color: "var(--diagram-edge)" });
     expect(aggregate.style).toMatchObject({ stroke: "var(--diagram-edge)" });
     expect(aggregate.data?.path).toMatch(/^M .+ L /);
@@ -78,22 +79,63 @@ describe("dependency graph React Flow adapter", () => {
 
   it("renders an inert dashed bounding group for a mixed group's loose nodes between group and cards", async () => {
     const layout = await layoutDependencyGraph(diagram.graph, sizes);
-    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn());
-    const bounding = model.nodes.find((node) => node.id === "bounding-group:app");
+    const onAggregateActivate = vi.fn();
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), { onAggregateActivate });
+    const bounding = model.nodes.find((node) => node.id === "bundle:app");
     if (bounding?.type !== "bounding-group") throw new Error("Missing bounding group");
     expect(bounding.style).toMatchObject({ pointerEvents: "none" });
     expect(bounding.parentId).toBe("app");
     expect(bounding.selectable).toBe(false);
     const order = model.nodes.map(({ id }) => id);
-    expect(order.indexOf("bounding-group:app")).toBeGreaterThan(order.indexOf("app"));
-    expect(order.indexOf("bounding-group:app")).toBeLessThan(order.indexOf("a"));
-    expect(model.nodes.find((node) => node.id === "bounding-group:library")).toBeUndefined();
+    expect(order.indexOf("bundle:app")).toBeGreaterThan(order.indexOf("app"));
+    expect(order.indexOf("bundle:app")).toBeLessThan(order.indexOf("a"));
+    expect(model.nodes.find((node) => node.id === "bundle:library")).toBeUndefined();
 
-    // Without an aggregate attaching to the group, the bounding group stays hidden.
-    const focused = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
-      focus: { type: "node", id: "c" },
+    const internal = model.edges.find((edge) => edge.source === "nested" && edge.target === bounding.id);
+    if (internal?.type !== "route") throw new Error("Missing internal bundle aggregate");
+    expect(internal.data?.path).toMatch(/^M .+ L /);
+    expect(internal.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(annotationTargetSchema.parse(model.edgeTargets?.get(internal.id))).toEqual({
+      type: "edge-set",
+      sourceId: "nested",
+      targetId: "bundle:app",
+      edgeIds: ["b-a"],
     });
-    expect(focused.nodes.find((node) => node.id === "bounding-group:app")).toBeUndefined();
+    internal.data?.labelAction?.onActivate();
+    expect(onAggregateActivate).toHaveBeenCalledWith(["b-a"]);
+    const expanded = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      focus: { type: "aggregate", edgeIds: ["b-a"] },
+    });
+    expect(expanded.edges.map(({ id, source, target }) => ({ id, source, target }))).toEqual([
+      { id: "b-a", source: "b", target: "a" },
+    ]);
+
+    // Neither original edges nor aggregates targeting the whole group show a bundle outline.
+    for (const focus of [
+      { type: "node", id: "c" },
+      { type: "group", id: "app" },
+    ] as const) {
+      const focused = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), { focus });
+      expect(focused.nodes.find((node) => node.id === "bundle:app")).toBeUndefined();
+    }
+  });
+
+  it("keeps bundle endpoints distinct from artifact node and edge IDs", async () => {
+    const colliding = {
+      ...diagram,
+      graph: {
+        ...diagram.graph,
+        nodes: [...diagram.graph.nodes, { id: "bundle:app", type: "default", title: "Root file" }],
+        edges: [...diagram.graph.edges, { id: "bundle:app:", type: "default", source: "a", target: "b" }],
+      },
+    } satisfies Diagram;
+    const layout = await layoutDependencyGraph(colliding.graph, { ...sizes, "bundle:app": sizes.a });
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(colliding, layout, vi.fn());
+    expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("card");
+    expect(model.nodes.find(({ id }) => id === "bundle:app::")?.type).toBe("bounding-group");
+    expect(model.edges.some(({ source, target }) => source === "bundle:app::" && target === "nested")).toBe(true);
+    expect(model.edges.some(({ source, target }) => source === "nested" && target === "bundle:app::")).toBe(true);
+    expect(new Set(model.nodes.map(({ id }) => id)).size).toBe(model.nodes.length);
   });
 
   it("renders only selected original edges and preserves their individual targets", async () => {

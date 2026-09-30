@@ -39,7 +39,7 @@ function members(focus?: Parameters<typeof projectDependencyEdges>[1]) {
 }
 
 describe("dependency edge projection", () => {
-  it("aggregates top-level relationships by ordered endpoints and excludes internal edges", () => {
+  it("aggregates root relationships and mixed-group internals without exposing bundle detail", () => {
     expect(members()).toEqual([
       {
         sourceId: "app",
@@ -48,9 +48,67 @@ describe("dependency edge projection", () => {
       },
       { sourceId: "api", targetId: "app", edgeIds: ["api-to-app"] },
       { sourceId: "app", targetId: "shared", edgeIds: ["page-to-shared"] },
+      { sourceId: "bundle:app", targetId: "pages", edgeIds: ["app-to-page"] },
       { sourceId: "api", targetId: "root", edgeIds: ["api-to-root"] },
       { sourceId: "root", targetId: "api", edgeIds: ["root-to-api"] },
     ]);
+  });
+
+  it("shows each relationship once at its lowest common scope at every depth", () => {
+    const nested = {
+      groups: [
+        { id: "A", title: "A" },
+        { id: "B", title: "B", parentId: "A" },
+        { id: "C", title: "C", parentId: "B" },
+        { id: "D", title: "D", parentId: "C" },
+        { id: "E", title: "E" },
+        { id: "F", title: "F", parentId: "E" },
+        { id: "G", title: "G", parentId: "F" },
+        { id: "H", title: "H", parentId: "G" },
+        { id: "X", title: "X", parentId: "B" },
+        { id: "Y", title: "Y", parentId: "C" },
+      ],
+      nodes: [
+        { id: "d", type: "default", title: "D file", groupId: "D" },
+        { id: "d2", type: "default", title: "Other D file", groupId: "D" },
+        { id: "h", type: "default", title: "H file", groupId: "H" },
+        { id: "x", type: "default", title: "X file", groupId: "X" },
+        { id: "y", type: "default", title: "Y file", groupId: "Y" },
+        { id: "c", type: "default", title: "C file", groupId: "C" },
+        { id: "c2", type: "default", title: "Other C file", groupId: "C" },
+        { id: "root", type: "default", title: "Root" },
+        { id: "other-root", type: "default", title: "Other root" },
+      ],
+      edges: [
+        { id: "across-roots", type: "default", source: "d", target: "h" },
+        { id: "inside-B", type: "default", source: "d", target: "x" },
+        { id: "inside-C", type: "default", source: "d", target: "y" },
+        { id: "loose-to-child", type: "default", source: "c", target: "d" },
+        { id: "child-to-loose", type: "default", source: "d", target: "c2" },
+        { id: "inside-bundle", type: "default", source: "c", target: "c2" },
+        { id: "inside-leaf", type: "default", source: "d", target: "d2" },
+        { id: "root-to-group", type: "default", source: "root", target: "d" },
+        { id: "root-to-root", type: "default", source: "root", target: "other-root" },
+      ],
+    } satisfies DiagramGraph;
+    const projected = projectDependencyEdges(nested);
+    expect(
+      projected.map((edge) => {
+        if (edge.type !== "aggregate") throw new Error("Expected overview aggregate");
+        return { sourceId: edge.sourceId, targetId: edge.targetId, edgeIds: edge.edgeIds };
+      }),
+    ).toEqual([
+      { sourceId: "A", targetId: "E", edgeIds: ["across-roots"] },
+      { sourceId: "C", targetId: "X", edgeIds: ["inside-B"] },
+      { sourceId: "D", targetId: "Y", edgeIds: ["inside-C"] },
+      { sourceId: "bundle:C", targetId: "D", edgeIds: ["loose-to-child"] },
+      { sourceId: "D", targetId: "bundle:C", edgeIds: ["child-to-loose"] },
+      { sourceId: "root", targetId: "A", edgeIds: ["root-to-group"] },
+      { sourceId: "root", targetId: "other-root", edgeIds: ["root-to-root"] },
+    ]);
+    expect(
+      projectDependencyEdges({ ...nested, groups: [...nested.groups].reverse(), nodes: [...nested.nodes].reverse() }),
+    ).toEqual(projected);
   });
 
   it("shows every relationship as original edges when the graph has no groups", () => {

@@ -237,7 +237,7 @@ export function collectRoutingRequests(
 }
 
 export function slotCoordinate(resource: RoutingResource, index: number, count: number): number {
-  // Bundles pack at TRACK_GAP inside a centered TRACK_WIDTH band; compression only
+  // Route tracks pack at TRACK_GAP inside a centered TRACK_WIDTH band; compression only
   // when the band itself cannot fit every track.
   const band = Math.min(TRACK_WIDTH, resource.max - resource.min);
   const gap = Math.min(TRACK_GAP, band / Math.max(1, count - 1));
