@@ -8,7 +8,7 @@ import { startServer } from "@/server/start-server";
 import { getDevelopmentCacheDirectory, readDevelopmentServerState, writeDevelopmentServerState } from "./_dev-session";
 
 async function watchDevelopmentServer(): Promise<void> {
-  const scopePath = await resolveConsumerScopePath(process.cwd());
+  const scopePath = await resolveConsumerScopePath(process.env.DEVELOPMENT_SERVER_SCOPE ?? process.cwd());
   const child = spawn(
     process.execPath,
     [

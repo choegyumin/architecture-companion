@@ -1,4 +1,9 @@
-import { createRequire as __createRequire } from "node:module"; import { fileURLToPath as __fileURLToPath } from "node:url"; import { dirname as __pathDirname } from "node:path"; globalThis.require = __createRequire(import.meta.url); globalThis.__filename = __fileURLToPath(import.meta.url); globalThis.__dirname = __pathDirname(globalThis.__filename);
+import { createRequire as __createRequire } from "node:module";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+import { dirname as __pathDirname } from "node:path";
+globalThis.require = __createRequire(import.meta.url);
+globalThis.__filename = __fileURLToPath(import.meta.url);
+globalThis.__dirname = __pathDirname(globalThis.__filename);
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;

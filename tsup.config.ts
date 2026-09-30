@@ -1,9 +1,13 @@
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { defineConfig, type Options } from "tsup";
 
 import {
   dependencyCruiserBundleBanner,
   dependencyCruiserBundlingPlugin,
 } from "./src/plugins/diagram-generators/js-module-dependency-graph/packaging/dependency-cruiser-bundling";
+import { nodeBundleBanner } from "./src/plugins/diagram-generators/react-component-structure/packaging/node-bundling";
 
 const nodeBundleOptions = {
   bundle: true,
@@ -17,17 +21,20 @@ const nodeBundleOptions = {
   target: "node22",
 } satisfies Options;
 
+const cliDirectory = fileURLToPath(new URL("./src/cli", import.meta.url));
+
+// CLI entries are the src/cli files whose basename has no additional dot (serve.ts),
+// unlike their implementations (serve.command.ts).
+const cliEntries = Object.fromEntries(
+  readdirSync(cliDirectory)
+    .filter((file) => /^[^.]+\.ts$/.test(file))
+    .map((file) => [`runtime/cli/${file.replace(/\.ts$/, "")}`, `src/cli/${file}`]),
+);
+
 export default defineConfig([
   {
     ...nodeBundleOptions,
-    entry: {
-      "runtime/cli/serve": "src/cli/serve.ts",
-      "runtime/cli/validate-schemas": "src/cli/validate-schemas.ts",
-      "runtime/cli/view-annotations": "src/cli/view-annotations.ts",
-      "runtime/cli/view-generators": "src/cli/view-generators.ts",
-      "runtime/diagram-generators/react-component-structure/run":
-        "src/plugins/diagram-generators/react-component-structure/run.ts",
-    },
+    entry: cliEntries,
     banner: {
       js: [
         'import { createRequire as __createRequire } from "node:module";',
@@ -47,5 +54,13 @@ export default defineConfig([
     },
     banner: { js: dependencyCruiserBundleBanner },
     esbuildPlugins: [dependencyCruiserBundlingPlugin],
+  },
+  {
+    ...nodeBundleOptions,
+    entry: {
+      "runtime/diagram-generators/react-component-structure/run":
+        "src/plugins/diagram-generators/react-component-structure/run.ts",
+    },
+    banner: { js: nodeBundleBanner },
   },
 ]);

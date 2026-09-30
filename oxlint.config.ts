@@ -184,8 +184,11 @@ export default defineConfig({
   ignorePatterns: [
     "**/node_modules",
     "**/patches",
+    "**/worktrees",
+    "**/.worktrees",
     "**/.env",
     "**/.env.*",
+    "**/.vite",
     "**/.turbo",
     "**/build",
     "**/dist",
