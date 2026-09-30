@@ -14,7 +14,7 @@ const config = {
         "format", // Code formatting changes or rules changes
         "test", // Adding missing tests or correcting existing tests
         "docs", // Documentation and comments only changes
-        "bump", // Workspace(App) version updates
+        "bump", // Workspace(App) version or dist updates
         "revert", // Reverting changes
       ],
     ],
