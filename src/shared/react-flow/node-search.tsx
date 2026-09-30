@@ -1,5 +1,5 @@
 import { type Node, useReactFlow } from "@xyflow/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { cn } from "@/shared/react/class-name";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/react-ui/command";
@@ -13,35 +13,62 @@ export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   onOpenChange?: (open: boolean) => void;
 }>;
 
-function defaultGetNodeLabel(node: Node): string {
-  return node.data.label as string;
+type SearchResult<NodeType extends Node> = Readonly<{ node: NodeType; label: string }>;
+
+function defaultGetNodeLabel(node: Node): unknown {
+  return node.data?.label;
 }
 
 // Based on https://ui.reactflow.dev/node-search; getNodeLabel drives both default search and result text.
 function NodeSearchInternal<NodeType extends Node>({
-  getNodeLabel = defaultGetNodeLabel,
+  getNodeLabel,
   onSearch,
   onSelectNode,
   open,
   onOpenChange,
 }: NodeSearchProps<NodeType>) {
-  const [searchResults, setSearchResults] = useState<NodeType[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult<NodeType>[]>([]);
   const [searchString, setSearchString] = useState("");
+  const hasWarnedInvalidLabel = useRef(false);
   const { getNodes, fitView, setNodes } = useReactFlow<NodeType>();
-
-  const defaultOnSearch = useCallback(
-    (searchString: string) =>
-      getNodes().filter((node) => getNodeLabel(node).toLowerCase().includes(searchString.toLowerCase())),
-    [getNodes, getNodeLabel],
-  );
 
   const onChange = useCallback(
     (value: string) => {
+      if (!value) {
+        setSearchString("");
+        setSearchResults([]);
+        onOpenChange?.(false);
+        return;
+      }
+
+      const nodes = onSearch ? onSearch(value) : getNodes();
+      const invalidIds: string[] = [];
+      const results: SearchResult<NodeType>[] = [];
+      const search = value.toLowerCase();
+
+      for (const node of nodes) {
+        const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
+        if (typeof label !== "string" && getNodeLabel) {
+          throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
+        }
+        if (typeof label !== "string") invalidIds.push(node.id);
+
+        const resolvedLabel = typeof label === "string" ? label : node.id;
+        if (onSearch || resolvedLabel.toLowerCase().includes(search)) results.push({ node, label: resolvedLabel });
+      }
+
+      if (!hasWarnedInvalidLabel.current && invalidIds.length > 0) {
+        hasWarnedInvalidLabel.current = true;
+        console.warn(
+          `NodeSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
+          { nodeIds: invalidIds },
+        );
+      }
       setSearchString(value);
-      setSearchResults(value ? (onSearch ?? defaultOnSearch)(value) : []);
-      onOpenChange?.(value.length > 0);
+      setSearchResults(results);
+      onOpenChange?.(true);
     },
-    [defaultOnSearch, onOpenChange, onSearch],
+    [getNodeLabel, getNodes, onOpenChange, onSearch],
   );
 
   const defaultOnSelectNode = useCallback(
@@ -82,9 +109,9 @@ function NodeSearchInternal<NodeType extends Node>({
             <CommandEmpty>No results found.</CommandEmpty>
           ) : (
             <CommandGroup heading="Nodes">
-              {searchResults.map((node) => (
+              {searchResults.map(({ node, label }) => (
                 <CommandItem key={node.id} onSelect={() => onSelect(node)} value={node.id}>
-                  {getNodeLabel(node)}
+                  {label}
                 </CommandItem>
               ))}
             </CommandGroup>
