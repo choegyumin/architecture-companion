@@ -483,7 +483,7 @@
         "type": "message",
         "source": "server",
         "target": "filesystem",
-        "label": "Read artifact file",
+        "label": "Read behavior and design diagram files",
         "messageType": "sync"
       },
       {
@@ -491,7 +491,7 @@
         "type": "message",
         "source": "filesystem",
         "target": "server",
-        "label": "artifact file",
+        "label": "Diagram file contents",
         "messageType": "return"
       },
       {
@@ -571,7 +571,7 @@
         "type": "message",
         "source": "renderer",
         "target": "canvas",
-        "label": "Build measurement nodes",
+        "label": "Render measurement nodes",
         "messageType": "sync"
       },
       {

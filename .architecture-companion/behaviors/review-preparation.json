@@ -69,11 +69,14 @@
         "type": "default",
         "id": "agent-artifact-valid",
         "kind": "condition",
-        "title": "Does validate-schemas accept the artifact?",
-        "description": "The coding agent validates the candidate artifact with the validate-schemas command.",
+        "title": "Does the artifact contain diagrams and pass validation?",
+        "description": "Confirm that at least one diagram exists across behaviors and designs, then validate the artifact with validate-schemas before sharing a URL.",
         "links": [
           {
             "href": "source:///src/cli/validate-schemas.command.ts"
+          },
+          {
+            "href": "source:///skills/architecture-companion/SKILL.md"
           }
         ]
       },
@@ -81,8 +84,8 @@
         "type": "default",
         "id": "agent-fix-artifact",
         "kind": "action",
-        "title": "Fix artifact errors",
-        "description": "Fix the artifact from the validation errors and rerun the command until it prints Artifact is valid."
+        "title": "Complete or fix the artifact",
+        "description": "Add the requested diagrams if none exist. Fix validation errors and rerun the command until it prints Artifact is valid."
       },
       {
         "type": "default",
