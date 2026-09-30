@@ -16,8 +16,14 @@ if (dependencyCruiserManifest.version !== expectedDependencyCruiserVersion) {
   );
 }
 
-export const dependencyCruiserBundleBanner =
-  'import { createRequire as __createRequire } from "node:module"; import { fileURLToPath as __fileURLToPath } from "node:url"; import { dirname as __pathDirname } from "node:path"; globalThis.require = __createRequire(import.meta.url); globalThis.__filename = __fileURLToPath(import.meta.url); globalThis.__dirname = __pathDirname(globalThis.__filename);';
+export const dependencyCruiserBundleBanner = [
+  'import { createRequire as __createRequire } from "node:module";',
+  'import { fileURLToPath as __fileURLToPath } from "node:url";',
+  'import { dirname as __pathDirname } from "node:path";',
+  "globalThis.require = __createRequire(import.meta.url);",
+  "globalThis.__filename = __fileURLToPath(import.meta.url);",
+  "globalThis.__dirname = __pathDirname(globalThis.__filename);",
+].join("\n");
 
 // dependency-cruiser discovers optional parsers and reporters dynamically. The installed
 // Architecture Companion distribution has no node_modules, so the generator bundle replaces

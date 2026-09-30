@@ -34,11 +34,9 @@ export default defineConfig({
         "**/*.test.tsx",
         "**/*.spec.ts",
         "**/*.spec.tsx",
+        "src/cli/*.ts",
+        "!src/cli/*.*.ts",
         "src/client/main.tsx",
-        "src/cli/serve.ts",
-        "src/cli/validate-schemas.ts",
-        "src/cli/view-annotations.ts",
-        "src/cli/view-generators.ts",
       ],
       thresholds: {
         lines: 80,
