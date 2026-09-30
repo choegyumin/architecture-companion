@@ -24286,8 +24286,16 @@ async function startServer(scope, options = {}) {
         });
       }
     );
+    const rejectStartup = (error62) => {
+      void reviewUpdates.close().then(() => reject(error62), reject);
+    };
     server.once("error", (error62) => {
-      void reviewUpdates.close().finally(() => reject(error62));
+      if (options.fallbackPort && "code" in error62 && error62.code === "EADDRINUSE") {
+        server.once("error", rejectStartup);
+        server.listen(0, hostname3);
+        return;
+      }
+      rejectStartup(error62);
     });
   });
 }
