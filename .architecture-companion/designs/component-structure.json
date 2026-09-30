@@ -608,6 +608,13 @@
       },
       {
         "type": "default",
+        "id": "edge:8a50b07f1ebc7ac2",
+        "source": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
+        "target": "external:@xyflow/react#Handle",
+        "kind": "direct-render"
+      },
+      {
+        "type": "default",
         "id": "edge:8de825d7dad5659a",
         "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
         "target": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
