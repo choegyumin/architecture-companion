@@ -35,6 +35,23 @@ describe("NodeSearch", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("allows caller addons to replace or remove the default search icon", () => {
+    const { container, rerender } = render(<NodeSearch />);
+    expect(container.querySelector("svg")).toBeInTheDocument();
+
+    rerender(
+      <NodeSearch startInputAddon={<span>Scope</span>} endInputAddon={<button type="button">Search help</button>} />,
+    );
+    expect(screen.getByText("Scope")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Search help" })).toBeVisible();
+    expect(container.querySelector("svg")).not.toBeInTheDocument();
+
+    rerender(<NodeSearch startInputAddon={null} endInputAddon={null} />);
+    expect(screen.queryByText("Scope")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search help" })).not.toBeInTheDocument();
+    expect(container.querySelector("svg")).not.toBeInTheDocument();
+  });
+
   it("searches data.label without regard to case and selects and fits the chosen node by default", async () => {
     const user = userEvent.setup();
     render(<NodeSearch />);

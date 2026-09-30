@@ -224,7 +224,9 @@ export function DiagramCanvas({
               getNodeLabel={getNodeLabel}
               inputRef={searchInputRef}
               onSelectNode={handleSearchSelect}
-              placeholder={isMacOS ? "Search nodes... (⌘K)" : "Search nodes... (Ctrl+K)"}
+              endInputAddon={
+                <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">{isMacOS ? "⌘K" : "Ctrl+K"}</kbd>
+              }
             />
           </Panel>
         ) : null}

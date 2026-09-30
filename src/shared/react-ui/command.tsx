@@ -1,6 +1,6 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/shared/react/class-name";
 
@@ -14,15 +14,27 @@ function Command({ className, ...props }: ComponentProps<typeof CommandPrimitive
   );
 }
 
-function CommandInput({ className, ...props }: ComponentProps<typeof CommandPrimitive.Input>) {
+function CommandInput({
+  className,
+  startAddon = <Search aria-hidden="true" className="size-4" />,
+  endAddon = null,
+  ...props
+}: ComponentProps<typeof CommandPrimitive.Input> & {
+  startAddon?: ReactNode;
+  endAddon?: ReactNode;
+}) {
   return (
     <div className="flex h-10 items-center gap-2 border-b px-3">
-      <Search aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+      {startAddon != null ? <div className="flex shrink-0 items-center text-muted-foreground">{startAddon}</div> : null}
       <CommandPrimitive.Input
         data-slot="command-input"
-        className={cn("w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground", className)}
+        className={cn(
+          "min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+          className,
+        )}
         {...props}
       />
+      {endAddon != null ? <div className="flex shrink-0 items-center text-muted-foreground">{endAddon}</div> : null}
     </div>
   );
 }

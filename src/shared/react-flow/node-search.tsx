@@ -1,5 +1,5 @@
 import { type Node, useReactFlow } from "@xyflow/react";
-import { type Ref, useCallback, useRef, useState } from "react";
+import { type ReactNode, type Ref, useCallback, useRef, useState } from "react";
 
 import { cn } from "@/shared/react/class-name";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/react-ui/command";
@@ -9,6 +9,8 @@ export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   getNodeLabel?: (node: NodeType) => string;
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
+  startInputAddon?: ReactNode;
+  endInputAddon?: ReactNode;
   onSearch?: (searchString: string) => NodeType[];
   onSelectNode?: (node: NodeType) => void;
   open?: boolean;
@@ -26,6 +28,8 @@ function NodeSearchInternal<NodeType extends Node>({
   getNodeLabel,
   inputRef,
   placeholder = "Search nodes...",
+  startInputAddon,
+  endInputAddon,
   onSearch,
   onSelectNode,
   open,
@@ -99,6 +103,8 @@ function NodeSearchInternal<NodeType extends Node>({
     <>
       <CommandInput
         aria-label="Search nodes"
+        startAddon={startInputAddon}
+        endAddon={endInputAddon}
         onFocus={() => onOpenChange?.(true)}
         onKeyDown={(event) => {
           if (event.key === "Escape") onOpenChange?.(false);

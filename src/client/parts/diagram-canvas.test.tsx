@@ -275,33 +275,31 @@ describe("diagram canvas", () => {
       mac: true,
       modifier: { metaKey: true },
       wrongModifier: { ctrlKey: true },
-      placeholder: "Search nodes... (⌘K)",
+      shortcut: "⌘K",
     },
     {
       os: "Windows/Linux",
       mac: false,
       modifier: { ctrlKey: true },
       wrongModifier: { metaKey: true },
-      placeholder: "Search nodes... (Ctrl+K)",
+      shortcut: "Ctrl+K",
     },
-  ])(
-    "focuses node search with the advertised shortcut on $os",
-    async ({ mac, modifier, wrongModifier, placeholder }) => {
-      mocks.platform.os.mac = mac;
-      const { unmount } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
-      const input = await screen.findByRole("combobox", { name: "Search nodes" });
-      expect(input).toHaveAttribute("placeholder", placeholder);
+  ])("focuses node search with the advertised shortcut on $os", async ({ mac, modifier, wrongModifier, shortcut }) => {
+    mocks.platform.os.mac = mac;
+    const { unmount } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
+    const input = await screen.findByRole("combobox", { name: "Search nodes" });
+    expect(input).toHaveAttribute("placeholder", "Search nodes...");
+    expect(screen.getByText(shortcut)).toBeVisible();
 
-      expect(fireEvent.keyDown(document, { key: "k", ...wrongModifier })).toBe(true);
-      expect(input).not.toHaveFocus();
+    expect(fireEvent.keyDown(document, { key: "k", ...wrongModifier })).toBe(true);
+    expect(input).not.toHaveFocus();
 
-      expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(false);
-      expect(input).toHaveFocus();
+    expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(false);
+    expect(input).toHaveFocus();
 
-      unmount();
-      expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(true);
-    },
-  );
+    unmount();
+    expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(true);
+  });
 
   it.each([
     { key: "k" },
