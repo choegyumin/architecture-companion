@@ -1,20 +1,27 @@
 ---
 id: freeform
-description: Builds evidence-based Product Behavior and Code Design diagrams for questions no dedicated generator covers.
+description: Create evidence-based Product Behavior and Code Design diagrams for questions not covered by a specialized generator.
 ---
 
-# Freeform Diagram Generator
+# Freeform diagram generator
 
-For questions no dedicated generator covers, produce the smallest diagram set that lets a reviewer check product behavior and software design against source evidence. These guidelines add to the common artifact-writing rules the Architecture Companion Skill reads first.
+Use for questions that no specialized generator covers. Manually author the smallest set of diagrams needed to review product behavior and software design.
 
-1. Confirm the explicit consumer scope, the user's request, and any existing artifact. Investigate the source code, tests, configuration, and current documentation for evidence relevant to the request.
+## Diagram configuration
 
-2. Before creating any element, decide what the reviewer needs to verify. Prefer boundaries, decisions, state changes, data movement, failure paths, and interactions over file inventories.
+```json
+{
+  "generator": "built-in:freeform",
+  "layout": { "id": "elk-layered" }
+}
+```
 
-3. Create only the Product Behaviors and Code Designs the question needs. A Product Behavior shows the start, choices, and outcomes an actor observes; a Code Design shows structure, responsibilities, dependencies, data flow, and runtime interactions. When both are needed, give them separate review questions.
+Set `layout.options` using schema-supported options that suit the user's requirements and the diagram being represented.
 
-4. Keep one central question per diagram, and reduce the element count as long as no important branch or dependency is hidden. If static structure and time-ordered interaction are both needed but hard to read on one canvas, split the diagram.
+## Investigation and authoring
 
-5. Present as current state only facts confirmed against the implementation. Mark proposed behavior or designs, and assumptions the investigation could not confirm. Where possible, phrase diagram text in the user's language and domain terminology.
+1. Investigate the boundaries, decisions, state changes, data movement, failure paths, and interactions the reviewer needs to examine. Choose elements that answer the review question rather than listing files.
+2. Use Product Behavior to show the starting points, choices, and outcomes observed by actors. Use Code Design to show structure, responsibilities, dependencies, data flow, and runtime interactions. If both are needed, give each a distinct review question.
+3. Reduce the number of elements without hiding important branches or dependencies. Split the diagram if static structure and time-ordered interactions are difficult to read on a single canvas.
 
-After writing the diagram, return to the Architecture Companion Skill workflow.
+Use the user's language and domain terminology wherever possible. Follow the skill's shared authoring procedure for checking evidence, distinguishing facts from proposals, preserving existing artifacts, and validation.

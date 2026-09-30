@@ -1,74 +1,88 @@
 ---
 name: architecture-companion
-description: Generates and revises Architecture Companion artifacts that capture product Behaviors and code Designs from source evidence, serves the local Review UI, and handles follow-up requests from stored Annotations. Use this skill whenever the user wants to visualize product flows or code structure in order to review them, asks to start the review UI or provide a review URL, needs an existing artifact fixed, or requests changes, explanations, or another review after an Architecture Companion review.
+description: Create and update Architecture Companion artifacts that capture product behavior and code design grounded in source evidence, and support review and follow-up work through a local Review UI and saved Annotations. Use when the user wants to visualize product flows or code structure for review, requests a review interface or URL, wants to modify an existing artifact, or follows up on a review with requests for changes, explanations, or another review.
 ---
 
 # Architecture Companion
 
-Presents product behavior and software design as interactive diagrams so the user can review them alongside source evidence.
+Present product behavior and software design as interactive diagrams that can be reviewed alongside source evidence.
 
-`<AC>` is the installed skill directory containing this file, `artifact-writing.md`, `review-follow-up.md`, `schemas/`, and `runtime/`. Running it requires Node.js `22.18.0` and no package installation. When an Architecture Companion command succeeds, do not separately report Node.js version differences in the user's environment.
+`<AC>` is the absolute path to the directory containing this `SKILL.md`. Node.js `22.18.0` or later is required; no package installation is needed in the target project.
 
-Use the absolute path of the consumer directory the user designates as `<scope>`. Ask only when the intended scope is genuinely unclear, and never substitute or infer the working directory or a Git root. Keep the same absolute path for the duration of a request.
+`<scope>` is the absolute path to the target directory specified by the user. Use the same path throughout the request. Ask only when the intended scope is unclear; do not arbitrarily substitute the working directory or Git root.
 
 ## Request routing
 
-- When a new diagram is needed or an existing diagram must change, run **Artifact writing**.
-- When a reviewable screen or URL is needed, run **Start the Review UI and hand off the URL**.
-- When the user returns to the coding harness after reviewing in the Review UI, start with **Review follow-up**. When its outcome requires diagram changes or another review, continue with the two procedures above.
+For follow-up requests after a Review UI review, start with **Review follow-up**, even if the request includes diagram changes.
 
-## Artifact writing
+| Request                                                         | Starting procedure  | Documents to read                                                                                                                                 |
+| --------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/diagram.schema.json` and its referenced schemas, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
+| Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                                                      |
+| Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                                           |
 
-1. If `<scope>/.architecture-companion/behaviors/` or `<scope>/.architecture-companion/designs/` exists, read the diagram files (`<id>.json`) inside first and separate the diagrams to preserve, modify, replace, add, or remove according to the request.
+Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
-2. Read `<AC>/schemas/diagram.schema.json` and follow its linked `$ref`s to confirm the exact JSON structure. Then read `<AC>/artifact-writing.md` and apply the writing rules common to all built-in and custom generators.
+## Artifact authoring
 
-3. When creating or regenerating a diagram, discover the installed generators.
+1. Read any existing diagram files in `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` first. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated diagrams and existing IDs for concepts that retain their meaning.
+
+2. Read `<AC>/schemas/diagram.schema.json` and its referenced `$ref` schemas to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
+
+3. When generating or regenerating a diagram, discover the installed generators. For simple wording or metadata changes that do not rebuild the graph, skip discovery and execution and proceed to step 5.
 
    ```sh
    node "<AC>/runtime/cli/view-generators.js" "<scope>"
    ```
 
-   The command prints one JSON line with an array of descriptors carrying `id`, `description`, `source`, and an absolute `path`. If the user named an installed generator, follow that choice. Otherwise compare every `description` against the requested view, and never select by array position. Keep entries that share a logical `id`. When both `id` and `description` match, choose in `built-in`, `project`, `global` order. When no dedicated generator fits, choose the built-in `freeform`.
+   The command prints a single line of JSON containing an array of descriptors with `id`, `description`, `source`, and an absolute `path`.
 
-4. Read `<selected path>/GENERATOR.md` at the chosen absolute path and follow its additional investigation guidance, references, supporting files, and execution instructions. Generator guidance does not replace the common artifact-writing rules, and do not assume every generator provides the same files or entrypoint.
+   - If the user specifies a generator, select it from the discovery results. If it is absent, report that and confirm an alternative with the user.
+   - When regenerating an existing diagram without a user-specified replacement generator, prefer a descriptor matching the existing `generator`'s `source` and `id`. If several candidates match, distinguish them by `description` and the existing regeneration instructions. If the existing generator cannot be found, report that and confirm an alternative with the user.
+   - For a new diagram with no user-specified generator, compare every `description` against the request. If no specialized generator fits, select the general-purpose generator from the discovery results.
 
-5. Investigate the source code, tests, configuration, and documentation you need, and edit the diagram files under `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` directly. Architecture Companion commands do not generate or merge the artifact. The artifact is the complete set of diagram files: one JSON file per diagram, named after its diagram `id` (lowercase kebab-case). Preserve unrelated diagram files and keep diagram and graph element IDs for the same concepts. Record the chosen descriptor's `source` and logical `id` as `generator` in `<source>:<id>` form on every diagram you create or regenerate.
+   Do not select by array order or discard entries solely because they share a logical `id`. If candidates with identical `id` and `description` remain after applying these criteria, prefer `built-in`, then `project`, then `global`.
 
-6. Validate the candidate once it covers the full request scope.
+4. Read `GENERATOR.md` at the selected `path` and follow its investigation, reference, and execution instructions. File organization and entry points may differ between generators. Follow that guide for diagram-specific construction while also applying the shared authoring rules. When regenerating, use any existing `generatorInstructions` as the starting point for source scope, options, working directory, and manual steps. Adjust only what the current request or the selected generator's instructions require.
+
+5. Check evidence in source code, tests, configuration, and documentation, and edit the diagram files directly. Even if a generator produces a candidate graph, compare it against the existing artifact, including manual refinements, and decide what to preserve, modify, or replace based on the request. For each generated or regenerated diagram, record the selected descriptor's `source` and `id` in `generator` as `<source>:<id>`.
+
+6. Validate the entire artifact after making changes.
 
    ```sh
    node "<AC>/runtime/cli/validate-schemas.js" "<scope>"
    ```
 
-   On failure, fix the errors from stderr and run it again until it prints `Artifact is valid.`. If you edit any diagram file after a successful run, validate again before reporting completion or handing off a URL. Independently of validation, check that the diagram answers the review question, that the evidence and interaction order are accurate, and that it satisfies the generator guidance.
+   On failure, fix the errors reported on stderr and rerun until the command prints `Artifact is valid.` If any files change afterward, validate again before reporting completion or sharing a URL. Separately from validation, check that the artifact covers the full requested scope, answers the review questions, and accurately reflects the evidence and interaction order.
 
-## Start the Review UI and hand off the URL
+   If the user also requested a review interface or URL, continue with **Start the Review UI**.
 
-1. Use the explicit `<scope>`. If the current artifact has not changed since the most recent validation, reuse that result; otherwise validate it with `validate-schemas.js`. When the artifact is missing or invalid, do not hand off a URL.
+## Start the Review UI
 
-2. Reuse a running server only when you can confirm it serves the same scope. Otherwise start the local review server as a background process.
+1. Check that `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` contain at least one diagram JSON file between them. An empty artifact can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+
+   Reuse the latest validation result if the current artifact has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid artifact.
+
+2. Reuse a running server only if you can confirm that it serves the same `<scope>`. Otherwise, start a server as a background process.
 
    ```sh
    node "<AC>/runtime/cli/serve.js" "<scope>"
    ```
 
-   Collect the single `http://127.0.0.1:<port>` URL line that stdout prints once the listener is ready. The command does not open a browser.
+   Once ready, the server prints a single line to stdout with a URL in the form `http://127.0.0.1:<port>`. This command does not open a browser.
 
-3. Briefly explain what the artifact covers and hand off the URL. Tell the user to leave the Annotations and Comments they need in the UI and then send a follow-up request to the coding harness. Do not use polling or blocking tool calls to wait for the request.
+3. Briefly describe what the artifact covers and share the URL. Tell the user to leave Annotations and Comments in the UI, then send a follow-up request through the coding harness. Do not use polling or blocking tool calls to wait for that request.
 
 ## Review follow-up
 
-1. Before editing the artifact with an explicit `<scope>`, query the Annotation document of the active revision.
+1. Retrieve the active revision's Annotations before handling the follow-up request.
 
    ```sh
    node "<AC>/runtime/cli/view-annotations.js" "<scope>"
    ```
 
-   The command validates the current artifact and prints `artifactRevisionId` and `document` as one JSON line. When the artifact is missing, both are `null`; when an artifact exists but no Annotations are stored, it returns the active `artifactRevisionId` with an empty document. Never replace a failed lookup with Annotations from another revision or scope.
+   The command validates the current artifact and prints `artifactRevisionId` and `document` as a single line of JSON. Read `<AC>/review-follow-up.md` for rules on interpreting results, handling failures, identifying targets, and interpreting requests. Do not substitute an empty result or Annotations from another revision or scope for a failed retrieval.
 
-2. Read `<AC>/review-follow-up.md`. Treat the user's coding-harness message as the primary request and the active revision's Annotations and Comments as review context.
+2. Treat the user's message as the primary request and the active revision's Annotations and Comments as review context. Investigate relevant evidence to answer explanation requests, and make code or documentation changes within the requested scope. Continue with **Artifact authoring** only when diagram changes are needed.
 
-3. Investigate the evidence the request needs and answer directly. Follow the **Artifact writing** procedure only when a diagram must change, preserving unrelated diagrams.
-
-4. When the artifact changed or the user wants another review, run the **Start the Review UI and hand off the URL** procedure and provide the validated URL. Do not poll or keep a tool call open while waiting for the next request.
+3. If the follow-up changes the artifact or the user requests another review, run **Start the Review UI** and share the validated artifact's URL. Always validate after diagram changes, whether or not another review is requested.
