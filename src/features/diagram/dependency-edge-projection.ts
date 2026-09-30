@@ -55,14 +55,24 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
     // pointless ×1 aggregate edges.
     if (!groups.size) return graph.edges.map(({ id }) => ({ type: "original", edgeId: id }) as const);
     const bundles = getDependencyNodeBundleIds(groups.keys(), reservedIds);
+    const pathsByGroup = new Map<string | undefined, readonly string[]>([[undefined, []]]);
     const ancestors = new Map(
       graph.nodes.map((node) => {
-        const path: string[] = [];
-        for (let groupId = node.groupId; groupId;) {
-          path.push(groupId);
-          groupId = getOrThrow(groups.get(groupId), `Missing diagram group: ${groupId}`).parentId;
+        let path = pathsByGroup.get(node.groupId);
+        if (!path) {
+          const missing: string[] = [];
+          let groupId = node.groupId;
+          while (groupId && !pathsByGroup.has(groupId)) {
+            missing.push(groupId);
+            groupId = getOrThrow(groups.get(groupId), `Missing diagram group: ${groupId}`).parentId;
+          }
+          path = pathsByGroup.get(groupId)!;
+          for (const id of missing.reverse()) {
+            path = [...path, id];
+            pathsByGroup.set(id, path);
+          }
         }
-        return [node.id, path.reverse()] as const;
+        return [node.id, path] as const;
       }),
     );
     const overview = createEdgeAggregator(new Set([...reservedIds, ...bundles.values()]));

@@ -111,6 +111,25 @@ describe("dependency edge projection", () => {
     ).toEqual(projected);
   });
 
+  it("reads each group's parent once when nodes share ancestor paths", () => {
+    const parentReads = new Map<string, number>();
+    const shared = {
+      ...graph,
+      groups: graph.groups.map((group) => ({
+        ...group,
+        get parentId() {
+          parentReads.set(group.id, (parentReads.get(group.id) ?? 0) + 1);
+          return "parentId" in group ? group.parentId : undefined;
+        },
+      })),
+    } satisfies DiagramGraph;
+
+    expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
+    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(1);
+    expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
+    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(2);
+  });
+
   it("shows every relationship as original edges when the graph has no groups", () => {
     const plain = {
       groups: [],
