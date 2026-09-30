@@ -61,6 +61,10 @@ function DiagramRendererContent({
   onPaneActivate,
 }: DiagramContentProps) {
   const measurementNodes = useMemo(() => buildDiagramMeasurementNodes(diagram, onOpenSource), [diagram, onOpenSource]);
+  const searchLabels = useMemo(
+    () => new Map([...diagram.graph.nodes, ...diagram.graph.groups].map(({ id, title }) => [id, title])),
+    [diagram],
+  );
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
@@ -150,6 +154,7 @@ function DiagramRendererContent({
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
         edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
+        getNodeLabel={rendered?.status === "ready" ? (node) => searchLabels.get(node.id) ?? "" : undefined}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
