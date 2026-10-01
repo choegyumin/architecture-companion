@@ -12,6 +12,7 @@ type RouteEdgeData = Readonly<{
   href?: string;
   onLinkActivate?: LinkActivationHandler;
   labelAction?: Readonly<{ ariaLabel: string; onActivate: () => void }>;
+  labelControl?: ReactNode;
 }>;
 
 export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
@@ -34,9 +35,13 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
   return (
     <>
       <BaseEdge id={id} markerEnd={markerEnd} markerStart={markerStart} path={data.path} style={style} />
-      {data.eyebrow != null || label != null || data.href ? (
+      {data.eyebrow != null || label != null || data.href || data.labelControl != null ? (
         <EdgeLabelRenderer>
-          {data.labelAction ? (
+          {data.labelControl != null ? (
+            <div className="nodrag nopan absolute" style={labelStyle}>
+              {data.labelControl}
+            </div>
+          ) : data.labelAction ? (
             <button
               aria-label={data.labelAction.ariaLabel}
               className="nodrag nopan absolute w-max cursor-pointer rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm hover:border-primary/60"
