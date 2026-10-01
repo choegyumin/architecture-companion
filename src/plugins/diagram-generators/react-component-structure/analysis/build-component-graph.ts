@@ -78,6 +78,13 @@ type ComponentUse = Readonly<{
   suppliedValues: SuppliedValue[];
 }>;
 
+type ComponentInstance = Readonly<{
+  id: string;
+  target: ComponentTarget;
+  ancestors: ReadonlyMap<string, ComponentInstance>;
+  uses: Map<string, ComponentInstance>;
+}>;
+
 type TerminalRule = Readonly<{
   type: "terminal";
   kind: SuppliedValueKind;
@@ -120,6 +127,7 @@ type PropBindings = Readonly<{
 }>;
 
 type AnalysisContext = Readonly<{
+  scopePath: string;
   checker: ts.TypeChecker;
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>;
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>;
@@ -719,8 +727,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     return target;
   }
 
-  function componentUseId(ownerId: string, node: ts.Node, targetId: string): string {
-    return [ownerId, toPosixPath(node.getSourceFile().fileName), node.pos, node.end, targetId].join("\0");
+  function componentUseId(ownerId: string, node: ts.Node, targetId: string, scopePath: string): string {
+    return [
+      ownerId,
+      toPosixPath(relative(scopePath, node.getSourceFile().fileName)),
+      node.pos,
+      node.end,
+      targetId,
+    ].join("\0");
   }
 
   function ensureComponentUse(
@@ -729,7 +743,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     target: ComponentTarget,
     context: AnalysisContext,
   ): ComponentUse {
-    const id = componentUseId(ownerId, node, target.id);
+    const id = componentUseId(ownerId, node, target.id, context.scopePath);
     const existing = context.uses.get(id);
     if (existing) return existing;
     const use = { id, ownerId, target, suppliedValues: [] } satisfies ComponentUse;
@@ -1303,7 +1317,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return;
         }
         const target = targetForReference(opening.tagName, context);
-        const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id) : undefined;
+        const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id, context.scopePath) : undefined;
         analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
         return;
       }
@@ -1347,7 +1361,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         return;
       }
       const target = targetForReference(tagExpression, context);
-      const targetUseId = target ? componentUseId(definition.id, call, target.id) : undefined;
+      const targetUseId = target ? componentUseId(definition.id, call, target.id, context.scopePath) : undefined;
       if (propsExpression && targetUseId) {
         for (const excludedProps of collectForwardedSpreadExclusions(propsExpression)) {
           mutableSpreads.push({ excludedProps, targetUseId });
@@ -1761,7 +1775,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   function edgeId(relationship: Relationship): string {
-    return `edge:${createHash("sha256").update(relationshipKey(relationship)).digest("hex").slice(0, 16)}`;
+    const key =
+      relationship.kind === "direct-render"
+        ? relationshipKey(relationship)
+        : `${relationshipKey(relationship)}\0${relationship.supplierIds.join("\0")}`;
+    return `edge:${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
   }
 
   function sourceHref(relativePath: string): string {
@@ -1874,16 +1892,37 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     context: AnalysisContext,
     rulesByComponentId: ReadonlyMap<string, ConsumerRules>,
     visibility: ReadonlyMap<string, ComponentVisibility>,
-  ): Readonly<{ visibleNodeIds: ReadonlySet<string>; relationships: readonly Relationship[] }> {
+  ): Readonly<{ instances: readonly ComponentInstance[]; relationships: readonly Relationship[] }> {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
-    const visibleNodeIds = new Set<string>();
+    const visibleInstances = new Map<string, ComponentInstance>();
+    const visibleDefinitionIds = new Set<string>();
     const relationships = new Map<string, Relationship>();
-    const queuedDefinitions = new Set<string>();
-    const processedDefinitions = new Set<string>();
-    const definitionQueue: string[] = [];
 
     function targetVisibility(targetId: string): ComponentVisibility {
       return visibility.get(targetId) ?? { boundaryVisible: false, implementationAnalyzed: false };
+    }
+
+    function createInstance(id: string, target: ComponentTarget, owner?: ComponentInstance): ComponentInstance {
+      const ancestors = new Map(owner?.ancestors);
+      const instance = { id, target, ancestors, uses: new Map<string, ComponentInstance>() };
+      ancestors.set(target.id, instance);
+      return instance;
+    }
+
+    function ensureComponentInstance(
+      parent: ComponentInstance,
+      use: ComponentUse,
+      owner: ComponentInstance,
+    ): ComponentInstance {
+      const existing = parent.uses.get(use.id);
+      if (existing) return existing;
+      // Follow the definition expansion path, not the visual parent path:
+      // explicitly nested JSX of the same component is not definition recursion.
+      const ancestor = owner.ancestors.get(use.target.id);
+      const suffix = createHash("sha256").update(`${parent.id}\0${use.id}`).digest("hex").slice(0, 16);
+      const instance = ancestor ?? createInstance(`${use.target.id}@${suffix}`, use.target, owner);
+      parent.uses.set(use.id, instance);
+      return instance;
     }
 
     function addFinalRelationship(relationship: Relationship): void {
@@ -1899,51 +1938,53 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       });
     }
 
-    function makeVisible(target: ComponentTarget): void {
-      const policy = targetVisibility(target.id);
-      if (!policy.boundaryVisible) return;
-      visibleNodeIds.add(target.id);
-      if (
-        target.definition &&
-        policy.implementationAnalyzed &&
-        !queuedDefinitions.has(target.id) &&
-        !processedDefinitions.has(target.id)
-      ) {
-        queuedDefinitions.add(target.id);
-        definitionQueue.push(target.id);
+    function makeVisible(instance: ComponentInstance): void {
+      const policy = targetVisibility(instance.target.id);
+      if (!policy.boundaryVisible || visibleInstances.has(instance.id)) return;
+      visibleInstances.set(instance.id, instance);
+      visibleDefinitionIds.add(instance.target.id);
+      if (!instance.target.definition || !policy.implementationAnalyzed) return;
+      for (const useId of [...(context.directUseIdsByOwner.get(instance.target.id) ?? [])].toSorted()) {
+        const use = context.uses.get(useId);
+        if (use) processDirectUse(instance, use);
       }
     }
 
     function processSuppliedTarget(
       targetUse: ComponentUse,
-      sourceId: string,
+      parent: ComponentInstance,
+      source: ComponentInstance,
+      owner: ComponentInstance,
       kind: SuppliedValueKind,
       propName: string,
       trail: ReadonlySet<string>,
     ): void {
-      const visitKey = [targetUse.id, sourceId, kind, propName].join("\0");
+      const visitKey = [targetUse.id, source.id, kind, propName].join("\0");
       if (trail.has(visitKey)) return;
       const nextTrail = new Set(trail).add(visitKey);
+      const instance = ensureComponentInstance(parent, targetUse, owner);
       const policy = targetVisibility(targetUse.target.id);
       if (!policy.boundaryVisible) {
-        processUseSupplies(targetUse, sourceId, nextTrail, { kind, propName });
+        processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName });
         return;
       }
 
-      makeVisible(targetUse.target);
+      makeVisible(instance);
       addFinalRelationship({
-        source: sourceId,
-        target: targetUse.target.id,
+        source: source.id,
+        target: instance.id,
         kind,
         propName,
         supplierIds: [targetUse.ownerId],
       });
-      processUseSupplies(targetUse, targetUse.target.id, nextTrail);
+      processUseSupplies(targetUse, instance, instance, owner, nextTrail);
     }
 
     function processUseSupplies(
       receiverUse: ComponentUse,
-      fallbackSourceId: string,
+      receiver: ComponentInstance,
+      fallbackSource: ComponentInstance,
+      owner: ComponentInstance,
       trail: ReadonlySet<string> = new Set(),
       inherited?: Readonly<{ kind: SuppliedValueKind; propName: string }>,
     ): void {
@@ -1958,68 +1999,51 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         );
         if (routes.length === 0) continue;
 
-        if (!receiverVisible) {
-          const relationship = inherited ?? { kind: supplied.kind, propName: supplied.propName };
-          for (const targetUseId of supplied.targetUseIds) {
-            const targetUse = context.uses.get(targetUseId);
-            if (targetUse) {
-              processSuppliedTarget(targetUse, fallbackSourceId, relationship.kind, relationship.propName, trail);
+        for (const route of routes) {
+          let consumer = receiver;
+          let source = fallbackSource;
+          let propName = inherited?.propName ?? supplied.propName;
+          let visiblePath = receiverVisible;
+          for (const [index, step] of route.steps.entries()) {
+            if (index > 0) {
+              const use = context.uses.get(step.useId)!;
+              consumer = ensureComponentInstance(consumer, use, consumer);
+            }
+            // Hidden boundaries stop visual ownership, not usage-path identity.
+            visiblePath &&= targetVisibility(step.componentId).boundaryVisible;
+            if (visiblePath) {
+              source = consumer;
+              propName = step.propName;
             }
           }
-          continue;
-        }
-
-        for (const route of routes) {
-          let lastVisibleStep: ConsumerRouteStep | undefined;
-          for (const step of route.steps) {
-            if (!targetVisibility(step.componentId).boundaryVisible) break;
-            lastVisibleStep = step;
-          }
-          if (!lastVisibleStep) continue;
           for (const targetUseId of supplied.targetUseIds) {
             const targetUse = context.uses.get(targetUseId);
             if (targetUse) {
-              processSuppliedTarget(
-                targetUse,
-                lastVisibleStep.componentId,
-                route.kind,
-                lastVisibleStep.propName,
-                trail,
-              );
+              processSuppliedTarget(targetUse, consumer, source, owner, inherited?.kind ?? route.kind, propName, trail);
             }
           }
         }
       }
     }
 
-    function processDirectUse(sourceId: string, use: ComponentUse): void {
+    function processDirectUse(source: ComponentInstance, use: ComponentUse): void {
+      const instance = ensureComponentInstance(source, use, source);
       const policy = targetVisibility(use.target.id);
       if (policy.boundaryVisible) {
-        makeVisible(use.target);
-        addFinalRelationship({ source: sourceId, target: use.target.id, kind: "direct-render" });
+        makeVisible(instance);
+        addFinalRelationship({ source: source.id, target: instance.id, kind: "direct-render" });
       }
-      processUseSupplies(use, sourceId);
+      processUseSupplies(use, instance, source, source);
     }
 
     for (const rootId of sourceDefinitionIds(definitions, context.uses)) {
       const definition = definitionsById.get(rootId);
-      if (!definition || !targetVisibility(rootId).boundaryVisible) continue;
-      makeVisible({ id: definition.id, title: definition.name, definition });
-    }
-
-    while (definitionQueue.length > 0) {
-      const definitionId = definitionQueue.shift()!;
-      queuedDefinitions.delete(definitionId);
-      if (processedDefinitions.has(definitionId)) continue;
-      processedDefinitions.add(definitionId);
-      for (const useId of [...(context.directUseIdsByOwner.get(definitionId) ?? [])].toSorted()) {
-        const use = context.uses.get(useId);
-        if (use) processDirectUse(definitionId, use);
-      }
+      if (!definition || visibleDefinitionIds.has(rootId) || !targetVisibility(rootId).boundaryVisible) continue;
+      makeVisible(createInstance(rootId, { id: definition.id, title: definition.name, definition }));
     }
 
     return {
-      visibleNodeIds,
+      instances: [...visibleInstances.values()],
       relationships: [...relationships.values()].toSorted((left, right) =>
         relationshipKey(left).localeCompare(relationshipKey(right)),
       ),
@@ -2028,27 +2052,31 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
   function createGraph(
     definitions: readonly ComponentDefinition[],
-    externalTargets: ReadonlyMap<string, ComponentTarget>,
-    visibleNodeIds: ReadonlySet<string>,
+    instances: readonly ComponentInstance[],
     relationships: readonly Relationship[],
   ): DiagramGraph {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
-    const localNodes = definitions
-      .filter(({ id }) => visibleNodeIds.has(id))
-      .map((definition): DefaultDiagramNode => ({
-        type: "default",
-        id: definition.id,
-        title: definition.name,
-        description: definition.relativePath,
-        links: [{ href: sourceHref(definition.relativePath) }],
-      }));
+    const localNodes = instances.flatMap(({ id, target }): DefaultDiagramNode[] => {
+      const definition = target.definition;
+      return definition
+        ? [
+            {
+              type: "default",
+              id,
+              title: definition.name,
+              description: definition.relativePath,
+              links: [{ href: sourceHref(definition.relativePath) }],
+            },
+          ]
+        : [];
+    });
     if (localNodes.length === 0) throw new Error("No React component definitions remain after filtering.");
 
-    const externalNodes = [...externalTargets.values()]
-      .filter(({ id }) => visibleNodeIds.has(id))
-      .map((target): DefaultDiagramNode => ({
+    const externalNodes = instances
+      .filter(({ target }) => !target.definition)
+      .map(({ id, target }): DefaultDiagramNode => ({
         type: "default",
-        id: target.id,
+        id,
         title: target.title,
         description: `${target.externalPackage} boundary`,
       }));
@@ -2072,9 +2100,18 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     return { groups: [], nodes, edges };
   }
 
-  function focusGraphOnRoots(graph: DiagramGraph, rootPatterns: readonly string[]): DiagramGraph {
+  function focusGraphOnRoots(
+    graph: DiagramGraph,
+    rootPatterns: readonly string[],
+    instances: readonly ComponentInstance[],
+  ): DiagramGraph {
+    const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
     const roots = graph.nodes.filter(({ id, title }) =>
-      rootPatterns.some((pattern) => matchesComponentPattern(id, title, [pattern])),
+      rootPatterns.some(
+        (pattern) =>
+          matchesComponentPattern(targetsByInstanceId.get(id)!.id, title, [pattern]) ||
+          matchesComponentPattern(id, title, [pattern]),
+      ),
     );
     if (roots.length === 0) {
       throw new Error(`No visible component matches the --root pattern: ${rootPatterns.join(", ")}`);
@@ -2100,6 +2137,72 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ...graph,
       nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
       edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
+    };
+  }
+
+  function mergeEquivalentContexts(
+    graph: DiagramGraph,
+    instances: readonly ComponentInstance[],
+    relationships: readonly Relationship[],
+  ): DiagramGraph {
+    const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
+    const relationshipsByEdgeId = new Map(relationships.map((relationship) => [edgeId(relationship), relationship]));
+    const edgesBySource = new Map<string, (typeof graph.edges)[number][]>();
+    for (const edge of graph.edges) {
+      const edges = edgesBySource.get(edge.source) ?? [];
+      edges.push(edge);
+      edgesBySource.set(edge.source, edges);
+    }
+    let classes = new Map(graph.nodes.map(({ id }) => [id, targetsByInstanceId.get(id)!.id]));
+
+    // Refine whole outgoing structures to a fixed point, including recursive compositions.
+    // The previous class prevents distinct contexts from being merged on a later pass.
+    for (;;) {
+      const representatives = new Map<string, string>();
+      const refined = new Map<string, string>();
+      for (const node of graph.nodes) {
+        const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
+          const { id, source: _source, target, ...metadata } = edge;
+          const relationship = relationshipsByEdgeId.get(id)!;
+          const suppliers = relationship.kind === "direct-render" ? [] : relationship.supplierIds;
+          return JSON.stringify([metadata, suppliers, classes.get(target)]);
+        });
+        const signature = JSON.stringify([classes.get(node.id), [...new Set(outgoing)].toSorted()]);
+        if (!representatives.has(signature)) representatives.set(signature, node.id);
+        refined.set(node.id, representatives.get(signature)!);
+      }
+      if (graph.nodes.every(({ id }) => refined.get(id) === classes.get(id))) break;
+      classes = refined;
+    }
+
+    const classesByDefinition = new Map<string, Set<string>>();
+    for (const node of graph.nodes) {
+      const definitionId = targetsByInstanceId.get(node.id)!.id;
+      const contexts = classesByDefinition.get(definitionId) ?? new Set<string>();
+      contexts.add(classes.get(node.id)!);
+      classesByDefinition.set(definitionId, contexts);
+    }
+    const outputIds = new Map(
+      graph.nodes.map(({ id }) => {
+        const definitionId = targetsByInstanceId.get(id)!.id;
+        return [id, classesByDefinition.get(definitionId)!.size === 1 ? definitionId : classes.get(id)!];
+      }),
+    );
+    const nodes = graph.nodes
+      .filter(({ id }) => classes.get(id) === id)
+      .map((node) => ({ ...node, id: outputIds.get(node.id)! }))
+      .toSorted((left, right) => left.id.localeCompare(right.id));
+    const edges = new Map<string, (typeof graph.edges)[number]>();
+    for (const edge of graph.edges) {
+      const source = outputIds.get(edge.source)!;
+      const target = outputIds.get(edge.target)!;
+      const id = edgeId({ ...relationshipsByEdgeId.get(edge.id)!, source, target });
+      edges.set(id, { ...edge, id, source, target });
+    }
+    return {
+      ...graph,
+      nodes,
+      edges: [...edges.values()].toSorted((left, right) => left.id.localeCompare(right.id)),
     };
   }
 
@@ -2142,6 +2245,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
 
     const context: AnalysisContext = {
+      scopePath,
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
@@ -2165,10 +2269,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       options.excludeComponentPatterns ?? [],
     );
     const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
-    const graph = createGraph(definitions, context.externalTargets, collapsed.visibleNodeIds, collapsed.relationships);
-    return options.rootPatterns && options.rootPatterns.length > 0
-      ? focusGraphOnRoots(graph, [...options.rootPatterns])
-      : graph;
+    const graph = createGraph(definitions, collapsed.instances, collapsed.relationships);
+    const focused =
+      options.rootPatterns && options.rootPatterns.length > 0
+        ? focusGraphOnRoots(graph, [...options.rootPatterns], collapsed.instances)
+        : graph;
+    return mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships);
   }
   return buildComponentGraph;
 }

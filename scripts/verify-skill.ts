@@ -468,9 +468,12 @@ async function verifyInstalledReactComponentGenerator(
   await Promise.all([
     writeFile(
       join(sourceRoot, "app.tsx"),
-      `import { Content } from "./content";\nimport { Layout } from "./layout";\nexport function App() { return <Layout><Content /></Layout>; }\n`,
+      `import { Alternate, Content } from "./content";\nimport { Layout } from "./layout";\nexport function App() { return <><Layout><Content /></Layout><Layout><Alternate /></Layout><Layout><Content /></Layout></>; }\n`,
     ),
-    writeFile(join(sourceRoot, "content.tsx"), `export function Content() { return <main />; }\n`),
+    writeFile(
+      join(sourceRoot, "content.tsx"),
+      `export function Content() { return <main />; }\nexport function Alternate() { return <aside />; }\n`,
+    ),
     writeFile(
       join(sourceRoot, "layout.tsx"),
       `export function Header() { return <header />; }\nexport function Layout({ children }: { children: unknown }) { return <section><Header />{children}</section>; }\n`,
@@ -541,12 +544,40 @@ async function verifyInstalledReactComponentGenerator(
   const graph = await generateGraph();
   assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
   assert.deepEqual(graph.groups, []);
-  assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
+  assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), [
+    "Alternate",
+    "App",
+    "Content",
+    "Header",
+    "Layout",
+    "Layout",
+  ]);
   assert.deepEqual(edgeFacts(graph), [
     { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
+    { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
     { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
+    { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
+    { kind: "NODE (children)", label: "from App", source: "Layout", target: "Alternate" },
     { kind: "NODE (children)", label: "from App", source: "Layout", target: "Content" },
   ]);
+  const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+  const compositions = graph.nodes
+    .filter(({ title }) => title === "Layout")
+    .map(({ id }) =>
+      graph.edges
+        .filter(({ source }) => source === id)
+        .map(({ target }) => titlesById.get(target))
+        .toSorted(),
+    );
+  assert.deepEqual(compositions.toSorted(), [
+    ["Alternate", "Header"],
+    ["Content", "Header"],
+  ]);
+  assert.deepEqual(
+    await buildComponentGraph({ scopePath, sourcePaths: ["src"] }),
+    graph,
+    "Installed React generator must preserve the same composition contexts as the source analyzer.",
+  );
 
   const externalAliasGraph = await generateGraph([], "external-src");
   assert.deepEqual(
@@ -582,8 +613,9 @@ async function verifyInstalledReactComponentGenerator(
     await generateGraph(["--exclude-component", "Layout"]),
     await generateGraph(["--exclude-path", "src/layout.tsx"]),
   ]) {
-    assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
+    assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["Alternate", "App", "Content"]);
     assert.deepEqual(edgeFacts(filtered), [
+      { kind: "NODE (children)", label: "from App", source: "App", target: "Alternate" },
       { kind: "NODE (children)", label: "from App", source: "App", target: "Content" },
     ]);
   }

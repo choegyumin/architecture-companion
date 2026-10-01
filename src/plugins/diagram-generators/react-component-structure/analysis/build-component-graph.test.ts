@@ -73,6 +73,205 @@ function externalPackageFiles(declarations: string): Readonly<Record<string, str
 }
 
 describe("React component structure generator", () => {
+  it("shares identical compositions without mixing different forwarded children", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Shared() { return <span />; }
+          function First() { return <Shared />; }
+          function Second() { return <Shared />; }
+          function Renderer({ children }) { return <main>{children}</main>; }
+          function Wrapper({ children }) { return <Renderer>{children}</Renderer>; }
+          export function App() {
+            return <>
+              <Wrapper><First /></Wrapper>
+              <Wrapper><Second /></Wrapper>
+              <Wrapper><First /></Wrapper>
+            </>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns: ["App"] });
+        const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+        const wrappers = graph.nodes.filter((node) => node.title === "Wrapper");
+        expect(wrappers).toHaveLength(2);
+        expect(graph.nodes.filter((node) => node.title === "Renderer")).toHaveLength(2);
+        expect(graph.nodes.filter((node) => node.title === "Shared")).toHaveLength(1);
+        expect(graph.nodes).toHaveLength(8);
+        expect(graph.edges).toHaveLength(8);
+        expect(graph.edges.filter((edge) => nodesById.get(edge.source)?.title === "App")).toHaveLength(2);
+        const compositions = wrappers.map((wrapper) => {
+          const rendererEdges = graph.edges.filter((edge) => edge.source === wrapper.id);
+          expect(rendererEdges).toHaveLength(1);
+          const renderer = nodesById.get(rendererEdges.at(0)!.target)!;
+          expect(renderer.title).toBe("Renderer");
+          const children = graph.edges.filter((edge) => edge.source === renderer.id);
+          expect(children).toHaveLength(1);
+          expect(children.at(0)).toMatchObject({ kind: "NODE (children)", label: "from App" });
+          return nodesById.get(children.at(0)!.target)?.title;
+        });
+        expect(compositions.toSorted()).toEqual(["First", "Second"]);
+      },
+    );
+  });
+
+  it("keeps every supplied relationship kind attached to its own composition", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Marker() { return <span />; }
+          function Left() { return <Marker />; }
+          function Right() { return <Marker />; }
+          function Renderer({ panel, render, component: Component }) {
+            return <>{panel}{render()}<Component /></>;
+          }
+          function Wrapper(props) { return <Renderer {...props} />; }
+          export function App() {
+            return <>
+              <Wrapper panel={<Left />} render={() => <Left />} component={Left} />
+              <Wrapper panel={<Right />} render={() => <Right />} component={Right} />
+            </>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+        const renderers = graph.nodes.filter(({ title }) => title === "Renderer");
+        expect(renderers).toHaveLength(2);
+        expect(graph.nodes.filter(({ title }) => title === "Marker")).toHaveLength(1);
+        const compositions = renderers.map(({ id }) => {
+          const edges = graph.edges.filter(({ source }) => source === id);
+          expect(edges.map(({ kind }) => kind).toSorted()).toEqual([
+            "COMPONENT (component)",
+            "NODE (panel)",
+            "RENDER (render)",
+          ]);
+          expect(edges.every(({ label }) => label === "from App")).toBe(true);
+          return edges.map(({ target }) => titlesById.get(target)).toSorted();
+        });
+        expect(compositions.toSorted()).toEqual([
+          ["Left", "Left", "Left"],
+          ["Right", "Right", "Right"],
+        ]);
+      },
+    );
+  });
+
+  it("does not merge distinct supplier definitions with the same display name", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Parent as First } from "./first";
+          import { Parent as Second } from "./second";
+          export function App() { return <><First /><Second /></>; }
+        `,
+        "src/first.tsx": `
+          import { Content, Renderer } from "./renderer";
+          export function Parent() { return <Renderer><Content /></Renderer>; }
+        `,
+        "src/second.tsx": `
+          import { Content, Renderer } from "./renderer";
+          export function Parent() { return <Renderer><Content /></Renderer>; }
+        `,
+        "src/renderer.tsx": `
+          export function Content() { return <main />; }
+          export function Renderer({ children }) { return <section>{children}</section>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const renderers = graph.nodes.filter(({ title }) => title === "Renderer");
+        expect(renderers).toHaveLength(2);
+        const content = graph.nodes.filter(({ title }) => title === "Content");
+        expect(content).toHaveLength(1);
+        for (const { id } of renderers) {
+          expect(graph.edges.filter(({ source }) => source === id)).toEqual([
+            expect.objectContaining({ target: content.at(0)!.id, kind: "NODE (children)", label: "from Parent" }),
+          ]);
+        }
+        expect(new Set(graph.edges.map(({ id }) => id)).size).toBe(graph.edges.length);
+      },
+    );
+  });
+
+  it("shares identical recursive compositions and preserves their cycle", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function A() { return <B />; }
+          function B() { return <A />; }
+          function First() { return <A />; }
+          function Second() { return <A />; }
+          export function App() { return <><First /><Second /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["A", "App", "B", "First", "Second"]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "A", target: "B", kind: "direct-render", label: undefined },
+          { source: "App", target: "First", kind: "direct-render", label: undefined },
+          { source: "App", target: "Second", kind: "direct-render", label: undefined },
+          { source: "B", target: "A", kind: "direct-render", label: undefined },
+          { source: "First", target: "A", kind: "direct-render", label: undefined },
+          { source: "Second", target: "A", kind: "direct-render", label: undefined },
+        ]);
+      },
+    );
+  });
+
+  it("keeps explicit nesting distinct from definition recursion", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Content() { return <main />; }
+          function Layout({ children }) { return <section>{children}</section>; }
+          export function App() { return <Layout><Layout><Content /></Layout></Layout>; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+        const appId = graph.nodes.find(({ title }) => title === "App")!.id;
+        const contentId = graph.nodes.find(({ title }) => title === "Content")!.id;
+        const outerId = graph.edges.find(({ source }) => source === appId)!.target;
+        const innerId = graph.edges.find(({ source }) => source === outerId)!.target;
+        expect(graph.nodes.filter(({ title }) => title === "Layout")).toHaveLength(2);
+        expect(innerId).not.toBe(outerId);
+        expect(graph.edges.filter(({ source }) => source === innerId)).toEqual([
+          expect.objectContaining({ target: contentId, kind: "NODE (children)", label: "from App" }),
+        ]);
+      },
+    );
+  });
+
+  it("keeps distinct composition identities stable across bases and root selection", async () => {
+    const files = {
+      "src/app.tsx": `
+        function Left() { return <main />; }
+        function Right() { return <aside />; }
+        function Layout({ children }) { return <section>{children}</section>; }
+        export function App() { return <><Layout><Left /></Layout><Layout><Right /></Layout></>; }
+      `,
+    };
+    await withFixture(files, async (scopePath) => {
+      const options = { scopePath, sourcePaths: ["src"] };
+      const graph = await buildComponentGraph({ ...options, rootPatterns: ["Layout"] });
+      expect(await buildComponentGraph({ ...options, rootPatterns: ["component:src/app.tsx#Layout"] })).toEqual(graph);
+      expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Layout", "Layout", "Left", "Right"]);
+      const leftId = graph.nodes.find(({ title }) => title === "Left")!.id;
+      const leftLayoutId = graph.edges.find(({ target }) => target === leftId)!.source;
+      const selected = await buildComponentGraph({ ...options, rootPatterns: [leftLayoutId] });
+      expect(selected.nodes.map(({ title }) => title).toSorted()).toEqual(["Layout", "Left"]);
+      await withFixture(files, async (secondScopePath) => {
+        expect(await buildComponentGraph({ ...options, scopePath: secondScopePath, rootPatterns: ["Layout"] })).toEqual(
+          graph,
+        );
+      });
+    });
+  });
+
   it("does not borrow fallback declarations when the installed TypeScript package is incomplete", async () => {
     await withFixture(
       {
@@ -219,7 +418,7 @@ describe("React component structure generator", () => {
     );
   });
 
-  it("keeps original suppliers when multiple components forward values to one renderer", async () => {
+  it("keeps different suppliers separate while sharing identical supplied components", async () => {
     await withFixture(
       {
         "src/app.tsx": `
@@ -237,17 +436,22 @@ describe("React component structure generator", () => {
       async (scopePath) => {
         const first = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         const second = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
-        const contentId = first.nodes.find(({ title }) => title === "Content")?.id;
-        const relationship = first.edges.find(({ target }) => target === contentId);
-        const repeatedRelationship = second.edges.find(({ target }) => target === contentId);
-
-        expect(relationship).toMatchObject({
-          source: first.nodes.find(({ title }) => title === "Renderer")?.id,
-          target: contentId,
-          kind: "NODE (body)",
-          label: "from ParentA, ParentB",
-        });
-        expect(repeatedRelationship?.id).toBe(relationship?.id);
+        expect(second).toEqual(first);
+        expect(first.nodes.filter(({ title }) => title === "Content")).toHaveLength(1);
+        for (const title of ["Wrapper", "Renderer"]) {
+          expect(first.nodes.filter((node) => node.title === title)).toHaveLength(2);
+        }
+        const contentId = first.nodes.find(({ title }) => title === "Content")!.id;
+        for (const parent of ["ParentA", "ParentB"]) {
+          const parentId = first.nodes.find(({ title }) => title === parent)!.id;
+          const wrapperId = first.edges.find(({ source }) => source === parentId)!.target;
+          const rendererId = first.edges.find(({ source }) => source === wrapperId)!.target;
+          expect(first.nodes.find(({ id }) => id === wrapperId)?.title).toBe("Wrapper");
+          expect(first.nodes.find(({ id }) => id === rendererId)?.title).toBe("Renderer");
+          expect(first.edges.filter(({ source }) => source === rendererId)).toEqual([
+            expect.objectContaining({ target: contentId, kind: "NODE (body)", label: `from ${parent}` }),
+          ]);
+        }
       },
     );
   });
@@ -672,7 +876,10 @@ describe("React component structure generator", () => {
       async (scopePath) => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
+        expect(graph.nodes.filter(({ title }) => title === "Wrapper")).toHaveLength(2);
+        expect(graph.nodes.filter(({ title }) => title === "ExternalFlow")).toHaveLength(2);
         expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
           { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
           {
             source: "ExternalFlow",
@@ -686,6 +893,7 @@ describe("React component structure generator", () => {
             kind: "NODE (children)",
             label: "from App",
           },
+          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
           { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
         ]);
       },
@@ -1740,7 +1948,13 @@ describe("React component structure generator", () => {
             source: "External",
             target: "B",
             kind: "NODE (panel)",
-            label: "from ExplicitWrapper, StaticSpreadWrapper",
+            label: "from ExplicitWrapper",
+          },
+          {
+            source: "External",
+            target: "B",
+            kind: "NODE (panel)",
+            label: "from StaticSpreadWrapper",
           },
           { source: "StaticSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
           { source: "UnknownSpreadWrapper", target: "External", kind: "direct-render", label: undefined },

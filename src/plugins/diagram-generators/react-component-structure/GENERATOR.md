@@ -55,7 +55,7 @@ Both display filters use the same reduction rules. Matching components and compo
 
 Hidden elements are not recorded in the output JSON. Generation fails if no source files are collected or no local components remain after display filtering. When `--root` is specified, generation fails if none of the patterns selects a visible component.
 
-The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are silently omitted. Provider annotations, per-usage nodes, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
+The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are silently omitted. Identical composition contexts are shared, so individual use locations and usage counts are not preserved. Provider annotations, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
 
 ## Output
 
@@ -69,7 +69,9 @@ This file contains only a candidate `Diagram.graph` with `groups`, `nodes`, and 
 
 ## Interpretation and integration
 
-Each node represents one component definition. Named local components use the identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
+Each node represents a component definition in one verified composition context. Usages of the same definition share a node only when their outgoing relationships, supplier identities, and recursively composed target contexts are identical. Different contexts remain separate even when their immediate child definitions are the same; recursive compositions are compared to a fixed point.
+
+Named local components use the definition identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. When only one context remains for a definition, its node retains that definition identifier. Multiple contexts retain representative usage identities, which can add an `@<hash>` suffix derived from scope-relative usage paths. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
 
 Relationships are displayed as follows:
 
@@ -78,7 +80,7 @@ Relationships are displayed as follows:
 - Render prop: `kind` is `RENDER (<invoker prop name>)`; `label` is `from <supplier>`.
 - Component prop: `kind` is `COMPONENT (<renderer prop name>)`; `label` is `from <supplier>`.
 
-The visual parent of a supplied value is its verified local renderer or invoker. The label names the component definition that created the supplied target. Local prop forwarding is traced through verified named aliases and static prop objects. `kind` uses the prop name of the final visible renderer or invoker with its original casing, while `label` retains the original supplier. When multiple component definitions supply the same target through the same relationship, their names are sorted and combined into a single label rather than duplicating edges.
+The visual parent of a supplied value is its verified local renderer or invoker. The label names the component definition that created the supplied target. Local prop forwarding is traced through verified named aliases and static prop objects. `kind` uses the prop name of the final visible renderer or invoker with its original casing, while `label` retains the original supplier. Supplier names are sorted and combined only when analysis verifies them for the same relationship within one usage context. Different supplier contexts are not merged merely because their target definitions match.
 
 External component boundaries remain visible and connected, but package implementations are not expanded. External provenance is traced through immutable `const` aliases and named, default, and star re-exports in local barrel modules to the canonical package export. Mutable aliases remain unresolved. External boundaries excluded by component filters follow the same rules as hidden local boundaries.
 
