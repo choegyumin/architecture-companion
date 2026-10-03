@@ -26,20 +26,13 @@ Architecture Companion calculates coordinates and dimensions, so do not store th
 
 ## Authoring metadata
 
-Every diagram must include `updatedAt`, the completion time of its current content in UTC ISO 8601 format (for example, `2026-10-03T09:15:00.000Z`). Read the system clock when creating or changing the content. Do not refresh it merely because the artifact is read, validated, saved without content changes, or annotated.
+- `updatedAt`: Record the current content's completion time from the system clock in UTC ISO 8601. Do not refresh it on reads, validation, unchanged saves, or Annotation changes.
+- `vcs.revision`: Record the code revision used as the basis, not the artifact's own commit or internal artifact revision ID. Use the version control system's native identifier; for Git, use the full commit hash. Omit `vcs` entirely when no version-controlled code basis exists.
+- `vcs.divergesFromRevision`: Set to `true` only when the represented behavior, structure, or design differs from that revision, including uncommitted implementation changes or unimplemented proposals; otherwise use `false`. Do not infer divergence from working-tree status or post-generation edits. Source interpretation, summarization, and intentional presentation refinements recorded in `instructions` do not by themselves constitute divergence.
 
-When the diagram uses a version-controlled code state as its basis, include `vcs` with both required fields:
+On content changes, update `updatedAt`; if `vcs` is present, reassess `divergesFromRevision`. Retain `revision` unless the code basis changes; when it does, verify retained content against the new basis and set both VCS fields together.
 
-- `revision`: The non-empty revision identifier of the code actually used as the basis, in the version control system's native format. For Git, use the full commit hash. This is not the artifact's own commit or Architecture Companion's internal artifact revision ID.
-- `divergesFromRevision`: Whether the represented behavior, structure, or design differs from that code state. Set it to `true` for changes beyond the revision, including uncommitted implementation changes or unimplemented proposals represented in the diagram. Otherwise, set it to `false`.
-
-A proposal can retain an existing code revision as its baseline even before implementation. If the diagram has no version-controlled code basis, omit the entire `vcs` object, not just one of its fields.
-
-Determine divergence from the represented system, not from the working tree's dirty state or whether the graph was modified after static generation. Source interpretation, summarization, and intentional presentation refinements recorded in `instructions` do not by themselves constitute divergence. A clean working tree can still produce a diagram with `divergesFromRevision: true` when it describes a proposed system change.
-
-On content changes, update `updatedAt` and reassess `divergesFromRevision` when `vcs` is present. Retain `revision` unless the code basis changes; do not replace it with the latest revision merely because the diagram was edited. When changing the code basis, verify retained diagram content against it and set both VCS fields together.
-
-Diagrams without `updatedAt` fail validation. Do not invent historical timestamps or revisions to migrate existing artifacts. Recover trustworthy metadata or reauthor the content and record its new completion time; do not backfill from file modification times or the current clock alone.
+For existing artifacts, recover trustworthy metadata or reauthor the content and record its new completion time. Do not invent historical timestamps or revisions; file modification times or the current clock alone are not sufficient evidence.
 
 ## Generators and regeneration context
 
