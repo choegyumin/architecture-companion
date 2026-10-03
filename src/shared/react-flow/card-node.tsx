@@ -20,6 +20,9 @@ type CardNodeData = Readonly<{
   links?: readonly CardNodeLink[];
   onLinkActivate?: LinkActivationHandler;
   activatable?: boolean;
+  accessibleDescription?: string;
+  children?: ReactNode;
+  className?: string;
 }>;
 
 export type CardReactFlowNode = Node<CardNodeData, "card">;
@@ -36,10 +39,12 @@ export function CardNode({
 
   return (
     <article
+      aria-description={data.accessibleDescription}
       aria-label={accessibleLabel || "Card"}
       className={cn(
         "w-72 rounded-xl border bg-card p-4 text-card-foreground shadow-sm",
         data.activatable && "cursor-pointer hover:border-primary/60",
+        data.className,
       )}
     >
       <Handle isConnectable={isConnectable} position={targetPosition} style={{ opacity: 0 }} type="target" />
@@ -84,6 +89,7 @@ export function CardNode({
           ))}
         </div>
       ) : null}
+      {data.children}
       <Handle isConnectable={isConnectable} position={sourcePosition} style={{ opacity: 0 }} type="source" />
     </article>
   );
