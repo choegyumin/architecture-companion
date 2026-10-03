@@ -82,6 +82,8 @@ The visual parent of a supplied value is its verified local renderer or invoker.
 
 External component boundaries remain visible and connected, but package implementations are not expanded. External provenance is traced through immutable `const` aliases and named, default, and star re-exports in local barrel modules to the canonical package export. Mutable aliases remain unresolved. External boundaries excluded by component filters follow the same rules as hidden local boundaries.
 
+External member references require a declared property or an applicable index signature, including members of CommonJS `export =` objects. Whitespace and comments in property access do not change member identity or make missing members valid. Existing import naming is preserved: for `export = UI`, a default import of `UI.Button` retains `UI.Button`, while a namespace import uses `Button`. Package and relative imports retain their own provenance even when the same source is selected for local analysis, including references supplied through component registries. Package-owned JSX values are not expanded as caller-supplied content.
+
 Local values statically verified as supplied through node props, render props, component props, or component registries remain connected. Results from event-style `onX` callbacks are omitted at external boundaries because their return values are not verified as being rendered.
 
 1. Read the existing diagram file first, then read the temporary candidate graph. Preserve, modify, or replace the existing graph according to the request, keeping unrelated diagrams and IDs for concepts that retain their meaning.

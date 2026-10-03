@@ -128,6 +128,8 @@ type PropBindings = Readonly<{
 
 type AnalysisContext = Readonly<{
   scopePath: string;
+  program: ts.Program;
+  host: ts.ModuleResolutionHost;
   checker: ts.TypeChecker;
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>;
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>;
@@ -525,17 +527,31 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const normalized = toPosixPath(fileName);
     const marker = "/node_modules/";
     const markerIndex = normalized.lastIndexOf(marker);
-    if (markerIndex < 0) return undefined;
-    const modulePath = normalized.slice(markerIndex + marker.length);
-    if (modulePath.startsWith("@")) return modulePath.split("/").slice(0, 2).join("/");
-    const packageName = modulePath.split("/").at(0);
-    return packageName && !packageName.startsWith(".") ? packageName : undefined;
+    if (markerIndex >= 0) {
+      const modulePath = normalized.slice(markerIndex + marker.length);
+      if (modulePath.startsWith("@")) return modulePath.split("/").slice(0, 2).join("/");
+      const packageName = modulePath.split("/").at(0);
+      return packageName && !packageName.startsWith(".") ? packageName : undefined;
+    }
+
+    // Workspace links can resolve outside node_modules. Nested module-format
+    // manifests need not name the package, so continue to the containing manifest.
+    let directory = resolve(fileName, "..");
+    while (true) {
+      const manifestPath = ts.findConfigFile(directory, ts.sys.fileExists, "package.json");
+      if (!manifestPath) return undefined;
+      const { config } = ts.readConfigFile(manifestPath, ts.sys.readFile);
+      if (typeof config?.name === "string") return config.name;
+      const parent = resolve(manifestPath, "../..");
+      if (parent === resolve(manifestPath, "..")) return undefined;
+      directory = parent;
+    }
   }
 
-  function hasExternalDeclaration(symbol: ts.Symbol | undefined, checker: ts.TypeChecker): boolean {
-    const canonical = canonicalSymbol(symbol, checker);
+  function hasExternalDeclaration(symbol: ts.Symbol | undefined, context: AnalysisContext): boolean {
+    const canonical = canonicalSymbol(symbol, context.checker);
     return (canonical?.declarations ?? symbol?.declarations ?? []).some((declaration) =>
-      externalPackageNameFromFile(declaration.getSourceFile().fileName),
+      context.program.isSourceFileFromExternalLibrary(declaration.getSourceFile()),
     );
   }
 
@@ -543,8 +559,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     if (getImportModuleSpecifier(symbol) === "react") return true;
     const canonical = canonicalSymbol(symbol, checker);
     return (canonical?.declarations ?? symbol?.declarations ?? []).some((declaration) => {
-      const fileName = toPosixPath(declaration.getSourceFile().fileName);
-      return fileName.includes("/node_modules/react/") || fileName.includes("/node_modules/@types/react/");
+      const packageName = externalPackageNameFromFile(declaration.getSourceFile().fileName);
+      return packageName === "react" || packageName === "@types/react";
     });
   }
 
@@ -565,7 +581,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   type ModuleBinding = Readonly<{
-    moduleSpecifier: string;
+    moduleSpecifier: ts.StringLiteral;
     importedName: string;
   }>;
 
@@ -573,12 +589,42 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     packageName: string;
     importedName?: string;
     symbol: ts.Symbol;
+    namespaceDepth?: number;
   }>;
 
   type ExternalReference = Readonly<{
-    packageName: string;
-    title: string;
+    origin: ExternalSymbolOrigin;
+    members: readonly ReferenceMember[];
+    localName: string;
   }>;
+
+  type ReferenceMember = Readonly<{
+    name: string;
+    symbol?: ts.Symbol;
+    type: ts.Type;
+  }>;
+
+  function resolveReferenceMembers(
+    symbol: ts.Symbol,
+    location: ts.Node,
+    names: readonly string[],
+    checker: ts.TypeChecker,
+  ): readonly ReferenceMember[] | undefined {
+    const members: ReferenceMember[] = [];
+    let type = checker.getTypeOfSymbolAtLocation(symbol, location);
+    for (const name of names) {
+      const member = checker.getPropertyOfType(type, name);
+      const nextType = member
+        ? checker.getTypeOfSymbolAtLocation(member, location)
+        : checker
+            .getIndexInfosOfType(type)
+            .find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+      if (!nextType) return undefined;
+      members.push({ name, symbol: member, type: nextType });
+      type = nextType;
+    }
+    return members;
+  }
 
   function moduleBinding(symbol: ts.Symbol): ModuleBinding | undefined {
     for (const declaration of symbol.declarations ?? []) {
@@ -608,7 +654,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           : ts.isImportClause(declaration)
             ? "default"
             : "*";
-      return { moduleSpecifier: candidate.moduleSpecifier.text, importedName };
+      return { moduleSpecifier: candidate.moduleSpecifier, importedName };
     }
     return undefined;
   }
@@ -634,28 +680,114 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     return undefined;
   }
 
-  function externalSymbolOrigin(symbol: ts.Symbol, checker: ts.TypeChecker): ExternalSymbolOrigin | undefined {
+  function externalSymbolOrigin(
+    symbol: ts.Symbol,
+    context: AnalysisContext,
+    namespaceMembers: readonly ReferenceMember[] = [],
+  ): ExternalSymbolOrigin | undefined {
+    const checker = context.checker;
     const chain = symbolAliasChain(symbol, checker);
-    const externalSymbol = chain.at(-1);
-    if (!externalSymbol || !hasExternalDeclaration(externalSymbol, checker)) return undefined;
+    const canonical = canonicalSymbol(chain.at(-1), checker);
+    const namespaceMember = namespaceMembers.at(0);
+    const namespaceBinding = chain.map(moduleBinding).find((binding) => binding?.importedName === "*");
+    // Type members also cover export= objects and applicable index signatures;
+    // looking them up again in a module export table would discard that evidence.
+    const member = namespaceBinding ? namespaceMember?.symbol : undefined;
+    const selected = canonicalSymbol(member, checker);
+    const externalSymbol = selected?.declarations?.length ? selected : canonical;
+    if (!externalSymbol?.declarations?.length) return undefined;
 
+    const originFromBinding = (
+      binding: ModuleBinding,
+      visited: ReadonlySet<ts.StringLiteral> = new Set(),
+    ): ExternalSymbolOrigin | undefined => {
+      if (visited.has(binding.moduleSpecifier)) return undefined;
+      const sourceFile = binding.moduleSpecifier.getSourceFile();
+      const resolved = ts.resolveModuleName(
+        binding.moduleSpecifier.text,
+        sourceFile.fileName,
+        context.program.getCompilerOptions(),
+        context.host,
+        undefined,
+        undefined,
+        context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier),
+      ).resolvedModule;
+      if (resolved?.isExternalLibraryImport) {
+        const packageName = externalPackageName(binding.moduleSpecifier.text);
+        if (packageName) return { packageName, importedName: binding.importedName, symbol: externalSymbol };
+      }
+
+      // Star re-exports can bypass intermediate symbols in the alias chain.
+      const moduleSymbol = checker.getSymbolAtLocation(binding.moduleSpecifier);
+      const nextVisited = new Set(visited).add(binding.moduleSpecifier);
+      for (const declaration of moduleSymbol?.declarations ?? []) {
+        if (!ts.isSourceFile(declaration)) continue;
+        const hasExplicitExport = declaration.statements.some(
+          (statement) =>
+            ts.isExportDeclaration(statement) &&
+            statement.exportClause &&
+            (ts.isNamespaceExport(statement.exportClause)
+              ? statement.exportClause.name.text === binding.importedName
+              : statement.exportClause.elements.some((member) => member.name.text === binding.importedName)),
+        );
+        if (hasExplicitExport) continue;
+        for (const statement of declaration.statements) {
+          if (
+            !ts.isExportDeclaration(statement) ||
+            statement.exportClause ||
+            !statement.moduleSpecifier ||
+            !ts.isStringLiteral(statement.moduleSpecifier)
+          ) {
+            continue;
+          }
+          const exportedModule = checker.getSymbolAtLocation(statement.moduleSpecifier);
+          const exported = exportedModule
+            ? checker.getExportsOfModule(exportedModule).find((member) => member.name === binding.importedName)
+            : undefined;
+          if (canonicalSymbol(exported, checker) !== externalSymbol) continue;
+          const origin = originFromBinding(
+            { moduleSpecifier: statement.moduleSpecifier, importedName: binding.importedName },
+            nextVisited,
+          );
+          if (origin) return origin;
+        }
+      }
+      return undefined;
+    };
+
+    // A local import of the same file can clear its program-wide external flag.
     for (const candidate of chain) {
       const binding = moduleBinding(candidate);
-      if (!binding) continue;
-      const packageName = externalPackageName(binding.moduleSpecifier);
-      if (packageName) {
-        return { packageName, importedName: binding.importedName, symbol: externalSymbol };
-      }
+      const origin = binding
+        ? originFromBinding(
+            binding.importedName === "*" && namespaceMember
+              ? { ...binding, importedName: namespaceMember.name }
+              : binding,
+          )
+        : undefined;
+      if (origin) return binding?.importedName === "*" ? { ...origin, importedName: "*" } : origin;
+    }
+    if (member) {
+      const origin = externalSymbolOrigin(member, context, namespaceMembers.slice(1));
+      if (origin) return { ...origin, namespaceDepth: (origin.namespaceDepth ?? 0) + 1 };
     }
 
+    if (!hasExternalDeclaration(externalSymbol, context)) return undefined;
     const packageName = externalPackageForSymbol(externalSymbol, checker);
     return packageName ? { packageName, symbol: externalSymbol } : undefined;
   }
 
-  function externalReferenceSuffix(expression: ts.Expression | ts.JsxTagNameExpression): string {
-    const localRoot = leftmostIdentifier(expression);
-    const sourceText = expression.getText();
-    return localRoot && sourceText.startsWith(localRoot.text) ? sourceText.slice(localRoot.text.length) : "";
+  function externalReferencePath(
+    expression: ts.Expression | ts.JsxTagNameExpression,
+  ): Readonly<{ root: ts.Identifier; members: readonly string[] }> | undefined {
+    if (ts.isJsxNamespacedName(expression)) return undefined;
+    let current = unwrapExpression(expression);
+    const members: string[] = [];
+    while (ts.isPropertyAccessExpression(current)) {
+      members.unshift(current.name.text);
+      current = unwrapExpression(current.expression);
+    }
+    return ts.isIdentifier(current) ? { root: current, members } : undefined;
   }
 
   function resolveExternalReference(
@@ -663,40 +795,47 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     context: AnalysisContext,
     symbolOverride?: ts.Symbol,
     visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
+    remainingMembers: readonly string[] = [],
   ): ExternalReference | undefined {
-    const candidate = ts.isJsxNamespacedName(expression) ? expression : unwrapExpression(expression);
-    const localRoot = leftmostIdentifier(candidate);
-    const symbol = symbolOverride ?? (localRoot ? context.checker.getSymbolAtLocation(localRoot) : undefined);
+    const path = externalReferencePath(expression);
+    if (!path) return undefined;
+    const symbol = symbolOverride ?? context.checker.getSymbolAtLocation(path.root);
     if (!symbol || visitedSymbols.has(symbol)) return undefined;
-    const suffix = externalReferenceSuffix(candidate);
-    const origin = externalSymbolOrigin(symbol, context.checker);
+    const members = [...path.members, ...remainingMembers];
+    const selectedMembers = resolveReferenceMembers(symbol, expression, members, context.checker);
+    if (!selectedMembers) return undefined;
+    const origin = externalSymbolOrigin(symbol, context, selectedMembers);
     if (origin) {
-      const canonicalName = declarationName(origin.symbol, context.checker);
-      const rootName =
-        origin.importedName === "*"
-          ? undefined
-          : origin.importedName === "default"
-            ? (canonicalName ?? "default")
-            : (origin.importedName ?? canonicalName);
-      const title = rootName
-        ? `${rootName}${suffix}`
-        : suffix.startsWith(".")
-          ? suffix.slice(1)
-          : (canonicalName ?? candidate.getText());
-      return { packageName: origin.packageName, title };
+      return { origin, members: selectedMembers.slice(origin.namespaceDepth ?? 0), localName: path.root.text };
     }
 
-    if (!localRoot) return undefined;
-    const reference = localVariableReference(localRoot, context, visitedSymbols, symbol);
+    const reference = localImmutableReference(symbol, context, visitedSymbols);
     if (!reference) return undefined;
     const resolved = new Map<string, ExternalReference>();
     for (const initializer of reference.initializers) {
-      const target = resolveExternalReference(initializer, context, undefined, reference.visitedSymbols);
+      const target = resolveExternalReference(initializer, context, undefined, reference.visitedSymbols, members);
       if (!target) continue;
-      const next = { ...target, title: `${target.title}${suffix}` };
-      resolved.set(`${next.packageName}\0${next.title}`, next);
+      resolved.set(externalReferenceIdentity(target, context.checker).id, target);
     }
     return resolved.size === 1 ? [...resolved.values()].at(0) : undefined;
+  }
+
+  function externalReferenceIdentity(reference: ExternalReference, checker: ts.TypeChecker): ComponentTarget {
+    const { origin, members, localName } = reference;
+    const canonicalName = declarationName(origin.symbol, checker);
+    const rootName =
+      origin.importedName === "*"
+        ? undefined
+        : origin.importedName === "default"
+          ? (canonicalName ?? "default")
+          : (origin.importedName ?? canonicalName);
+    const path = members.map(({ name }) => name);
+    const title = rootName
+      ? [rootName, ...path].join(".")
+      : path.length > 0
+        ? path.join(".")
+        : (canonicalName ?? localName);
+    return { id: `external:${origin.packageName}#${title}`, title, externalPackage: origin.packageName };
   }
 
   function isIntrinsicJsxTag(tagName: ts.JsxTagNameExpression): boolean {
@@ -709,27 +848,22 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     symbolOverride?: ts.Symbol,
   ): ComponentTarget | undefined {
     const checker = context.checker;
-    const symbol = symbolOverride ?? checker.getSymbolAtLocation(expression);
-    const definition = resolveDefinition(
-      symbol,
-      checker,
-      context.definitionsBySymbol,
-      context.definitionsByDeclaration,
-    );
-    if (definition) return { id: definition.id, title: definition.name, definition };
-
     const external = resolveExternalReference(expression, context, symbolOverride);
-    if (!external) return undefined;
-    if (external.packageName === "react" && /(?:^|\.)Fragment$/.test(external.title)) return undefined;
-    const key = `${external.packageName}\0${external.title}`;
-    const existing = context.externalTargets.get(key);
+    if (!external) {
+      const symbol = symbolOverride ?? checker.getSymbolAtLocation(expression);
+      const definition = resolveDefinition(
+        symbol,
+        checker,
+        context.definitionsBySymbol,
+        context.definitionsByDeclaration,
+      );
+      return definition ? { id: definition.id, title: definition.name, definition } : undefined;
+    }
+    const target = externalReferenceIdentity(external, checker);
+    if (target.externalPackage === "react" && /(?:^|\.)Fragment$/.test(target.title)) return undefined;
+    const existing = context.externalTargets.get(target.id);
     if (existing) return existing;
-    const target = {
-      id: `external:${external.packageName}#${external.title}`,
-      title: external.title,
-      externalPackage: external.packageName,
-    } satisfies ComponentTarget;
-    context.externalTargets.set(key, target);
+    context.externalTargets.set(target.id, target);
     return target;
   }
 
@@ -963,18 +1097,42 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   ): Readonly<{ initializers: readonly ts.Expression[]; visitedSymbols: ReadonlySet<ts.Symbol> }> | undefined {
     const unwrapped = unwrapExpression(expression);
     if (!symbolOverride && !ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return undefined;
-    const symbol = canonicalSymbol(symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped), context.checker);
-    if (!symbol || visitedSymbols.has(symbol)) return undefined;
-    if (resolveDefinition(symbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)) {
+    const referenceSymbol = symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped);
+    const reference = referenceSymbol ? localImmutableReference(referenceSymbol, context, visitedSymbols) : undefined;
+    if (!reference) return undefined;
+    if (ts.isPropertyAccessExpression(unwrapped)) {
+      const root = externalReferencePath(unwrapped)?.root;
+      const rootSymbol = root ? context.checker.getSymbolAtLocation(root) : undefined;
+      if (rootSymbol && externalSymbolOrigin(rootSymbol, context)) return undefined;
+      // Local namespace barrels and aliases need member-level provenance. This
+      // consumes ownership evidence, not the display identity of a graph node.
+      if (resolveExternalReference(unwrapped, context, undefined, visitedSymbols)) return undefined;
+    }
+    if (
+      resolveDefinition(referenceSymbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)
+    ) {
       return undefined;
     }
+    return reference;
+  }
+
+  function localImmutableReference(
+    referenceSymbol: ts.Symbol,
+    context: AnalysisContext,
+    visitedSymbols: ReadonlySet<ts.Symbol>,
+  ): Readonly<{ initializers: readonly ts.Expression[]; visitedSymbols: ReadonlySet<ts.Symbol> }> | undefined {
+    // Following a component alias for provenance does not expand its render value.
+    // Keep import-route ownership independent of whether a target member resolves.
+    if (externalSymbolOrigin(referenceSymbol, context)) return undefined;
+    const symbol = canonicalSymbol(referenceSymbol, context.checker);
+    if (!symbol || visitedSymbols.has(symbol)) return undefined;
     const initializers = (symbol.declarations ?? []).flatMap((declaration) => {
       if (
         !ts.isVariableDeclaration(declaration) ||
         !declaration.initializer ||
         !ts.isVariableDeclarationList(declaration.parent) ||
         (declaration.parent.flags & ts.NodeFlags.Const) === 0 ||
-        toPosixPath(declaration.getSourceFile().fileName).includes("/node_modules/")
+        context.program.isSourceFileFromExternalLibrary(declaration.getSourceFile())
       ) {
         return [];
       }
@@ -1521,15 +1679,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         return;
       }
 
-      const definition = resolveDefinition(
-        candidateSymbol ?? context.checker.getSymbolAtLocation(unwrapped),
-        context.checker,
-        context.definitionsBySymbol,
-        context.definitionsByDeclaration,
-      );
-      const target = definition
-        ? { id: definition.id, title: definition.name, definition }
-        : targetForReference(unwrapped, context, candidateSymbol);
+      const target = targetForReference(unwrapped, context, candidateSymbol);
       const valueSymbol = canonicalSymbol(
         candidateSymbol ?? context.checker.getSymbolAtLocation(unwrapped),
         context.checker,
@@ -2218,7 +2368,6 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     if (sourceFilePaths.length === 0)
       throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
     const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
-
     const host = ts.createCompilerHost(compilerOptions);
     host.getCurrentDirectory = () => scopePath;
     const program = ts.createProgram({
@@ -2252,6 +2401,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const context: AnalysisContext = {
       scopePath,
+      program,
+      host,
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
