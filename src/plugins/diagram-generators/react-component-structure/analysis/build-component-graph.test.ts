@@ -388,6 +388,41 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("traces component props through default-exported resource objects", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Frame } from "./frame";
+          import slots from "./slots";
+          export function App() { return <Frame {...slots} />; }
+        `,
+        "src/slots.ts": `
+          import { Footer } from "./frame";
+          export default { footerComponent: Footer };
+        `,
+        "src/frame.tsx": `
+          export function Footer() { return <footer />; }
+
+          export function Frame({ footerComponent: FooterComponent }: {
+            footerComponent?: () => unknown;
+          }) {
+            return <FooterComponent />;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "Frame",
+          target: "Footer",
+          kind: "COMPONENT (footerComponent)",
+          label: "from App",
+        });
+      },
+    );
+  });
+
   it("keeps different suppliers separate while sharing identical supplied components", async () => {
     await withFixture(
       {

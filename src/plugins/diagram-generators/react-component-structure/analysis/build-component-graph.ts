@@ -1127,12 +1127,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const symbol = canonicalSymbol(referenceSymbol, context.checker);
     if (!symbol || visitedSymbols.has(symbol)) return undefined;
     const initializers = (symbol.declarations ?? []).flatMap((declaration) => {
+      if (context.program.isSourceFileFromExternalLibrary(declaration.getSourceFile())) {
+        return [];
+      }
+      // A default export binds its expression once per module, so it is as
+      // immutable as a const initializer for static value tracing.
+      if (ts.isExportAssignment(declaration)) return [declaration.expression];
       if (
         !ts.isVariableDeclaration(declaration) ||
         !declaration.initializer ||
         !ts.isVariableDeclarationList(declaration.parent) ||
-        (declaration.parent.flags & ts.NodeFlags.Const) === 0 ||
-        context.program.isSourceFileFromExternalLibrary(declaration.getSourceFile())
+        (declaration.parent.flags & ts.NodeFlags.Const) === 0
       ) {
         return [];
       }
