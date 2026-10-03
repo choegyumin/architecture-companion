@@ -2243,6 +2243,71 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("keeps composition inside unresolved context provider tags", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import { Table } from "./table";
+          export const ThemeContext = { Provider: (props: { children: unknown }) => props.children };
+          export function App() {
+            return (
+              <ThemeContext.Provider value={true}>
+                <Table />
+              </ThemeContext.Provider>
+            );
+          }
+        `,
+        "src/table.tsx": `
+          export function Table() { return <table />; }
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "App",
+          target: "Table",
+          kind: "direct-render",
+          label: undefined,
+        });
+      },
+    );
+  });
+
+  it("keeps children supplied to renderers that forward rest props", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import Wrapper from "./wrapper";
+          import Table from "./table";
+          export function App() {
+            return (
+              <Wrapper>
+                <Table />
+              </Wrapper>
+            );
+          }
+        `,
+        "src/wrapper.tsx": `
+          export default function Wrapper({ style, ...rest }: { style?: unknown; children?: unknown }) {
+            return <div style={style} {...rest} />;
+          }
+        `,
+        "src/table.tsx": `export default function Table() { return <table />; }`,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "Wrapper",
+          target: "Table",
+          kind: "NODE (children)",
+          label: "from App",
+        });
+      },
+    );
+  });
+
   it("supports every JavaScript and TypeScript source extension", async () => {
     await withFixture(
       {

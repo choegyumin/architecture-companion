@@ -1441,6 +1441,20 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
     }
 
+    function analyzeIntrinsicSpreadAttributes(attributes: ts.JsxAttributes, children: readonly ts.JsxChild[]): void {
+      // Explicit JSX children override a children key arriving through a spread,
+      // matching how createElement applies children after spread attributes.
+      if (children.filter(isEffectiveJsxChild).length > 0) return;
+      for (const property of attributes.properties) {
+        if (ts.isJsxAttribute(property)) continue;
+        for (const excludedProps of collectForwardedSpreadExclusions(property.expression)) {
+          // A spread onto an intrinsic element delivers its children key into
+          // the DOM tree, so forwarded children render under this component.
+          if (!excludedProps.has("children")) terminal("children", "node-prop");
+        }
+      }
+    }
+
     function analyzeRendered(expression: ts.Expression): void {
       const unwrapped = unwrapExpression(expression);
       const directProp = getIncomingProp(unwrapped, bindings, context.checker);
@@ -1483,6 +1497,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
         if (isIntrinsicJsxTag(opening.tagName)) {
           if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeJsxChild(child);
+          analyzeIntrinsicSpreadAttributes(opening.attributes, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
           return;
         }
         const target = targetForReference(opening.tagName, context);
@@ -1814,7 +1829,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return;
         }
         const target = targetForReference(opening.tagName, context);
-        if (!target) return;
+        if (!target) {
+          // Unresolved tags (context providers, third-party macros) still wrap
+          // children that must be traced, matching the intrinsic branch.
+          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child);
+          return;
+        }
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
         analyzeJsxComponentUsage(unwrapped, use, context);
