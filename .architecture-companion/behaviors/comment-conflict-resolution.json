@@ -1,7 +1,7 @@
 {
   "id": "comment-conflict-resolution",
   "title": "Resolve comment conflicts",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-03T09:16:13.000Z",
   "vcs": {
     "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
     "divergesFromRevision": false
@@ -51,7 +51,7 @@
         "id": "comments-reload-external",
         "kind": "result",
         "title": "Apply external comment changes",
-        "description": "With no local edit, apply the latest comment content to the canvas."
+        "description": "When there is no conflict with a local edit, apply the latest comment content to the canvas."
       },
       {
         "type": "default",
