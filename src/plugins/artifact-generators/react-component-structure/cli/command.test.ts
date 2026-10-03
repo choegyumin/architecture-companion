@@ -112,8 +112,15 @@ describe("React component structure command", () => {
         expect(outputs).toEqual([`${JSON.stringify({ graphPath: graphPath })}\n`]);
         expect(graph).toEqual({
           groups: [],
-          nodes: [expect.objectContaining({ type: "default", title: "App" })],
+          nodes: [
+            expect.objectContaining({
+              type: "default",
+              title: "App",
+              component: { definitionId: "component:src/app.tsx#App", origins: [] },
+            }),
+          ],
           edges: [],
+          componentStructure: { roots: ["component:src/app.tsx#App"], controls: [] },
         });
         expect(graph.nodes.at(0)).not.toHaveProperty("kind");
       } finally {
