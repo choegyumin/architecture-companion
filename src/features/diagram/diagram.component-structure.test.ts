@@ -44,6 +44,30 @@ describe("component structure diagram contract", () => {
     );
   });
 
+  it("rejects unsupported component node and edge types", () => {
+    expect(() =>
+      parseDiagram({
+        ...componentDiagram,
+        graph: {
+          ...componentDiagram.graph,
+          nodes: [
+            { id: "app", type: "lifeline", title: "App", kind: "participant", activations: [] },
+            { id: "body", type: "lifeline", title: "Body", kind: "participant", activations: [] },
+          ],
+        },
+      }),
+    ).toThrow("Component structure supports only default nodes");
+    expect(() =>
+      parseDiagram({
+        ...componentDiagram,
+        graph: {
+          ...componentDiagram.graph,
+          edges: [{ id: "app-body", type: "message", source: "app", target: "body" }],
+        },
+      }),
+    ).toThrow("Component structure supports only default edges");
+  });
+
   it("preserves component metadata through serialization", () => {
     expect(parseDiagram(JSON.parse(JSON.stringify(componentDiagram)))).toEqual(componentDiagram);
   });
