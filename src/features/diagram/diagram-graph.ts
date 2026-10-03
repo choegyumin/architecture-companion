@@ -177,6 +177,26 @@ export const diagramGraphSchema = z
   })
   .strict()
   .superRefine((graph, context) => {
+    if (graph.componentStructure) {
+      graph.nodes.forEach((node, index) => {
+        if (node.type !== "default") {
+          context.addIssue({
+            code: "custom",
+            path: ["nodes", index, "type"],
+            message: "Component structure supports only default nodes",
+          });
+        }
+      });
+      graph.edges.forEach((edge, index) => {
+        if (edge.type !== "default") {
+          context.addIssue({
+            code: "custom",
+            path: ["edges", index, "type"],
+            message: "Component structure supports only default edges",
+          });
+        }
+      });
+    }
     const controls = new Map(graph.componentStructure?.controls.map((control) => [control.id, control]));
     const nodeIds = new Set(graph.nodes.map((node) => node.id));
     const rootIds = new Set<string>();
