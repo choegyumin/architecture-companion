@@ -3,6 +3,7 @@ import { parseDiagram } from "@/features/diagram/diagram";
 const validDiagram = {
   id: "checkout-structure",
   title: "Checkout structure",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout responsibilities and dependencies.\n\n## Regeneration\nInspect the checkout page and payment client and map their verified relationships.",

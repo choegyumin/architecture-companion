@@ -32,11 +32,13 @@ function artifact(label: string): Artifact {
           edges: [],
         },
         id: "checkout",
+        updatedAt: "2026-10-03T09:15:00.000Z",
       },
     ],
     designs: [
       {
         id: "checkout-structure",
+        updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout structure",
         generator: "built-in:freeform",
         instructions:

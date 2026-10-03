@@ -116,6 +116,7 @@ describe("DataClient", () => {
   it("sorts the diagrams of a Review response by title", async () => {
     const diagram = (id: string, title: string) => ({
       id,
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title,
       generator: "built-in:freeform",
       instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} diagram from its current workflow or component boundary.`,

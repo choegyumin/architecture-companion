@@ -161,7 +161,7 @@ function expectReadableRoutes(
 }
 
 async function focusedAggregateRoutes(focusId: string) {
-  const diagram = parseDiagram(artifactJson);
+  const diagram = parseDiagram({ ...artifactJson, updatedAt: "2026-10-03T09:15:00.000Z" });
   const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
   const layout = await layoutDependencyGraph(diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);

@@ -15,6 +15,14 @@ export const diagramSchema = z
   .object({
     id: artifactDiagramIdSchema,
     title: z.string().min(1),
+    updatedAt: z.string().datetime(),
+    vcs: z
+      .object({
+        revision: z.string().min(1),
+        divergesFromRevision: z.boolean(),
+      })
+      .strict()
+      .optional(),
     generator: diagramGeneratorReferenceSchema,
     instructions: z.string().min(1),
     layout: diagramLayoutConfigSchema,

@@ -15,6 +15,7 @@ const artifact = {
   behaviors: [
     {
       id: "checkout",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
       instructions:
@@ -28,6 +29,7 @@ const artifact = {
     },
     {
       id: "cancel-order",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Cancel order",
       generator: "built-in:freeform",
       instructions:
@@ -43,6 +45,7 @@ const artifact = {
   designs: [
     {
       id: "checkout-structure",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions:
@@ -56,6 +59,7 @@ const artifact = {
     },
     {
       id: "catalog-structure",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",
       instructions:

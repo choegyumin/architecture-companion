@@ -17,6 +17,7 @@ vi.mock("@/client/widgets/sequence-diagram-renderer", () => ({
 const annotations = {} as AnnotationCanvasController;
 const diagram = {
   id: "example",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Example",
   generator: "built-in:freeform",
   instructions:
