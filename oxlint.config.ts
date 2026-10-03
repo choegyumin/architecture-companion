@@ -116,7 +116,7 @@ const boundaryLayers = [
     type: "server",
     pattern: "src/server",
     relationships: ["internal", "sibling"],
-    dependencies: ["plugin", "feature", "shared-node", "shared-universal"],
+    dependencies: ["feature", "shared-node", "shared-universal"],
   },
   {
     kind: "file",
@@ -130,7 +130,6 @@ const boundaryLayers = [
     pattern: "src/client/parts",
     relationships: ["internal", "sibling"],
     dependencies: [
-      "plugin",
       "feature",
       "shared-react-flow",
       "shared-react-ui",
@@ -147,7 +146,6 @@ const boundaryLayers = [
     dependencies: [
       "client-part",
       "client-data",
-      "plugin",
       "feature",
       "shared-react-flow",
       "shared-react-ui",
@@ -165,7 +163,6 @@ const boundaryLayers = [
       "client-widget",
       "client-part",
       "client-data",
-      "plugin",
       "feature",
       "shared-react-flow",
       "shared-react-ui",
