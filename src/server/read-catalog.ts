@@ -1,8 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { type Artifact, parseArtifact } from "@/features/artifact/artifact";
 import type { CompanionCatalog } from "@/features/catalog/catalog";
-import { type Artifact, parseArtifact } from "@/features/diagram/artifact";
 import { validateCatalog } from "@/server/validate-catalog";
 
 export const BEHAVIORS_RELATIVE_PATH = ".architecture-companion/behaviors";

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { type Artifact, artifactSchema } from "@/features/diagram/artifact";
+import { type Artifact, artifactSchema } from "@/features/artifact/artifact";
 import type { DefaultDiagramEdge, DefaultDiagramNode } from "@/features/diagram/diagram-graph";
 
 export const companionCatalogSchema = z

@@ -12,8 +12,8 @@ import {
   pathsOverlap,
 } from "@/client/widgets/dependency-graph-route-test-geometry";
 import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
+import { parseArtifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import { parseArtifact } from "@/features/diagram/artifact";
 import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import type { DiagramLayout, DiagramLayoutGroup } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";

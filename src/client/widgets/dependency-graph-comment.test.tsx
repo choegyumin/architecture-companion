@@ -10,7 +10,7 @@ import {
   parseAnnotationDocument,
 } from "@/features/annotation/annotation-document";
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 
 const sizes = {
   one: { width: 288, height: 80 },

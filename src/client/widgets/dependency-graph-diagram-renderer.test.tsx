@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-graph-diagram-renderer";
 import type { DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const diagram = {

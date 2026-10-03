@@ -4,7 +4,7 @@ import {
   type DiagramReactFlowRenderModel,
   toMessageReactFlowEdge,
 } from "@/client/widgets/diagram-renderer.react-flow";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
 

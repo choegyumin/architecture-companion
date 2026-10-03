@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 
 vi.mock("@/client/widgets/dependency-graph-diagram-renderer", () => ({
   DependencyGraphDiagramRenderer: () => <span>Dependency graph renderer</span>,

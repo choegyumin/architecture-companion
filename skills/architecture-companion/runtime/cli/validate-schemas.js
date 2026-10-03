@@ -19835,7 +19835,7 @@ var diagramLayoutConfigSchema = external_exports.discriminatedUnion("id", [
   dependencyGraphLayoutConfigSchema
 ]);
 
-// src/features/diagram/artifact.ts
+// src/features/artifact/artifact.ts
 var artifactIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
 var artifactSchema = external_exports.object({
   id: artifactIdSchema,

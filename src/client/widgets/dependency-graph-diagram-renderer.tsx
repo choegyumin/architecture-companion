@@ -3,8 +3,8 @@ import { useCallback, useState } from "react";
 
 import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
 import { DiagramRendererBase, type DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
+import type { Artifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import type { Artifact } from "@/features/diagram/artifact";
 import type { DependencyFocus } from "@/features/diagram/dependency-edge-projection";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { Button } from "@/shared/react-ui/button";

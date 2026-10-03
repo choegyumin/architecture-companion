@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 
 import { ArtifactList } from "@/client/parts/artifact-list";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 
 function createDiagram(id: string, title: string): Artifact {
   return {

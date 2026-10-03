@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { artifactSchema } from "@/features/diagram/artifact";
+import { artifactSchema } from "@/features/artifact/artifact";
 import { diagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 export const generatedSchemaFileNames = ["diagram-graph.schema.json", "artifact.schema.json"] as const;

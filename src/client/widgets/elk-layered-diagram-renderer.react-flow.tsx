@@ -9,7 +9,7 @@ import {
   toMessageReactFlowEdge,
 } from "@/client/widgets/diagram-renderer.react-flow";
 import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout, DiagramLayoutEdge } from "@/features/diagram/diagram-spatial";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 

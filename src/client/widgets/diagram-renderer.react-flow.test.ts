@@ -3,7 +3,7 @@ import { MarkerType } from "@xyflow/react";
 import { buildDiagramMeasurementNodes, resolveDiagramNodeSizes } from "@/client/widgets/diagram-renderer.react-flow";
 import { buildElkLayeredDiagramReactFlowRenderModel } from "@/client/widgets/elk-layered-diagram-renderer.react-flow";
 import { buildSequenceDiagramReactFlowRenderModel } from "@/client/widgets/sequence-diagram-renderer.react-flow";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const sequenceDiagram = {

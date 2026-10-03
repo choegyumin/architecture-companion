@@ -1,4 +1,4 @@
-import { parseArtifact } from "@/features/diagram/artifact";
+import { parseArtifact } from "@/features/artifact/artifact";
 
 const validDiagram = {
   id: "checkout-structure",

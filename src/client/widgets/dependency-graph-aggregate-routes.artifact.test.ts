@@ -6,8 +6,8 @@ import {
   pathsCross,
   pathsOverlap,
 } from "@/client/widgets/dependency-graph-route-test-geometry";
+import { parseArtifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import { parseArtifact } from "@/features/diagram/artifact";
 import { type DependencyEdgeProjection, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 

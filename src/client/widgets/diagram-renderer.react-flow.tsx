@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DefaultDiagramNode, LifelineDiagramNode, MessageDiagramEdge } from "@/features/diagram/diagram-graph";
 import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
 import type {

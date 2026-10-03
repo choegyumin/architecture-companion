@@ -1,4 +1,4 @@
-import type { Artifact } from "@/features/diagram/artifact";
+import type { Artifact } from "@/features/artifact/artifact";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/react-ui/card";
 import { Item, ItemContent, ItemGroup, ItemTitle } from "@/shared/react-ui/item";
 

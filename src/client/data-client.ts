@@ -6,8 +6,8 @@ import {
   parseRevisionAnnotationsRead,
   type RevisionAnnotationsRead,
 } from "@/features/annotation/revision-annotations";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
-import type { Artifact } from "@/features/diagram/artifact";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
 
