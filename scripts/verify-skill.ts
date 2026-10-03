@@ -7,6 +7,7 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
+import { buildComponentGraph } from "@/plugins/diagram-generators/react-component-structure/analysis/build-component-graph";
 import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
 import { generatedSchemaFileNames } from "./_schema-generation";
@@ -457,10 +458,12 @@ async function verifyInstalledReactComponentGenerator(
   const sourceRoot = join(scopePath, "src");
   const externalSourceRoot = join(scopePath, "external-src");
   const externalPackageRoot = join(scopePath, "node_modules", "ui-kit");
+  const arrayRenderingSourceRoot = join(scopePath, "array-render-src");
   await Promise.all([
     mkdir(sourceRoot, { recursive: true }),
     mkdir(externalSourceRoot, { recursive: true }),
     mkdir(externalPackageRoot, { recursive: true }),
+    mkdir(arrayRenderingSourceRoot, { recursive: true }),
   ]);
   await Promise.all([
     writeFile(
@@ -481,6 +484,14 @@ async function verifyInstalledReactComponentGenerator(
     writeFile(
       join(externalPackageRoot, "package.json"),
       JSON.stringify({ name: "ui-kit", type: "module", exports: { ".": { types: "./index.d.ts" } } }),
+    ),
+    writeFile(
+      join(arrayRenderingSourceRoot, "list.tsx"),
+      `type Item = { id: string };\nexport function Row({ item }: { item: Item }) { return <li>{item.id}</li>; }\nexport function ReadOnlyList({ items }: { items: readonly Item[] }) {\n  return <ul>{items.map((item) => <Row key={item.id} item={item} />)}</ul>;\n}\nexport function OptionalList({ items }: { items?: Item[] }) {\n  return <ul>{(items ?? []).map((item) => <Row key={item.id} item={item} />)}</ul>;\n}\nexport function FlatList({ groups }: { groups: readonly Item[][] }) {\n  return <ul>{groups.flatMap((items) => items.map((item) => <Row key={item.id} item={item} />))}</ul>;\n}\n`,
+    ),
+    writeFile(
+      join(arrayRenderingSourceRoot, "custom-map.tsx"),
+      `export function Chip({ label }: { label: string }) { return <span>{label}</span>; }\nclass Catalog {\n  map(callback: (label: string) => unknown): unknown { return callback("catalog"); }\n}\nexport function CustomMapList({ catalog }: { catalog: Catalog }) {\n  return <div>{catalog.map((label) => <Chip key={label} label={label} />)}</div>;\n}\n`,
     ),
   ]);
 
@@ -545,6 +556,27 @@ async function verifyInstalledReactComponentGenerator(
   assert.deepEqual(edgeFacts(externalAliasGraph), [
     { kind: "direct-render", label: undefined, source: "App", target: "Button" },
   ]);
+
+  const arrayRenderingGraph = await generateGraph([], "array-render-src");
+  assert.deepEqual(arrayRenderingGraph.nodes.map(({ title }) => title).toSorted(), [
+    "Chip",
+    "CustomMapList",
+    "FlatList",
+    "OptionalList",
+    "ReadOnlyList",
+    "Row",
+  ]);
+  assert.deepEqual(edgeFacts(arrayRenderingGraph), [
+    { kind: "direct-render", label: undefined, source: "FlatList", target: "Row" },
+    { kind: "direct-render", label: undefined, source: "OptionalList", target: "Row" },
+    { kind: "direct-render", label: undefined, source: "ReadOnlyList", target: "Row" },
+  ]);
+  const sourceAnalyzerGraph = await buildComponentGraph({ scopePath, sourcePaths: ["array-render-src"] });
+  assert.deepEqual(
+    sourceAnalyzerGraph,
+    arrayRenderingGraph,
+    "Installed React generator must produce the same array-render graph as the source analyzer.",
+  );
 
   for (const filtered of [
     await generateGraph(["--exclude-component", "Layout"]),

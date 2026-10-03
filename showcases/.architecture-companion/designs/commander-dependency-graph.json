@@ -1,0 +1,221 @@
+{
+  "id": "commander-dependency-graph",
+  "title": "Module Dependency Graph — Commander",
+  "updatedAt": "2026-09-29T06:44:16.000Z",
+  "generator": "built-in:js-module-dependency-graph",
+  "layout": {
+    "id": "dependency-graph"
+  },
+  "graph": {
+    "groups": [
+      {
+        "id": "group:directory:lib",
+        "title": "lib"
+      },
+      {
+        "id": "group:external-packages",
+        "title": "external packages"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "external:child_process",
+        "title": "child_process",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
+        "id": "file:esm.mjs",
+        "title": "esm.mjs",
+        "type": "default"
+      },
+      {
+        "id": "file:index.js",
+        "title": "index.js",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/argument.js",
+        "title": "argument.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/command.js",
+        "title": "command.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/error.js",
+        "title": "error.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/help.js",
+        "title": "help.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/option.js",
+        "title": "option.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "external:events",
+        "title": "events",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
+        "id": "external:fs",
+        "title": "fs",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
+        "id": "file:lib/suggestSimilar.js",
+        "title": "suggestSimilar.js",
+        "groupId": "group:directory:lib",
+        "type": "default"
+      },
+      {
+        "id": "external:path",
+        "title": "path",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      },
+      {
+        "id": "external:process",
+        "title": "process",
+        "groupId": "group:external-packages",
+        "kind": "External package",
+        "type": "default"
+      }
+    ],
+    "edges": [
+      {
+        "id": "dependency:file%3Aesm.mjs%3Afile%3Aindex.js%3Aruntime",
+        "type": "default",
+        "source": "file:esm.mjs",
+        "target": "file:index.js"
+      },
+      {
+        "id": "dependency:file%3Aindex.js%3Afile%3Alib%2Fargument.js%3Aruntime",
+        "type": "default",
+        "source": "file:index.js",
+        "target": "file:lib/argument.js"
+      },
+      {
+        "id": "dependency:file%3Aindex.js%3Afile%3Alib%2Fcommand.js%3Aruntime",
+        "type": "default",
+        "source": "file:index.js",
+        "target": "file:lib/command.js"
+      },
+      {
+        "id": "dependency:file%3Aindex.js%3Afile%3Alib%2Ferror.js%3Aruntime",
+        "type": "default",
+        "source": "file:index.js",
+        "target": "file:lib/error.js"
+      },
+      {
+        "id": "dependency:file%3Aindex.js%3Afile%3Alib%2Fhelp.js%3Aruntime",
+        "type": "default",
+        "source": "file:index.js",
+        "target": "file:lib/help.js"
+      },
+      {
+        "id": "dependency:file%3Aindex.js%3Afile%3Alib%2Foption.js%3Aruntime",
+        "type": "default",
+        "source": "file:index.js",
+        "target": "file:lib/option.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fargument.js%3Afile%3Alib%2Ferror.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/argument.js",
+        "target": "file:lib/error.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Aexternal%3Achild_process%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "external:child_process"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Aexternal%3Aevents%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "external:events"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Aexternal%3Afs%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "external:fs"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Afile%3Alib%2Fargument.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "file:lib/argument.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Afile%3Alib%2Ferror.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "file:lib/error.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Afile%3Alib%2Fhelp.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "file:lib/help.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Afile%3Alib%2Foption.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "file:lib/option.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Afile%3Alib%2FsuggestSimilar.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "file:lib/suggestSimilar.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Aexternal%3Apath%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "external:path"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fcommand.js%3Aexternal%3Aprocess%3Aruntime",
+        "type": "default",
+        "source": "file:lib/command.js",
+        "target": "external:process"
+      },
+      {
+        "id": "dependency:file%3Alib%2Fhelp.js%3Afile%3Alib%2Fargument.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/help.js",
+        "target": "file:lib/argument.js"
+      },
+      {
+        "id": "dependency:file%3Alib%2Foption.js%3Afile%3Alib%2Ferror.js%3Aruntime",
+        "type": "default",
+        "source": "file:lib/option.js",
+        "target": "file:lib/error.js"
+      }
+    ]
+  },
+  "instructions": "Each box is a module; an arrow from A to B means A imports B at the top of the file. Boxes sit in folder groups mirroring the repository directories; external npm packages and Node built-ins collect in the external packages group. Use it to review which parts of the library reach the outside world and how deep the internal layering runs."
+}

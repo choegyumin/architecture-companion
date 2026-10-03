@@ -7,7 +7,6 @@ import {
   routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
 } from "@/client/widgets/dependency-graph-edge-routes";
-import type { Bounds } from "@/client/widgets/dependency-graph-routing-geometry";
 import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
 import {
   buildDiagramReactFlowNodes,
@@ -45,22 +44,21 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeTargets = new Map<string, AnnotationTarget>();
   const projections = projectDependencyEdges(diagram.graph, options.focus);
-  const groupIds = new Set(layout.groups.map(({ id }) => id));
+  const bundles = [...(collectVirtualBundles(layout, bounds) ?? [])];
+  const groupIds = new Set([...layout.groups.map(({ id }) => id), ...bundles.map(([, { id }]) => id)]);
   const hasGroupEndpoint = (sourceId: string, targetId: string) => groupIds.has(sourceId) || groupIds.has(targetId);
   const aggregateProjections = projections
     .filter((projection) => projection.type === "aggregate")
     .filter((projection) => hasGroupEndpoint(projection.sourceId, projection.targetId));
-  // Bounding groups render above their group and below the cards: a dashed
-  // outline marking where a mixed group's aggregate edges attach — and only
-  // while such an edge exists; otherwise the loose nodes read as plain cards.
-  const bundles = collectVirtualBundles(layout, bounds) ?? new Map<string, Bounds>();
+  // Draw a loose-node outline only when a relationship explicitly targets that
+  // bundle. Relationships to its parent group attach to the whole group instead.
   const attached = new Set(aggregateProjections.flatMap(({ sourceId, targetId }) => [sourceId, targetId]));
-  const boundingGroups = [...bundles]
-    .filter(([groupId]) => attached.has(groupId))
+  const boundingGroups = bundles
+    .filter(([, bundle]) => attached.has(bundle.id))
     .map<BoundingGroupReactFlowNode>(([groupId, bundle]) => {
       const group = getOrThrow(bounds.get(groupId), `Missing dependency group bounds: ${groupId}`);
       return {
-        id: `bounding-group:${groupId}`,
+        id: bundle.id,
         type: "bounding-group",
         data: {},
         position: { x: bundle.position.x - group.position.x, y: bundle.position.y - group.position.y },
