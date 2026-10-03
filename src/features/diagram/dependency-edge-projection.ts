@@ -1,4 +1,5 @@
-import type { DiagramGraph, DiagramGroup, DiagramNode } from "@/features/diagram/diagram-graph";
+import { getDependencyNodeBundleIds } from "@/features/diagram/dependency-node-bundle";
+import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 export type DependencyFocus =
@@ -44,26 +45,40 @@ export function projectDependencyEdges(graph: DiagramGraph, focus?: DependencyFo
     ...graph.nodes.map(({ id }) => id),
     ...graph.edges.map(({ id }) => id),
   ]);
-  const rootId = (node: DiagramNode): string => {
-    if (!node.groupId) return node.id;
-    let group: DiagramGroup = getOrThrow(groups.get(node.groupId), `Missing diagram group: ${node.groupId}`);
-    while (group.parentId) group = getOrThrow(groups.get(group.parentId), `Missing diagram group: ${group.parentId}`);
-    return group.id;
-  };
-
   if (!focus) {
     // Without groups there is nothing to roll up: override the aggregate
     // default and show every relationship as its original edge instead of
-    // pointless ×1 bundles.
+    // pointless ×1 aggregate edges.
     if (!groups.size) return graph.edges.map(({ id }) => ({ type: "original", edgeId: id }) as const);
-    return aggregateEdges(
-      graph.edges.map((edge) => ({
-        edgeId: edge.id,
-        sourceId: rootId(getOrThrow(nodes.get(edge.source), `Missing edge source: ${edge.source}`)),
-        targetId: rootId(getOrThrow(nodes.get(edge.target), `Missing edge target: ${edge.target}`)),
-      })),
-      reservedIds,
+    const bundles = getDependencyNodeBundleIds(groups.keys(), reservedIds);
+    const ancestors = new Map(
+      graph.nodes.map((node) => {
+        const path: string[] = [];
+        for (let groupId = node.groupId; groupId;) {
+          path.push(groupId);
+          groupId = getOrThrow(groups.get(groupId), `Missing diagram group: ${groupId}`).parentId;
+        }
+        return [node.id, path.reverse()] as const;
+      }),
     );
+    const overview = graph.edges.flatMap<BoundaryEdge>((edge) => {
+      const source = getOrThrow(ancestors.get(edge.source), `Missing edge source: ${edge.source}`);
+      const target = getOrThrow(ancestors.get(edge.target), `Missing edge target: ${edge.target}`);
+      let depth = 0;
+      while (depth < source.length && depth < target.length && source[depth] === target[depth]) depth += 1;
+      const parentId = depth ? source[depth - 1] : undefined;
+      // Each relationship belongs to its lowest common scope, not every ancestor.
+      // Direct nodes share one bundle there; its internal detail remains focused-only.
+      if (parentId && depth === source.length && depth === target.length) return [];
+      return [
+        {
+          edgeId: edge.id,
+          sourceId: source[depth] ?? (parentId ? bundles.get(parentId)! : edge.source),
+          targetId: target[depth] ?? (parentId ? bundles.get(parentId)! : edge.target),
+        },
+      ];
+    });
+    return aggregateEdges(overview, new Set([...reservedIds, ...bundles.values()]));
   }
   if (focus.type === "node") {
     getOrThrow(nodes.get(focus.id), `Missing focused diagram node: ${focus.id}`);

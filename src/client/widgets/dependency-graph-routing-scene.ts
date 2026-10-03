@@ -1,3 +1,4 @@
+import { getDependencyNodeBundleIds } from "@/features/diagram/dependency-node-bundle";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 import {
@@ -83,12 +84,15 @@ function virtualObstacles(
     members.push(node.id);
     children.set(node.parentId, members);
   }
-  const identifiers = new Set(existing);
+  const identifiers = getDependencyNodeBundleIds(
+    layout.groups.map(({ id }) => id),
+    existing,
+  );
   const result: RoutingObstacle[] = [];
   for (const [parentId, members] of children) {
     // Virtual wrappers exist only where loose nodes sit beside subgroups: a pure
-    // node container duplicates its group obstacle, and top-level nodes bundle in
-    // the layout already — wrapping them only blocks unrelated through traffic.
+    // node container duplicates its group obstacle, and top-level nodes are already
+    // laid out together — wrapping them only blocks unrelated through traffic.
     if (!parentId || !layout.groups.some((group) => group.parentId === parentId)) continue;
     members.sort();
     let left = Infinity;
@@ -105,10 +109,7 @@ function virtualObstacles(
       right = Math.max(right, rect.right);
       bottom = Math.max(bottom, rect.bottom);
     }
-    const stem = `virtual:${JSON.stringify([parentId ?? null, members])}`;
-    let id = stem;
-    for (let suffix = 1; identifiers.has(id); suffix += 1) id = `${stem}:${suffix}`;
-    identifiers.add(id);
+    const id = identifiers.get(parentId)!;
     // Padding keeps the drawn outline and the routing face off the cards, so the
     // bundle reads as a container instead of a second skin. It draws into the
     // group's free space — the layout does not reserve room for it.
@@ -131,14 +132,15 @@ function virtualObstacles(
 export function collectVirtualBundles(
   layout: DiagramLayout,
   bounds: ReadonlyMap<string, Bounds>,
-): ReadonlyMap<string, Bounds> | undefined {
-  const existing = new Set([...layout.groups, ...layout.nodes].map(({ id }) => id));
+): ReadonlyMap<string, Bounds & Readonly<{ id: string }>> | undefined {
+  const existing = new Set([...layout.groups, ...layout.nodes, ...layout.edges].map(({ id }) => id));
   const virtual = virtualObstacles(layout, bounds, existing);
   if (!virtual) return undefined;
-  const bundles = new Map<string, Bounds>();
+  const bundles = new Map<string, Bounds & Readonly<{ id: string }>>();
   for (const obstacle of virtual) {
     if (!obstacle.parentId) continue;
     bundles.set(obstacle.parentId, {
+      id: obstacle.id,
       position: { x: obstacle.rect.left, y: obstacle.rect.top },
       size: {
         width: obstacle.rect.right - obstacle.rect.left,
@@ -174,7 +176,7 @@ export function buildRoutingScene(
     parents.set(node.id, node.parentId);
     kinds.set(node.id, "node");
   }
-  const virtual = virtualObstacles(layout, bounds, new Set(obstacles.map(({ id }) => id)));
+  const virtual = virtualObstacles(layout, bounds, new Set([...obstacles, ...layout.edges].map(({ id }) => id)));
   if (!virtual) return undefined;
   obstacles.push(...virtual);
   // Bundles behave like groups downstream: ancestors resolve through the parent
@@ -464,11 +466,10 @@ export function createRoutingQuery(
   sources: readonly RoutingTerminal[];
   targets: readonly RoutingTerminal[];
 }> {
-  // A mixed group's aggregate rolls up exactly its loose direct nodes, so the
-  // endpoint resolves to their bundle instead of the outer group border.
-  const resolve = (elementId: string) => scene.bundles.get(elementId)?.id ?? elementId;
-  const sourceId = resolve(projection.sourceId);
-  const targetId = resolve(projection.targetId);
+  // Projections explicitly distinguish whole groups, loose-node bundles and nodes.
+  // A whole-group relationship must never be redirected to its internal bundle.
+  const sourceId = projection.sourceId;
+  const targetId = projection.targetId;
   const exempt = new Set<string>();
   for (const id of [sourceId, targetId]) {
     for (let parent = scene.parents.get(id); parent; parent = scene.parents.get(parent)) exempt.add(parent);

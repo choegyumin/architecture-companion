@@ -22,7 +22,11 @@ import {
   selectRoutingPlan,
   type WorkBudget,
 } from "@/client/widgets/dependency-graph-routing-plan";
-import { buildRoutingScene, type RoutingScene } from "@/client/widgets/dependency-graph-routing-scene";
+import {
+  buildRoutingScene,
+  collectVirtualBundles,
+  type RoutingScene,
+} from "@/client/widgets/dependency-graph-routing-scene";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
@@ -85,7 +89,10 @@ export function routeAggregateDependencyEdges(
   if (!projections.length) return new Map();
   const edges = [...projections].sort((a, b) => a.id.localeCompare(b.id) || (a.id < b.id ? -1 : Number(a.id > b.id)));
   let scene = scenes.get(layout);
-  const bounds = scene?.bounds ?? getDependencyElementBounds(layout);
+  const bounds = new Map(scene?.bounds ?? getDependencyElementBounds(layout));
+  if (!scene) {
+    for (const bundle of collectVirtualBundles(layout, bounds)?.values() ?? []) bounds.set(bundle.id, bundle);
+  }
   // Even scene construction is optional: every relationship already has a visible route.
   const routes = new Map<string, AggregateEdgeRoute>(
     edges.map((edge) => [
