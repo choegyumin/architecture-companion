@@ -4,12 +4,12 @@ import {
   type DiagramReactFlowRenderModel,
   toMessageReactFlowEdge,
 } from "@/client/widgets/diagram-renderer.react-flow";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/diagram/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
 
 export function buildSequenceDiagramReactFlowRenderModel(
-  diagram: Diagram,
+  diagram: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowRenderModel {

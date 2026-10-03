@@ -7,7 +7,7 @@ import { executeServeCommand } from "@/cli/serve.command";
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
 import { executeViewGeneratorsCommand } from "@/cli/view-generators.command";
 import type { StartedServer } from "@/server/start-server";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
 const spawnProcess = vi.hoisted(() =>
   vi.fn(() => {
@@ -50,7 +50,7 @@ async function writeGenerator(
   await mkdir(pluginPath, { recursive: true });
   await writeFile(
     join(pluginPath, "GENERATOR.md"),
-    `---\nid: ${id}\ndescription: ${description}\n---\n\nGenerate an Architecture Companion artifact.\n`,
+    `---\nid: ${id}\ndescription: ${description}\n---\n\nGenerate an Architecture Companion catalog.\n`,
   );
   return pluginPath;
 }
@@ -77,12 +77,12 @@ function reviewArtifact(generator: string) {
   };
 }
 
-describe("coding agent hands off a validated artifact as a review URL", () => {
-  it("resolves generators, validates the artifact, and serves a review URL for the scope", async () => {
+describe("coding agent hands off a validated catalog as a review URL", () => {
+  it("resolves generators, validates the catalog, and serves a review URL for the scope", async () => {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-skill-"));
     const scopePath = join(temporaryRoot, "scope");
     const homeDirectory = join(temporaryRoot, "home");
-    const builtInGeneratorsRoot = resolve("src/plugins/diagram-generators");
+    const builtInGeneratorsRoot = resolve("src/plugins/artifact-generators");
     let generatorOutputs: readonly string[] = [];
     let validationOutputs: readonly string[] = [];
     let serverOutputs: readonly string[] = [];
@@ -91,13 +91,13 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
     try {
       await mkdir(scopePath);
       const globalPlugin = await writeGenerator(
-        join(homeDirectory, ".architecture-companion", "diagram-generators"),
+        join(homeDirectory, ".architecture-companion", "artifact-generators"),
         "request-flow",
         "request-flow",
         "Traces request flow.",
       );
       const projectPlugin = await writeGenerator(
-        join(scopePath, ".architecture-companion", "diagram-generators"),
+        join(scopePath, ".architecture-companion", "artifact-generators"),
         "dependency-graph",
         "dependency-graph",
         "Builds a dependency graph.",
@@ -130,16 +130,16 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
 
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
-      ).rejects.toThrow("Artifact is missing: .architecture-companion/behaviors");
+      ).rejects.toThrow("Catalog is missing: .architecture-companion/behaviors");
 
-      await writeArtifact(scopePath, reviewArtifact("Invalid_ID"));
+      await writeCatalog(scopePath, reviewArtifact("Invalid_ID"));
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
-      ).rejects.toThrow("Artifact is invalid");
+      ).rejects.toThrow("Catalog is invalid");
 
-      await writeArtifact(scopePath, reviewArtifact("project:dependency-graph"));
+      await writeCatalog(scopePath, reviewArtifact("project:dependency-graph"));
       await executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput });
-      expect(validationOutputs).toEqual(["Artifact is valid.\n"]);
+      expect(validationOutputs).toEqual(["Catalog is valid.\n"]);
 
       server = await executeServeCommand([scopePath], {
         staticRoot: false,
@@ -151,7 +151,7 @@ describe("coding agent hands off a validated artifact as a review URL", () => {
       const reviewResponse = await getJson(`${server.url}/api/review`);
       expect(reviewResponse.status).toBe(200);
       expect(reviewResponse.body).toMatchObject({
-        artifact: { behaviors: [{ generator: "project:dependency-graph" }] },
+        catalog: { behaviors: [{ generator: "project:dependency-graph" }] },
       });
       expect(serverOutputs).toEqual([`${server.url}\n`]);
       expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);

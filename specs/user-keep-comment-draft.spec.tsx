@@ -8,15 +8,15 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
-const artifact = {
+const catalog = {
   behaviors: [
     {
       id: "checkout",
@@ -34,7 +34,7 @@ const artifact = {
     },
   ],
   designs: [],
-} satisfies Artifact;
+} satisfies CompanionCatalog;
 
 function annotations(body: string): AnnotationDocument {
   return {
@@ -62,13 +62,13 @@ describe("reviewer keeps their own input after an external comment change", () =
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, artifact);
+      await writeCatalog(scopePath, catalog);
       await mkdir(join(scopePath, ".architecture-companion/annotations"));
       await writeFile(
-        join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(artifact))),
+        join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(catalog))),
         JSON.stringify(annotations("Original feedback")),
       );
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       const updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       const app = createApp(scope, { reviewUpdates: updates });
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -84,7 +84,7 @@ describe("reviewer keeps their own input after an external comment change", () =
         await userEvent.type(textarea, "Keep this local draft");
 
         await writeFile(
-          join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(artifact))),
+          join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(catalog))),
           JSON.stringify(annotations("New external feedback")),
         );
         expect(await within(editor).findByRole("alert")).toHaveTextContent("Comment changed outside the app.");

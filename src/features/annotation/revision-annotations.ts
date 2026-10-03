@@ -1,18 +1,21 @@
 import { z } from "zod";
 
 import { type AnnotationDocument, annotationDocumentSchema } from "@/features/annotation/annotation-document";
-import { type ArtifactRevisionId, artifactRevisionIdSchema } from "@/features/artifact/artifact-revision-id";
+import {
+  type CompanionCatalogRevisionId,
+  companionCatalogRevisionIdSchema,
+} from "@/features/catalog/catalog-revision-id";
 
 export const revisionAnnotationsSchema = z
   .object({
-    artifactRevisionId: artifactRevisionIdSchema,
+    catalogRevisionId: companionCatalogRevisionIdSchema,
     document: annotationDocumentSchema,
   })
   .strict();
 
 const missingRevisionAnnotationsSchema = z
   .object({
-    artifactRevisionId: z.null(),
+    catalogRevisionId: z.null(),
     document: z.null(),
   })
   .strict();
@@ -20,11 +23,11 @@ const missingRevisionAnnotationsSchema = z
 const revisionAnnotationsReadSchema = z.union([revisionAnnotationsSchema, missingRevisionAnnotationsSchema]);
 
 export type RevisionAnnotations = Readonly<{
-  artifactRevisionId: ArtifactRevisionId;
+  catalogRevisionId: CompanionCatalogRevisionId;
   document: AnnotationDocument;
 }>;
 
-export type RevisionAnnotationsRead = RevisionAnnotations | Readonly<{ artifactRevisionId: null; document: null }>;
+export type RevisionAnnotationsRead = RevisionAnnotations | Readonly<{ catalogRevisionId: null; document: null }>;
 
 function parseWithMessage<T>(schema: z.ZodType<T>, input: unknown, message: string): T {
   const result = schema.safeParse(input);

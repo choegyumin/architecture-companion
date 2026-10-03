@@ -38,7 +38,7 @@ describe("server startup", () => {
       expect(reviewResponse.status).toBe(200);
       expect(JSON.parse(reviewResponse.body)).toEqual({
         scope: { path: "/consumer", isGitRepository: false },
-        artifact: null,
+        catalog: null,
       });
       expect(pageResponse.body).toContain("Architecture Companion");
     } finally {

@@ -8,13 +8,13 @@ import type {
   AnnotationEditConflictResolution,
   AnnotationReviewController,
 } from "@/client/parts/annotation-layer";
-import { DiagramList } from "@/client/parts/diagram-list";
+import { ArtifactList } from "@/client/parts/artifact-list";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
 import type { AnnotationAnchor, AnnotationDocument } from "@/features/annotation/annotation-document";
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
-import type { ArtifactRevisionId } from "@/features/artifact/artifact-revision-id";
+import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
@@ -34,7 +34,7 @@ type ReviewState =
   | Readonly<{ status: "loading" }>
   | Readonly<{
       status: "ready";
-      artifactRevisionId: ArtifactRevisionId | null;
+      catalogRevisionId: CompanionCatalogRevisionId | null;
       review: ReviewResponse;
       annotations: AnnotationDocument;
       operationId?: string;
@@ -47,18 +47,18 @@ type ReviewEvent =
   | Readonly<{ type: "load-failed"; mode: ReviewLoadMode; message: string }>
   | Readonly<{
       type: "annotation-operation-started";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
     }>
   | Readonly<{
       type: "annotations-updated";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
       annotations: AnnotationDocument;
     }>;
 
 type AnnotationState = Readonly<{
-  artifactRevisionId: ArtifactRevisionId | null;
+  catalogRevisionId: CompanionCatalogRevisionId | null;
   draft?: AnnotationDraft;
   draftError?: string;
   edit?: AnnotationEdit;
@@ -77,12 +77,12 @@ type AnnotationEvent =
   | Readonly<{ type: "publish-started"; operationId: string }>
   | Readonly<{
       type: "publish-succeeded";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
     }>
   | Readonly<{
       type: "publish-failed";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
       draft: AnnotationDraft;
       message: string;
@@ -93,12 +93,12 @@ type AnnotationEvent =
   | Readonly<{ type: "management-started"; operationId: string }>
   | Readonly<{
       type: "edit-management-succeeded";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
     }>
   | Readonly<{
       type: "management-failed";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
       message: string;
       fallbackEdit?: AnnotationEdit;
@@ -107,7 +107,7 @@ type AnnotationEvent =
   | Readonly<{ type: "annotations-refreshed"; annotations: RevisionAnnotationsRead }>
   | Readonly<{
       type: "move-succeeded";
-      artifactRevisionId: ArtifactRevisionId;
+      catalogRevisionId: CompanionCatalogRevisionId;
       operationId: string;
       annotations: AnnotationDocument;
     }>;
@@ -122,12 +122,12 @@ function hasConflictingModifier(event: KeyboardEvent, holdKey: string): boolean 
 
 const emptyAnnotationDocument: AnnotationDocument = { annotations: [] };
 const emptyRevisionAnnotations: RevisionAnnotationsRead = {
-  artifactRevisionId: null,
+  catalogRevisionId: null,
   document: null,
 };
 
 const initialAnnotationState: AnnotationState = {
-  artifactRevisionId: null,
+  catalogRevisionId: null,
   isManaging: false,
   isModeEnabled: false,
   isPublishing: false,
@@ -181,11 +181,11 @@ function getReviewErrorMessage(review: ReviewResponse): string | undefined {
     return error.message;
   }
 
-  return "Artifact is invalid.";
+  return "Catalog is invalid.";
 }
 
-function getReviewArtifactRevisionId(review: ReviewResponse): ArtifactRevisionId | null {
-  return "artifactRevisionId" in review ? review.artifactRevisionId : null;
+function getReviewCatalogRevisionId(review: ReviewResponse): CompanionCatalogRevisionId | null {
+  return "catalogRevisionId" in review ? review.catalogRevisionId : null;
 }
 
 function hasUnsavedAnnotationChanges(state: AnnotationState): boolean {
@@ -206,21 +206,21 @@ function reconcileAnnotationEdit(edit: AnnotationEdit, document: AnnotationDocum
 
 function reviewReducer(state: ReviewState, event: ReviewEvent): ReviewState {
   if (event.type === "annotation-operation-started") {
-    return state.status === "ready" && state.artifactRevisionId === event.artifactRevisionId
+    return state.status === "ready" && state.catalogRevisionId === event.catalogRevisionId
       ? { ...state, operationId: event.operationId }
       : state;
   }
 
   if (event.type === "annotations-updated") {
     return state.status === "ready" &&
-      state.artifactRevisionId === event.artifactRevisionId &&
+      state.catalogRevisionId === event.catalogRevisionId &&
       state.operationId === event.operationId
       ? { ...state, annotations: event.annotations, operationId: undefined }
       : state;
   }
 
   if (event.type === "load-failed") {
-    if (event.mode === "refresh" && state.status === "ready" && state.review.artifact) {
+    if (event.mode === "refresh" && state.status === "ready" && state.review.catalog) {
       return { ...state, updateError: event.message };
     }
 
@@ -229,26 +229,26 @@ function reviewReducer(state: ReviewState, event: ReviewEvent): ReviewState {
 
   const { annotations, review } = event.bundle;
   const updateError = getReviewErrorMessage(review);
-  if (event.mode === "refresh" && updateError && state.status === "ready" && state.review.artifact) {
-    return { ...state, artifactRevisionId: null, operationId: undefined, updateError };
+  if (event.mode === "refresh" && updateError && state.status === "ready" && state.review.catalog) {
+    return { ...state, catalogRevisionId: null, operationId: undefined, updateError };
   }
 
-  const artifactRevisionId = annotations.artifactRevisionId;
+  const catalogRevisionId = annotations.catalogRevisionId;
   return {
     status: "ready",
-    artifactRevisionId,
+    catalogRevisionId,
     review,
     annotations: annotations.document ?? emptyAnnotationDocument,
     operationId:
-      state.status === "ready" && state.artifactRevisionId === artifactRevisionId ? state.operationId : undefined,
+      state.status === "ready" && state.catalogRevisionId === catalogRevisionId ? state.operationId : undefined,
   };
 }
 
 function annotationReducer(state: AnnotationState, event: AnnotationEvent): AnnotationState {
   if (event.type === "annotations-refreshed") {
-    if (event.annotations.artifactRevisionId !== state.artifactRevisionId) {
+    if (event.annotations.catalogRevisionId !== state.catalogRevisionId) {
       return {
-        artifactRevisionId: event.annotations.artifactRevisionId,
+        catalogRevisionId: event.annotations.catalogRevisionId,
         isManaging: false,
         isModeEnabled: state.isModeEnabled,
         isPublishing: false,
@@ -291,7 +291,7 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
         ? { ...state, draftError: undefined, isPublishing: true, operationId: event.operationId }
         : state;
     case "publish-succeeded":
-      return event.artifactRevisionId === state.artifactRevisionId && event.operationId === state.operationId
+      return event.catalogRevisionId === state.catalogRevisionId && event.operationId === state.operationId
         ? {
             ...state,
             draft: undefined,
@@ -301,7 +301,7 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
           }
         : state;
     case "publish-failed":
-      return event.artifactRevisionId === state.artifactRevisionId && event.operationId === state.operationId
+      return event.catalogRevisionId === state.catalogRevisionId && event.operationId === state.operationId
         ? {
             ...state,
             draft: event.draft,
@@ -338,7 +338,7 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
     case "management-started":
       return { ...state, editError: undefined, isManaging: true, operationId: event.operationId };
     case "edit-management-succeeded":
-      return event.artifactRevisionId === state.artifactRevisionId && event.operationId === state.operationId
+      return event.catalogRevisionId === state.catalogRevisionId && event.operationId === state.operationId
         ? {
             ...state,
             edit: undefined,
@@ -348,7 +348,7 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
           }
         : state;
     case "management-failed":
-      return event.artifactRevisionId === state.artifactRevisionId && event.operationId === state.operationId
+      return event.catalogRevisionId === state.catalogRevisionId && event.operationId === state.operationId
         ? {
             ...state,
             edit: state.edit ?? event.fallbackEdit,
@@ -364,7 +364,7 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
         editError: undefined,
       };
     case "move-succeeded": {
-      if (event.artifactRevisionId !== state.artifactRevisionId || event.operationId !== state.operationId) {
+      if (event.catalogRevisionId !== state.catalogRevisionId || event.operationId !== state.operationId) {
         return state;
       }
 
@@ -382,11 +382,11 @@ function annotationReducer(state: AnnotationState, event: AnnotationEvent): Anno
 async function loadReviewBundle(client: DataClient, isCurrent: () => boolean): Promise<ReviewBundle | undefined> {
   for (let attempt = 0; attempt < MAX_REVIEW_BUNDLE_ATTEMPTS && isCurrent(); attempt += 1) {
     const review = await client.getReview();
-    const artifactRevisionId = getReviewArtifactRevisionId(review);
-    if (artifactRevisionId === null) return { review, annotations: emptyRevisionAnnotations };
+    const catalogRevisionId = getReviewCatalogRevisionId(review);
+    if (catalogRevisionId === null) return { review, annotations: emptyRevisionAnnotations };
 
     const annotations = await client.getAnnotations();
-    if (artifactRevisionId === annotations.artifactRevisionId) return { review, annotations };
+    if (catalogRevisionId === annotations.catalogRevisionId) return { review, annotations };
 
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
@@ -402,17 +402,17 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const [requestedReviewView, setRequestedReviewView] = useState<ReviewView>("process");
   const [activeProcessId, setActiveProcessId] = useState("");
   const [activeDesignId, setActiveDesignId] = useState("");
-  const activeArtifactRevisionId = state.status === "ready" ? state.artifactRevisionId : null;
+  const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
   const pressedKeys = useRef<ReadonlySet<string>>(new Set());
   const annotationRepository = useMemo(
     () => ({
       load: async () => {
-        if (!activeArtifactRevisionId) throw new Error("No active Artifact revision is available.");
+        if (!activeCatalogRevisionId) throw new Error("No active catalog revision is available.");
 
         const annotations = await client.getAnnotations();
-        if (annotations.artifactRevisionId !== activeArtifactRevisionId || annotations.document === null) {
-          throw new Error("Artifact revision changed. Reload before saving Annotations.");
+        if (annotations.catalogRevisionId !== activeCatalogRevisionId || annotations.document === null) {
+          throw new Error("Catalog revision changed. Reload before saving Annotations.");
         }
 
         return annotations.document;
@@ -421,7 +421,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         await client.saveAnnotations(document, expectedDocument);
       },
     }),
-    [activeArtifactRevisionId, client],
+    [activeCatalogRevisionId, client],
   );
   const annotationDrafts = useMemo(
     () =>
@@ -469,7 +469,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         }
 
         if (
-          !activeArtifactRevisionId ||
+          !activeCatalogRevisionId ||
           holdAnnotationMode.current ||
           annotationState.isModeEnabled ||
           annotationState.isManaging ||
@@ -488,7 +488,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         dispatchAnnotation({ type: "mode-changed", enabled: false });
       }
     },
-    [activeArtifactRevisionId, annotationState.isManaging, annotationState.isModeEnabled, annotationState.isPublishing],
+    [activeCatalogRevisionId, annotationState.isManaging, annotationState.isModeEnabled, annotationState.isPublishing],
   );
 
   const handleAnnotationModeKeyUp = useCallback((event: KeyboardEvent) => {
@@ -572,7 +572,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   async function beginAnnotation(anchor: AnnotationAnchor): Promise<void> {
-    if (!activeArtifactRevisionId || annotationState.isManaging || annotationState.isPublishing) return;
+    if (!activeCatalogRevisionId || annotationState.isManaging || annotationState.isPublishing) return;
     if (!(await confirmAnnotationClose())) return;
 
     dispatchAnnotation({ type: "draft-began", draft: annotationDrafts.begin(anchor) });
@@ -589,9 +589,12 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     return true;
   }
 
-  function startAnnotationOperation(artifactRevisionId: ArtifactRevisionId, kind: "management" | "publish"): string {
+  function startAnnotationOperation(
+    catalogRevisionId: CompanionCatalogRevisionId,
+    kind: "management" | "publish",
+  ): string {
     const operationId = globalThis.crypto.randomUUID();
-    dispatchReview({ type: "annotation-operation-started", artifactRevisionId, operationId });
+    dispatchReview({ type: "annotation-operation-started", catalogRevisionId, operationId });
     dispatchAnnotation(
       kind === "publish" ? { type: "publish-started", operationId } : { type: "management-started", operationId },
     );
@@ -599,27 +602,27 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   async function publishAnnotation(): Promise<void> {
-    if (!activeArtifactRevisionId || !annotationState.draft || annotationState.isPublishing) return;
+    if (!activeCatalogRevisionId || !annotationState.draft || annotationState.isPublishing) return;
 
-    const artifactRevisionId = activeArtifactRevisionId;
+    const catalogRevisionId = activeCatalogRevisionId;
     const draft = annotationState.draft;
-    const operationId = startAnnotationOperation(artifactRevisionId, "publish");
+    const operationId = startAnnotationOperation(catalogRevisionId, "publish");
     const result = await annotationDrafts.publish(draft);
 
     if (result.status === "published") {
       dispatchReview({
         type: "annotations-updated",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         annotations: result.document,
       });
-      dispatchAnnotation({ type: "publish-succeeded", artifactRevisionId, operationId });
+      dispatchAnnotation({ type: "publish-succeeded", catalogRevisionId, operationId });
       return;
     }
 
     dispatchAnnotation({
       type: "publish-failed",
-      artifactRevisionId,
+      catalogRevisionId,
       operationId,
       draft: result.draft,
       message: result.message,
@@ -627,7 +630,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   async function openAnnotation(annotationId: string): Promise<void> {
-    if (!activeArtifactRevisionId || annotationState.isManaging || state.status !== "ready") return;
+    if (!activeCatalogRevisionId || annotationState.isManaging || state.status !== "ready") return;
 
     const annotation = state.annotations.annotations.find((candidate) => candidate.id === annotationId);
     if (!annotation || !(await confirmAnnotationClose())) return;
@@ -658,25 +661,25 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       return;
     }
 
-    if (resolution === "restore-local" && activeArtifactRevisionId) {
-      const artifactRevisionId = activeArtifactRevisionId;
-      const operationId = startAnnotationOperation(artifactRevisionId, "management");
+    if (resolution === "restore-local" && activeCatalogRevisionId) {
+      const catalogRevisionId = activeCatalogRevisionId;
+      const operationId = startAnnotationOperation(catalogRevisionId, "management");
       const result = await annotationDrafts.publish({ anchor: edit.source.anchor, body: edit.body });
 
       if (result.status === "published") {
         dispatchReview({
           type: "annotations-updated",
-          artifactRevisionId,
+          catalogRevisionId,
           operationId,
           annotations: result.document,
         });
-        dispatchAnnotation({ type: "edit-management-succeeded", artifactRevisionId, operationId });
+        dispatchAnnotation({ type: "edit-management-succeeded", catalogRevisionId, operationId });
         return;
       }
 
       dispatchAnnotation({
         type: "management-failed",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         message: result.message,
       });
@@ -701,26 +704,26 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
   async function saveAnnotationEdit(): Promise<boolean> {
     const edit = annotationState.edit;
-    if (!activeArtifactRevisionId || !edit || annotationState.isManaging) return false;
+    if (!activeCatalogRevisionId || !edit || annotationState.isManaging) return false;
 
-    const artifactRevisionId = activeArtifactRevisionId;
-    const operationId = startAnnotationOperation(artifactRevisionId, "management");
+    const catalogRevisionId = activeCatalogRevisionId;
+    const operationId = startAnnotationOperation(catalogRevisionId, "management");
     const result = await annotationManager.update(edit.annotationId, edit.body);
 
     if (result.status === "updated") {
       dispatchReview({
         type: "annotations-updated",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         annotations: result.document,
       });
-      dispatchAnnotation({ type: "edit-management-succeeded", artifactRevisionId, operationId });
+      dispatchAnnotation({ type: "edit-management-succeeded", catalogRevisionId, operationId });
       return true;
     }
 
     dispatchAnnotation({
       type: "management-failed",
-      artifactRevisionId,
+      catalogRevisionId,
       operationId,
       message: result.message,
     });
@@ -729,51 +732,51 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
   async function removeAnnotationEdit(): Promise<void> {
     const edit = annotationState.edit;
-    if (!activeArtifactRevisionId || !edit || annotationState.isManaging) return;
+    if (!activeCatalogRevisionId || !edit || annotationState.isManaging) return;
 
-    const artifactRevisionId = activeArtifactRevisionId;
-    const operationId = startAnnotationOperation(artifactRevisionId, "management");
+    const catalogRevisionId = activeCatalogRevisionId;
+    const operationId = startAnnotationOperation(catalogRevisionId, "management");
     const result = await annotationManager.remove(edit.annotationId);
 
     if (result.status === "deleted") {
       dispatchReview({
         type: "annotations-updated",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         annotations: result.document,
       });
-      dispatchAnnotation({ type: "edit-management-succeeded", artifactRevisionId, operationId });
+      dispatchAnnotation({ type: "edit-management-succeeded", catalogRevisionId, operationId });
       return;
     }
 
     dispatchAnnotation({
       type: "management-failed",
-      artifactRevisionId,
+      catalogRevisionId,
       operationId,
       message: result.message,
     });
   }
 
   async function moveAnnotation(annotationId: string, point: AnnotationAnchor["point"]): Promise<void> {
-    if (!activeArtifactRevisionId || annotationState.isManaging || state.status !== "ready") return;
+    if (!activeCatalogRevisionId || annotationState.isManaging || state.status !== "ready") return;
 
     const source = state.annotations.annotations.find((annotation) => annotation.id === annotationId);
     if (!source) return;
 
-    const artifactRevisionId = activeArtifactRevisionId;
-    const operationId = startAnnotationOperation(artifactRevisionId, "management");
+    const catalogRevisionId = activeCatalogRevisionId;
+    const operationId = startAnnotationOperation(catalogRevisionId, "management");
     const result = await annotationManager.move(annotationId, point);
 
     if (result.status === "moved") {
       dispatchReview({
         type: "annotations-updated",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         annotations: result.document,
       });
       dispatchAnnotation({
         type: "move-succeeded",
-        artifactRevisionId,
+        catalogRevisionId,
         operationId,
         annotations: result.document,
       });
@@ -782,7 +785,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
     dispatchAnnotation({
       type: "management-failed",
-      artifactRevisionId,
+      catalogRevisionId,
       operationId,
       message: result.message,
       fallbackEdit: { annotationId, body: source.comment.body, source },
@@ -811,7 +814,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       .split(/[\\/]/)
       .at(-1) ?? scope.path;
 
-  if (!state.review.artifact) {
+  if (!state.review.catalog) {
     return (
       <Tabs className="contents" defaultValue="process">
         <WorkspaceShell
@@ -848,7 +851,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                     No review artifacts yet
                   </EmptyTitle>
                   <EmptyDescription>
-                    Add an Architecture Companion artifact to this scope, then refresh the review.
+                    Add an Architecture Companion catalog to this scope, then refresh the review.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -859,9 +862,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     );
   }
 
-  const { artifact } = state.review;
-  const activeProcess = artifact.behaviors.find(({ id }) => id === activeProcessId) ?? artifact.behaviors.at(0);
-  const activeDesign = artifact.designs.find(({ id }) => id === activeDesignId) ?? artifact.designs.at(0);
+  const { catalog } = state.review;
+  const activeProcess = catalog.behaviors.find(({ id }) => id === activeProcessId) ?? catalog.behaviors.at(0);
+  const activeDesign = catalog.designs.find(({ id }) => id === activeDesignId) ?? catalog.designs.at(0);
   const activeReviewView: ReviewView | null =
     requestedReviewView === "process" && activeProcess
       ? "process"
@@ -878,7 +881,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
           activeDiagram: activeProcess,
           ariaLabel: `${activeProcess.title} product behavior diagram`,
           annotationSurface: { canvasId: `behavior:${activeProcess.id}` },
-          diagrams: artifact.behaviors,
+          artifacts: catalog.behaviors,
           heading: "Product Behaviors",
           onSelect: setActiveProcessId,
         }
@@ -887,7 +890,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             activeDiagram: activeDesign,
             ariaLabel: `${activeDesign.title} code design diagram`,
             annotationSurface: { canvasId: `design:${activeDesign.id}` },
-            diagrams: artifact.designs,
+            artifacts: catalog.designs,
             heading: "Code Designs",
             onSelect: setActiveDesignId,
           }
@@ -899,7 +902,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     editError: annotationState.editError,
     error: annotationState.draftError,
     isCommentMode:
-      Boolean(activeArtifactRevisionId) &&
+      Boolean(activeCatalogRevisionId) &&
       annotationState.isModeEnabled &&
       !annotationState.isManaging &&
       !annotationState.isPublishing,
@@ -928,7 +931,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       <WorkspaceShell
         actions={
           <Toggle
-            disabled={!activeArtifactRevisionId}
+            disabled={!activeCatalogRevisionId}
             onPressedChange={(enabled) => dispatchAnnotation({ type: "mode-changed", enabled })}
             pressed={annotationState.isModeEnabled}
             size="sm"
@@ -940,10 +943,10 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         }
         navigation={
           <TabsList aria-label="Review views">
-            <TabsTrigger disabled={artifact.behaviors.length === 0} value="process">
+            <TabsTrigger disabled={catalog.behaviors.length === 0} value="process">
               Product Behavior
             </TabsTrigger>
-            <TabsTrigger disabled={artifact.designs.length === 0} value="design">
+            <TabsTrigger disabled={catalog.designs.length === 0} value="design">
               Code Design
             </TabsTrigger>
           </TabsList>
@@ -954,9 +957,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
           <TabsContent className="h-full min-h-0" value={activeReviewView}>
             <h2 className="sr-only">{activeDiagramCollection.heading}</h2>
             <div className="grid h-full min-h-0 min-w-0 grid-cols-[16rem_minmax(0,1fr)] gap-3">
-              <DiagramList
-                activeDiagramId={activeDiagramCollection.activeDiagram.id}
-                diagrams={activeDiagramCollection.diagrams}
+              <ArtifactList
+                activeArtifactId={activeDiagramCollection.activeDiagram.id}
+                artifacts={activeDiagramCollection.artifacts}
                 heading={activeDiagramCollection.heading}
                 onSelect={activeDiagramCollection.onSelect}
               />

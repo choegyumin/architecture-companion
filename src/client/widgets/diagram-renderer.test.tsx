@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/diagram/artifact";
 
 vi.mock("@/client/widgets/dependency-graph-diagram-renderer", () => ({
   DependencyGraphDiagramRenderer: () => <span>Dependency graph renderer</span>,
@@ -27,7 +27,7 @@ const diagram = {
 
 describe("diagram renderer selection", () => {
   it("selects the dependency renderer by layout ID", () => {
-    const dependencyDiagram = { ...diagram, layout: { id: "dependency-graph" } } satisfies Diagram;
+    const dependencyDiagram = { ...diagram, layout: { id: "dependency-graph" } } satisfies Artifact;
 
     render(<DiagramRenderer annotations={annotations} diagram={dependencyDiagram} onOpenSource={vi.fn()} />);
 
@@ -36,7 +36,7 @@ describe("diagram renderer selection", () => {
   });
 
   it("selects the ELK renderer by layout ID", () => {
-    const elkDiagram = { ...diagram, layout: { id: "elk-layered" } } satisfies Diagram;
+    const elkDiagram = { ...diagram, layout: { id: "elk-layered" } } satisfies Artifact;
 
     render(<DiagramRenderer annotations={annotations} diagram={elkDiagram} onOpenSource={vi.fn()} />);
 
@@ -53,7 +53,7 @@ describe("diagram renderer selection", () => {
         edges: [],
       },
       layout: { id: "sequence" },
-    } satisfies Diagram;
+    } satisfies Artifact;
 
     render(<DiagramRenderer annotations={annotations} diagram={sequenceDiagram} onOpenSource={vi.fn()} />);
 

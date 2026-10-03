@@ -3,21 +3,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import {
   createFileAnnotationRepository,
   getAnnotationDocumentRelativePath,
   type RevisionAnnotationRepository,
 } from "@/server/file-annotation-repository";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 const emptyDocument: AnnotationDocument = { annotations: [] };
 
-function artifact(title: string): Artifact {
+function catalog(title: string): CompanionCatalog {
   return {
     behaviors: [
       {
@@ -39,9 +39,9 @@ function artifact(title: string): Artifact {
   };
 }
 
-const firstArtifact = artifact("Checkout workflow");
-const secondArtifact = artifact("Changed checkout workflow");
-const firstRevisionId = createArtifactRevisionId(firstArtifact);
+const firstArtifact = catalog("Checkout workflow");
+const secondArtifact = catalog("Changed checkout workflow");
+const firstRevisionId = createCatalogRevisionId(firstArtifact);
 
 function document(body: string): AnnotationDocument {
   return {
@@ -86,7 +86,7 @@ async function createRejectionReview(): Promise<
   }>
 > {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
-  await writeArtifact(scopePath, firstArtifact);
+  await writeCatalog(scopePath, firstArtifact);
   let loadCount = 0;
   let saveCount = 0;
   const repository: RevisionAnnotationRepository = {
@@ -98,7 +98,7 @@ async function createRejectionReview(): Promise<
       saveCount += 1;
     },
   };
-  const app = createApp(await resolveConsumerScope(scopePath), { annotationRepository: repository });
+  const app = createApp(await resolveCompanionScope(scopePath), { annotationRepository: repository });
 
   return {
     app,
@@ -108,65 +108,65 @@ async function createRejectionReview(): Promise<
 }
 
 describe("annotation server", () => {
-  test("returns a read-only empty state and rejects saves when the Artifact is missing", async () => {
+  test("returns a read-only empty state and rejects saves when the Catalog is missing", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      const app = createApp(await resolveConsumerScope(scopePath));
+      const app = createApp(await resolveCompanionScope(scopePath));
       const response = await app.request(`${baseUrl}/api/annotations`);
 
       expect(response.status).toBe(200);
       expect(response.headers.get("ETag")).toBeNull();
-      await expect(response.json()).resolves.toEqual({ artifactRevisionId: null, document: null });
+      await expect(response.json()).resolves.toEqual({ catalogRevisionId: null, document: null });
       expect(
-        (await putAnnotations(app, { artifactRevisionId: firstRevisionId, document: emptyDocument }, '"etag"')).status,
+        (await putAnnotations(app, { catalogRevisionId: firstRevisionId, document: emptyDocument }, '"etag"')).status,
       ).toBe(409);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("neither reads nor saves Annotations when the Artifact is invalid", async () => {
+  test("neither reads nor saves Annotations when the Catalog is invalid", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, {
+      await writeCatalog(scopePath, {
         behaviors: [{ ...firstArtifact.behaviors.at(0)!, unexpected: true }],
         designs: [],
       });
-      const app = createApp(await resolveConsumerScope(scopePath));
+      const app = createApp(await resolveCompanionScope(scopePath));
 
       expect((await app.request(`${baseUrl}/api/annotations`)).status).toBe(422);
       expect(
-        (await putAnnotations(app, { artifactRevisionId: firstRevisionId, document: emptyDocument }, '"etag"')).status,
+        (await putAnnotations(app, { catalogRevisionId: firstRevisionId, document: emptyDocument }, '"etag"')).status,
       ).toBe(422);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("saves an Annotation for the current Artifact revision and restores it in a new app", async () => {
+  test("saves an Annotation for the current Catalog revision and restores it in a new app", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, firstArtifact);
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope);
       const current = await app.request(`${baseUrl}/api/annotations`);
       const savedDocument = document("Move this responsibility.");
 
       expect(await current.clone().json()).toEqual({
-        artifactRevisionId: firstRevisionId,
+        catalogRevisionId: firstRevisionId,
         document: emptyDocument,
       });
       const saved = await putAnnotations(
         app,
-        { artifactRevisionId: firstRevisionId, document: savedDocument },
+        { catalogRevisionId: firstRevisionId, document: savedDocument },
         current.headers.get("ETag"),
       );
 
       expect(saved.status).toBe(200);
-      expect(await saved.json()).toEqual({ artifactRevisionId: firstRevisionId, document: savedDocument });
+      expect(await saved.json()).toEqual({ catalogRevisionId: firstRevisionId, document: savedDocument });
       expect(
         JSON.parse(await readFile(join(scopePath, getAnnotationDocumentRelativePath(firstRevisionId)), "utf8")),
       ).toEqual(savedDocument);
@@ -176,7 +176,7 @@ describe("annotation server", () => {
 
       const restored = await createApp(scope).request(`${baseUrl}/api/annotations`);
       await expect(restored.json()).resolves.toEqual({
-        artifactRevisionId: firstRevisionId,
+        catalogRevisionId: firstRevisionId,
         document: savedDocument,
       });
     } finally {
@@ -184,35 +184,35 @@ describe("annotation server", () => {
     }
   });
 
-  test("isolates ETags and Annotations per revision and restores them when the same Artifact returns", async () => {
+  test("isolates ETags and Annotations per revision and restores them when the same CompanionCatalog returns", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const app = createApp(await resolveConsumerScope(scopePath));
+      await writeCatalog(scopePath, firstArtifact);
+      const app = createApp(await resolveCompanionScope(scopePath));
       const first = await app.request(`${baseUrl}/api/annotations`);
       const savedDocument = document("First revision");
       expect(
         (
           await putAnnotations(
             app,
-            { artifactRevisionId: firstRevisionId, document: savedDocument },
+            { catalogRevisionId: firstRevisionId, document: savedDocument },
             first.headers.get("ETag"),
           )
         ).status,
       ).toBe(200);
 
-      await writeArtifact(scopePath, secondArtifact);
+      await writeCatalog(scopePath, secondArtifact);
       const second = await app.request(`${baseUrl}/api/annotations`);
       expect(second.headers.get("ETag")).not.toBe(first.headers.get("ETag"));
       await expect(second.json()).resolves.toEqual({
-        artifactRevisionId: createArtifactRevisionId(secondArtifact),
+        catalogRevisionId: createCatalogRevisionId(secondArtifact),
         document: emptyDocument,
       });
 
-      await writeArtifact(scopePath, firstArtifact);
+      await writeCatalog(scopePath, firstArtifact);
       await expect((await app.request(`${baseUrl}/api/annotations`)).json()).resolves.toEqual({
-        artifactRevisionId: firstRevisionId,
+        catalogRevisionId: firstRevisionId,
         document: savedDocument,
       });
     } finally {
@@ -243,7 +243,7 @@ describe("annotation server", () => {
 
     try {
       expect(
-        (await putAnnotations(app, { artifactRevisionId: "../outside", document: emptyDocument }, '"etag"')).status,
+        (await putAnnotations(app, { catalogRevisionId: "../outside", document: emptyDocument }, '"etag"')).status,
       ).toBe(422);
       expect(counts.load()).toBe(0);
       expect(counts.save()).toBe(0);
@@ -268,7 +268,7 @@ describe("annotation server", () => {
     const { app, counts, scopePath } = await createRejectionReview();
 
     try {
-      expect((await putAnnotations(app, { artifactRevisionId: firstRevisionId, document: emptyDocument })).status).toBe(
+      expect((await putAnnotations(app, { catalogRevisionId: firstRevisionId, document: emptyDocument })).status).toBe(
         428,
       );
       expect(counts.load()).toBe(0);
@@ -278,18 +278,18 @@ describe("annotation server", () => {
     }
   });
 
-  test("rejects a save for an earlier revision after the Artifact revision changed", async () => {
+  test("rejects a save for an earlier revision after the Catalog revision changed", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const app = createApp(await resolveConsumerScope(scopePath));
+      await writeCatalog(scopePath, firstArtifact);
+      const app = createApp(await resolveCompanionScope(scopePath));
       const current = await app.request(`${baseUrl}/api/annotations`);
-      await writeArtifact(scopePath, secondArtifact);
+      await writeCatalog(scopePath, secondArtifact);
 
       const response = await putAnnotations(
         app,
-        { artifactRevisionId: firstRevisionId, document: document("Stale artifact") },
+        { catalogRevisionId: firstRevisionId, document: document("Stale catalog") },
         current.headers.get("ETag"),
       );
 
@@ -306,17 +306,17 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const app = createApp(await resolveConsumerScope(scopePath));
+      await writeCatalog(scopePath, firstArtifact);
+      const app = createApp(await resolveCompanionScope(scopePath));
       const current = await app.request(`${baseUrl}/api/annotations`);
       const etag = current.headers.get("ETag");
 
       expect(
-        (await putAnnotations(app, { artifactRevisionId: firstRevisionId, document: document("First") }, etag)).status,
+        (await putAnnotations(app, { catalogRevisionId: firstRevisionId, document: document("First") }, etag)).status,
       ).toBe(200);
       const stale = await putAnnotations(
         app,
-        { artifactRevisionId: firstRevisionId, document: document("Stale") },
+        { catalogRevisionId: firstRevisionId, document: document("Stale") },
         etag,
       );
 
@@ -333,14 +333,14 @@ describe("annotation server", () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const app = createApp(await resolveConsumerScope(scopePath));
+      await writeCatalog(scopePath, firstArtifact);
+      const app = createApp(await resolveCompanionScope(scopePath));
       const current = await app.request(`${baseUrl}/api/annotations`);
       const etag = current.headers.get("ETag");
       const documents = [document("First"), document("Second")];
       const responses = await Promise.all(
         documents.map((nextDocument) =>
-          putAnnotations(app, { artifactRevisionId: firstRevisionId, document: nextDocument }, etag),
+          putAnnotations(app, { catalogRevisionId: firstRevisionId, document: nextDocument }, etag),
         ),
       );
 
@@ -352,25 +352,25 @@ describe("annotation server", () => {
     }
   });
 
-  test("does not replace the file when the Artifact revision changes just before saving", async () => {
+  test("does not replace the file when the Catalog revision changes just before saving", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comments-"));
     let committed = false;
     const repository: RevisionAnnotationRepository = {
       load: async () => emptyDocument,
       save: async ({ validateBeforeCommit }) => {
-        await writeArtifact(scopePath, secondArtifact);
+        await writeCatalog(scopePath, secondArtifact);
         await validateBeforeCommit?.();
         committed = true;
       },
     };
 
     try {
-      await writeArtifact(scopePath, firstArtifact);
-      const app = createApp(await resolveConsumerScope(scopePath), { annotationRepository: repository });
+      await writeCatalog(scopePath, firstArtifact);
+      const app = createApp(await resolveCompanionScope(scopePath), { annotationRepository: repository });
       const current = await app.request(`${baseUrl}/api/annotations`);
       const response = await putAnnotations(
         app,
-        { artifactRevisionId: firstRevisionId, document: document("Stale") },
+        { catalogRevisionId: firstRevisionId, document: document("Stale") },
         current.headers.get("ETag"),
       );
 

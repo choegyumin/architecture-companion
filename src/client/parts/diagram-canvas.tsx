@@ -180,7 +180,7 @@ export function DiagramCanvas({
 
   return (
     <div
-      aria-label="Diagram canvas"
+      aria-label="Artifact canvas"
       className="h-full min-h-0"
       onClick={(event) => {
         if (event.target === event.currentTarget) handlePaneClick(event);

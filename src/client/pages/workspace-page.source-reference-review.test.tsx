@@ -7,12 +7,12 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
-const artifact = {
+const catalog = {
   behaviors: [
     {
       id: "checkout",
@@ -81,9 +81,9 @@ describe("source links in a review", () => {
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "src"));
-      await writeArtifact(scopePath, artifact);
+      await writeCatalog(scopePath, catalog);
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, {
         openPath: async () => {
           throw new Error("No default application");
@@ -115,7 +115,7 @@ describe("source links in a review", () => {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "specs"));
       await mkdir(join(scopePath, "src"));
-      await writeArtifact(scopePath, artifact);
+      await writeCatalog(scopePath, catalog);
       await writeFile(
         join(scopePath, "specs/user-review-architecture.spec.tsx"),
         "export const workflowReview = true;\n",
@@ -123,7 +123,7 @@ describe("source links in a review", () => {
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
       await writeFile(join(scopePath, "src/checkout-page.ts"), "export const checkoutPage = true;\n");
       await writeFile(join(scopePath, "src/checkout-page.test.ts"), "export const checkoutPageTest = true;\n");
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, {
         openPath: async ({ path }) => {
           openedPaths = [...openedPaths, path];

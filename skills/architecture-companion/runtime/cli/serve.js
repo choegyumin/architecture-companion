@@ -13,7 +13,7 @@ var __export = (target, all) => {
 // src/cli/serve.ts
 import { fileURLToPath as fileURLToPath2 } from "url";
 
-// src/server/resolve-consumer-scope.ts
+// src/server/resolve-companion-scope.ts
 import { realpath, stat } from "fs/promises";
 import { dirname, join } from "path";
 async function pathExists(path) {
@@ -34,7 +34,7 @@ async function isInsideGitRepository(path) {
     currentPath = parentPath;
   }
 }
-async function resolveConsumerScopePath(inputPath) {
+async function resolveCompanionScopePath(inputPath) {
   let inputStat;
   try {
     inputStat = await stat(inputPath);
@@ -49,8 +49,8 @@ async function resolveConsumerScopePath(inputPath) {
   }
   return realpath(inputPath);
 }
-async function resolveConsumerScope(inputPath) {
-  const path = await resolveConsumerScopePath(inputPath);
+async function resolveCompanionScope(inputPath) {
+  const path = await resolveCompanionScopePath(inputPath);
   return {
     path,
     isGitRepository: await isInsideGitRepository(path)
@@ -23057,23 +23057,23 @@ function parseAnnotationDocument(input2) {
   return result.data;
 }
 
-// src/features/artifact/artifact-revision-id.ts
-var artifactRevisionIdSchema = external_exports.string().regex(/^[0-9a-f]{64}$/, "Artifact revision ID must be a 64-character lowercase hexadecimal string.").brand();
-function parseArtifactRevisionId(input2) {
-  const result = artifactRevisionIdSchema.safeParse(input2);
+// src/features/catalog/catalog-revision-id.ts
+var companionCatalogRevisionIdSchema = external_exports.string().regex(/^[0-9a-f]{64}$/, "Catalog revision ID must be a 64-character lowercase hexadecimal string.").brand();
+function parseCatalogRevisionId(input2) {
+  const result = companionCatalogRevisionIdSchema.safeParse(input2);
   if (!result.success) {
-    throw new Error("Invalid Artifact revision ID.", { cause: result.error });
+    throw new Error("Invalid Catalog revision ID.", { cause: result.error });
   }
   return result.data;
 }
 
 // src/features/annotation/revision-annotations.ts
 var revisionAnnotationsSchema = external_exports.object({
-  artifactRevisionId: artifactRevisionIdSchema,
+  catalogRevisionId: companionCatalogRevisionIdSchema,
   document: annotationDocumentSchema
 }).strict();
 var missingRevisionAnnotationsSchema = external_exports.object({
-  artifactRevisionId: external_exports.null(),
+  catalogRevisionId: external_exports.null(),
   document: external_exports.null()
 }).strict();
 var revisionAnnotationsReadSchema = external_exports.union([revisionAnnotationsSchema, missingRevisionAnnotationsSchema]);
@@ -23093,8 +23093,11 @@ function createAnnotationEtag(revisionAnnotations) {
   return `"sha256:${digest}"`;
 }
 
-// src/server/create-artifact-revision-id.ts
+// src/server/create-catalog-revision-id.ts
 import { createHash as createHash2 } from "crypto";
+
+// src/features/artifact-generator/artifact-generator-reference.ts
+var artifactGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 // src/features/diagram/diagram-graph.ts
 var diagramIdSchema = external_exports.string().min(1);
@@ -23246,20 +23249,17 @@ var diagramLayoutConfigSchema = external_exports.discriminatedUnion("id", [
   dependencyGraphLayoutConfigSchema
 ]);
 
-// src/features/diagram-generator/diagram-generator-reference.ts
-var diagramGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
-
-// src/features/diagram/diagram.ts
-var artifactDiagramIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Diagram ID must be lowercase kebab-case (letters, digits, hyphens)");
-var diagramSchema = external_exports.object({
-  id: artifactDiagramIdSchema,
+// src/features/diagram/artifact.ts
+var artifactIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
+var artifactSchema = external_exports.object({
+  id: artifactIdSchema,
   title: external_exports.string().min(1),
   updatedAt: external_exports.string().datetime(),
   vcs: external_exports.object({
     revision: external_exports.string().min(1),
     divergesFromRevision: external_exports.boolean()
   }).strict().optional(),
-  generator: diagramGeneratorReferenceSchema,
+  generator: artifactGeneratorReferenceSchema,
   instructions: external_exports.string().min(1),
   layout: diagramLayoutConfigSchema,
   links: external_exports.array(diagramLinkSchema).readonly().optional(),
@@ -23495,43 +23495,6 @@ var diagramSchema = external_exports.object({
     }
   });
 });
-function parseDiagram(input2) {
-  const result = diagramSchema.safeParse(input2);
-  if (!result.success) {
-    const messages = result.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid diagram: ${messages}`, { cause: result.error });
-  }
-  return result.data;
-}
-
-// src/features/artifact/artifact.ts
-var artifactSchema = external_exports.object({
-  behaviors: external_exports.array(diagramSchema),
-  designs: external_exports.array(diagramSchema)
-}).strict().superRefine((artifact, context) => {
-  const behaviorIds = /* @__PURE__ */ new Set();
-  artifact.behaviors.forEach((diagram, index) => {
-    if (behaviorIds.has(diagram.id)) {
-      context.addIssue({
-        code: "custom",
-        path: ["behaviors", index, "id"],
-        message: `Duplicate behavior ID: ${diagram.id}`
-      });
-    }
-    behaviorIds.add(diagram.id);
-  });
-  const designIds = /* @__PURE__ */ new Set();
-  artifact.designs.forEach((diagram, index) => {
-    if (designIds.has(diagram.id)) {
-      context.addIssue({
-        code: "custom",
-        path: ["designs", index, "id"],
-        message: `Duplicate design ID: ${diagram.id}`
-      });
-    }
-    designIds.add(diagram.id);
-  });
-});
 function parseArtifact(input2) {
   const result = artifactSchema.safeParse(input2);
   if (!result.success) {
@@ -23541,11 +23504,48 @@ function parseArtifact(input2) {
   return result.data;
 }
 
-// src/server/create-artifact-revision-id.ts
-function createArtifactRevisionId(artifact) {
-  const canonicalArtifact = parseArtifact(artifact);
-  const digest = createHash2("sha256").update(JSON.stringify(canonicalArtifact)).digest("hex");
-  return parseArtifactRevisionId(digest);
+// src/features/catalog/catalog.ts
+var companionCatalogSchema = external_exports.object({
+  behaviors: external_exports.array(artifactSchema),
+  designs: external_exports.array(artifactSchema)
+}).strict().superRefine((catalog, context) => {
+  const behaviorIds = /* @__PURE__ */ new Set();
+  catalog.behaviors.forEach((artifact, index) => {
+    if (behaviorIds.has(artifact.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["behaviors", index, "id"],
+        message: `Duplicate behavior ID: ${artifact.id}`
+      });
+    }
+    behaviorIds.add(artifact.id);
+  });
+  const designIds = /* @__PURE__ */ new Set();
+  catalog.designs.forEach((artifact, index) => {
+    if (designIds.has(artifact.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["designs", index, "id"],
+        message: `Duplicate design ID: ${artifact.id}`
+      });
+    }
+    designIds.add(artifact.id);
+  });
+});
+function parseCatalog(input2) {
+  const result = companionCatalogSchema.safeParse(input2);
+  if (!result.success) {
+    const messages = result.error.issues.map(({ message }) => message).join("; ");
+    throw new Error(`Invalid catalog: ${messages}`, { cause: result.error });
+  }
+  return result.data;
+}
+
+// src/server/create-catalog-revision-id.ts
+function createCatalogRevisionId(catalog) {
+  const canonicalCatalog = parseCatalog(catalog);
+  const digest = createHash2("sha256").update(JSON.stringify(canonicalCatalog)).digest("hex");
+  return parseCatalogRevisionId(digest);
 }
 
 // src/server/file-annotation-repository.ts
@@ -23712,20 +23712,20 @@ async function serializeSave(key, action) {
     if (saveQueues.get(key) === queue) saveQueues.delete(key);
   }
 }
-function getAnnotationDocumentRelativePath(artifactRevisionId) {
-  const revisionId = parseArtifactRevisionId(artifactRevisionId);
+function getAnnotationDocumentRelativePath(catalogRevisionId) {
+  const revisionId = parseCatalogRevisionId(catalogRevisionId);
   return join3(ANNOTATIONS_DIRECTORY_RELATIVE_PATH, `${revisionId}.json`);
 }
-async function assertAnnotationDocumentPathIsSafe(scopePath, artifactRevisionId) {
+async function assertAnnotationDocumentPathIsSafe(scopePath, catalogRevisionId) {
   await assertNotSymbolicLink(join3(scopePath, ARCHITECTURE_COMPANION_RELATIVE_PATH));
   await assertNotSymbolicLink(join3(scopePath, ANNOTATIONS_DIRECTORY_RELATIVE_PATH));
-  await assertNotSymbolicLink(join3(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId)));
+  await assertNotSymbolicLink(join3(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId)));
 }
 function createFileAnnotationRepository(scopePath) {
   const annotationsPath = join3(scopePath, ANNOTATIONS_DIRECTORY_RELATIVE_PATH);
-  const load = async (artifactRevisionId) => {
-    const documentPath = join3(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId));
-    await assertAnnotationDocumentPathIsSafe(scopePath, artifactRevisionId);
+  const load = async (catalogRevisionId) => {
+    const documentPath = join3(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId));
+    await assertAnnotationDocumentPathIsSafe(scopePath, catalogRevisionId);
     try {
       return parseAnnotationDocument(JSON.parse(await readFile(documentPath, "utf8")));
     } catch (error62) {
@@ -23735,15 +23735,15 @@ function createFileAnnotationRepository(scopePath) {
   };
   return {
     load,
-    save: async ({ artifactRevisionId, document: input2, expectedDocument: expectedInput, validateBeforeCommit }) => {
+    save: async ({ catalogRevisionId, document: input2, expectedDocument: expectedInput, validateBeforeCommit }) => {
       const document = parseAnnotationDocument(input2);
       const expectedDocument = parseAnnotationDocument(expectedInput);
-      const documentPath = join3(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId));
+      const documentPath = join3(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId));
       await serializeSave(annotationsPath, async () => {
         await ensureStorage(scopePath);
         const releaseLock = await acquireFileLock(`${documentPath}.lock`);
         try {
-          const currentDocument = await load(artifactRevisionId);
+          const currentDocument = await load(catalogRevisionId);
           if (!isDeepStrictEqual(currentDocument, expectedDocument)) throw new AnnotationDocumentConflictError();
           await assertNotSymbolicLink(documentPath);
           const temporaryPath = join3(annotationsPath, `.annotations-${randomUUID()}.tmp`);
@@ -23753,7 +23753,7 @@ function createFileAnnotationRepository(scopePath) {
               encoding: "utf8",
               flag: "wx"
             });
-            const latestDocument = await load(artifactRevisionId);
+            const latestDocument = await load(catalogRevisionId);
             if (!isDeepStrictEqual(latestDocument, expectedDocument)) throw new AnnotationDocumentConflictError();
             await assertNotSymbolicLink(documentPath);
             await validateBeforeCommit?.();
@@ -23867,52 +23867,52 @@ async function openSourceReference(scope, href, openPath) {
   return { status: 200, href };
 }
 
-// src/server/read-artifact.ts
+// src/server/read-catalog.ts
 import { readdir, readFile as readFile2 } from "fs/promises";
 import { join as join5 } from "path";
 
-// src/server/validate-artifact.ts
-function validateArtifact(input2) {
-  return parseArtifact(input2);
+// src/server/validate-catalog.ts
+function validateCatalog(input2) {
+  return parseCatalog(input2);
 }
 
-// src/server/read-artifact.ts
+// src/server/read-catalog.ts
 var BEHAVIORS_RELATIVE_PATH = ".architecture-companion/behaviors";
 var DESIGNS_RELATIVE_PATH = ".architecture-companion/designs";
-var DIAGRAM_FILE_SUFFIX = ".json";
-var DIAGRAM_FILE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*\.json$/;
-var artifactKinds = [
+var ARTIFACT_FILE_SUFFIX = ".json";
+var ARTIFACT_FILE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*\.json$/;
+var catalogKinds = [
   { key: "behaviors", relativePath: BEHAVIORS_RELATIVE_PATH },
   { key: "designs", relativePath: DESIGNS_RELATIVE_PATH }
 ];
 function isFileSystemError2(error62, code) {
   return error62 instanceof Error && "code" in error62 && error62.code === code;
 }
-async function readDiagramFile(scopePath, relativePath, fileName) {
+async function readArtifactFile(scopePath, relativePath, fileName) {
   const filePath = join5(relativePath, fileName);
   let input2;
   try {
     input2 = JSON.parse(await readFile2(join5(scopePath, filePath), "utf8"));
   } catch {
-    return `Artifact contains invalid JSON: ${filePath}`;
+    return `Catalog contains invalid JSON: ${filePath}`;
   }
   try {
-    const diagram = parseDiagram(input2);
-    if (diagram.id !== fileName.slice(0, -DIAGRAM_FILE_SUFFIX.length)) {
-      return `Diagram file name does not match the diagram ID: ${filePath} must be ${diagram.id}.json`;
+    const artifact = parseArtifact(input2);
+    if (artifact.id !== fileName.slice(0, -ARTIFACT_FILE_SUFFIX.length)) {
+      return `Artifact file name does not match the artifact ID: ${filePath} must be ${artifact.id}.json`;
     }
-    return diagram;
+    return artifact;
   } catch (error62) {
     const detail = error62 instanceof Error ? error62.message : "Unknown validation error";
-    return `Artifact is invalid: ${filePath}. ${detail}`;
+    return `Catalog is invalid: ${filePath}. ${detail}`;
   }
 }
-async function readArtifact(scopePath) {
+async function readCatalog(scopePath) {
   const errors = [];
   const behaviors = [];
   const designs = [];
   let missingKinds = 0;
-  for (const { key, relativePath } of artifactKinds) {
+  for (const { key, relativePath } of catalogKinds) {
     let entries;
     try {
       entries = (await readdir(join5(scopePath, relativePath))).toSorted();
@@ -23924,22 +23924,22 @@ async function readArtifact(scopePath) {
       throw error62;
     }
     for (const entry of entries) {
-      if (!DIAGRAM_FILE_NAME_PATTERN.test(entry)) {
-        errors.push(`Unexpected artifact entry: ${join5(relativePath, entry)}`);
+      if (!ARTIFACT_FILE_NAME_PATTERN.test(entry)) {
+        errors.push(`Unexpected catalog entry: ${join5(relativePath, entry)}`);
         continue;
       }
-      const diagram = await readDiagramFile(scopePath, relativePath, entry);
-      if (typeof diagram === "string") {
-        errors.push(diagram);
+      const artifact = await readArtifactFile(scopePath, relativePath, entry);
+      if (typeof artifact === "string") {
+        errors.push(artifact);
         continue;
       }
-      (key === "behaviors" ? behaviors : designs).push(diagram);
+      (key === "behaviors" ? behaviors : designs).push(artifact);
     }
   }
-  if (missingKinds === artifactKinds.length) return { status: "missing" };
+  if (missingKinds === catalogKinds.length) return { status: "missing" };
   if (errors.length > 0) return { status: "invalid", message: errors.join("; ") };
-  const artifact = validateArtifact({ behaviors, designs });
-  return { status: "valid", artifact };
+  const catalog = validateCatalog({ behaviors, designs });
+  return { status: "valid", catalog };
 }
 
 // src/server/read-active-revision-annotations.ts
@@ -23947,21 +23947,21 @@ function errorMessage(error62) {
   return error62 instanceof Error ? error62.message : "Unknown error";
 }
 async function readActiveRevisionAnnotations(scopePath, annotationRepository) {
-  const artifactResult = await readArtifact(scopePath);
-  if (artifactResult.status === "invalid") return artifactResult;
-  if (artifactResult.status === "missing") {
+  const catalogResult = await readCatalog(scopePath);
+  if (catalogResult.status === "invalid") return catalogResult;
+  if (catalogResult.status === "missing") {
     return {
       status: "valid",
-      revisionAnnotations: { artifactRevisionId: null, document: null }
+      revisionAnnotations: { catalogRevisionId: null, document: null }
     };
   }
-  const artifactRevisionId = createArtifactRevisionId(artifactResult.artifact);
+  const catalogRevisionId = createCatalogRevisionId(catalogResult.catalog);
   try {
     return {
       status: "valid",
       revisionAnnotations: {
-        artifactRevisionId,
-        document: await annotationRepository.load(artifactRevisionId)
+        catalogRevisionId,
+        document: await annotationRepository.load(catalogRevisionId)
       }
     };
   } catch (error62) {
@@ -24006,20 +24006,20 @@ var defaultOpenPath = async ({ path, line }) => {
   }
   await openLocalPath(path);
 };
-var ArtifactRevisionConflictError = class extends Error {
+var CatalogRevisionConflictError = class extends Error {
 };
-var InvalidArtifactForAnnotationsError = class extends Error {
+var InvalidCatalogForAnnotationsError = class extends Error {
 };
-async function readArtifactRevision(scopePath) {
-  const result = await readArtifact(scopePath);
+async function readCatalogRevision(scopePath) {
+  const result = await readCatalog(scopePath);
   if (result.status !== "valid") return result;
-  return { status: "valid", artifactRevisionId: createArtifactRevisionId(result.artifact) };
+  return { status: "valid", catalogRevisionId: createCatalogRevisionId(result.catalog) };
 }
-async function validateArtifactRevision(scopePath, expectedRevisionId) {
-  const result = await readArtifactRevision(scopePath);
-  if (result.status === "invalid") throw new InvalidArtifactForAnnotationsError(result.message);
-  if (result.status === "missing" || result.artifactRevisionId !== expectedRevisionId) {
-    throw new ArtifactRevisionConflictError();
+async function validateCatalogRevision(scopePath, expectedRevisionId) {
+  const result = await readCatalogRevision(scopePath);
+  if (result.status === "invalid") throw new InvalidCatalogForAnnotationsError(result.message);
+  if (result.status === "missing" || result.catalogRevisionId !== expectedRevisionId) {
+    throw new CatalogRevisionConflictError();
   }
 }
 function createApp(scope, dependencies = {}) {
@@ -24027,12 +24027,12 @@ function createApp(scope, dependencies = {}) {
   const reviewUpdates = dependencies.reviewUpdates;
   const annotationRepository = dependencies.annotationRepository ?? createFileAnnotationRepository(scope.path);
   return new Hono2().get("/api/review", async (context) => {
-    const result = await readArtifact(scope.path);
+    const result = await readCatalog(scope.path);
     if (result.status === "invalid") {
       return context.json(
         {
           scope,
-          artifact: null,
+          catalog: null,
           error: { message: result.message }
         },
         422
@@ -24041,11 +24041,11 @@ function createApp(scope, dependencies = {}) {
     if (result.status === "valid") {
       return context.json({
         scope,
-        artifact: result.artifact,
-        artifactRevisionId: createArtifactRevisionId(result.artifact)
+        catalog: result.catalog,
+        catalogRevisionId: createCatalogRevisionId(result.catalog)
       });
     }
-    return context.json({ scope, artifact: null });
+    return context.json({ scope, catalog: null });
   }).get(
     "/api/review/events",
     (context) => streamSSE(context, async (stream2) => {
@@ -24071,7 +24071,7 @@ function createApp(scope, dependencies = {}) {
       return context.json({ error: { message: result.message } }, 422);
     }
     const revisionAnnotations = result.revisionAnnotations;
-    if (revisionAnnotations.artifactRevisionId === null) return context.json(revisionAnnotations);
+    if (revisionAnnotations.catalogRevisionId === null) return context.json(revisionAnnotations);
     context.header("ETag", createAnnotationEtag(revisionAnnotations));
     return context.json(revisionAnnotations);
   }).put(
@@ -24107,19 +24107,19 @@ function createApp(scope, dependencies = {}) {
         return context.json({ error: { message: "Annotation revision is required. Reload before saving." } }, 428);
       }
       try {
-        const artifactResult = await readArtifactRevision(scope.path);
-        if (artifactResult.status === "invalid") {
-          return context.json({ error: { message: artifactResult.message } }, 422);
+        const catalogResult = await readCatalogRevision(scope.path);
+        if (catalogResult.status === "invalid") {
+          return context.json({ error: { message: catalogResult.message } }, 422);
         }
-        if (artifactResult.status === "missing" || artifactResult.artifactRevisionId !== revisionAnnotations.artifactRevisionId) {
+        if (catalogResult.status === "missing" || catalogResult.catalogRevisionId !== revisionAnnotations.catalogRevisionId) {
           return context.json(
-            { error: { message: "Artifact changed or is unavailable. Reload before saving annotations." } },
+            { error: { message: "Catalog changed or is unavailable. Reload before saving annotations." } },
             409
           );
         }
         const currentRevisionAnnotations = {
-          artifactRevisionId: revisionAnnotations.artifactRevisionId,
-          document: await annotationRepository.load(revisionAnnotations.artifactRevisionId)
+          catalogRevisionId: revisionAnnotations.catalogRevisionId,
+          document: await annotationRepository.load(revisionAnnotations.catalogRevisionId)
         };
         if (expectedEtag !== createAnnotationEtag(currentRevisionAnnotations)) {
           return context.json(
@@ -24130,7 +24130,7 @@ function createApp(scope, dependencies = {}) {
         await annotationRepository.save({
           ...revisionAnnotations,
           expectedDocument: currentRevisionAnnotations.document,
-          validateBeforeCommit: () => validateArtifactRevision(scope.path, revisionAnnotations.artifactRevisionId)
+          validateBeforeCommit: () => validateCatalogRevision(scope.path, revisionAnnotations.catalogRevisionId)
         });
         context.header("ETag", createAnnotationEtag(revisionAnnotations));
         return context.json(revisionAnnotations);
@@ -24141,12 +24141,12 @@ function createApp(scope, dependencies = {}) {
             412
           );
         }
-        if (error62 instanceof InvalidArtifactForAnnotationsError) {
+        if (error62 instanceof InvalidCatalogForAnnotationsError) {
           return context.json({ error: { message: error62.message } }, 422);
         }
-        if (error62 instanceof ArtifactRevisionConflictError) {
+        if (error62 instanceof CatalogRevisionConflictError) {
           return context.json(
-            { error: { message: "Artifact changed or is unavailable. Reload before saving annotations." } },
+            { error: { message: "Catalog changed or is unavailable. Reload before saving annotations." } },
             409
           );
         }
@@ -24190,12 +24190,12 @@ function getReadErrorReason(error62) {
   if (error62 instanceof Error && "code" in error62 && typeof error62.code === "string") return error62.code;
   return error62 instanceof Error ? error62.message : "Unknown Annotation read error.";
 }
-async function readAnnotations(scopePath, artifact) {
-  if (artifact.status !== "valid") return null;
-  const artifactRevisionId = createArtifactRevisionId(artifact.artifact);
-  const relativePath = getAnnotationDocumentRelativePath(artifactRevisionId);
+async function readAnnotations(scopePath, catalog) {
+  if (catalog.status !== "valid") return null;
+  const catalogRevisionId = createCatalogRevisionId(catalog.catalog);
+  const relativePath = getAnnotationDocumentRelativePath(catalogRevisionId);
   try {
-    await assertAnnotationDocumentPathIsSafe(scopePath, artifactRevisionId);
+    await assertAnnotationDocumentPathIsSafe(scopePath, catalogRevisionId);
     return await readFile3(join6(scopePath, relativePath), "utf8");
   } catch (error62) {
     if (error62 instanceof Error && "code" in error62 && error62.code === "ENOENT") return null;
@@ -24203,11 +24203,11 @@ async function readAnnotations(scopePath, artifact) {
   }
 }
 async function readReviewFiles(scopePath) {
-  const artifact = await readArtifact(scopePath);
-  const annotations = await readAnnotations(scopePath, artifact);
-  const latestArtifact = await readArtifact(scopePath);
-  if (JSON.stringify(artifact) !== JSON.stringify(latestArtifact)) return void 0;
-  return { artifact: latestArtifact, annotations };
+  const catalog = await readCatalog(scopePath);
+  const annotations = await readAnnotations(scopePath, catalog);
+  const latestCatalog = await readCatalog(scopePath);
+  if (JSON.stringify(catalog) !== JSON.stringify(latestCatalog)) return void 0;
+  return { catalog: latestCatalog, annotations };
 }
 function fingerprint(files) {
   return JSON.stringify(files);
@@ -24233,7 +24233,7 @@ async function createReviewUpdates(scopePath, options = {}) {
     if (nextFingerprint === currentFingerprint) return;
     currentFingerprint = nextFingerprint;
     revision += 1;
-    const update = { revision, status: files.artifact.status };
+    const update = { revision, status: files.catalog.status };
     listeners.forEach((listener) => listener(update));
   }
   function schedule() {
@@ -24309,7 +24309,7 @@ async function startServer(scope, options = {}) {
 async function executeServeCommand(args, options) {
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === void 0) throw new Error("Usage: node serve.js <scope>");
-  const scope = await resolveConsumerScope(scopeInput);
+  const scope = await resolveCompanionScope(scopeInput);
   const serverOptions = options.staticRoot === void 0 ? { hostname: "127.0.0.1", port: 0 } : { hostname: "127.0.0.1", port: 0, staticRoot: options.staticRoot };
   const server = await startServer(scope, serverOptions);
   try {

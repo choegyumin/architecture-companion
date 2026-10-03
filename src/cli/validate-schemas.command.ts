@@ -1,5 +1,5 @@
-import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH, readArtifact } from "@/server/read-artifact";
-import { resolveConsumerScopePath } from "@/server/resolve-consumer-scope";
+import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
+import { resolveCompanionScopePath } from "@/server/resolve-companion-scope";
 
 export type ValidateSchemasCommandOptions = Readonly<{
   writeStdout: (output: string) => void;
@@ -14,15 +14,15 @@ export async function executeValidateSchemasCommand(
     throw new Error("Usage: node validate-schemas.js <scope>");
   }
 
-  const scopePath = await resolveConsumerScopePath(scopeInput);
-  const result = await readArtifact(scopePath);
+  const scopePath = await resolveCompanionScopePath(scopeInput);
+  const result = await readCatalog(scopePath);
 
   if (result.status === "missing") {
-    throw new Error(`Artifact is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
+    throw new Error(`Catalog is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
   }
   if (result.status === "invalid") {
     throw new Error(result.message);
   }
 
-  options.writeStdout("Artifact is valid.\n");
+  options.writeStdout("Catalog is valid.\n");
 }

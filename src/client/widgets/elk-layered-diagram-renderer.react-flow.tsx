@@ -9,7 +9,7 @@ import {
   toMessageReactFlowEdge,
 } from "@/client/widgets/diagram-renderer.react-flow";
 import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/diagram/artifact";
 import type { DiagramLayout, DiagramLayoutEdge } from "@/features/diagram/diagram-spatial";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 
@@ -20,7 +20,7 @@ function toEdgePath(placement: DiagramLayoutEdge): string {
 }
 
 export function buildElkLayeredDiagramReactFlowRenderModel(
-  diagram: Diagram,
+  diagram: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowRenderModel {

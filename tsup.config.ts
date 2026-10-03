@@ -6,8 +6,8 @@ import { defineConfig, type Options } from "tsup";
 import {
   dependencyCruiserBundleBanner,
   dependencyCruiserBundlingPlugin,
-} from "./src/plugins/diagram-generators/js-module-dependency-graph/packaging/dependency-cruiser-bundling";
-import { nodeBundleBanner } from "./src/plugins/diagram-generators/react-component-structure/packaging/node-bundling";
+} from "./src/plugins/artifact-generators/js-module-dependency-graph/packaging/dependency-cruiser-bundling";
+import { nodeBundleBanner } from "./src/plugins/artifact-generators/react-component-structure/packaging/node-bundling";
 
 const nodeBundleOptions = {
   bundle: true,
@@ -49,8 +49,8 @@ export default defineConfig([
   {
     ...nodeBundleOptions,
     entry: {
-      "runtime/diagram-generators/js-module-dependency-graph/run":
-        "src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
+      "runtime/artifact-generators/js-module-dependency-graph/run":
+        "src/plugins/artifact-generators/js-module-dependency-graph/run.ts",
     },
     banner: { js: dependencyCruiserBundleBanner },
     esbuildPlugins: [dependencyCruiserBundlingPlugin],
@@ -58,8 +58,8 @@ export default defineConfig([
   {
     ...nodeBundleOptions,
     entry: {
-      "runtime/diagram-generators/react-component-structure/run":
-        "src/plugins/diagram-generators/react-component-structure/run.ts",
+      "runtime/artifact-generators/react-component-structure/run":
+        "src/plugins/artifact-generators/react-component-structure/run.ts",
     },
     banner: { js: nodeBundleBanner },
   },

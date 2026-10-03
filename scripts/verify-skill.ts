@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
-import { buildComponentGraph } from "@/plugins/diagram-generators/react-component-structure/analysis/build-component-graph";
+import { parseArtifactGeneratorManifest } from "@/features/artifact-generator/artifact-generator-manifest";
+import { buildComponentGraph } from "@/plugins/artifact-generators/react-component-structure/analysis/build-component-graph";
 import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
 import { generatedSchemaFileNames } from "./_schema-generation";
@@ -33,12 +33,12 @@ const expectedTopLevelEntries = [
   "runtime",
   "schemas",
 ] as const;
-const expectedRuntimeEntries = ["cli", "client", "diagram-generators"] as const;
+const expectedRuntimeEntries = ["artifact-generators", "cli", "client"] as const;
 const expectedCliFiles = ["serve.js", "validate-schemas.js", "view-annotations.js", "view-generators.js"] as const;
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repositoryRoot = packageRoot;
 const skillSourceRoot = join(packageRoot, "skills", "architecture-companion");
-const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
+const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "artifact-generators");
 const expectedBuiltInGeneratorFiles = {
   freeform: ["GENERATOR.md"],
   "js-module-dependency-graph": ["GENERATOR.md", "run.js"],
@@ -180,7 +180,7 @@ async function verifyGeneratorResources(rootPath: string): Promise<void> {
     "Built-in generator source directories must be explicit.",
   );
 
-  const installedGeneratorsRoot = join(rootPath, "runtime", "diagram-generators");
+  const installedGeneratorsRoot = join(rootPath, "runtime", "artifact-generators");
   const installedEntries = await readdir(installedGeneratorsRoot, { withFileTypes: true });
   assert.ok(
     installedEntries.every((entry) => entry.isDirectory()),
@@ -422,16 +422,16 @@ async function readExpectedBuiltInGeneratorDescriptors(skillRoot: string): Promi
   for (const { name } of childEntries.filter((entry) => entry.isDirectory())) {
     const manifestPath = join(sourceGeneratorsRoot, name, "GENERATOR.md");
     if (!(await pathExists(manifestPath))) continue;
-    const manifest = parseDiagramGeneratorManifest(await readFile(manifestPath, "utf8"));
+    const manifest = parseArtifactGeneratorManifest(await readFile(manifestPath, "utf8"));
     descriptors.push({
       description: manifest.description,
       id: manifest.id,
-      path: await realpath(join(skillRoot, "runtime", "diagram-generators", name)),
+      path: await realpath(join(skillRoot, "runtime", "artifact-generators", name)),
       source: "built-in",
     });
   }
 
-  assert.ok(descriptors.length > 0, "Built-in diagram generators must ship at least one manifest.");
+  assert.ok(descriptors.length > 0, "Built-in artifact generators must ship at least one manifest.");
   const compareText = (left: string, right: string) => (left < right ? -1 : left > right ? 1 : 0);
   return descriptors.toSorted((left, right) => compareText(left.id, right.id) || compareText(left.path, right.path));
 }
@@ -501,7 +501,7 @@ async function verifyInstalledReactComponentGenerator(
     nodes: ReadonlyArray<{ id: string; title: string }>;
   }>;
 
-  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "react-component-structure", "run.js");
+  const scriptPath = join(skillRoot, "runtime", "artifact-generators", "react-component-structure", "run.js");
   async function generateGraph(extraArguments: readonly string[] = [], sourcePath = "src"): Promise<InstalledGraph> {
     const result = await runInstalledScript(
       scriptPath,
@@ -613,7 +613,7 @@ async function verifyInstalledJsModuleDependencyGenerator(
   );
   await writeFixtureFile(scopePath, "node_modules/installed-package/feature.js", "export default true;\n");
 
-  const scriptPath = join(skillRoot, "runtime", "diagram-generators", "js-module-dependency-graph", "run.js");
+  const scriptPath = join(skillRoot, "runtime", "artifact-generators", "js-module-dependency-graph", "run.js");
   const result = await runInstalledScript(
     scriptPath,
     ["--base", scopePath, "--tsconfig", "tsconfig.json", "src"],

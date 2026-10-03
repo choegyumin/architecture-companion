@@ -1,4 +1,4 @@
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { type StartedServer, startServer } from "@/server/start-server";
 
 export type ServeCommandOptions = Readonly<{
@@ -13,7 +13,7 @@ export async function executeServeCommand(
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === undefined) throw new Error("Usage: node serve.js <scope>");
 
-  const scope = await resolveConsumerScope(scopeInput);
+  const scope = await resolveCompanionScope(scopeInput);
   const serverOptions =
     options.staticRoot === undefined
       ? { hostname: "127.0.0.1", port: 0 }

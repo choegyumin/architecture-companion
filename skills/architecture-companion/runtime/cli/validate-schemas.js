@@ -10,7 +10,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// src/server/read-artifact.ts
+// src/server/read-catalog.ts
 import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 
@@ -19682,6 +19682,9 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
+// src/features/artifact-generator/artifact-generator-reference.ts
+var artifactGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
 // src/features/diagram/diagram-graph.ts
 var diagramIdSchema = external_exports.string().min(1);
 var diagramLinkSchema = external_exports.object({
@@ -19832,20 +19835,17 @@ var diagramLayoutConfigSchema = external_exports.discriminatedUnion("id", [
   dependencyGraphLayoutConfigSchema
 ]);
 
-// src/features/diagram-generator/diagram-generator-reference.ts
-var diagramGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
-
-// src/features/diagram/diagram.ts
-var artifactDiagramIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Diagram ID must be lowercase kebab-case (letters, digits, hyphens)");
-var diagramSchema = external_exports.object({
-  id: artifactDiagramIdSchema,
+// src/features/diagram/artifact.ts
+var artifactIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
+var artifactSchema = external_exports.object({
+  id: artifactIdSchema,
   title: external_exports.string().min(1),
   updatedAt: external_exports.string().datetime(),
   vcs: external_exports.object({
     revision: external_exports.string().min(1),
     divergesFromRevision: external_exports.boolean()
   }).strict().optional(),
-  generator: diagramGeneratorReferenceSchema,
+  generator: artifactGeneratorReferenceSchema,
   instructions: external_exports.string().min(1),
   layout: diagramLayoutConfigSchema,
   links: external_exports.array(diagramLinkSchema).readonly().optional(),
@@ -20081,43 +20081,6 @@ var diagramSchema = external_exports.object({
     }
   });
 });
-function parseDiagram(input2) {
-  const result = diagramSchema.safeParse(input2);
-  if (!result.success) {
-    const messages = result.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid diagram: ${messages}`, { cause: result.error });
-  }
-  return result.data;
-}
-
-// src/features/artifact/artifact.ts
-var artifactSchema = external_exports.object({
-  behaviors: external_exports.array(diagramSchema),
-  designs: external_exports.array(diagramSchema)
-}).strict().superRefine((artifact, context) => {
-  const behaviorIds = /* @__PURE__ */ new Set();
-  artifact.behaviors.forEach((diagram, index) => {
-    if (behaviorIds.has(diagram.id)) {
-      context.addIssue({
-        code: "custom",
-        path: ["behaviors", index, "id"],
-        message: `Duplicate behavior ID: ${diagram.id}`
-      });
-    }
-    behaviorIds.add(diagram.id);
-  });
-  const designIds = /* @__PURE__ */ new Set();
-  artifact.designs.forEach((diagram, index) => {
-    if (designIds.has(diagram.id)) {
-      context.addIssue({
-        code: "custom",
-        path: ["designs", index, "id"],
-        message: `Duplicate design ID: ${diagram.id}`
-      });
-    }
-    designIds.add(diagram.id);
-  });
-});
 function parseArtifact(input2) {
   const result = artifactSchema.safeParse(input2);
   if (!result.success) {
@@ -20127,48 +20090,85 @@ function parseArtifact(input2) {
   return result.data;
 }
 
-// src/server/validate-artifact.ts
-function validateArtifact(input2) {
-  return parseArtifact(input2);
+// src/features/catalog/catalog.ts
+var companionCatalogSchema = external_exports.object({
+  behaviors: external_exports.array(artifactSchema),
+  designs: external_exports.array(artifactSchema)
+}).strict().superRefine((catalog, context) => {
+  const behaviorIds = /* @__PURE__ */ new Set();
+  catalog.behaviors.forEach((artifact, index) => {
+    if (behaviorIds.has(artifact.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["behaviors", index, "id"],
+        message: `Duplicate behavior ID: ${artifact.id}`
+      });
+    }
+    behaviorIds.add(artifact.id);
+  });
+  const designIds = /* @__PURE__ */ new Set();
+  catalog.designs.forEach((artifact, index) => {
+    if (designIds.has(artifact.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["designs", index, "id"],
+        message: `Duplicate design ID: ${artifact.id}`
+      });
+    }
+    designIds.add(artifact.id);
+  });
+});
+function parseCatalog(input2) {
+  const result = companionCatalogSchema.safeParse(input2);
+  if (!result.success) {
+    const messages = result.error.issues.map(({ message }) => message).join("; ");
+    throw new Error(`Invalid catalog: ${messages}`, { cause: result.error });
+  }
+  return result.data;
 }
 
-// src/server/read-artifact.ts
+// src/server/validate-catalog.ts
+function validateCatalog(input2) {
+  return parseCatalog(input2);
+}
+
+// src/server/read-catalog.ts
 var BEHAVIORS_RELATIVE_PATH = ".architecture-companion/behaviors";
 var DESIGNS_RELATIVE_PATH = ".architecture-companion/designs";
-var DIAGRAM_FILE_SUFFIX = ".json";
-var DIAGRAM_FILE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*\.json$/;
-var artifactKinds = [
+var ARTIFACT_FILE_SUFFIX = ".json";
+var ARTIFACT_FILE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*\.json$/;
+var catalogKinds = [
   { key: "behaviors", relativePath: BEHAVIORS_RELATIVE_PATH },
   { key: "designs", relativePath: DESIGNS_RELATIVE_PATH }
 ];
 function isFileSystemError(error62, code) {
   return error62 instanceof Error && "code" in error62 && error62.code === code;
 }
-async function readDiagramFile(scopePath, relativePath, fileName) {
+async function readArtifactFile(scopePath, relativePath, fileName) {
   const filePath = join(relativePath, fileName);
   let input2;
   try {
     input2 = JSON.parse(await readFile(join(scopePath, filePath), "utf8"));
   } catch {
-    return `Artifact contains invalid JSON: ${filePath}`;
+    return `Catalog contains invalid JSON: ${filePath}`;
   }
   try {
-    const diagram = parseDiagram(input2);
-    if (diagram.id !== fileName.slice(0, -DIAGRAM_FILE_SUFFIX.length)) {
-      return `Diagram file name does not match the diagram ID: ${filePath} must be ${diagram.id}.json`;
+    const artifact = parseArtifact(input2);
+    if (artifact.id !== fileName.slice(0, -ARTIFACT_FILE_SUFFIX.length)) {
+      return `Artifact file name does not match the artifact ID: ${filePath} must be ${artifact.id}.json`;
     }
-    return diagram;
+    return artifact;
   } catch (error62) {
     const detail = error62 instanceof Error ? error62.message : "Unknown validation error";
-    return `Artifact is invalid: ${filePath}. ${detail}`;
+    return `Catalog is invalid: ${filePath}. ${detail}`;
   }
 }
-async function readArtifact(scopePath) {
+async function readCatalog(scopePath) {
   const errors = [];
   const behaviors = [];
   const designs = [];
   let missingKinds = 0;
-  for (const { key, relativePath } of artifactKinds) {
+  for (const { key, relativePath } of catalogKinds) {
     let entries;
     try {
       entries = (await readdir(join(scopePath, relativePath))).toSorted();
@@ -20180,28 +20180,28 @@ async function readArtifact(scopePath) {
       throw error62;
     }
     for (const entry of entries) {
-      if (!DIAGRAM_FILE_NAME_PATTERN.test(entry)) {
-        errors.push(`Unexpected artifact entry: ${join(relativePath, entry)}`);
+      if (!ARTIFACT_FILE_NAME_PATTERN.test(entry)) {
+        errors.push(`Unexpected catalog entry: ${join(relativePath, entry)}`);
         continue;
       }
-      const diagram = await readDiagramFile(scopePath, relativePath, entry);
-      if (typeof diagram === "string") {
-        errors.push(diagram);
+      const artifact = await readArtifactFile(scopePath, relativePath, entry);
+      if (typeof artifact === "string") {
+        errors.push(artifact);
         continue;
       }
-      (key === "behaviors" ? behaviors : designs).push(diagram);
+      (key === "behaviors" ? behaviors : designs).push(artifact);
     }
   }
-  if (missingKinds === artifactKinds.length) return { status: "missing" };
+  if (missingKinds === catalogKinds.length) return { status: "missing" };
   if (errors.length > 0) return { status: "invalid", message: errors.join("; ") };
-  const artifact = validateArtifact({ behaviors, designs });
-  return { status: "valid", artifact };
+  const catalog = validateCatalog({ behaviors, designs });
+  return { status: "valid", catalog };
 }
 
-// src/server/resolve-consumer-scope.ts
+// src/server/resolve-companion-scope.ts
 import { realpath, stat } from "fs/promises";
 import { dirname, join as join2 } from "path";
-async function resolveConsumerScopePath(inputPath) {
+async function resolveCompanionScopePath(inputPath) {
   let inputStat;
   try {
     inputStat = await stat(inputPath);
@@ -20223,15 +20223,15 @@ async function executeValidateSchemasCommand(args, options) {
   if (args.length !== 1 || scopeInput === void 0) {
     throw new Error("Usage: node validate-schemas.js <scope>");
   }
-  const scopePath = await resolveConsumerScopePath(scopeInput);
-  const result = await readArtifact(scopePath);
+  const scopePath = await resolveCompanionScopePath(scopeInput);
+  const result = await readCatalog(scopePath);
   if (result.status === "missing") {
-    throw new Error(`Artifact is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
+    throw new Error(`Catalog is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
   }
   if (result.status === "invalid") {
     throw new Error(result.message);
   }
-  options.writeStdout("Artifact is valid.\n");
+  options.writeStdout("Catalog is valid.\n");
 }
 
 // src/cli/validate-schemas.ts
@@ -20240,7 +20240,7 @@ try {
     writeStdout: (output2) => process.stdout.write(output2)
   });
 } catch (error62) {
-  const message = error62 instanceof Error ? error62.message : "Architecture Companion failed to validate Artifact schemas.";
+  const message = error62 instanceof Error ? error62.message : "Architecture Companion failed to validate CompanionCatalog schemas.";
   process.stderr.write(`${message}
 `);
   process.exitCode = 1;

@@ -50,7 +50,7 @@ describe("DataClient", () => {
   it("cannot read comments when the response has no ETag", async () => {
     const fetcher: typeof fetch = vi.fn(
       async () =>
-        new Response(JSON.stringify({ artifactRevisionId: "a".repeat(64), document: { annotations: [] } }), {
+        new Response(JSON.stringify({ catalogRevisionId: "a".repeat(64), document: { annotations: [] } }), {
           status: 200,
         }),
     );
@@ -59,8 +59,8 @@ describe("DataClient", () => {
     await expect(client.getAnnotations()).rejects.toThrow("Annotation response is missing its revision.");
   });
 
-  it("sends the read Artifact revision and ETag with the Annotation save request", async () => {
-    const artifactRevisionId = "a".repeat(64);
+  it("sends the read Catalog revision and ETag with the Annotation save request", async () => {
+    const catalogRevisionId = "a".repeat(64);
     const initialDocument = { annotations: [] };
     const savedDocument = {
       annotations: [
@@ -79,36 +79,36 @@ describe("DataClient", () => {
     const fetcher: typeof fetch = vi.fn(async (input, init) => {
       const request = new Request(input, init);
       if (request.method === "GET") {
-        return new Response(JSON.stringify({ artifactRevisionId, document: initialDocument }), {
+        return new Response(JSON.stringify({ catalogRevisionId, document: initialDocument }), {
           headers: { ETag: '"initial"' },
         });
       }
 
       expect(request.headers.get("If-Match")).toBe('"initial"');
-      await expect(request.json()).resolves.toEqual({ artifactRevisionId, document: savedDocument });
-      return new Response(JSON.stringify({ artifactRevisionId, document: savedDocument }), {
+      await expect(request.json()).resolves.toEqual({ catalogRevisionId, document: savedDocument });
+      return new Response(JSON.stringify({ catalogRevisionId, document: savedDocument }), {
         headers: { ETag: '"saved"' },
       });
     });
     const client = createDataClient(baseUrl, fetcher);
     const initial = await client.getAnnotations();
 
-    expect(initial).toEqual({ artifactRevisionId, document: initialDocument });
+    expect(initial).toEqual({ catalogRevisionId, document: initialDocument });
     if (initial.document === null) throw new Error("Expected active revision annotations.");
     await expect(client.saveAnnotations(savedDocument, initial.document)).resolves.toEqual(savedDocument);
   });
 
-  it("returns no active Annotation revision when the Artifact is missing or invalid", async () => {
+  it("returns no active Annotation revision when the Catalog is missing or invalid", async () => {
     const fetcher: typeof fetch = vi.fn(
       async () =>
-        new Response(JSON.stringify({ error: { message: "Artifact is invalid." } }), {
+        new Response(JSON.stringify({ error: { message: "Catalog is invalid." } }), {
           status: 422,
         }),
     );
     const client = createDataClient(baseUrl, fetcher);
 
     await expect(client.getAnnotations()).resolves.toEqual({
-      artifactRevisionId: null,
+      catalogRevisionId: null,
       document: null,
     });
   });
@@ -128,7 +128,7 @@ describe("DataClient", () => {
         new Response(
           JSON.stringify({
             scope: { isGitRepository: false, path: "/consumer" },
-            artifact: {
+            catalog: {
               behaviors: [diagram("invite", "Invite member"), diagram("checkout", "Checkout workflow")],
               designs: [diagram("structure", "Structure"), diagram("catalog", "Catalog")],
             },
@@ -139,7 +139,7 @@ describe("DataClient", () => {
 
     const review = await createDataClient(baseUrl, fetcher).getReview();
 
-    expect(review.artifact?.behaviors.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
-    expect(review.artifact?.designs.map(({ title }) => title)).toEqual(["Catalog", "Structure"]);
+    expect(review.catalog?.behaviors.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
+    expect(review.catalog?.designs.map(({ title }) => title)).toEqual(["Catalog", "Structure"]);
   });
 });

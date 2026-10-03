@@ -41,9 +41,9 @@ describe("generateSchemaSources", () => {
       required: ["groups", "nodes", "edges"],
       additionalProperties: false,
     });
-    expect(parseJsonObject(first["diagram.schema.json"])).toMatchObject({
+    expect(parseJsonObject(first["artifact.schema.json"])).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "./diagram.schema.json",
+      $id: "./artifact.schema.json",
       type: "object",
       required: ["id", "title", "updatedAt", "generator", "instructions", "layout", "graph"],
       additionalProperties: false,

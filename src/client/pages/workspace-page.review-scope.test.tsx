@@ -7,7 +7,7 @@ import { render, screen } from "@testing-library/react";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
 function isReviewEventRequest(input: RequestInfo | URL): boolean {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -19,7 +19,7 @@ describe("local review scope", () => {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-"));
 
     try {
-      const scope = await resolveConsumerScope(temporaryRoot);
+      const scope = await resolveCompanionScope(temporaryRoot);
       const app = createApp(scope);
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
         app.request(input, init),

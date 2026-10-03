@@ -1,16 +1,16 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import {
   assertAnnotationDocumentPathIsSafe,
   getAnnotationDocumentRelativePath,
 } from "@/server/file-annotation-repository";
-import { readArtifact, type ReadArtifactResult } from "@/server/read-artifact";
+import { readCatalog, type ReadCatalogResult } from "@/server/read-catalog";
 
 export type ReviewUpdate = Readonly<{
   revision: number;
-  status: ReadArtifactResult["status"];
+  status: ReadCatalogResult["status"];
 }>;
 
 type ReviewUpdateListener = (update: ReviewUpdate) => void;
@@ -27,7 +27,7 @@ type ReviewUpdateOptions = Readonly<{
 type AnnotationFingerprint = string | null | Readonly<{ status: "unreadable"; reason: string }>;
 
 type ReviewFiles = Readonly<{
-  artifact: ReadArtifactResult;
+  catalog: ReadCatalogResult;
   annotations: AnnotationFingerprint;
 }>;
 
@@ -36,14 +36,14 @@ function getReadErrorReason(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown Annotation read error.";
 }
 
-async function readAnnotations(scopePath: string, artifact: ReadArtifactResult): Promise<AnnotationFingerprint> {
-  if (artifact.status !== "valid") return null;
+async function readAnnotations(scopePath: string, catalog: ReadCatalogResult): Promise<AnnotationFingerprint> {
+  if (catalog.status !== "valid") return null;
 
-  const artifactRevisionId = createArtifactRevisionId(artifact.artifact);
-  const relativePath = getAnnotationDocumentRelativePath(artifactRevisionId);
+  const catalogRevisionId = createCatalogRevisionId(catalog.catalog);
+  const relativePath = getAnnotationDocumentRelativePath(catalogRevisionId);
 
   try {
-    await assertAnnotationDocumentPathIsSafe(scopePath, artifactRevisionId);
+    await assertAnnotationDocumentPathIsSafe(scopePath, catalogRevisionId);
     return await readFile(join(scopePath, relativePath), "utf8");
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") return null;
@@ -52,12 +52,12 @@ async function readAnnotations(scopePath: string, artifact: ReadArtifactResult):
 }
 
 async function readReviewFiles(scopePath: string): Promise<ReviewFiles | undefined> {
-  const artifact = await readArtifact(scopePath);
-  const annotations = await readAnnotations(scopePath, artifact);
-  const latestArtifact = await readArtifact(scopePath);
+  const catalog = await readCatalog(scopePath);
+  const annotations = await readAnnotations(scopePath, catalog);
+  const latestCatalog = await readCatalog(scopePath);
 
-  if (JSON.stringify(artifact) !== JSON.stringify(latestArtifact)) return undefined;
-  return { artifact: latestArtifact, annotations };
+  if (JSON.stringify(catalog) !== JSON.stringify(latestCatalog)) return undefined;
+  return { catalog: latestCatalog, annotations };
 }
 
 function fingerprint(files: ReviewFiles): string {
@@ -93,7 +93,7 @@ export async function createReviewUpdates(
 
     currentFingerprint = nextFingerprint;
     revision += 1;
-    const update = { revision, status: files.artifact.status } as const;
+    const update = { revision, status: files.catalog.status } as const;
     listeners.forEach((listener) => listener(update));
   }
 

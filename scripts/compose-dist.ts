@@ -6,8 +6,8 @@ import { writeSchemaFiles } from "./_schema-synchronization";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const distributionRoot = join(packageRoot, "skills", "architecture-companion");
-const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "diagram-generators");
-const distributionGeneratorsRoot = join(distributionRoot, "runtime", "diagram-generators");
+const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "artifact-generators");
+const distributionGeneratorsRoot = join(distributionRoot, "runtime", "artifact-generators");
 
 await writeSchemaFiles(join(distributionRoot, "schemas"));
 await mkdir(distributionGeneratorsRoot, { recursive: true });

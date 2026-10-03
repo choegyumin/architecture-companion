@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-graph-diagram-renderer";
 import type { DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/diagram/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const diagram = {
@@ -32,7 +32,7 @@ const diagram = {
       { id: "one-two", type: "default", source: "one", target: "two" },
     ],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 const layout = {
   groups: [
@@ -81,14 +81,14 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
     onPaneActivate,
   }: {
     buildRenderModel: (
-      diagram: Diagram,
+      diagram: Artifact,
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => ReturnType<
       typeof import("@/client/widgets/dependency-graph-diagram-renderer.react-flow").buildDependencyGraphDiagramReactFlowRenderModel
     >;
     children?: ReactNode;
-    diagram: Diagram;
+    diagram: Artifact;
     onOpenSource: (href: string) => void;
     onGroupActivate?: (id: string) => void;
     onNodeActivate?: (id: string) => void;

@@ -1,7 +1,7 @@
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import type { RevisionAnnotationRepository } from "@/server/file-annotation-repository";
-import { readArtifact } from "@/server/read-artifact";
+import { readCatalog } from "@/server/read-catalog";
 
 export type ReadActiveRevisionAnnotationsResult =
   | Readonly<{ status: "invalid"; message: string }>
@@ -15,23 +15,23 @@ export async function readActiveRevisionAnnotations(
   scopePath: string,
   annotationRepository: RevisionAnnotationRepository,
 ): Promise<ReadActiveRevisionAnnotationsResult> {
-  const artifactResult = await readArtifact(scopePath);
-  if (artifactResult.status === "invalid") return artifactResult;
-  if (artifactResult.status === "missing") {
+  const catalogResult = await readCatalog(scopePath);
+  if (catalogResult.status === "invalid") return catalogResult;
+  if (catalogResult.status === "missing") {
     return {
       status: "valid",
-      revisionAnnotations: { artifactRevisionId: null, document: null },
+      revisionAnnotations: { catalogRevisionId: null, document: null },
     };
   }
 
-  const artifactRevisionId = createArtifactRevisionId(artifactResult.artifact);
+  const catalogRevisionId = createCatalogRevisionId(catalogResult.catalog);
 
   try {
     return {
       status: "valid",
       revisionAnnotations: {
-        artifactRevisionId,
-        document: await annotationRepository.load(artifactRevisionId),
+        catalogRevisionId,
+        document: await annotationRepository.load(catalogRevisionId),
       },
     };
   } catch (error) {

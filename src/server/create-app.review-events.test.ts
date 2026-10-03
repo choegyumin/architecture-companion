@@ -3,15 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createDataClient } from "@/client/data-client";
-import type { Artifact } from "@/features/artifact/artifact";
-import type { ConsumerScope } from "@/server/consumer-scope";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
+import type { CompanionScope } from "@/server/companion-scope";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
-function artifact(title: string): Artifact {
+function catalog(title: string): CompanionCatalog {
   return {
     behaviors: [
       {
@@ -33,10 +33,10 @@ function artifact(title: string): Artifact {
   };
 }
 
-async function writeAnnotations(scopePath: string, activeArtifact: Artifact, body: string): Promise<void> {
+async function writeAnnotations(scopePath: string, activeArtifact: CompanionCatalog, body: string): Promise<void> {
   await mkdir(join(scopePath, ".architecture-companion/annotations"), { recursive: true });
   await writeFile(
-    join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(activeArtifact))),
+    join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(activeArtifact))),
     JSON.stringify({
       annotations: [
         {
@@ -57,16 +57,16 @@ async function writeAnnotations(scopePath: string, activeArtifact: Artifact, bod
 describe("review events", () => {
   it("delivers only external changes for the current revision over the Hono event stream", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-events-"));
-    const initialArtifact = artifact("Checkout requested");
-    const changedArtifact = artifact("Checkout started");
+    const initialArtifact = catalog("Checkout requested");
+    const changedArtifact = catalog("Checkout started");
     let updates: ReviewUpdates | undefined;
     let unsubscribe: () => void = () => undefined;
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, initialArtifact);
+      await writeCatalog(scopePath, initialArtifact);
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
-      const scope: ConsumerScope = { isGitRepository: false, path: scopePath };
+      const scope: CompanionScope = { isGitRepository: false, path: scopePath };
       const app = createApp(scope, { reviewUpdates: updates });
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
         app.request(input, init),
@@ -82,7 +82,7 @@ describe("review events", () => {
       await writeAnnotations(scopePath, initialArtifact, "Review the request");
       await vi.waitFor(() => expect(eventsSeen).toBe(2));
 
-      await writeArtifact(scopePath, changedArtifact);
+      await writeCatalog(scopePath, changedArtifact);
       await vi.waitFor(() => expect(eventsSeen).toBe(3));
 
       await writeAnnotations(scopePath, changedArtifact, "Review the started checkout");
