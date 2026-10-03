@@ -1,6 +1,7 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 
 import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 
@@ -34,13 +35,58 @@ async function withFixture(
         await writeFile(filePath, content);
       }),
     );
+    await mkdir(join(scopePath, "node_modules"), { recursive: true });
+    await symlink(
+      dirname(dirname(createRequire(import.meta.url).resolve("typescript"))),
+      join(scopePath, "node_modules/typescript"),
+      "junction",
+    );
     await run(scopePath);
   } finally {
     await rm(scopePath, { recursive: true });
   }
 }
 
+async function withNpmFixture(scopePath: string, source: string, run: () => Promise<void>): Promise<void> {
+  const binPath = join(scopePath, "bin");
+  const temporaryPath = join(scopePath, "temporary");
+  await mkdir(binPath);
+  await mkdir(temporaryPath);
+  const scriptPath = join(binPath, "npm-fixture.cjs");
+  await writeFile(scriptPath, source);
+  const commandPath = join(binPath, process.platform === "win32" ? "npm.cmd" : "npm");
+  await writeFile(
+    commandPath,
+    process.platform === "win32"
+      ? `@"${process.execPath}" "${scriptPath}" %*\r\n`
+      : `#!/bin/sh\nexec "${process.execPath}" "${scriptPath}" "$@"\n`,
+  );
+  await chmod(commandPath, 0o755);
+  vi.stubEnv("PATH", `${binPath}${delimiter}${process.env.PATH ?? ""}`);
+  for (const name of ["TMPDIR", "TEMP", "TMP"]) vi.stubEnv(name, temporaryPath);
+  try {
+    await run();
+  } finally {
+    vi.unstubAllEnvs();
+  }
+}
+
 describe("React component structure command", () => {
+  it("fails without a graph candidate when fallback installation fails", async () => {
+    await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
+      await rm(join(scopePath, "node_modules/typescript"), { recursive: true });
+      await withNpmFixture(scopePath, `process.stderr.write("registry unavailable\\n"); process.exit(1);`, async () => {
+        const outputs: string[] = [];
+        await expect(
+          executeReactComponentStructureCommand(["--base", scopePath, "src"], {
+            writeStdout: (output) => outputs.push(output),
+          }),
+        ).rejects.toThrow("Cannot install fallback TypeScript");
+        expect(outputs).toEqual([]);
+      });
+    });
+  });
+
   it("rejects caller-selected output paths", async () => {
     await withFixture({ "src/app.tsx": `export function App() { return <main />; }` }, async (scopePath) => {
       const outputs: string[] = [];
