@@ -8,6 +8,7 @@ import { writeArtifact } from "@/server/write-artifact";
 const checkoutBehavior = {
   id: "checkout",
   title: "Checkout workflow",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
   layout: { id: "elk-layered" },
@@ -69,15 +70,19 @@ describe("split artifact reading", () => {
     const scopePath = await createScope();
 
     try {
-      await writeArtifact(scopePath, {
+      const artifact = {
         behaviors: [checkoutBehavior],
-        designs: [{ ...checkoutBehavior, title: "Checkout structure" }],
-      });
+        designs: [
+          {
+            ...checkoutBehavior,
+            title: "Checkout structure",
+            vcs: { revision: "r1842", divergesFromRevision: true },
+          },
+        ],
+      };
+      await writeArtifact(scopePath, artifact);
 
-      await expect(readArtifact(scopePath)).resolves.toMatchObject({
-        status: "valid",
-        artifact: { behaviors: [{ id: "checkout" }], designs: [{ id: "checkout" }] },
-      });
+      await expect(readArtifact(scopePath)).resolves.toEqual({ status: "valid", artifact });
     } finally {
       await rm(scopePath, { recursive: true });
     }

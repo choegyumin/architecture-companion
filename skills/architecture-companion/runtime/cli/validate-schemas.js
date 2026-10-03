@@ -19840,6 +19840,11 @@ var artifactDiagramIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-
 var diagramSchema = external_exports.object({
   id: artifactDiagramIdSchema,
   title: external_exports.string().min(1),
+  updatedAt: external_exports.string().datetime(),
+  vcs: external_exports.object({
+    revision: external_exports.string().min(1),
+    divergesFromRevision: external_exports.boolean()
+  }).strict().optional(),
   generator: diagramGeneratorReferenceSchema,
   instructions: external_exports.string().min(1),
   layout: diagramLayoutConfigSchema,

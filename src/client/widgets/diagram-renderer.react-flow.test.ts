@@ -8,6 +8,7 @@ import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const sequenceDiagram = {
   id: "sequence",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Sequence",
   generator: "built-in:freeform",
   instructions:

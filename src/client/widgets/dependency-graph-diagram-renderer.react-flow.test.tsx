@@ -4,6 +4,7 @@ import type { Diagram } from "@/features/diagram/diagram";
 
 const diagram = {
   id: "dependencies",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",

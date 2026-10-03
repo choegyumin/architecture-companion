@@ -3,6 +3,7 @@ import { parseArtifact } from "@/features/artifact/artifact";
 const validBehavior = {
   id: "checkout",
   title: "Checkout workflow",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout payment flow.\n\n## Regeneration\nRebuild submission, validation, capture, and confirmation steps.",
@@ -31,6 +32,39 @@ const validArtifact = {
 describe("artifact parsing", () => {
   it("preserves a valid diagram artifact", () => {
     expect(parseArtifact(validArtifact)).toEqual(validArtifact);
+  });
+
+  it.each([
+    { revision: "r1842", divergesFromRevision: false },
+    { revision: "6d8c2d3b21d2647166542072ba757b1b57d496cf", divergesFromRevision: true },
+  ])("preserves authoring metadata in behaviors and designs: $revision", (vcs) => {
+    const diagram = { ...validBehavior, vcs };
+    const artifact = { behaviors: [diagram], designs: [diagram] };
+
+    expect(parseArtifact(artifact)).toEqual(artifact);
+  });
+
+  it.each([undefined, null, "", "not-a-date", "2026-10-03", "2026-10-03T09:15:00", "2026-10-03T09:15:00+09:00"])(
+    "rejects a missing or non-UTC authoring timestamp: %s",
+    (updatedAt) => {
+      const artifact = { ...validArtifact, behaviors: [{ ...validBehavior, updatedAt }] };
+
+      expect(() => parseArtifact(artifact)).toThrow("Invalid artifact");
+    },
+  );
+
+  it.each([
+    null,
+    {},
+    { revision: "r1842" },
+    { divergesFromRevision: false },
+    { revision: "", divergesFromRevision: false },
+    { revision: "r1842", divergesFromRevision: "false" },
+    { revision: "r1842", divergesFromRevision: false, dirty: true },
+  ])("rejects incomplete or invalid VCS metadata: %j", (vcs) => {
+    const artifact = { ...validArtifact, behaviors: [{ ...validBehavior, vcs }] };
+
+    expect(() => parseArtifact(artifact)).toThrow("Invalid artifact");
   });
 
   it("allows an artifact with no behaviors", () => {
@@ -122,6 +156,7 @@ describe("artifact parsing", () => {
     const diagram = {
       id: "structure",
       title: "Structure",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
@@ -142,6 +177,7 @@ describe("artifact parsing", () => {
     const diagram = {
       id: "structure",
       title: "Structure",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",

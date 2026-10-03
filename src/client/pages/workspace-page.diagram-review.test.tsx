@@ -14,6 +14,7 @@ import { writeArtifact } from "@/server/write-artifact";
 
 const checkoutDiagram = {
   id: "checkout-structure",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Checkout structure",
   generator: "built-in:freeform",
   instructions:
@@ -72,6 +73,7 @@ const checkoutDiagram = {
 };
 const catalogDiagram = {
   id: "catalog-structure",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Catalog structure",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview product browsing ownership.\n\n## Regeneration\nRebuild the catalog page boundary.",
@@ -108,6 +110,7 @@ const designArtifact = {
         edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
       },
       id: "checkout",
+      updatedAt: "2026-10-03T09:15:00.000Z",
     },
   ],
   designs: [checkoutDiagram, catalogDiagram],
@@ -117,6 +120,7 @@ const processArtifact = {
   behaviors: [
     {
       id: "invite-member",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
       instructions:
@@ -139,6 +143,7 @@ const processArtifact = {
     },
     {
       id: "remove-member",
+      updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Remove member",
       generator: "built-in:freeform",
       instructions:
@@ -254,6 +259,7 @@ describe("dependency graph review", () => {
       designs: [
         {
           id: "dependencies",
+          updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Dependencies",
           generator: "built-in:freeform",
           instructions:
@@ -299,6 +305,7 @@ describe("process (product workflow) review", () => {
       behaviors: [
         {
           id: "request-response",
+          updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Request response",
           generator: "built-in:freeform",
           instructions:

@@ -11,6 +11,7 @@ import { writeArtifact } from "@/server/write-artifact";
 const checkoutBehavior = {
   id: "checkout",
   title: "Workflow",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",

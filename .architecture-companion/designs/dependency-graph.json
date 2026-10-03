@@ -1,6 +1,11 @@
 {
   "id": "dependency-graph",
   "title": "JavaScript module dependency graph",
+  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "vcs": {
+    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "divergesFromRevision": false
+  },
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/diagram-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
   "layout": {

@@ -24,6 +24,16 @@ Preserve diagrams unrelated to the request. Keep existing IDs for diagrams and g
 
 Architecture Companion calculates coordinates and dimensions, so do not store them in the artifact.
 
+## Authoring metadata
+
+- `updatedAt`: Record the current content's completion time from the system clock in UTC ISO 8601. Do not refresh it on reads, validation, unchanged saves, or Annotation changes.
+- `vcs.revision`: Record the code revision used as the basis, not the artifact's own commit or internal artifact revision ID. Use the version control system's native identifier; for Git, use the full commit hash. Omit `vcs` entirely when no version-controlled code basis exists.
+- `vcs.divergesFromRevision`: Set to `true` only when the represented behavior, structure, or design differs from that revision, including uncommitted implementation changes or unimplemented proposals; otherwise use `false`. Do not infer divergence from working-tree status or post-generation edits. Source interpretation, summarization, and intentional presentation refinements recorded in `instructions` do not by themselves constitute divergence.
+
+On content changes, update `updatedAt`; if `vcs` is present, reassess `divergesFromRevision`. Retain `revision` unless the code basis changes; when it does, verify retained content against the new basis and set both VCS fields together.
+
+For existing artifacts, recover trustworthy metadata or reauthor the content and record its new completion time. Do not invent historical timestamps or revisions; file modification times or the current clock alone are not sufficient evidence.
+
 ## Generators and regeneration context
 
 For each generated or regenerated diagram, set `generator` to the selected descriptor's `source` and logical `id` as `<source>:<id>`. Reading an artifact must not require that generator to be installed.

@@ -23,6 +23,7 @@ function artifact(title: string): Artifact {
       {
         id: "checkout",
         title,
+        updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",

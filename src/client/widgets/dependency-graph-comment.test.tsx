@@ -19,6 +19,7 @@ const sizes = {
 };
 const diagram = {
   id: "dependencies",
+  updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",
   instructions:

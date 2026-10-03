@@ -6,6 +6,7 @@ import type { Diagram } from "@/features/diagram/diagram";
 function createDiagram(id: string, title: string): Diagram {
   return {
     id,
+    updatedAt: "2026-10-03T09:15:00.000Z",
     title,
     generator: "built-in:freeform",
     instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} workflow.`,

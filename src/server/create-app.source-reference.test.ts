@@ -15,6 +15,7 @@ function artifact() {
       {
         id: "checkout",
         title: "Checkout workflow",
+        updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
@@ -30,6 +31,7 @@ function artifact() {
       {
         id: "structure",
         title: "Checkout structure",
+        updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout input ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts.",

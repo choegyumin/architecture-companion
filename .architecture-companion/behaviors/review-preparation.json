@@ -1,6 +1,11 @@
 {
   "id": "review-preparation",
   "title": "Prepare Review URL (Skill trigger)",
+  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "vcs": {
+    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "divergesFromRevision": false
+  },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
   "layout": {

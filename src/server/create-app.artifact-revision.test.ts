@@ -13,6 +13,7 @@ function artifact(title: string) {
     behaviors: [
       {
         title: "Workflow",
+        updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
