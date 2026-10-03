@@ -111,6 +111,25 @@ describe("dependency edge projection", () => {
     ).toEqual(projected);
   });
 
+  it("reads each group's parent once when nodes share ancestor paths", () => {
+    const parentReads = new Map<string, number>();
+    const shared = {
+      ...graph,
+      groups: graph.groups.map((group) => ({
+        ...group,
+        get parentId() {
+          parentReads.set(group.id, (parentReads.get(group.id) ?? 0) + 1);
+          return "parentId" in group ? group.parentId : undefined;
+        },
+      })),
+    } satisfies DiagramGraph;
+
+    expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
+    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(1);
+    expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
+    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(2);
+  });
+
   it("shows every relationship as original edges when the graph has no groups", () => {
     const plain = {
       groups: [],
@@ -196,13 +215,19 @@ describe("dependency edge projection", () => {
       ...graph,
       edges: [...graph.edges, { id: 'aggregate:["app","api"]', type: "default", source: "app-a", target: "api-file" }],
     } as const satisfies DiagramGraph;
-    const projected = projectDependencyEdges(colliding);
-    const aggregate = projected.find(
-      (edge) => edge.type === "aggregate" && edge.sourceId === "app" && edge.targetId === "api",
-    );
-    expect(aggregate?.type).toBe("aggregate");
-    if (aggregate?.type !== "aggregate") throw new Error("Missing aggregate");
-    expect(aggregate.id).not.toBe('aggregate:["app","api"]');
+    for (const focus of [undefined, { type: "group", id: "app" }] as const) {
+      const projected = projectDependencyEdges(colliding, focus);
+      const aggregate = projected.find(
+        (edge) => edge.type === "aggregate" && edge.sourceId === "app" && edge.targetId === "api",
+      );
+      expect(aggregate).toEqual({
+        type: "aggregate",
+        id: 'aggregate:["app","api"]:',
+        sourceId: "app",
+        targetId: "api",
+        edgeIds: ["app-a-to-api", "app-b-to-api", "page-to-api", 'aggregate:["app","api"]'],
+      });
+    }
     expect(() => projectDependencyEdges(graph, { type: "aggregate", edgeIds: ["unknown"] })).toThrow(
       "Missing focused aggregate edge: unknown",
     );
