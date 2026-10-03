@@ -65,13 +65,15 @@ On success, the command creates a graph file in the operating system's temporary
 { "graphPath": "/temporary/path/graph.json" }
 ```
 
-This file contains only a candidate `Diagram.graph` with `groups`, `nodes`, and `edges`. It is not a complete Architecture Companion artifact; do not copy it as a standalone artifact file.
+This file contains a candidate `Diagram.graph` with `groups`, `nodes`, `edges`, and `componentStructure` metadata. It is not a complete Architecture Companion artifact; do not copy it as a standalone artifact file. Preserve the metadata when integrating the graph so the component structure renderer can display origins and rendering controls.
 
 ## Interpretation and integration
 
-Each node represents a component definition in one verified composition context. Usages of the same definition share a node only when their outgoing relationships, supplier identities, and recursively composed target contexts are identical. Different contexts remain separate even when their immediate child definitions are the same; recursive compositions are compared to a fixed point.
+Each node represents a component definition in one verified composition context. Context expansion is the default, not an optional mode. Usages of the same definition share a node only when their outgoing relationships, supplier identities, rendering controls, and recursively composed target contexts are identical. Control IDs are normalized before this comparison; equivalent repeated compositions share their controls rather than staying separate because their instance IDs differ. Different contexts remain separate even when their immediate child definitions are the same; recursive compositions are compared to a fixed point.
 
 Named local components use the definition identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. When only one context remains for a definition, its node retains that definition identifier. Multiple contexts retain representative usage identities, which can add an `@<hash>` suffix derived from scope-relative usage paths. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
+
+Node titles retain the original component name, never the instance hash or a serial number. Each node's `component.definitionId` identifies the definition, and `component.origins` records every verified `{ supplierId, supplierTitle, prop }` pair. The origin `prop` is the original supplied prop, not a downstream renamed consumer prop: supplying `Wrapper.header` and forwarding it to `Inner.children` retains the supplier's `header` origin while the edge kind uses `children`. Merging nodes unions these pairs without mixing one supplier with another supplier's prop. Supplier IDs identify definitions, including suppliers outside a focused graph; they are not necessarily visible node IDs.
 
 Relationships are displayed as follows:
 
@@ -87,6 +89,18 @@ External component boundaries remain visible and connected, but package implemen
 External member references require a declared property or an applicable index signature, including members of CommonJS `export =` objects. Whitespace and comments in property access do not change member identity or make missing members valid. Existing import naming is preserved: for `export = UI`, a default import of `UI.Button` retains `UI.Button`, while a namespace import uses `Button`. Package and relative imports retain their own provenance even when the same source is selected for local analysis, including references supplied through component registries. Package-owned JSX values are not expanded as caller-supplied content.
 
 Local values statically verified as supplied through node props, render props, component props, or component registries remain connected. Results from event-style `onX` callbacks are omitted at external boundaries because their return values are not verified as being rendered.
+
+### Rendering controls
+
+`componentStructure.roots` records the starting node IDs, including explicit `--root` selections and source components in recursive graphs. `componentStructure.controls` records real source-level rendering decisions, scoped to their usage context. Repeated simultaneous JSX uses alone never create a control.
+
+The analyzer traces ternaries, chained `&&`, `||`, `??`, `if`/`else`, early returns, and `switch` cases, including fallthrough and unlabeled conditional breaks. It preserves nested decisions in immutable output aliases, supplied children/node/render/component values, render callbacks, and verified consumer-side forwarding or rendering. Rendered left operands of `||` and `??` remain represented. Hidden forwarding boundaries retain their constraints and attach controls to the nearest visible owner; controls without any surviving visible route are omitted.
+
+A control has an `id`, owning visible node `source`, source-derived `label`, and prerequisite `when` paths. Conditional controls use `kind: "conditional"` and `on`/`off` values. A ternary with a null, undefined, or boolean non-rendering arm becomes one conditional control; its rendered arm uses `on`, with a negated label when the true arm is empty. Branch controls use `kind: "branch"` and descriptive `alternatives`; the edge path selects an alternative ID. Each edge's `component.paths` and each control's `when` are an OR of paths, with each path an ordered AND of `{ controlId, value }` requirements. `[[]]` means unconditional. Focusing on a root removes constraints owned outside that focused graph, treating the selected root as a new starting point.
+
+The renderer owns initial selections: conditional switches start off; branch selection uses reachable descendant count, then maximum depth, then edge ID. Controls describe source structure, not independent runtime state variables. The analyzer does not execute conditions, infer a happy path, prove correlations between different conditions, or guarantee every runtime combination.
+
+Mutable or reassigned output aliases and arbitrary helper-call results remain unresolved. Loop iteration guards, exception routing, and labeled exits are not modeled; return expressions discovered in those unsupported statement forms retain source relationships without additional controls for that statement. This implementation does not add supplied-children `map`/`flatMap` transforms, traversal through unresolved JSX wrappers, intrinsic spread-only children consumption, broader default-object/module-fallback resolution, or external-symlink provenance support.
 
 1. Read the existing diagram file first, then read the temporary candidate graph. Preserve, modify, or replace the existing graph according to the request, keeping unrelated diagrams and IDs for concepts that retain their meaning.
 2. Apply the **Diagram configuration** above and record the necessary regeneration context according to the skill's shared authoring rules.
