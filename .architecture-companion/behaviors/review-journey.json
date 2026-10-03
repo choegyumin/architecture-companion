@@ -1,6 +1,11 @@
 {
   "id": "review-journey",
   "title": "Architecture review journey",
+  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "vcs": {
+    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "divergesFromRevision": false
+  },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview the user journey from receiving an architecture review URL to inspecting evidence, leaving comments, and requesting follow-up work from the coding agent.\n\n## Regeneration\nInspect specs/user-review-architecture.spec.tsx, specs/user-comment-architecture.spec.tsx, specs/agent-follow-up-review.spec.ts, src/client/pages/workspace-page.tsx, src/client/parts/annotation-layer.tsx, and skills/architecture-companion/review-follow-up.md. Reconstruct the actor-observed review steps, including dependency focus interactions and comment targets, without expanding the internal server or rendering implementation.",
   "layout": {

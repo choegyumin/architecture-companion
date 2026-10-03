@@ -1,6 +1,11 @@
 {
   "id": "comment-conflict-resolution",
   "title": "Resolve comment conflicts",
+  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "vcs": {
+    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "divergesFromRevision": false
+  },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how a reviewer resolves external comment changes or deletions that conflict with a local edit.\n\n## Regeneration\nInspect src/server/review-updates.ts, src/client/pages/workspace-page.tsx, src/client/parts/annotation-layer.tsx, and specs/user-keep-comment-draft.spec.tsx. Reconstruct the product flow from external change detection through the local-edit conflict check and the available resolutions. Distinguish unrelated updates from conflicts, and distinguish changed comments from deleted comments when describing the reviewer's choices.",
   "layout": {
