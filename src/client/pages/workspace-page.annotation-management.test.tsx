@@ -398,9 +398,10 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      const canvas = await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
       await blockCommentWrites(scopePath);
-      fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 120, clientY: 90 });
+      fireEvent.click(canvas, { clientX: 120, clientY: 90 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       const textarea = within(composer).getByLabelText("Comment text");
       await userEvent.type(textarea, "Keep this text");
@@ -420,6 +421,7 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Saved feedback" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
       const textarea = within(editor).getByLabelText("Comment text");
@@ -447,6 +449,7 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Saved feedback" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
       await blockCommentWrites(scopePath);
