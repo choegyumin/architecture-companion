@@ -17,6 +17,8 @@ import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
+
 function artifact(nodeTitle: string): Artifact {
   return {
     behaviors: [
@@ -84,12 +86,14 @@ describe("reviewer continues a review after the artifact is revised", () => {
 
       try {
         expect(await screen.findByText("Checkout submitted")).toBeInTheDocument();
+        await waitForDiagramReady();
         expect(
           await screen.findByRole("button", { name: "Comment: Please refine the trigger wording." }),
         ).toBeInTheDocument();
 
         await writeArtifact(scopePath, revisedArtifact);
         expect(await screen.findByText("Checkout started")).toBeInTheDocument();
+        await waitForDiagramReady();
         expect(
           screen.queryByRole("button", { name: "Comment: Please refine the trigger wording." }),
         ).not.toBeInTheDocument();

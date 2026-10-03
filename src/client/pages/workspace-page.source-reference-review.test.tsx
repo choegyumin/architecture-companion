@@ -10,6 +10,8 @@ import { createApp } from "@/server/create-app";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+
 const artifact = {
   behaviors: [
     {
@@ -68,6 +70,7 @@ const artifact = {
 async function findSourceLink(label: string): Promise<HTMLAnchorElement> {
   const link = (await screen.findByText(`Open ${label}`)).closest("a");
   if (!(link instanceof HTMLAnchorElement)) throw new Error(`Source control is not a link: ${label}`);
+  await waitForDiagramReady();
   return link;
 }
 
@@ -130,13 +133,13 @@ describe("source links in a review", () => {
         app.request(input, init),
       );
 
-      render(<WorkspacePage client={client} />);
-      fireEvent.click(await screen.findByRole("button", { name: "Comment" }));
       const expectedPaths = [
         await realpath(join(scopePath, "specs/user-review-architecture.spec.tsx")),
         await realpath(join(scopePath, "src/workflow.ts")),
         await realpath(join(scopePath, "src/checkout-page.test.ts")),
       ];
+      render(<WorkspacePage client={client} />);
+      fireEvent.click(await screen.findByRole("button", { name: "Comment" }));
       const diagramLink = await findSourceLink("user-review-architecture.spec.tsx");
       const workflowLink = await findSourceLink("workflow.ts");
       await act(async () => {

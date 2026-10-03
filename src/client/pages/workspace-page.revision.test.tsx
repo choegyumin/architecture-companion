@@ -17,6 +17,8 @@ import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { createReviewUpdates } from "@/server/review-updates";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+
 function artifact(label: string): Artifact {
   return {
     behaviors: [
@@ -106,6 +108,12 @@ function createDeferred<T>() {
   return { promise, resolve };
 }
 
+async function findDiagramNode(title: string): Promise<HTMLElement> {
+  await screen.findByText(title);
+  await waitForDiagramReady();
+  return screen.getByText(title);
+}
+
 async function createReview(initialLabel: string, initialDocument?: AnnotationDocument) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-external-"));
   const initialArtifact = artifact(initialLabel);
@@ -149,17 +157,17 @@ describe("external artifact review", () => {
       const review = render(<WorkspacePage client={client} />);
 
       try {
-        expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+        expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
         expect(
           await screen.findByRole("button", { name: "Comment: Review the initial workflow." }),
         ).toBeInTheDocument();
         await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
-        expect(await screen.findByText("Initial component")).toBeInTheDocument();
+        expect(await findDiagramNode("Initial component")).toBeInTheDocument();
 
         await writeArtifact(scopePath, changedArtifact);
-        expect(await screen.findByText("Changed component")).toBeInTheDocument();
+        expect(await findDiagramNode("Changed component")).toBeInTheDocument();
         await userEvent.click(screen.getByRole("tab", { name: "Product Behavior" }));
-        expect(await screen.findByText("Changed workflow")).toBeInTheDocument();
+        expect(await findDiagramNode("Changed workflow")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Comment: Review the initial workflow." })).not.toBeInTheDocument();
       } finally {
         review.unmount();
@@ -174,7 +182,7 @@ describe("external artifact review", () => {
     const { cleanup, scopePath } = await createReview("Initial");
 
     try {
-      expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
       await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -191,12 +199,12 @@ describe("external artifact review", () => {
     const { cleanup, scopePath } = await createReview("Initial");
 
     try {
-      expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
       await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
       await screen.findByRole("alert");
 
       await writeArtifact(scopePath, artifact("Recovered"));
-      expect(await screen.findByText("Recovered workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Recovered workflow")).toBeInTheDocument();
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     } finally {
       await cleanup();
@@ -231,7 +239,7 @@ describe("external artifact review", () => {
     const review = render(<WorkspacePage client={client} />);
 
     try {
-      expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
       expect(await screen.findByRole("button", { name: "Comment: Matched revision" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Comment: Wrong revision" })).not.toBeInTheDocument();
       expect(getReview).toHaveBeenCalledTimes(2);
@@ -326,7 +334,7 @@ describe("external artifact review", () => {
     const review = render(<WorkspacePage client={client} />);
 
     try {
-      expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Review the initial workflow." }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
       const textarea = screen.getByLabelText("Comment text");
@@ -342,7 +350,7 @@ describe("external artifact review", () => {
       };
       act(() => publishUpdate());
 
-      expect(await screen.findByText("Changed workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Changed workflow")).toBeInTheDocument();
       expect(editor).not.toBeInTheDocument();
 
       currentReview = { scope, artifact: initialArtifact, artifactRevisionId: initialRevisionId };
@@ -352,7 +360,7 @@ describe("external artifact review", () => {
       };
       act(() => publishUpdate());
 
-      expect(await screen.findByText("Initial workflow")).toBeInTheDocument();
+      expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Reactivated revision" }));
       const reactivatedEditor = await screen.findByRole("form", { name: "Edit comment" });
       const reactivatedTextarea = screen.getByLabelText("Comment text");
@@ -379,6 +387,7 @@ describe("external comment review", () => {
     const { cleanup, scopePath } = await createReview("External");
 
     try {
+      await findDiagramNode("External workflow");
       await screen.findByRole("button", { name: "Comment" });
       expect(screen.queryByRole("button", { name: "Comment: External feedback" })).not.toBeInTheDocument();
 

@@ -16,6 +16,8 @@ import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repo
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+
 const artifact: Artifact = {
   behaviors: [
     {
@@ -113,6 +115,7 @@ async function getAnnotationDocument(client: ReturnType<typeof createClient>) {
 
 async function getCanvas(regionName: string): Promise<HTMLElement> {
   const region = await screen.findByRole("region", { name: regionName });
+  await waitForDiagramReady(region);
   return within(region).getByRole("group", { name: "Diagram canvas" });
 }
 
@@ -332,6 +335,7 @@ describe("WorkspacePage comment management", () => {
 
       review.unmount();
       review = renderWorkspace(createClient(createApp(scope)));
+      await getCanvas("Workflow product behavior diagram");
       const pin = await screen.findByRole("button", { name: "Comment: Review workflow trigger" });
       const pointBeforeMove = (await getAnnotationDocument(client)).annotations.at(0)?.anchor.point;
       await userEvent.pointer([
@@ -346,6 +350,7 @@ describe("WorkspacePage comment management", () => {
 
       review.unmount();
       review = renderWorkspace(createClient(createApp(scope)));
+      await getCanvas("Workflow product behavior diagram");
       expect(await screen.findByRole("button", { name: "Comment: Review workflow trigger" })).toBeInTheDocument();
       expect((await getAnnotationDocument(client)).annotations.at(0)?.anchor.point).toEqual(pointAfterMove);
     } finally {
@@ -366,6 +371,7 @@ describe("WorkspacePage comment management", () => {
       });
       review.unmount();
       review = renderWorkspace(createClient(createApp(scope)));
+      await getCanvas("Workflow product behavior diagram");
 
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Review workflow trigger" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
@@ -376,6 +382,7 @@ describe("WorkspacePage comment management", () => {
 
       review.unmount();
       review = renderWorkspace(createClient(createApp(scope)));
+      await getCanvas("Workflow product behavior diagram");
       await screen.findByRole("button", { name: "Comment" });
       expect(screen.queryByRole("button", { name: "Comment: Review workflow trigger" })).not.toBeInTheDocument();
     } finally {
@@ -391,9 +398,10 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      const canvas = await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
       await blockCommentWrites(scopePath);
-      fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 120, clientY: 90 });
+      fireEvent.click(canvas, { clientX: 120, clientY: 90 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       const textarea = within(composer).getByLabelText("Comment text");
       await userEvent.type(textarea, "Keep this text");
@@ -413,6 +421,7 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Saved feedback" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
       const textarea = within(editor).getByLabelText("Comment text");
@@ -440,6 +449,7 @@ describe("WorkspacePage comment save failures", () => {
     const review = renderWorkspace(createClient(createApp(scope)));
 
     try {
+      await getCanvas("Workflow product behavior diagram");
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Saved feedback" }));
       const editor = await screen.findByRole("form", { name: "Edit comment" });
       await blockCommentWrites(scopePath);
