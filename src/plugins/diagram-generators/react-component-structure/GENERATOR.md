@@ -45,6 +45,8 @@ node "<generator-directory>/run.js" \
 
 The analyzer uses the TypeScript compiler resolvable from the target scope and the standard `lib.*.d.ts` declarations from that same package. If the target has no TypeScript compiler, a fallback is used without changing the target project's dependencies. Compiler configuration and missing standard types that prevent initialization are reported as errors rather than returning an incomplete graph.
 
+The fallback cache is shared per user and compiler version. Missing package metadata, compiler entry points, or default standard declarations trigger a repair serialized across processes. An incomplete cache is quarantined only after the replacement installation has been verified. Unsafe cache directories are rejected, and waiting for an installation lock times out after 120 seconds without forcibly removing another process's lock.
+
 Source collection covers `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, and `.cts` files. It applies `.gitignore` files in the scope root and its subdirectories, but does not read rules above the scope. Recursive traversal skips `.git` and `node_modules` directories it encounters, but does not exclude test or generated files by name alone. Explicitly specified input paths themselves bypass collection-stage exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories.
 
 `--exclude-path` and `--exclude-component` determine what is displayed after the collected source has been analyzed. These display filters therefore cannot re-include files excluded from collection by `.gitignore`. Display filters still apply to explicitly specified input files.

@@ -1,13 +1,31 @@
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { promisify } from "node:util";
+
+import { version as fallbackVersion } from "typescript/package.json";
 
 import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { buildComponentGraph } from "./build-component-graph";
 
 const compilerPath = createRequire(import.meta.url).resolve("typescript");
+const typescriptRoot = dirname(dirname(compilerPath));
+const fallbackInstaller = `
+  const { cpSync } = require("node:fs");
+  const { join } = require("node:path");
+  if (!process.argv.includes(${JSON.stringify(`typescript@${fallbackVersion}`)})) process.exit(1);
+  cpSync(${JSON.stringify(typescriptRoot)}, join(process.cwd(), "node_modules/typescript"), { recursive: true });
+`;
+
+function fallbackCachePath(): string {
+  const user = createHash("sha256").update(homedir()).digest("hex").slice(0, 16);
+  return join(tmpdir(), `architecture-companion-typescript-${user}`, fallbackVersion);
+}
 
 async function withFixture(
   files: Readonly<Record<string, string>>,
@@ -84,15 +102,7 @@ describe("React component structure compiler", () => {
       { "package.json": packageContents, "src/app.tsx": arraySource.replace(".map(", ".flatMap(") },
       async (scopePath) => {
         await rm(join(scopePath, "node_modules"), { recursive: true });
-        const typescriptRoot = dirname(dirname(compilerPath));
-        const version = JSON.parse(await readFile(join(typescriptRoot, "package.json"), "utf8")).version;
-        const installer = `
-          const { cpSync } = require("node:fs");
-          const { join } = require("node:path");
-          if (!process.argv.includes(${JSON.stringify(`typescript@${version}`)})) process.exit(1);
-          cpSync(${JSON.stringify(typescriptRoot)}, join(process.cwd(), "node_modules/typescript"), { recursive: true });
-        `;
-        await withNpmFixture(scopePath, installer, async () => {
+        await withNpmFixture(scopePath, fallbackInstaller, async () => {
           const run = () => buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns: ["App"] });
           const [first, concurrent] = await Promise.all([run(), run()]);
           expect(edgeFacts(first)).toEqual([{ source: "App", target: "Child", kind: "direct-render" }]);
@@ -106,6 +116,118 @@ describe("React component structure compiler", () => {
         });
       },
     );
+  });
+
+  it.each(["package metadata", "compiler entry", "standard declarations"])(
+    "recovers and reuses a fallback without %s",
+    async (missing) => {
+      await withFixture({ "src/app.tsx": arraySource }, async (scopePath) => {
+        await rm(join(scopePath, "node_modules"), { recursive: true });
+        await withNpmFixture(scopePath, fallbackInstaller, async () => {
+          const packagePath = join(fallbackCachePath(), "node_modules/typescript");
+          await mkdir(join(packagePath, "lib"), { recursive: true });
+          if (missing !== "package metadata") {
+            await copyFile(join(typescriptRoot, "package.json"), join(packagePath, "package.json"));
+          }
+          if (missing === "standard declarations") {
+            await copyFile(compilerPath, join(packagePath, "lib/typescript.js"));
+          }
+
+          const options = { scopePath, sourcePaths: ["src"], rootPatterns: ["App"] };
+          const graph = await buildComponentGraph(options);
+          expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render" }]);
+
+          await writeFile(join(scopePath, "bin/npm-fixture.cjs"), `process.exit(1);`);
+          expect(await buildComponentGraph(options)).toEqual(graph);
+        });
+      });
+    },
+  );
+
+  it("shares a repaired fallback between concurrent analysis processes", async () => {
+    await withFixture({ "src/app.tsx": arraySource }, async (scopePath) => {
+      await rm(join(scopePath, "node_modules"), { recursive: true });
+      const installer = `
+        const { closeSync, openSync } = require("node:fs");
+        closeSync(openSync(require("node:path").join(process.env.TMPDIR, "installation.claim"), "wx"));
+        setTimeout(() => { ${fallbackInstaller} }, 500);
+      `;
+      await withNpmFixture(scopePath, installer, async () => {
+        await mkdir(join(fallbackCachePath(), "node_modules/typescript/lib"), { recursive: true });
+        const runnerPath = join(scopePath, "analyze.mts");
+        const builderUrl = pathToFileURL(join(import.meta.dirname, "build-component-graph.ts")).href;
+        await writeFile(
+          runnerPath,
+          `
+          import { buildComponentGraph } from ${JSON.stringify(builderUrl)};
+          const graph = await buildComponentGraph({
+            scopePath: ${JSON.stringify(scopePath)}, sourcePaths: ["src"], rootPatterns: ["App"],
+          });
+          process.stdout.write(JSON.stringify(graph));
+        `,
+        );
+        const run = () => promisify(execFile)(process.execPath, ["--import", "tsx", runnerPath]);
+        const results = await Promise.allSettled([run(), run()]);
+        for (const result of results) {
+          if (result.status === "rejected") throw result.reason;
+          expect(edgeFacts(JSON.parse(result.value.stdout) as DiagramGraph)).toEqual([
+            { source: "App", target: "Child", kind: "direct-render" },
+          ]);
+        }
+      });
+    });
+  });
+
+  it("can retry fallback installation after an installer failure", async () => {
+    await withFixture({ "src/app.tsx": arraySource }, async (scopePath) => {
+      await rm(join(scopePath, "node_modules"), { recursive: true });
+      await withNpmFixture(scopePath, `process.exit(1);`, async () => {
+        await mkdir(join(fallbackCachePath(), "node_modules/typescript/lib"), { recursive: true });
+        const options = { scopePath, sourcePaths: ["src"], rootPatterns: ["App"] };
+        await expect(buildComponentGraph(options)).rejects.toThrow("Cannot install fallback TypeScript");
+
+        await writeFile(join(scopePath, "bin/npm-fixture.cjs"), fallbackInstaller);
+        expect(edgeFacts(await buildComponentGraph(options))).toEqual([
+          { source: "App", target: "Child", kind: "direct-render" },
+        ]);
+      });
+    });
+  });
+
+  it("reports an installation lock timeout instead of waiting indefinitely", async () => {
+    await withFixture({ "src/app.tsx": arraySource }, async (scopePath) => {
+      await rm(join(scopePath, "node_modules"), { recursive: true });
+      await withNpmFixture(scopePath, `process.exit(1);`, async () => {
+        await mkdir(`${fallbackCachePath()}.lock`, { recursive: true, mode: 0o700 });
+        const clock = vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(120_000);
+        try {
+          await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+            "Timed out waiting for TypeScript temporary installation lock",
+          );
+        } finally {
+          clock.mockRestore();
+        }
+      });
+    });
+  });
+
+  it.each(["root", "version"])("rejects a symlinked fallback cache %s", async (kind) => {
+    await withFixture({ "src/app.tsx": arraySource }, async (scopePath) => {
+      await rm(join(scopePath, "node_modules"), { recursive: true });
+      await withNpmFixture(scopePath, `process.exit(1);`, async () => {
+        const otherCache = join(scopePath, "other-cache");
+        await mkdir(join(otherCache, "node_modules"), { recursive: true });
+        await symlink(typescriptRoot, join(otherCache, "node_modules/typescript"), "junction");
+        const cachePath = fallbackCachePath();
+        const linkPath = kind === "root" ? dirname(cachePath) : cachePath;
+        await mkdir(dirname(linkPath), { recursive: true, mode: 0o700 });
+        await symlink(otherCache, linkPath, "junction");
+
+        await expect(buildComponentGraph({ scopePath, sourcePaths: ["src"] })).rejects.toThrow(
+          "Unsafe TypeScript temporary cache directory",
+        );
+      });
+    });
   });
 
   it.each([
