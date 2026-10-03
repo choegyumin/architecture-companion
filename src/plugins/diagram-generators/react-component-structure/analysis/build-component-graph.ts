@@ -491,6 +491,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     for (const declaration of canonical?.declarations ?? symbol.declarations ?? []) {
       const definition = definitionsByDeclaration.get(declaration);
       if (definition) return definition;
+      if (ts.isExportAssignment(declaration)) {
+        const expression = unwrapExpression(declaration.expression);
+        if (
+          ts.isCallExpression(expression) &&
+          isReactWrapperCall(expression, checker) &&
+          expression.arguments.length > 0
+        ) {
+          const wrapped = unwrapExpression(expression.arguments.at(0) as ts.Expression);
+          if (ts.isIdentifier(wrapped) || ts.isPropertyAccessExpression(wrapped)) {
+            const aliasedDefinition = resolveDefinition(
+              checker.getSymbolAtLocation(wrapped),
+              checker,
+              definitionsBySymbol,
+              definitionsByDeclaration,
+              nextVisited,
+            );
+            if (aliasedDefinition) return aliasedDefinition;
+          }
+        }
+        continue;
+      }
       if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
         const initializer = unwrapExpression(declaration.initializer);
         if (ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)) {

@@ -3436,6 +3436,36 @@ describe("React component structure generator", () => {
     );
   });
 
+  it("resolves references to memo-wrapped default exports", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import Row from "./row";
+
+          export function App() {
+            return <Row />;
+          }
+        `,
+        "src/row.tsx": `
+          import * as React from "react";
+
+          function RowBase() { return <li />; }
+          export default React.memo(RowBase);
+        `,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "App",
+          target: "RowBase",
+          kind: "direct-render",
+          label: undefined,
+        });
+      },
+    );
+  });
+
   it("supplies list-rendered children to wrapping components", async () => {
     await withFixture(
       {
