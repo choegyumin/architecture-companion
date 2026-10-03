@@ -43,6 +43,8 @@ node "<generator-directory>/run.js" \
 
 ## Analysis scope
 
+The analyzer uses the TypeScript compiler resolvable from the target scope and the standard `lib.*.d.ts` declarations from that same package. If the target has no TypeScript compiler, a fallback is used without changing the target project's dependencies. Compiler configuration and missing standard types that prevent initialization are reported as errors rather than returning an incomplete graph.
+
 Source collection covers `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, and `.cts` files. It applies `.gitignore` files in the scope root and its subdirectories, but does not read rules above the scope. Recursive traversal skips `.git` and `node_modules` directories it encounters, but does not exclude test or generated files by name alone. Explicitly specified input paths themselves bypass collection-stage exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories.
 
 `--exclude-path` and `--exclude-component` determine what is displayed after the collected source has been analyzed. These display filters therefore cannot re-include files excluded from collection by `.gitignore`. Display filters still apply to explicitly specified input files.
@@ -51,7 +53,7 @@ Both display filters use the same reduction rules. Matching components and compo
 
 Hidden elements are not recorded in the output JSON. Generation fails if no source files are collected or no local components remain after display filtering. When `--root` is specified, generation fails if none of the patterns selects a visible component.
 
-The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are silently omitted. Provider annotations, per-usage nodes, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
+The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are silently omitted. Identical composition contexts are shared, so individual use locations and usage counts are not preserved. Provider annotations, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
 
 ## Output
 
@@ -65,7 +67,9 @@ This file contains only a candidate `Diagram.graph` with `groups`, `nodes`, and 
 
 ## Interpretation and integration
 
-Each node represents one component definition. Named local components use the identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
+Each node represents a component definition in one verified composition context. Usages of the same definition share a node only when their outgoing relationships, supplier identities, and recursively composed target contexts are identical. Different contexts remain separate even when their immediate child definitions are the same; recursive compositions are compared to a fixed point.
+
+Named local components use the definition identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. When only one context remains for a definition, its node retains that definition identifier. Multiple contexts retain representative usage identities, which can add an `@<hash>` suffix derived from scope-relative usage paths. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
 
 Relationships are displayed as follows:
 
@@ -74,9 +78,11 @@ Relationships are displayed as follows:
 - Render prop: `kind` is `RENDER (<invoker prop name>)`; `label` is `from <supplier>`.
 - Component prop: `kind` is `COMPONENT (<renderer prop name>)`; `label` is `from <supplier>`.
 
-The visual parent of a supplied value is its verified local renderer or invoker. The label names the component definition that created the supplied target. Local prop forwarding is traced through verified named aliases and static prop objects. `kind` uses the prop name of the final visible renderer or invoker with its original casing, while `label` retains the original supplier. When multiple component definitions supply the same target through the same relationship, their names are sorted and combined into a single label rather than duplicating edges.
+The visual parent of a supplied value is its verified local renderer or invoker. The label names the component definition that created the supplied target. Local prop forwarding is traced through verified named aliases and static prop objects. `kind` uses the prop name of the final visible renderer or invoker with its original casing, while `label` retains the original supplier. Supplier names are sorted and combined only when analysis verifies them for the same relationship within one usage context. Different supplier contexts are not merged merely because their target definitions match.
 
 External component boundaries remain visible and connected, but package implementations are not expanded. External provenance is traced through immutable `const` aliases and named, default, and star re-exports in local barrel modules to the canonical package export. Mutable aliases remain unresolved. External boundaries excluded by component filters follow the same rules as hidden local boundaries.
+
+External member references require a declared property or an applicable index signature, including members of CommonJS `export =` objects. Whitespace and comments in property access do not change member identity or make missing members valid. Existing import naming is preserved: for `export = UI`, a default import of `UI.Button` retains `UI.Button`, while a namespace import uses `Button`. Package and relative imports retain their own provenance even when the same source is selected for local analysis, including references supplied through component registries. Package-owned JSX values are not expanded as caller-supplied content.
 
 Local values statically verified as supplied through node props, render props, component props, or component registries remain connected. Results from event-style `onX` callbacks are omitted at external boundaries because their return values are not verified as being rendered.
 
