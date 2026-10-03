@@ -21,6 +21,7 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
 
   const labelStyle = {
     left: data.labelPosition.x,
+    opacity: style?.opacity,
     pointerEvents: "all" as const,
     top: data.labelPosition.y,
     transform: "translate(-50%, -50%)",
