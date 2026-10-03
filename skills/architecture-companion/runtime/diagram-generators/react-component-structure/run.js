@@ -3934,10 +3934,11 @@ async function collectSourceFiles(scopePath, sourcePaths) {
 // src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts
 import { execFile } from "child_process";
 import { createHash } from "crypto";
-import { access, chmod, lstat, mkdir, mkdtemp, readFile as readFile2, rename, rm } from "fs/promises";
+import { access, chmod, lstat, mkdir, mkdtemp, readFile as readFile2, rename, rm, rmdir } from "fs/promises";
 import { createRequire } from "module";
 import { homedir, tmpdir } from "os";
 import { join as join2, resolve as resolve2 } from "path";
+import { setTimeout } from "timers/promises";
 import { promisify } from "util";
 
 // node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/package.json
@@ -3949,6 +3950,10 @@ var installations = /* @__PURE__ */ new Map();
 async function hasCachedPackage(directory) {
   let contents;
   try {
+    const cacheStat = await lstat(directory);
+    if (!cacheStat.isDirectory() || process.getuid && cacheStat.uid !== process.getuid()) {
+      throw new Error(`Unsafe TypeScript temporary cache directory: ${directory}`);
+    }
     contents = await readFile2(join2(directory, "node_modules/typescript/package.json"), "utf8");
   } catch (error) {
     if (isMissingPathError(error)) return false;
@@ -3957,10 +3962,53 @@ async function hasCachedPackage(directory) {
   if (JSON.parse(contents).version !== version) {
     throw new Error(`Unexpected TypeScript version in temporary cache: ${directory}`);
   }
-  await access(require2.resolve(join2(directory, "node_modules/typescript")));
+  try {
+    await access(require2.resolve(join2(directory, "node_modules/typescript")));
+    await access(join2(directory, "node_modules/typescript/lib/lib.esnext.full.d.ts"));
+    await access(join2(directory, "node_modules/typescript/lib/lib.es5.d.ts"));
+  } catch (error) {
+    if (isMissingPathError(error) || error && typeof error === "object" && "code" in error && error.code === "MODULE_NOT_FOUND") {
+      return false;
+    }
+    throw error;
+  }
   return true;
 }
+async function acquireInstallationLock(cachePath) {
+  const lockPath = `${cachePath}.lock`;
+  const deadline = Date.now() + 12e4;
+  for (; ; ) {
+    if (Date.now() >= deadline) {
+      throw new Error(`Timed out waiting for TypeScript temporary installation lock: ${lockPath}`);
+    }
+    try {
+      await mkdir(lockPath, { mode: 448 });
+      return () => rmdir(lockPath);
+    } catch (error) {
+      if (!(error && typeof error === "object" && "code" in error && error.code === "EEXIST")) throw error;
+    }
+    try {
+      const lockStat = await lstat(lockPath);
+      if (!lockStat.isDirectory() || process.getuid && lockStat.uid !== process.getuid()) {
+        throw new Error(`Unsafe TypeScript temporary lock directory: ${lockPath}`);
+      }
+    } catch (error) {
+      if (isMissingPathError(error)) continue;
+      throw error;
+    }
+    await setTimeout(50);
+  }
+}
 async function installFallback(cacheRoot, cachePath) {
+  const releaseLock = await acquireInstallationLock(cachePath);
+  try {
+    if (await hasCachedPackage(cachePath)) return;
+    await installFallbackPackage(cacheRoot, cachePath);
+  } finally {
+    await releaseLock();
+  }
+}
+async function installFallbackPackage(cacheRoot, cachePath) {
   const directory = await mkdtemp(join2(cacheRoot, `${version}-install-`));
   try {
     try {
@@ -3985,6 +4033,18 @@ async function installFallback(cacheRoot, cachePath) {
     }
     if (!await hasCachedPackage(directory)) {
       throw new Error(`npm did not install fallback TypeScript ${version}.`);
+    }
+    if (!await hasCachedPackage(cachePath)) {
+      try {
+        const cacheStat = await lstat(cachePath);
+        if (!cacheStat.isDirectory() || process.getuid && cacheStat.uid !== process.getuid()) {
+          throw new Error(`Unsafe TypeScript temporary cache directory: ${cachePath}`);
+        }
+        const quarantine = await mkdtemp(join2(cacheRoot, `${version}-invalid-`));
+        await rename(cachePath, join2(quarantine, "cache"));
+      } catch (error) {
+        if (!isMissingPathError(error)) throw error;
+      }
     }
     try {
       await rename(directory, cachePath);
