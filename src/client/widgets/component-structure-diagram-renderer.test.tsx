@@ -127,6 +127,406 @@ beforeEach(() => {
 afterEach(() => restoreBrowserMeasurements());
 
 describe("component structure paths", () => {
+  it("starts alternative connections at the branch edge label, without adding displayed nodes", async () => {
+    const graph = branchGraph([
+      connection("a-small", "app", "small", "small"),
+      connection("z-large", "app", "large", "large"),
+    ]);
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    const segment = screen.getByRole("radiogroup", { name: "mode" });
+    expect(segment.closest(".react-flow__edgelabel-renderer")).not.toBeNull();
+    const label = segment.parentElement!;
+    const expectStartsAtLabel = (name: string) => {
+      const route = screen.getByRole("img", { name }).querySelector("path")!.getAttribute("d")!;
+      const [, x, y] = /^M (\S+) (\S+)/.exec(route)!;
+      expect(Number(x)).toBeCloseTo(Number.parseFloat(label.style.left), 5);
+      expect(Number(y)).toBeCloseTo(Number.parseFloat(label.style.top), 5);
+    };
+    expectStartsAtLabel("app to small: Active path");
+    expectStartsAtLabel("app to large: Inactive path");
+    expect(screen.getAllByRole("article")).toHaveLength(3);
+    expect(document.querySelectorAll(".react-flow__node")).toHaveLength(3);
+
+    await userEvent.click(screen.getByRole("radio", { name: "Large" }));
+
+    expect(screen.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Active path");
+    expectStartsAtLabel("app to large: Active path");
+  });
+
+  it("uses one switch edge label as the common junction for every path controlled by the same condition", async () => {
+    const graph: DiagramGraph = {
+      ...branchGraph([connection("summary", "app", "summary"), connection("actions", "app", "actions")]),
+      edges: ["summary", "actions"].map((target) => ({
+        ...connection(target, "app", target),
+        component: { paths: [[{ controlId: "section", value: "on" }]] },
+      })),
+      componentStructure: {
+        roots: ["app"],
+        controls: [{ id: "section", source: "app", label: "showSection", kind: "conditional", when: [[]] }],
+      },
+    };
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    const toggle = screen.getByRole("switch", { name: "showSection" });
+    expect(toggle.closest(".react-flow__edgelabel-renderer")).not.toBeNull();
+    const label = toggle.closest("label")!.parentElement!;
+    for (const target of ["summary", "actions"]) {
+      const route = screen
+        .getByRole("img", { name: `app to ${target}: Inactive path` })
+        .querySelector("path")!
+        .getAttribute("d")!;
+      const [, x, y] = /^M (\S+) (\S+)/.exec(route)!;
+      expect(Number(x)).toBeCloseTo(Number.parseFloat(label.style.left), 5);
+      expect(Number(y)).toBeCloseTo(Number.parseFloat(label.style.top), 5);
+    }
+
+    await userEvent.click(toggle);
+
+    expect(screen.getAllByRole("switch")).toHaveLength(1);
+    expect(screen.getByRole("article", { name: "component: summary" })).toHaveAccessibleDescription("Active path");
+    expect(screen.getByRole("article", { name: "component: actions" })).toHaveAccessibleDescription("Active path");
+  });
+
+  it("reserves label space and routes nested switches and segments in source dependency order", async () => {
+    const branch = branchGraph([
+      connection("small", "app", "small", "small"),
+      connection("large", "app", "large", "large"),
+    ]);
+    const graph: DiagramGraph = {
+      ...branch,
+      edges: branch.edges.map((edge) => ({
+        ...edge,
+        type: "default",
+        component: {
+          paths:
+            edge.target === "small"
+              ? [[{ controlId: "inner", value: "on" }]]
+              : [[{ controlId: "mode", value: "large" }]],
+        },
+      })),
+      componentStructure: {
+        roots: ["app"],
+        controls: [
+          { id: "outer", source: "app", label: "showMode", kind: "conditional", when: [[]] },
+          { ...branch.componentStructure!.controls.at(0)!, when: [[{ controlId: "outer", value: "on" }]] },
+          {
+            id: "inner",
+            source: "app",
+            label: "showSmall",
+            kind: "conditional",
+            when: [[{ controlId: "mode", value: "small" }]],
+          },
+        ],
+      },
+    };
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{
+          ...diagram,
+          graph,
+          layout: { id: "elk-layered", options: { nudgeObstacleNodes: true, elk: { direction: "DOWN" } } },
+        }}
+        onOpenSource={() => {}}
+      />,
+    );
+    await waitForDiagramReady();
+
+    const labels = [
+      screen.getByRole("switch", { name: "showMode" }).closest("label")!.parentElement!,
+      screen.getByRole("radiogroup", { name: "mode" }).parentElement!,
+      screen.getByRole("switch", { name: "showSmall" }).closest("label")!.parentElement!,
+    ];
+    const centers = labels.map((label) => ({
+      x: Number.parseFloat(label.style.left),
+      y: Number.parseFloat(label.style.top),
+    }));
+    for (const [index, name] of ["mode", "showSmall"].entries()) {
+      const path = screen
+        .getByRole("img", { name: `Path to ${name}: Inactive path` })
+        .querySelector("path")!
+        .getAttribute("d")!
+        .split(" ");
+      expect(Number(path.at(1))).toBeCloseTo(centers.at(index)!.x, 5);
+      expect(Number(path.at(2))).toBeCloseTo(centers.at(index)!.y, 5);
+      expect(Number(path.at(-2))).toBeCloseTo(centers.at(index + 1)!.x, 5);
+      expect(Number(path.at(-1))).toBeCloseTo(centers.at(index + 1)!.y, 5);
+    }
+    for (const [index, label] of labels.entries()) {
+      const center = centers.at(index)!;
+      for (const node of document.querySelectorAll<HTMLElement>(".react-flow__node")) {
+        const [, x, y] = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(node.style.transform)!;
+        const overlaps =
+          Math.abs(center.x - (Number(x) + node.offsetWidth / 2)) < (label.offsetWidth + node.offsetWidth) / 2 &&
+          Math.abs(center.y - (Number(y) + node.offsetHeight / 2)) < (label.offsetHeight + node.offsetHeight) / 2;
+        expect(overlaps).toBe(false);
+      }
+    }
+  });
+
+  it("keeps OR connection routes independently dimmed and maps either displayed route to the original comment target", async () => {
+    const begin = vi.fn();
+    const graph: DiagramGraph = {
+      groups: [],
+      nodes: ["app", "leaf"].map((id) => ({ id, type: "default", kind: "component", title: id })),
+      edges: [
+        {
+          ...connection("app-leaf", "app", "leaf"),
+          component: { paths: [[{ controlId: "left", value: "on" }], [{ controlId: "right", value: "on" }]] },
+        },
+      ],
+      componentStructure: {
+        roots: ["app"],
+        controls: ["left", "right"].map((id) => ({ id, source: "app", label: id, kind: "conditional", when: [[]] })),
+      },
+    };
+    render(
+      <DiagramRenderer
+        annotations={{ ...annotations, isCommentMode: true, begin }}
+        diagram={{ ...diagram, graph }}
+        onOpenSource={() => {}}
+      />,
+    );
+    await waitForDiagramReady();
+
+    await userEvent.click(screen.getByRole("switch", { name: "right" }));
+
+    expect(screen.getByRole("article", { name: "component: leaf" })).toHaveAccessibleDescription("Active path");
+    expect(screen.getByRole("img", { name: "app to leaf: Inactive path" }).querySelector("path")).toHaveStyle({
+      opacity: "0.25",
+    });
+    fireEvent.click(screen.getByRole("img", { name: "app to leaf: Active path" }).querySelector("path")!, {
+      view: window,
+    });
+    expect(begin).toHaveBeenLastCalledWith(expect.objectContaining({ target: { type: "edge", id: "app-leaf" } }));
+
+    await userEvent.click(screen.getByRole("switch", { name: "right" }));
+    await userEvent.click(screen.getByRole("switch", { name: "left" }));
+    fireEvent.click(screen.getByRole("img", { name: "app to leaf: Active path" }).querySelector("path")!, {
+      view: window,
+    });
+    expect(begin).toHaveBeenLastCalledWith(expect.objectContaining({ target: { type: "edge", id: "app-leaf" } }));
+    expect(graph.nodes).toHaveLength(2);
+    expect(graph.edges).toHaveLength(1);
+  });
+
+  it("keeps impossible transitive paths visible and dimmed instead of removing their connections", async () => {
+    const graph: DiagramGraph = {
+      ...diagram.graph,
+      edges: [
+        {
+          ...diagram.graph.edges.at(0)!,
+          type: "default",
+          component: {
+            paths: [
+              [
+                { controlId: "parent", value: "off" },
+                { controlId: "child", value: "on" },
+              ],
+            ],
+          },
+        },
+      ],
+      componentStructure: {
+        roots: ["app"],
+        controls: [
+          { id: "parent", source: "app", label: "parent", kind: "conditional", when: [[]] },
+          {
+            id: "child",
+            source: "app",
+            label: "child",
+            kind: "conditional",
+            when: [[{ controlId: "parent", value: "on" }]],
+          },
+        ],
+      },
+    };
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    expect(screen.getByRole("img", { name: "app to details: Inactive path" })).toBeVisible();
+    await userEvent.click(screen.getByRole("switch", { name: "child" }));
+    expect(screen.getByRole("img", { name: "app to details: Inactive path" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "component: Details" })).toHaveAccessibleDescription("Inactive path");
+  });
+
+  it("starts controlled output at its label even when the control is owned by another visible component", async () => {
+    const graph = branchGraph([
+      connection("app-shell", "app", "shell"),
+      connection("a-small", "shell", "small", "small"),
+      connection("z-large", "shell", "large", "large"),
+    ]);
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    const label = screen.getByRole("radiogroup", { name: "mode" }).parentElement!;
+    for (const name of ["shell to small: Active path", "shell to large: Inactive path"]) {
+      const path = screen.getByRole("img", { name }).querySelector("path")!.getAttribute("d")!.split(" ");
+      expect(Number(path.at(1))).toBeCloseTo(Number.parseFloat(label.style.left), 5);
+      expect(Number(path.at(2))).toBeCloseTo(Number.parseFloat(label.style.top), 5);
+    }
+    expect(screen.getByRole("article", { name: "component: shell" })).toHaveAccessibleDescription("Active path");
+  });
+
+  it("connects every independent AND prerequisite to a dependent label without losing its OR alternative", async () => {
+    const graph: DiagramGraph = {
+      ...diagram.graph,
+      edges: [
+        { ...diagram.graph.edges.at(0)!, type: "default", component: { paths: [[{ controlId: "C", value: "on" }]] } },
+      ],
+      componentStructure: {
+        roots: ["app"],
+        controls: [
+          ...["A", "B", "D"].map((id) => ({ id, source: "app", label: id, kind: "conditional" as const, when: [[]] })),
+          {
+            id: "C",
+            source: "app",
+            label: "C",
+            kind: "conditional",
+            when: [
+              [
+                { controlId: "A", value: "on" },
+                { controlId: "B", value: "on" },
+              ],
+              [{ controlId: "D", value: "on" }],
+            ],
+          },
+        ],
+      },
+    };
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    const incoming = screen.getAllByRole("img", { name: "Path to C: Inactive path" });
+    expect(incoming).toHaveLength(3);
+    for (const name of ["A", "B", "D"]) {
+      const label = screen.getByRole("switch", { name }).closest("label")!.parentElement!;
+      expect(
+        incoming.some((edge) => {
+          const path = edge.querySelector("path")!.getAttribute("d")!.split(" ");
+          return (
+            Math.abs(Number(path.at(1)) - Number.parseFloat(label.style.left)) < 0.00001 &&
+            Math.abs(Number(path.at(2)) - Number.parseFloat(label.style.top)) < 0.00001
+          );
+        }),
+      ).toBe(true);
+    }
+    await userEvent.click(screen.getByRole("switch", { name: "A" }));
+    expect(screen.queryByRole("img", { name: "Path to C: Active path" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("switch", { name: "B" }));
+    expect(screen.getAllByRole("img", { name: "Path to C: Active path" })).toHaveLength(2);
+    expect(screen.getByRole("img", { name: "Path to C: Inactive path" })).toBeVisible();
+  });
+
+  it("continues from the visible source instead of looping back to a condition already traversed upstream", async () => {
+    const graph: DiagramGraph = {
+      groups: [],
+      nodes: ["app", "shell", "leaf"].map((id) => ({ id, type: "default", kind: "component", title: id })),
+      edges: [
+        ["app", "shell"],
+        ["shell", "leaf"],
+      ].map(([source, target]) => ({
+        ...connection(`${source}-${target}`, source!, target!),
+        component: { paths: [[{ controlId: "gate", value: "on" }]] },
+      })),
+      componentStructure: {
+        roots: ["app"],
+        controls: [{ id: "gate", source: "app", label: "gate", kind: "conditional", when: [[]] }],
+      },
+    };
+    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    expect(screen.getAllByRole("img", { name: /^Path to gate:/ })).toHaveLength(1);
+    const source = screen.getByRole("article", { name: "component: shell" }).closest<HTMLElement>(".react-flow__node")!;
+    const [, sourceX] = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(source.style.transform)!;
+    const path = screen
+      .getByRole("img", { name: "shell to leaf: Inactive path" })
+      .querySelector("path")!
+      .getAttribute("d")!
+      .split(" ");
+    expect(Number(path.at(1))).toBeCloseTo(Number(sourceX) + source.offsetWidth, 5);
+    await userEvent.click(screen.getByRole("switch", { name: "gate" }));
+    expect(screen.getByRole("article", { name: "component: leaf" })).toHaveAccessibleDescription("Active path");
+  });
+
+  it("keeps measured labels clear of cards and other labels when legacy obstacle nudging is requested", async () => {
+    const connections: readonly (readonly [number, number, number?])[] = [
+      [0, 1, 0],
+      [0, 4, 0],
+      [1, 2],
+      [1, 3, 1],
+      [1, 4, 1],
+      [1, 5],
+      [2, 3],
+      [3, 4],
+      [3, 5],
+      [4, 5],
+    ];
+    const graph: DiagramGraph = {
+      groups: [],
+      nodes: Array.from({ length: 6 }, (_, index) => ({
+        id: `v${index}`,
+        title: `v${index}`,
+        type: "default",
+        kind: "component",
+      })),
+      edges: connections.map(([source, target, control]) => ({
+        ...connection(`${source}-${target}`, `v${source}`, `v${target}`),
+        component: { paths: control === undefined ? [[]] : [[{ controlId: `c${control}`, value: "on" }]] },
+      })),
+      componentStructure: {
+        roots: ["v0"],
+        controls: [0, 1, 2].map((index) => ({
+          id: `c${index}`,
+          source: `v${index}`,
+          label: `c${index}`,
+          kind: "conditional",
+          when: [[]],
+        })),
+      },
+    };
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{
+          ...diagram,
+          graph,
+          layout: { id: "elk-layered", options: { nudgeObstacleNodes: true, elk: { direction: "DOWN" } } },
+        }}
+        onOpenSource={() => {}}
+      />,
+    );
+    await waitForDiagramReady();
+
+    const labels = screen.getAllByRole("switch").map((toggle) => {
+      const element = toggle.closest("label")!.parentElement!;
+      return {
+        element,
+        x: Number.parseFloat(element.style.left) - element.offsetWidth / 2,
+        y: Number.parseFloat(element.style.top) - element.offsetHeight / 2,
+      };
+    });
+    const cards = [...document.querySelectorAll<HTMLElement>(".react-flow__node")].map((element) => {
+      const [, x, y] = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(element.style.transform)!;
+      return { element, x: Number(x), y: Number(y) };
+    });
+    for (const label of labels)
+      for (const other of [...cards, ...labels]) {
+        if (label === other) continue;
+        const overlapX =
+          Math.min(label.x + label.element.offsetWidth, other.x + other.element.offsetWidth) -
+          Math.max(label.x, other.x);
+        const overlapY =
+          Math.min(label.y + label.element.offsetHeight, other.y + other.element.offsetHeight) -
+          Math.max(label.y, other.y);
+        expect(overlapX > 0.01 && overlapY > 0.01).toBe(false);
+      }
+  });
+
   it("initially selects the branch with more unique descendants", async () => {
     const graph = branchGraph([
       connection("a-small", "app", "small", "small"),
@@ -469,7 +869,7 @@ describe("component structure paths", () => {
       route,
     );
     expect(screen.getAllByRole("article")).toHaveLength(3);
-    expect(screen.getAllByRole("img")).toHaveLength(2);
+    expect(screen.getAllByRole("img", { name: /^(app to panel|panel to details):/ })).toHaveLength(2);
   });
 
   it("turns an inactive child off without activating its ancestors", async () => {
@@ -536,9 +936,10 @@ describe("component structure paths", () => {
     expect(second.getByRole("article", { name: "component: small" })).toHaveAccessibleDescription("Active path");
   });
 
-  it("retains the component title and displays every supplier-prop pair of a merged node", async () => {
+  it("retains the component title and displays merged supplier-prop pairs on the node, not again on connections", async () => {
     const graph: DiagramGraph = {
       ...diagram.graph,
+      edges: [{ ...diagram.graph.edges.at(0)!, kind: "NODE (footer)", label: "from Page" }],
       nodes: [
         diagram.graph.nodes.at(0)!,
         {
@@ -563,6 +964,9 @@ describe("component structure paths", () => {
     expect(origins.getByText("Page → footer")).toBeVisible();
     expect(origins.getByText("Modal → children")).toBeVisible();
     expect(origins.getByText("Page → header")).toBeVisible();
+    const canvas = within(screen.getByRole("group", { name: "Diagram canvas" }));
+    expect(canvas.queryByText("NODE (footer)")).not.toBeInTheDocument();
+    expect(canvas.queryByText("from Page")).not.toBeInTheDocument();
   });
 
   it("keeps path controls separate from node comment targeting", async () => {

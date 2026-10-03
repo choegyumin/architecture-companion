@@ -12,6 +12,8 @@ type RouteEdgeData = Readonly<{
   href?: string;
   onLinkActivate?: LinkActivationHandler;
   labelAction?: Readonly<{ ariaLabel: string; onActivate: () => void }>;
+  labelControl?: ReactNode;
+  labelControlPosition?: XYPosition;
 }>;
 
 export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
@@ -35,6 +37,22 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
   return (
     <>
       <BaseEdge id={id} markerEnd={markerEnd} markerStart={markerStart} path={data.path} style={style} />
+      {data.labelControl != null ? (
+        <EdgeLabelRenderer>
+          <div
+            className="nodrag nopan nowheel absolute w-max"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              ...labelStyle,
+              left: (data.labelControlPosition ?? data.labelPosition).x,
+              top: (data.labelControlPosition ?? data.labelPosition).y,
+              opacity: 1,
+            }}
+          >
+            {data.labelControl}
+          </div>
+        </EdgeLabelRenderer>
+      ) : null}
       {data.eyebrow != null || label != null || data.href ? (
         <EdgeLabelRenderer>
           {data.labelAction ? (
