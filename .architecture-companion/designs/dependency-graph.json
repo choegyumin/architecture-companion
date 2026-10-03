@@ -858,6 +858,18 @@
         ]
       },
       {
+        "id": "file:src/features/diagram/dependency-node-bundle.ts",
+        "title": "dependency-node-bundle.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/dependency-node-bundle.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/features/diagram/diagram-graph.ts",
         "title": "diagram-graph.ts",
         "groupId": "group:directory:src/features/diagram",
@@ -998,6 +1010,18 @@
           {
             "text": "source",
             "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "title": "load-typescript.ts",
+        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts"
           }
         ]
       },
@@ -2200,13 +2224,6 @@
         "target": "file:src/client/widgets/dependency-graph-edge-routes.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-geometry.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
-        "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts",
-        "kind": "type-only"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
@@ -2402,6 +2419,12 @@
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-routing-scene.ts",
         "target": "file:src/client/widgets/dependency-graph-routing-geometry.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-node-bundle.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-routing-scene.ts",
+        "target": "file:src/features/diagram/dependency-node-bundle.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-routing-scene.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -2935,6 +2958,12 @@
         "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-node-bundle.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/dependency-edge-projection.ts",
+        "target": "file:src/features/diagram/dependency-node-bundle.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
         "source": "file:src/features/diagram/dependency-edge-projection.ts",
@@ -3127,10 +3156,11 @@
         "target": "external:micromatch"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Atypescript:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Atypescript:type-only",
         "type": "default",
         "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
-        "target": "external:typescript"
+        "target": "external:typescript",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -3144,6 +3174,12 @@
         "type": "default",
         "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
@@ -3161,6 +3197,25 @@
         "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
         "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "target": "file:src/shared/node/path.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "target": "external:typescript"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:type-only",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "target": "external:typescript",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "type": "default",
+        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
@@ -3458,11 +3513,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:external%3A%40xyflow%2Freact:type-only",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/bounding-group-node.tsx",
-        "target": "external:@xyflow/react",
-        "kind": "type-only"
+        "target": "external:@xyflow/react"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:external%3A%40xyflow%2Freact:runtime",
