@@ -177,7 +177,13 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       incremental: false,
       jsx: options.jsx ?? ts.JsxEmit.Preserve,
       module: options.module ?? ts.ModuleKind.ESNext,
-      moduleResolution: options.moduleResolution ?? ts.ModuleResolutionKind.Bundler,
+      // Bundler resolution requires module ES2015+ or preserve; a tsconfig that
+      // pins an older module (for example commonjs) must fall back to Node10.
+      moduleResolution:
+        options.moduleResolution ??
+        (options.module !== undefined && options.module < ts.ModuleKind.ES2015
+          ? ts.ModuleResolutionKind.Node10
+          : ts.ModuleResolutionKind.Bundler),
       noEmit: true,
       skipLibCheck: true,
       target: options.target ?? ts.ScriptTarget.ESNext,
