@@ -3403,4 +3403,73 @@ describe("React component structure generator", () => {
       ).rejects.toThrow("No visible component matches the --root pattern: Missing");
     });
   });
+
+  it("traces components rendered inside block-bodied list callbacks", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import Row from "./row";
+
+          export function App({ items }: { items: { id: string }[] }) {
+            return (
+              <div>
+                {items.map((item) => {
+                  const key = item.id;
+                  return <Row key={key} />;
+                })}
+              </div>
+            );
+          }
+        `,
+        "src/row.tsx": `export default function Row() { return <li />; }`,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "App",
+          target: "Row",
+          kind: "direct-render",
+          label: undefined,
+        });
+      },
+    );
+  });
+
+  it("supplies list-rendered children to wrapping components", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          import Layout from "./layout";
+          import Row from "./row";
+
+          export function App({ items }: { items: { id: string }[] }) {
+            return (
+              <Layout>
+                {items.map((item) => (
+                  <Row key={item.id} />
+                ))}
+              </Layout>
+            );
+          }
+        `,
+        "src/layout.tsx": `
+          export default function Layout({ children }: { children?: unknown }) {
+            return <section>{children}</section>;
+          }
+        `,
+        "src/row.tsx": `export default function Row() { return <li />; }`,
+      },
+      async (scopePath) => {
+        const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
+
+        expect(edgeFacts(graph)).toContainEqual({
+          source: "Layout",
+          target: "Row",
+          kind: "NODE (children)",
+          label: "from App",
+        });
+      },
+    );
+  });
 });

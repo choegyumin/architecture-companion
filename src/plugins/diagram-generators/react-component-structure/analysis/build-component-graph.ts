@@ -1635,6 +1635,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
         return;
       }
+      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+        for (const argument of unwrapped.arguments) {
+          if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
+            for (const returned of collectReturnExpressions(argument.body)) collect(returned, visitedSymbols);
+          }
+        }
+        return;
+      }
       if (ts.isConditionalExpression(unwrapped)) {
         collect(unwrapped.whenTrue);
         collect(unwrapped.whenFalse);
