@@ -11,6 +11,8 @@ import { createApp } from "@/server/create-app";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
+
 const artifact = {
   behaviors: [
     {
@@ -86,6 +88,7 @@ const artifact = {
 async function findSourceLink(label: string): Promise<HTMLAnchorElement> {
   const link = (await screen.findByText(`Open ${label}`)).closest("a");
   if (!(link instanceof HTMLAnchorElement)) throw new Error(`Source control is not a link: ${label}`);
+  await waitForDiagramReady();
   return link;
 }
 
@@ -112,8 +115,10 @@ describe("reviewer understands the architecture from diagrams and source evidenc
       render(<WorkspacePage client={client} />);
 
       expect(await screen.findByText("Cancellation requested")).toBeInTheDocument();
+      await waitForDiagramReady();
       await userEvent.click(screen.getByRole("button", { name: "Checkout workflow" }));
       expect(await screen.findByText("Checkout requested")).toBeInTheDocument();
+      await waitForDiagramReady();
 
       await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
       expect(await screen.findByText("Browse products")).toBeInTheDocument();
@@ -127,6 +132,7 @@ describe("reviewer understands the architecture from diagrams and source evidenc
 
       await userEvent.click(screen.getByRole("button", { name: "Checkout structure" }));
       expect(await screen.findByText("Checkout page")).toBeInTheDocument();
+      await waitForDiagramReady();
     } finally {
       await rm(scopePath, { recursive: true });
     }

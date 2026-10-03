@@ -12,6 +12,8 @@ import { createApp } from "@/server/create-app";
 import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
 import { writeArtifact } from "@/server/write-artifact";
 
+import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
+
 const artifact = {
   behaviors: [
     {
@@ -56,13 +58,14 @@ function renderWorkspace(scope: Awaited<ReturnType<typeof resolveConsumerScope>>
 
 async function getCanvas(regionName: string): Promise<HTMLElement> {
   const region = await screen.findByRole("region", { name: regionName });
+  await waitForDiagramReady(region);
   return within(region).getByRole("group", { name: "Diagram canvas" });
 }
 
 describe("reviewer leaves feedback as diagram comments", () => {
   it("posts a comment on the canvas and still sees it after reopening the review", async () => {
     const { scope, scopePath } = await createReview();
-    const review = renderWorkspace(scope);
+    let review = renderWorkspace(scope);
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -76,7 +79,8 @@ describe("reviewer leaves feedback as diagram comments", () => {
       );
 
       review.unmount();
-      renderWorkspace(scope);
+      review = renderWorkspace(scope);
+      await getCanvas("Checkout workflow product behavior diagram");
       expect(
         await screen.findByRole("button", { name: "Comment: Please add a payment failure path." }),
       ).toBeInTheDocument();
