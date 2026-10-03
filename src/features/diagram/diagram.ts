@@ -31,6 +31,13 @@ export const diagramSchema = z
   })
   .strict()
   .superRefine((diagram, context) => {
+    if (diagram.graph.componentStructure && diagram.layout.id !== "elk-layered") {
+      context.addIssue({
+        code: "custom",
+        path: ["layout", "id"],
+        message: "Component structure requires ELK layered layout",
+      });
+    }
     if (diagram.layout.id === "sequence" && diagram.graph.groups.length > 0) {
       context.addIssue({
         code: "custom",
