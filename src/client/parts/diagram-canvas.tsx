@@ -205,15 +205,27 @@ export function DiagramCanvas({
 
   useEffect(() => {
     if (!focusView) return;
-    let secondFrame = 0;
-    const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(() => void focusSpotlightView());
-    });
-    return () => {
-      cancelAnimationFrame(firstFrame);
-      cancelAnimationFrame(secondFrame);
+    let frame = 0;
+    let attempts = 0;
+
+    // Framed nodes are unmeasured until React Flow's ResizeObserver runs, so a
+    // spotlight present at mount would fit to nothing. Poll frames until the
+    // framed nodes have dimensions (or give up) before fitting.
+    const waitForFramedNodes = () => {
+      attempts += 1;
+      const framedReady =
+        flowInstance !== undefined &&
+        focusView.nodeIds.every((id) => (flowInstance.getInternalNode(id)?.measured.width ?? 0) > 0);
+      if (!framedReady && attempts < 90) {
+        frame = requestAnimationFrame(waitForFramedNodes);
+        return;
+      }
+      void focusSpotlightView();
     };
-  }, [focusView, focusSpotlightView]);
+
+    frame = requestAnimationFrame(waitForFramedNodes);
+    return () => cancelAnimationFrame(frame);
+  }, [focusView, focusSpotlightView, flowInstance]);
 
   function isInteractiveClick(event: MouseEvent): boolean {
     return event.target instanceof Element && Boolean(event.target.closest(interactiveElementSelector));

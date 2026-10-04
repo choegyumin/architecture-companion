@@ -155,7 +155,6 @@
     box-shadow:
       0 0 0 2px var(--primary),
       0 0 0 6px color-mix(in oklab, var(--primary) 22%, transparent);
-    z-index: 5;
   }
 
   .react-flow__node.diagram-spotlight-dimmed {

@@ -93,7 +93,13 @@ export function applySpotlight(
   const nodes = model.nodes.map<DiagramReactFlowNode>((node) => {
     if (node.type === "bounding-group") return node;
     if (emphasizedNodeIds.has(node.id)) {
-      return { ...node, className: joinClassName(node.className, SPOTLIGHT_EMPHASIZED_CLASS_NAME) };
+      // React Flow writes an inline z-index on every node wrapper, so raising
+      // emphasized nodes above dimmed ones must happen here, not in CSS.
+      return {
+        ...node,
+        className: joinClassName(node.className, SPOTLIGHT_EMPHASIZED_CLASS_NAME),
+        zIndex: 5,
+      };
     }
     return { ...node, className: joinClassName(node.className, SPOTLIGHT_DIMMED_CLASS_NAME) };
   });
