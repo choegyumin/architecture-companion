@@ -228,7 +228,11 @@ export function applyComponentControlForks({
 
     // Options follow the drawn port order — leftmost target anchor first — so
     // the first button matches the leftmost exit. Cases without a port keep
-    // their authored order after the ported ones.
+    // their authored order after the ported ones. Ranking compares each
+    // case's leftmost edge only: a case owning several edges is not
+    // guaranteed a contiguous span of exits (the layout knows nothing about
+    // cases), and we accept that rather than regrouping drawn ports around
+    // case order.
     const rankByCase = new Map<string, [number, number]>();
     for (const edge of branchEdges) {
       const caseValue = (edge.activeWhen ?? [])
