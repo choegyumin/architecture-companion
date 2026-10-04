@@ -39,7 +39,7 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
       {data.eyebrow != null || label != null || data.href || data.labelControl != null ? (
         <EdgeLabelRenderer>
           {data.labelControl != null ? (
-            <div className="nodrag nopan absolute" style={{ ...labelStyle, opacity: 1 }}>
+            <div className="nodrag nopan absolute flex flex-col gap-2" style={{ ...labelStyle, opacity: 1 }}>
               {data.labelControl}
             </div>
           ) : data.labelAction ? (
