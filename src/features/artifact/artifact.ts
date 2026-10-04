@@ -4,7 +4,7 @@ import {
   type ArtifactGeneratorReference,
   artifactGeneratorReferenceSchema,
 } from "@/features/artifact-generator/artifact-generator-reference";
-import { diagramGraphSchema, diagramLinkSchema } from "@/features/diagram/diagram-graph";
+import { diagramGraphSchema, diagramLinkSchema, hasComponentStructure } from "@/features/diagram/diagram-graph";
 import { diagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
 
 export const artifactIdSchema = z
@@ -31,7 +31,7 @@ export const artifactSchema = z
   })
   .strict()
   .superRefine((diagram, context) => {
-    if (diagram.graph.componentStructure && diagram.layout.id !== "elk-layered") {
+    if (hasComponentStructure(diagram.graph) && diagram.layout.id !== "elk-layered") {
       context.addIssue({
         code: "custom",
         path: ["layout", "id"],

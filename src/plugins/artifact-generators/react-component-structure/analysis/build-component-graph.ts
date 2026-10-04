@@ -7,10 +7,10 @@ import micromatch from "micromatch";
 import type ts from "typescript";
 
 import type {
-  ComponentControl,
-  ComponentPaths,
   DefaultDiagramEdge,
   DefaultDiagramNode,
+  DiagramControl,
+  DiagramControlPaths,
   DiagramGraph,
 } from "@/features/diagram/diagram-graph";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
@@ -70,12 +70,12 @@ type SuppliedRenderRelationship = Readonly<{
   origins: readonly Readonly<{ supplierId: string; prop: string }>[];
 }>;
 
-type Relationship = (DirectRenderRelationship | SuppliedRenderRelationship) & Readonly<{ paths: ComponentPaths }>;
+type Relationship = (DirectRenderRelationship | SuppliedRenderRelationship) & Readonly<{ paths: DiagramControlPaths }>;
 
 type SuppliedValue = Readonly<{
   propName: string;
   kind: SuppliedValueKind;
-  targets: readonly Readonly<{ useId: string; paths: ComponentPaths }>[];
+  targets: readonly Readonly<{ useId: string; paths: DiagramControlPaths }>[];
 }>;
 
 type ComponentUse = Readonly<{
@@ -95,28 +95,30 @@ type ComponentInstance = Readonly<{
 type TerminalRule = Readonly<{
   type: "terminal";
   kind: SuppliedValueKind;
-  paths: ComponentPaths;
+  paths: DiagramControlPaths;
 }>;
 
 type ForwardRule = Readonly<{
   type: "forward";
   targetUseId: string;
   targetPropName: string;
-  paths: ComponentPaths;
+  paths: DiagramControlPaths;
 }>;
 
 type ConsumerRule = TerminalRule | ForwardRule;
 
 type ConsumerRules = Readonly<{
   exact: Map<string, ConsumerRule[]>;
-  spreads: ReadonlyArray<Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; paths: ComponentPaths }>>;
+  spreads: ReadonlyArray<
+    Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; paths: DiagramControlPaths }>
+  >;
 }>;
 
 type ConsumerRouteStep = Readonly<{
   useId: string;
   componentId: string;
   propName: string;
-  paths: ComponentPaths;
+  paths: DiagramControlPaths;
 }>;
 
 type ConsumerRoute = Readonly<{
@@ -147,8 +149,8 @@ type AnalysisContext = Readonly<{
   uses: Map<string, ComponentUse>;
   directUseIdsByOwner: Map<string, string[]>;
   analyzedUseIds: Set<string>;
-  controls: Map<string, ComponentControl>;
-  usePaths: Map<string, ComponentPaths>;
+  controls: Map<string, DiagramControl>;
+  usePaths: Map<string, DiagramControlPaths>;
   propBindings: ReadonlyMap<string, PropBindings>;
 }>;
 
@@ -1337,15 +1339,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   ): ConsumerRules {
     const rules: ConsumerRules = { exact: new Map(), spreads: [] };
     const mutableSpreads = rules.spreads as Array<
-      Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; paths: ComponentPaths }>
+      Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; paths: DiagramControlPaths }>
     >;
-    let activePaths: ComponentPaths = [[]];
+    let activePaths: DiagramControlPaths = [[]];
 
     function terminal(propName: string, kind: TerminalRule["kind"]): void {
       addExactRule(rules, propName, { type: "terminal", kind, paths: activePaths });
     }
 
-    function inActivePaths(path: ComponentPaths[number]): boolean {
+    function inActivePaths(path: DiagramControlPaths[number]): boolean {
       return activePaths.some((prefix) =>
         prefix.every((requirement) =>
           path.some(({ controlId, value }) => controlId === requirement.controlId && value === requirement.value),
@@ -1396,11 +1398,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     function collectInvokedRenderProps(
       expression: ts.Expression,
       traverseRootFunction: boolean,
-      initialPaths: ComponentPaths = activePaths,
-    ): readonly { propName: string; paths: ComponentPaths }[] {
-      const props = new Map<string, { propName: string; paths: ComponentPaths }>();
+      initialPaths: DiagramControlPaths = activePaths,
+    ): readonly { propName: string; paths: DiagramControlPaths }[] {
+      const props = new Map<string, { propName: string; paths: DiagramControlPaths }>();
       const activeNodes = new Set<ts.Node>();
-      function visit(node: ts.Node, paths: ComponentPaths, isRoot: boolean): void {
+      function visit(node: ts.Node, paths: DiagramControlPaths, isRoot: boolean): void {
         if (activeNodes.has(node)) return;
         activeNodes.add(node);
         try {
@@ -1409,7 +1411,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           activeNodes.delete(node);
         }
       }
-      function visitValue(node: ts.Node, paths: ComponentPaths, isRoot: boolean): void {
+      function visitValue(node: ts.Node, paths: DiagramControlPaths, isRoot: boolean): void {
         if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
           if (isRoot && traverseRootFunction)
             controlledReturns(node.body, definition.id, context, (value, next) => visit(value, next, false), paths);
@@ -1450,12 +1452,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     function collectForwardedProps(
       expression: ts.Expression,
       symbolOverride?: ts.Symbol,
-    ): readonly { propName: string; paths: ComponentPaths }[] {
-      const props = new Map<string, { propName: string; paths: ComponentPaths }>();
+    ): readonly { propName: string; paths: DiagramControlPaths }[] {
+      const props = new Map<string, { propName: string; paths: DiagramControlPaths }>();
 
       function collect(
         candidate: ts.Expression,
-        paths: ComponentPaths,
+        paths: DiagramControlPaths,
         visitedSymbols: ReadonlySet<ts.Symbol>,
         candidateSymbol?: ts.Symbol,
       ): void {
@@ -1594,7 +1596,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
 
     const activeExpressions = new Set<ts.Expression>();
-    function analyzeRendered(expression: ts.Expression, paths: ComponentPaths = activePaths): void {
+    function analyzeRendered(expression: ts.Expression, paths: DiagramControlPaths = activePaths): void {
       if (activeExpressions.has(expression)) return;
       activeExpressions.add(expression);
       const previous = activePaths;
@@ -1739,8 +1741,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     callback: ts.ArrowFunction | ts.FunctionExpression,
     ownerId: string,
     context: AnalysisContext,
-    initialPaths: ComponentPaths = [[]],
-    pathsByUse: Map<string, ComponentPaths> = new Map(),
+    initialPaths: DiagramControlPaths = [[]],
+    pathsByUse: Map<string, DiagramControlPaths> = new Map(),
   ): readonly ComponentUse[] {
     const uses = new Map<string, ComponentUse>();
     controlledReturns(
@@ -1759,15 +1761,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     expressions: readonly ts.Expression[],
     ownerId: string,
     context: AnalysisContext,
-    initialPaths: ComponentPaths = [[]],
-    pathsByUse: Map<string, ComponentPaths> = new Map(),
+    initialPaths: DiagramControlPaths = [[]],
+    pathsByUse: Map<string, DiagramControlPaths> = new Map(),
   ): readonly ComponentUse[] {
     const uses = new Map<string, ComponentUse>();
 
     const activeExpressions = new Set<ts.Expression>();
     function collect(
       expression: ts.Expression,
-      paths: ComponentPaths,
+      paths: DiagramControlPaths,
       visitedSymbols: ReadonlySet<ts.Symbol> = new Set(),
     ): void {
       if (activeExpressions.has(expression)) return;
@@ -1780,7 +1782,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
     function collectValue(
       expression: ts.Expression,
-      paths: ComponentPaths,
+      paths: DiagramControlPaths,
       visitedSymbols: ReadonlySet<ts.Symbol>,
     ): void {
       if (
@@ -1852,7 +1854,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       for (const initializer of reference.initializers) collect(initializer, paths, reference.visitedSymbols);
     }
 
-    function collectChild(child: ts.JsxChild, paths: ComponentPaths): void {
+    function collectChild(child: ts.JsxChild, paths: DiagramControlPaths): void {
       if (ts.isJsxExpression(child) && child.expression) collect(child.expression, paths);
       else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child))
         collect(child, paths);
@@ -1867,7 +1869,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     ownerId: string,
     context: AnalysisContext,
     symbolOverride?: ts.Symbol,
-    pathsByUse: Map<string, ComponentPaths> = new Map(),
+    pathsByUse: Map<string, DiagramControlPaths> = new Map(),
   ): readonly ComponentUse[] {
     const uses = new Map<string, ComponentUse>();
 
@@ -1875,7 +1877,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       candidate: ts.Expression,
       visitedSymbols: ReadonlySet<ts.Symbol>,
       candidateSymbol?: ts.Symbol,
-      paths: ComponentPaths = [[]],
+      paths: DiagramControlPaths = [[]],
     ): void {
       if (
         controlledExpression(candidate, ownerId, paths, context, (expression, next) =>
@@ -1939,7 +1941,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     propName: string,
     kind: SuppliedValueKind,
     targets: readonly ComponentUse[],
-    pathsByUse: ReadonlyMap<string, ComponentPaths>,
+    pathsByUse: ReadonlyMap<string, DiagramControlPaths>,
   ): void {
     if (targets.length === 0) return;
     receiver.suppliedValues.push({
@@ -1956,7 +1958,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     context: AnalysisContext,
     symbolOverride?: ts.Symbol,
   ): void {
-    const pathsByUse = new Map<string, ComponentPaths>();
+    const pathsByUse = new Map<string, DiagramControlPaths>();
     const componentUses = componentReferenceUses(expression, receiver.ownerId, context, symbolOverride, pathsByUse);
     if (componentUses.length > 0) {
       addSuppliedValue(receiver, propName, "component-prop", componentUses, pathsByUse);
@@ -1965,7 +1967,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const values = resolveAliasedValues(expression, context, new Set(), symbolOverride);
     const renderUses = new Map<string, ComponentUse>();
-    function collectCallbacks(value: ts.Expression, paths: ComponentPaths): void {
+    function collectCallbacks(value: ts.Expression, paths: DiagramControlPaths): void {
       if (controlledExpression(value, receiver.ownerId, paths, context, collectCallbacks)) return;
       const unwrapped = unwrapExpression(value);
       if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
@@ -2041,13 +2043,13 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     for (const child of children) analyzeSuppliedValue(receiver, "children", child, context);
   }
 
-  function unionPaths(...sets: ComponentPaths[]): ComponentPaths {
-    const paths = new Map<string, ComponentPaths[number]>();
+  function unionPaths(...sets: DiagramControlPaths[]): DiagramControlPaths {
+    const paths = new Map<string, DiagramControlPaths[number]>();
     for (const path of sets.flat()) paths.set(JSON.stringify(path), path);
     return [...paths.values()];
   }
 
-  function combinePaths(left: ComponentPaths, right: ComponentPaths): ComponentPaths {
+  function combinePaths(left: DiagramControlPaths, right: DiagramControlPaths): DiagramControlPaths {
     return unionPaths(
       left.flatMap((prefix) =>
         right.flatMap((suffix) => {
@@ -2067,20 +2069,20 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     node: ts.Node,
     ownerId: string,
     label: string,
-    when: ComponentPaths,
+    when: DiagramControlPaths,
     context: AnalysisContext,
     alternatives?: { id: string; label: string }[],
-  ): (value: string) => ComponentPaths {
+  ): (value: string) => DiagramControlPaths {
     const suffix = createHash("sha256")
       .update(`${toPosixPath(relative(context.scopePath, node.getSourceFile().fileName))}:${node.pos}:${node.end}`)
       .digest("hex")
       .slice(0, 16);
     const id = `${ownerId}:control:${suffix}`;
     const existing = context.controls.get(id);
-    const base = { id, source: ownerId, label, when: unionPaths(existing?.when ?? [], when) };
+    const base = { id, owner: ownerId, label, dependsOn: unionPaths(existing?.dependsOn ?? [], when) };
     context.controls.set(
       id,
-      alternatives ? { ...base, kind: "branch", alternatives } : { ...base, kind: "conditional" },
+      alternatives ? { ...base, kind: "branch", cases: alternatives } : { ...base, kind: "conditional" },
     );
     return (value) => combinePaths(when, [[{ controlId: id, value }]]);
   }
@@ -2099,9 +2101,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function controlledExpression(
     expression: ts.Expression,
     ownerId: string,
-    paths: ComponentPaths,
+    paths: DiagramControlPaths,
     context: AnalysisContext,
-    visit: (expression: ts.Expression, paths: ComponentPaths) => void,
+    visit: (expression: ts.Expression, paths: DiagramControlPaths) => void,
   ): boolean {
     const unwrapped = unwrapExpression(expression);
     if (ts.isConditionalExpression(unwrapped)) {
@@ -2127,7 +2129,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       return true;
     }
     if (ts.isBinaryExpression(unwrapped) && unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
-      function conjunction(condition: ts.Expression, node: ts.Node, when: ComponentPaths): ComponentPaths {
+      function conjunction(condition: ts.Expression, node: ts.Node, when: DiagramControlPaths): DiagramControlPaths {
         const guard = unwrapExpression(condition);
         if (ts.isBinaryExpression(guard) && guard.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
           const prerequisites = conjunction(guard.left, guard, when);
@@ -2204,8 +2206,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     body: ts.ConciseBody,
     ownerId: string,
     context: AnalysisContext,
-    visit: (expression: ts.Expression, paths: ComponentPaths) => void,
-    initialPaths: ComponentPaths = [[]],
+    visit: (expression: ts.Expression, paths: DiagramControlPaths) => void,
+    initialPaths: DiagramControlPaths = [[]],
   ): void {
     if (!ts.isBlock(body)) {
       visit(body, initialPaths);
@@ -2240,15 +2242,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
       return false;
     }
-    type Flow = { next: ComponentPaths; breaks: ComponentPaths };
+    type Flow = { next: DiagramControlPaths; breaks: DiagramControlPaths };
     function walk(
       statements: readonly ts.Statement[],
-      initial: ComponentPaths,
+      initial: DiagramControlPaths,
       breakContinuation: readonly ts.Statement[] = [],
       continuation: readonly ts.Statement[] = [],
     ): Flow {
       let next = initial;
-      let breaks: ComponentPaths = [];
+      let breaks: DiagramControlPaths = [];
       for (const [index, statement] of statements.entries()) {
         if (next.length === 0) break;
         if (ts.isReturnStatement(statement)) {
@@ -2321,8 +2323,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             continue;
           }
           const select = controlPaths(statement, ownerId, statement.expression.getText(), next, context, alternatives);
-          let fallthrough: ComponentPaths = [];
-          let exits: ComponentPaths = noDefault ? select(`case:${clauses.length}`) : [];
+          let fallthrough: DiagramControlPaths = [];
+          let exits: DiagramControlPaths = noDefault ? select(`case:${clauses.length}`) : [];
           for (const [clauseIndex, clause] of clauses.entries()) {
             const flow = walk(clause.statements, unionPaths(fallthrough, select(`case:${clauseIndex}`)), tail, [
               ...clauses.slice(clauseIndex + 1).flatMap((nextClause) => [...nextClause.statements]),
@@ -2345,15 +2347,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function addUsePaths(
     context: AnalysisContext,
     useId: string,
-    paths: ComponentPaths,
-    pathsByUse: Map<string, ComponentPaths> = context.usePaths,
+    paths: DiagramControlPaths,
+    pathsByUse: Map<string, DiagramControlPaths> = context.usePaths,
   ): void {
     pathsByUse.set(useId, unionPaths(pathsByUse.get(useId) ?? [], paths));
   }
 
   function analyzeDefinitionUsages(definition: ComponentDefinition, context: AnalysisContext): void {
     const activeExpressions = new Set<ts.Expression>();
-    function analyzeRendered(expression: ts.Expression, paths: ComponentPaths = [[]]): void {
+    function analyzeRendered(expression: ts.Expression, paths: DiagramControlPaths = [[]]): void {
       if (activeExpressions.has(expression)) return;
       activeExpressions.add(expression);
       try {
@@ -2362,7 +2364,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         activeExpressions.delete(expression);
       }
     }
-    function analyzeRenderedValue(expression: ts.Expression, paths: ComponentPaths): void {
+    function analyzeRenderedValue(expression: ts.Expression, paths: DiagramControlPaths): void {
       if (controlledExpression(expression, definition.id, paths, context, analyzeRendered)) return;
       const unwrapped = unwrapExpression(expression);
       if (ts.isJsxFragment(unwrapped)) {
@@ -2419,7 +2421,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       if (reference) for (const initializer of reference.initializers) analyzeRendered(initializer, paths);
     }
 
-    function analyzeChild(child: ts.JsxChild, paths: ComponentPaths): void {
+    function analyzeChild(child: ts.JsxChild, paths: DiagramControlPaths): void {
       if (ts.isJsxExpression(child) && child.expression) analyzeRendered(child.expression, paths);
       else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
         analyzeRendered(child, paths);
@@ -2489,24 +2491,6 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
 
     return [...routes.values()];
-  }
-
-  function relationshipKindLabel(relationship: Relationship): string {
-    if (relationship.kind === "direct-render") return relationship.kind;
-    const category =
-      relationship.kind === "node-prop" ? "NODE" : relationship.kind === "render-prop" ? "RENDER" : "COMPONENT";
-    return `${category} (${relationship.propName})`;
-  }
-
-  function relationshipLabel(
-    relationship: Relationship,
-    definitionsById: ReadonlyMap<string, ComponentDefinition>,
-  ): string | undefined {
-    if (relationship.kind === "direct-render") return undefined;
-    const supplierNames = relationship.supplierIds
-      .map((supplierId) => definitionsById.get(supplierId)?.name ?? supplierId)
-      .toSorted();
-    return `from ${supplierNames.join(", ")}`;
   }
 
   function edgeId(relationship: Relationship): string {
@@ -2630,29 +2614,37 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   ): Readonly<{
     instances: readonly ComponentInstance[];
     relationships: readonly Relationship[];
-    controls: ComponentControl[];
+    controls: DiagramControl[];
     roots: string[];
   }> {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
     const visibleInstances = new Map<string, ComponentInstance>();
     const visibleDefinitionIds = new Set<string>();
     const relationships = new Map<string, Relationship>();
-    const controls = new Map<string, ComponentControl>();
+    const controls = new Map<string, DiagramControl>();
     const roots: string[] = [];
 
     function instantiatePaths(
-      paths: ComponentPaths,
+      paths: DiagramControlPaths,
       instance: ComponentInstance,
       source: ComponentInstance,
-      prerequisites: ComponentPaths = [[]],
-    ): ComponentPaths {
+      prerequisites: DiagramControlPaths = [[]],
+    ): DiagramControlPaths {
       return paths.map((path) =>
         path.map(({ controlId, value }) => {
           const template = context.controls.get(controlId)!;
           const id = `${instance.id}:control:${controlId.split(":control:").at(-1)}`;
-          const when = combinePaths(prerequisites, instantiatePaths(template.when, instance, source, prerequisites));
+          const when = combinePaths(
+            prerequisites,
+            instantiatePaths(template.dependsOn, instance, source, prerequisites),
+          );
           const existing = controls.get(id);
-          controls.set(id, { ...template, id, source: source.id, when: unionPaths(existing?.when ?? [], when) });
+          controls.set(id, {
+            ...template,
+            id,
+            owner: source.id,
+            dependsOn: unionPaths(existing?.dependsOn ?? [], when),
+          });
           return { controlId: id, value };
         }),
       );
@@ -2731,8 +2723,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       propName: string,
       originPropName: string,
       trail: ReadonlySet<string>,
-      paths: ComponentPaths,
-      targetUsePaths: ComponentPaths,
+      paths: DiagramControlPaths,
+      targetUsePaths: DiagramControlPaths,
     ): void {
       const visitKey = [targetUse.id, source.id, kind, propName].join("\0");
       if (trail.has(visitKey)) return;
@@ -2766,7 +2758,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       owner: ComponentInstance,
       trail: ReadonlySet<string> = new Set(),
       inherited?: Readonly<{ kind: SuppliedValueKind; propName: string }>,
-      inheritedPaths: ComponentPaths = [[]],
+      inheritedPaths: DiagramControlPaths = [[]],
     ): void {
       const receiverVisible = targetVisibility(receiverUse.target.id).boundaryVisible;
       for (const supplied of receiverUse.suppliedValues) {
@@ -2851,7 +2843,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     definitions: readonly ComponentDefinition[],
     instances: readonly ComponentInstance[],
     relationships: readonly Relationship[],
-    controls: ComponentControl[],
+    controls: DiagramControl[],
     roots: string[],
   ): DiagramGraph {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
@@ -2899,22 +2891,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
     const edges: DefaultDiagramEdge[] = relationships
       .filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target))
-      .map((relationship): DefaultDiagramEdge => {
-        const label = relationshipLabel(relationship, definitionsById);
-        return {
-          type: "default",
-          id: edgeId(relationship),
-          source: relationship.source,
-          target: relationship.target,
-          kind: relationshipKindLabel(relationship),
-          component: { paths: relationship.paths },
-          ...(label ? { label } : {}),
-        };
-      })
+      .map((relationship): DefaultDiagramEdge => ({
+        type: "default",
+        id: edgeId(relationship),
+        source: relationship.source,
+        target: relationship.target,
+        activeWhen: relationship.paths,
+      }))
       .toSorted((left, right) => left.id.localeCompare(right.id));
     const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
 
-    return { groups: [], nodes, edges, componentStructure: { roots, controls } };
+    return { groups: [], nodes, edges, roots, controls };
   }
 
   function focusGraphOnRoots(
@@ -2954,7 +2941,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ...graph,
       nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
       edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
-      componentStructure: { roots: roots.map(({ id }) => id), controls: graph.componentStructure!.controls },
+      roots: roots.map(({ id }) => id),
+      controls: graph.controls!,
     };
   }
 
@@ -2973,36 +2961,34 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
     const visibleIds = new Set(graph.nodes.map(({ id }) => id));
     const availableControls = new Map(
-      graph
-        .componentStructure!.controls.filter(({ source }) => visibleIds.has(source))
-        .map((control) => [control.id, control]),
+      graph.controls!.filter(({ owner }) => visibleIds.has(owner)).map((control) => [control.id, control]),
     );
     const neededControls = new Set<string>();
-    function requireControls(paths: ComponentPaths): void {
+    function requireControls(paths: DiagramControlPaths): void {
       for (const { controlId } of paths.flat()) {
         const control = availableControls.get(controlId);
         if (!control || neededControls.has(controlId)) continue;
         neededControls.add(controlId);
-        requireControls(control.when);
+        requireControls(control.dependsOn);
       }
     }
-    for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.component!.paths);
-    const controls = graph.componentStructure!.controls.filter(({ id }) => neededControls.has(id));
-    const controlsBySource = new Map<string, ComponentControl[]>();
+    for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.activeWhen ?? [[]]);
+    const controls = graph.controls!.filter(({ id }) => neededControls.has(id));
+    const controlsByOwner = new Map<string, DiagramControl[]>();
     const controlKeys = new Map<string, string>();
     for (const control of controls) {
-      const owned = controlsBySource.get(control.source) ?? [];
+      const owned = controlsByOwner.get(control.owner) ?? [];
       controlKeys.set(control.id, String(owned.length));
       owned.push(control);
-      controlsBySource.set(control.source, owned);
+      controlsByOwner.set(control.owner, owned);
     }
     const controlsById = new Map(controls.map((control) => [control.id, control]));
-    const normalizePaths = (paths: ComponentPaths, classes: ReadonlyMap<string, string>) =>
+    const normalizePaths = (paths: DiagramControlPaths, classes: ReadonlyMap<string, string>) =>
       paths.map((path) =>
         path
           .filter(({ controlId }) => controlsById.has(controlId))
           .map(({ controlId, value }) => ({
-            controlId: `${classes.get(controlsById.get(controlId)!.source)}:${controlKeys.get(controlId)}`,
+            controlId: `${classes.get(controlsById.get(controlId)!.owner)}:${controlKeys.get(controlId)}`,
             value,
           })),
       );
@@ -3021,14 +3007,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return JSON.stringify([
             {
               ...metadata,
-              component: { paths: normalizePaths(edge.type === "default" ? edge.component!.paths : [[]], classes) },
+              activeWhen: normalizePaths(edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]], classes),
             },
             suppliers,
             classes.get(target),
           ]);
         });
-        const ownedControls = (controlsBySource.get(node.id) ?? []).map(
-          ({ id: _id, source: _source, when, ...metadata }) => ({ ...metadata, when: normalizePaths(when, classes) }),
+        const ownedControls = (controlsByOwner.get(node.id) ?? []).map(
+          ({ id: _id, owner: _owner, dependsOn, ...metadata }) => ({
+            ...metadata,
+            dependsOn: normalizePaths(dependsOn, classes),
+          }),
         );
         const signature = JSON.stringify([classes.get(node.id), ownedControls, [...new Set(outgoing)].toSorted()]);
         if (!representatives.has(signature)) representatives.set(signature, node.id);
@@ -3069,12 +3058,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       })
       .toSorted((left, right) => left.id.localeCompare(right.id));
     const outputControlIds = new Map(
-      controls.map((control) => [
-        control.id,
-        `${outputIds.get(control.source)}:control:${controlKeys.get(control.id)}`,
-      ]),
+      controls.map((control) => [control.id, `${outputIds.get(control.owner)}:control:${controlKeys.get(control.id)}`]),
     );
-    const rewritePaths = (paths: ComponentPaths): ComponentPaths =>
+    const rewritePaths = (paths: DiagramControlPaths): DiagramControlPaths =>
       unionPaths(
         paths.map((path) =>
           path
@@ -3082,15 +3068,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             .map(({ controlId, value }) => ({ controlId: outputControlIds.get(controlId)!, value })),
         ),
       );
-    const outputControls = new Map<string, ComponentControl>();
+    const outputControls = new Map<string, DiagramControl>();
     for (const control of controls) {
       const id = outputControlIds.get(control.id)!;
       const existing = outputControls.get(id);
       outputControls.set(id, {
         ...control,
         id,
-        source: outputIds.get(control.source)!,
-        when: unionPaths(existing?.when ?? [], rewritePaths(control.when)),
+        owner: outputIds.get(control.owner)!,
+        dependsOn: unionPaths(existing?.dependsOn ?? [], rewritePaths(control.dependsOn)),
       });
     }
     const edges = new Map<string, (typeof graph.edges)[number]>();
@@ -3099,14 +3085,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const target = outputIds.get(edge.target)!;
       const id = edgeId({ ...relationshipsByEdgeId.get(edge.id)!, source, target });
       const existing = edges.get(id);
-      const paths = edge.type === "default" ? rewritePaths(edge.component!.paths) : [[]];
+      const paths = edge.type === "default" ? rewritePaths(edge.activeWhen ?? [[]]) : [[]];
       edges.set(id, {
         ...edge,
         id,
         source,
         target,
         ...(edge.type === "default"
-          ? { component: { paths: unionPaths(existing?.type === "default" ? existing.component!.paths : [], paths) } }
+          ? { activeWhen: unionPaths(existing?.type === "default" ? (existing.activeWhen ?? []) : [], paths) }
           : {}),
       });
     }
@@ -3114,10 +3100,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ...graph,
       nodes,
       edges: [...edges.values()].toSorted((left, right) => left.id.localeCompare(right.id)),
-      componentStructure: {
-        roots: [...new Set(graph.componentStructure!.roots.map((id) => outputIds.get(id)!))],
-        controls: [...outputControls.values()],
-      },
+      roots: [...new Set(graph.roots!.map((id) => outputIds.get(id)!))],
+      controls: [...outputControls.values()],
     };
   }
 

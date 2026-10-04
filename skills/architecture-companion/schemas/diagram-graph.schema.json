@@ -394,39 +394,30 @@
                 "type": "string",
                 "minLength": 1
               },
-              "component": {
-                "type": "object",
-                "properties": {
-                  "paths": {
-                    "minItems": 1,
-                    "type": "array",
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "controlId": {
-                            "type": "string",
-                            "minLength": 1
-                          },
-                          "value": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        },
-                        "required": [
-                          "controlId",
-                          "value"
-                        ],
-                        "additionalProperties": false
+              "activeWhen": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "controlId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
                       }
-                    }
+                    },
+                    "required": [
+                      "controlId",
+                      "value"
+                    ],
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "paths"
-                ],
-                "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -489,161 +480,153 @@
         ]
       }
     },
-    "componentStructure": {
-      "type": "object",
-      "properties": {
-        "roots": {
-          "minItems": 1,
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "controls": {
-          "type": "array",
-          "items": {
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "source": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "label": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "when": {
-                    "minItems": 1,
-                    "type": "array",
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "controlId": {
-                            "type": "string",
-                            "minLength": 1
-                          },
-                          "value": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        },
-                        "required": [
-                          "controlId",
-                          "value"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "kind": {
-                    "type": "string",
-                    "const": "conditional"
-                  }
-                },
-                "required": [
-                  "id",
-                  "source",
-                  "label",
-                  "when",
-                  "kind"
-                ],
-                "additionalProperties": false
+    "roots": {
+      "readOnly": true,
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "controls": {
+      "readOnly": true,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
               },
-              {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "source": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "label": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "when": {
-                    "minItems": 1,
-                    "type": "array",
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "controlId": {
-                            "type": "string",
-                            "minLength": 1
-                          },
-                          "value": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        },
-                        "required": [
-                          "controlId",
-                          "value"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "kind": {
-                    "type": "string",
-                    "const": "branch"
-                  },
-                  "alternatives": {
-                    "minItems": 2,
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "label": {
-                          "type": "string",
-                          "minLength": 1
-                        }
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dependsOn": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "controlId": {
+                        "type": "string",
+                        "minLength": 1
                       },
-                      "required": [
-                        "id",
-                        "label"
-                      ],
-                      "additionalProperties": false
-                    }
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "controlId",
+                      "value"
+                    ],
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "id",
-                  "source",
-                  "label",
-                  "when",
-                  "kind",
-                  "alternatives"
-                ],
-                "additionalProperties": false
+                }
+              },
+              "kind": {
+                "type": "string",
+                "const": "conditional"
               }
-            ]
+            },
+            "required": [
+              "id",
+              "owner",
+              "label",
+              "dependsOn",
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dependsOn": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "controlId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "value": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "controlId",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "kind": {
+                "type": "string",
+                "const": "branch"
+              },
+              "cases": {
+                "minItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "owner",
+              "label",
+              "dependsOn",
+              "kind",
+              "cases"
+            ],
+            "additionalProperties": false
           }
-        }
-      },
-      "required": [
-        "roots",
-        "controls"
-      ],
-      "additionalProperties": false
+        ]
+      }
     }
   },
   "required": [

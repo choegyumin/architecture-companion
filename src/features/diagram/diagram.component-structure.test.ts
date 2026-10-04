@@ -27,13 +27,11 @@ const componentDiagram = {
         id: "app-body",
         source: "app",
         target: "body",
-        component: { paths: [[{ controlId: "show", value: "on" }]] },
+        activeWhen: [[{ controlId: "show", value: "on" }]],
       },
     ],
-    componentStructure: {
-      roots: ["app"],
-      controls: [{ id: "show", source: "app", label: "show", kind: "conditional", when: [[]] }],
-    },
+    roots: ["app"],
+    controls: [{ id: "show", owner: "app", label: "show", kind: "conditional", dependsOn: [[]] }],
   },
 } as const;
 
@@ -81,7 +79,7 @@ describe("component structure diagram contract", () => {
           edges: [
             {
               ...componentDiagram.graph.edges.at(0),
-              component: { paths: [[{ controlId: "missing", value: "on" }]] },
+              activeWhen: [[{ controlId: "missing", value: "on" }]],
             },
           ],
         },
@@ -90,29 +88,30 @@ describe("component structure diagram contract", () => {
   });
 
   it.each([
-    { control: componentDiagram.graph.componentStructure.controls.at(0), value: "true" },
+    { control: componentDiagram.graph.controls.at(0), value: "true" },
     {
       control: {
         id: "show",
-        source: "app",
+        owner: "app",
         label: "mode",
         kind: "branch",
-        when: [[]],
-        alternatives: [
+        dependsOn: [[]],
+        cases: [
           { id: "first", label: "First" },
           { id: "second", label: "Second" },
         ],
       },
       value: "missing",
     },
-  ])("rejects a value outside the control alternatives: $value", ({ control, value }) => {
+  ])("rejects a value outside the control cases: $value", ({ control, value }) => {
     expect(() =>
       parseDiagram({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
-          componentStructure: { roots: ["app"], controls: [control] },
-          edges: [{ ...componentDiagram.graph.edges.at(0), component: { paths: [[{ controlId: "show", value }]] } }],
+          roots: ["app"],
+          controls: [control],
+          edges: [{ ...componentDiagram.graph.edges.at(0), activeWhen: [[{ controlId: "show", value }]] }],
         },
       }),
     ).toThrow(`Invalid value for component control show: ${value}`);
@@ -121,25 +120,22 @@ describe("component structure diagram contract", () => {
   it.each([
     {
       roots: ["missing"],
-      controls: componentDiagram.graph.componentStructure.controls,
+      controls: componentDiagram.graph.controls,
       error: "Unknown component root: missing",
     },
     {
       roots: ["app", "app"],
-      controls: componentDiagram.graph.componentStructure.controls,
+      controls: componentDiagram.graph.controls,
       error: "Duplicate component root: app",
     },
     {
       roots: ["app"],
-      controls: [{ ...componentDiagram.graph.componentStructure.controls.at(0), source: "missing" }],
-      error: "Unknown component control source: missing",
+      controls: [{ ...componentDiagram.graph.controls.at(0), owner: "missing" }],
+      error: "Unknown component control owner: missing",
     },
     {
       roots: ["app"],
-      controls: [
-        ...componentDiagram.graph.componentStructure.controls,
-        ...componentDiagram.graph.componentStructure.controls,
-      ],
+      controls: [...componentDiagram.graph.controls, ...componentDiagram.graph.controls],
       error: "Duplicate component control: show",
     },
     {
@@ -147,23 +143,23 @@ describe("component structure diagram contract", () => {
       controls: [
         {
           id: "show",
-          source: "app",
+          owner: "app",
           kind: "branch",
           label: "mode",
-          when: [[]],
-          alternatives: [
+          dependsOn: [[]],
+          cases: [
             { id: "same", label: "First" },
             { id: "same", label: "Second" },
           ],
         },
       ],
-      error: "Duplicate component alternative: same",
+      error: "Duplicate component control case: same",
     },
   ])("rejects inconsistent metadata: $error", ({ roots, controls, error }) => {
     expect(() =>
       parseDiagram({
         ...componentDiagram,
-        graph: { ...componentDiagram.graph, edges: [], componentStructure: { roots, controls } },
+        graph: { ...componentDiagram.graph, edges: [], roots, controls },
       }),
     ).toThrow(error);
   });
@@ -174,22 +170,20 @@ describe("component structure diagram contract", () => {
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
-          componentStructure: {
-            roots: ["app"],
-            controls: [
-              {
-                ...componentDiagram.graph.componentStructure.controls.at(0),
-                when: [[{ controlId: dependency, value: "on" }]],
-              },
-              {
-                id: "other",
-                source: "body",
-                kind: "conditional",
-                label: "other",
-                when: [[{ controlId: "show", value: "on" }]],
-              },
-            ],
-          },
+          roots: ["app"],
+          controls: [
+            {
+              ...componentDiagram.graph.controls.at(0),
+              dependsOn: [[{ controlId: dependency, value: "on" }]],
+            },
+            {
+              id: "other",
+              owner: "body",
+              kind: "conditional",
+              label: "other",
+              dependsOn: [[{ controlId: "show", value: "on" }]],
+            },
+          ],
         },
       }),
     ).toThrow("Component control prerequisites contain a cycle");
@@ -204,18 +198,34 @@ describe("component structure diagram contract", () => {
           edges: [
             {
               ...componentDiagram.graph.edges.at(0),
-              component: {
-                paths: [
-                  [
-                    { controlId: "show", value: "on" },
-                    { controlId: "show", value: "off" },
-                  ],
+              activeWhen: [
+                [
+                  { controlId: "show", value: "on" },
+                  { controlId: "show", value: "off" },
                 ],
-              },
+              ],
             },
           ],
         },
       }),
     ).toThrow("Contradictory component path: show");
+  });
+
+  it("rejects controls without declared roots", () => {
+    const { roots: _roots, ...graph } = componentDiagram.graph;
+    void _roots;
+    expect(() => parseDiagram({ ...componentDiagram, graph })).toThrow("Component controls require declared roots");
+  });
+
+  it("rejects a node without incoming edges that is not a declared root", () => {
+    expect(() =>
+      parseDiagram({
+        ...componentDiagram,
+        graph: {
+          ...componentDiagram.graph,
+          nodes: [...componentDiagram.graph.nodes, { type: "default", id: "orphan", title: "Orphan" }],
+        },
+      }),
+    ).toThrow("Component node without incoming edges must be a declared root: orphan");
   });
 });

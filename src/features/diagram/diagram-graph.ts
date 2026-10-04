@@ -16,27 +16,31 @@ export type DiagramLink = z.infer<typeof diagramLinkSchema>;
 
 /* === Component structure === */
 
-const componentPathRequirementSchema = z.object({ controlId: diagramIdSchema, value: z.string().min(1) }).strict();
-export const componentPathsSchema = z.array(z.array(componentPathRequirementSchema)).min(1);
-export type ComponentPaths = z.infer<typeof componentPathsSchema>;
+/** One condition of a control path: the control `controlId` must currently hold `value`. */
+const diagramControlConditionSchema = z.object({ controlId: diagramIdSchema, value: z.string().min(1) }).strict();
+export type DiagramControlCondition = z.infer<typeof diagramControlConditionSchema>;
 
-const componentControlBaseShape = {
+/** Disjunctive normal form: the connection holds when at least one AND clause holds. */
+export const diagramControlPathsSchema = z.array(z.array(diagramControlConditionSchema)).min(1);
+export type DiagramControlPaths = z.infer<typeof diagramControlPathsSchema>;
+
+const diagramControlBaseShape = {
   id: diagramIdSchema,
-  source: diagramIdSchema,
+  owner: diagramIdSchema,
   label: z.string().min(1),
-  when: componentPathsSchema,
+  dependsOn: diagramControlPathsSchema,
 };
-export const componentControlSchema = z.discriminatedUnion("kind", [
-  z.object({ ...componentControlBaseShape, kind: z.literal("conditional") }).strict(),
+export const diagramControlSchema = z.discriminatedUnion("kind", [
+  z.object({ ...diagramControlBaseShape, kind: z.literal("conditional") }).strict(),
   z
     .object({
-      ...componentControlBaseShape,
+      ...diagramControlBaseShape,
       kind: z.literal("branch"),
-      alternatives: z.array(z.object({ id: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
+      cases: z.array(z.object({ id: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
     })
     .strict(),
 ]);
-export type ComponentControl = z.infer<typeof componentControlSchema>;
+export type DiagramControl = z.infer<typeof diagramControlSchema>;
 
 const componentNodeMetadataSchema = z
   .object({
@@ -129,7 +133,7 @@ export const defaultDiagramEdgeSchema = z
     kind: z.string().min(1).optional(),
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
-    component: z.object({ paths: componentPathsSchema }).strict().optional(),
+    activeWhen: diagramControlPathsSchema.optional(),
   })
   .strict();
 export type DefaultDiagramEdge = z.infer<typeof defaultDiagramEdgeSchema>;
@@ -170,14 +174,13 @@ export const diagramGraphSchema = z
     groups: z.array(diagramGroupSchema).readonly(),
     nodes: z.array(diagramNodeSchema).min(1).readonly(),
     edges: z.array(diagramEdgeSchema).readonly(),
-    componentStructure: z
-      .object({ roots: z.array(diagramIdSchema).min(1), controls: z.array(componentControlSchema) })
-      .strict()
-      .optional(),
+    roots: z.array(diagramIdSchema).min(1).readonly().optional(),
+    controls: z.array(diagramControlSchema).readonly().optional(),
   })
   .strict()
   .superRefine((graph, context) => {
-    if (graph.componentStructure) {
+    const hasComponentStructure = graph.controls != null || graph.roots != null;
+    if (hasComponentStructure) {
       graph.nodes.forEach((node, index) => {
         if (node.type !== "default") {
           context.addIssue({
@@ -196,100 +199,119 @@ export const diagramGraphSchema = z
           });
         }
       });
+      if (graph.controls != null && graph.roots == null) {
+        context.addIssue({
+          code: "custom",
+          path: ["roots"],
+          message: "Component controls require declared roots",
+        });
+      }
     }
-    const controls = new Map(graph.componentStructure?.controls.map((control) => [control.id, control]));
+    const controls = new Map(graph.controls?.map((control) => [control.id, control]));
     const nodeIds = new Set(graph.nodes.map((node) => node.id));
     const rootIds = new Set<string>();
-    graph.componentStructure?.roots.forEach((root, index) => {
+    graph.roots?.forEach((root, index) => {
       if (!nodeIds.has(root) || rootIds.has(root)) {
         context.addIssue({
           code: "custom",
-          path: ["componentStructure", "roots", index],
+          path: ["roots", index],
           message: `${nodeIds.has(root) ? "Duplicate" : "Unknown"} component root: ${root}`,
         });
       }
       rootIds.add(root);
     });
     const controlIds = new Set<string>();
-    graph.componentStructure?.controls.forEach((control, index) => {
+    graph.controls?.forEach((control, index) => {
       if (controlIds.has(control.id)) {
         context.addIssue({
           code: "custom",
-          path: ["componentStructure", "controls", index, "id"],
+          path: ["controls", index, "id"],
           message: `Duplicate component control: ${control.id}`,
         });
       }
       controlIds.add(control.id);
-      if (!nodeIds.has(control.source)) {
+      if (!nodeIds.has(control.owner)) {
         context.addIssue({
           code: "custom",
-          path: ["componentStructure", "controls", index, "source"],
-          message: `Unknown component control source: ${control.source}`,
+          path: ["controls", index, "owner"],
+          message: `Unknown component control owner: ${control.owner}`,
         });
       }
       if (control.kind === "branch") {
-        const alternativeIds = new Set<string>();
-        control.alternatives.forEach((alternative, alternativeIndex) => {
-          if (alternativeIds.has(alternative.id)) {
+        const caseIds = new Set<string>();
+        control.cases.forEach((branchCase, caseIndex) => {
+          if (caseIds.has(branchCase.id)) {
             context.addIssue({
               code: "custom",
-              path: ["componentStructure", "controls", index, "alternatives", alternativeIndex, "id"],
-              message: `Duplicate component alternative: ${alternative.id}`,
+              path: ["controls", index, "cases", caseIndex, "id"],
+              message: `Duplicate component control case: ${branchCase.id}`,
             });
           }
-          alternativeIds.add(alternative.id);
+          caseIds.add(branchCase.id);
         });
       }
     });
-    const validatePaths = (paths: ComponentPaths, path: (string | number)[]) => {
-      paths.forEach((requirements, pathIndex) => {
+    const validatePaths = (paths: DiagramControlPaths, path: (string | number)[]) => {
+      paths.forEach((conditions, pathIndex) => {
         const values = new Map<string, string>();
-        requirements.forEach((requirement, requirementIndex) => {
-          const previous = values.get(requirement.controlId);
-          if (previous !== undefined && previous !== requirement.value) {
+        conditions.forEach((condition, conditionIndex) => {
+          const previous = values.get(condition.controlId);
+          if (previous !== undefined && previous !== condition.value) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, requirementIndex],
-              message: `Contradictory component path: ${requirement.controlId}`,
+              path: [...path, pathIndex, conditionIndex],
+              message: `Contradictory component path: ${condition.controlId}`,
             });
           }
-          values.set(requirement.controlId, requirement.value);
-          const control = controls.get(requirement.controlId);
+          values.set(condition.controlId, condition.value);
+          const control = controls.get(condition.controlId);
           if (!control) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, requirementIndex, "controlId"],
-              message: `Unknown component control: ${requirement.controlId}`,
+              path: [...path, pathIndex, conditionIndex, "controlId"],
+              message: `Unknown component control: ${condition.controlId}`,
             });
           } else if (
             control.kind === "conditional"
-              ? requirement.value !== "on" && requirement.value !== "off"
-              : !control.alternatives.some((alternative) => alternative.id === requirement.value)
+              ? condition.value !== "on" && condition.value !== "off"
+              : !control.cases.some((branchCase) => branchCase.id === condition.value)
           ) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, requirementIndex, "value"],
-              message: `Invalid value for component control ${requirement.controlId}: ${requirement.value}`,
+              path: [...path, pathIndex, conditionIndex, "value"],
+              message: `Invalid value for component control ${condition.controlId}: ${condition.value}`,
             });
           }
         });
       });
     };
     graph.edges.forEach((edge, index) => {
-      if (edge.type === "default" && edge.component)
-        validatePaths(edge.component.paths, ["edges", index, "component", "paths"]);
+      if (edge.type === "default" && edge.activeWhen) validatePaths(edge.activeWhen, ["edges", index, "activeWhen"]);
     });
-    graph.componentStructure?.controls.forEach((control, index) => {
-      validatePaths(control.when, ["componentStructure", "controls", index, "when"]);
+    graph.controls?.forEach((control, index) => {
+      validatePaths(control.dependsOn, ["controls", index, "dependsOn"]);
     });
+    if (hasComponentStructure) {
+      const targetsWithIncoming = new Set(
+        graph.edges.filter((edge) => edge.type === "default").map((edge) => edge.target),
+      );
+      graph.nodes.forEach((node, index) => {
+        if (node.type !== "default" || targetsWithIncoming.has(node.id) || rootIds.has(node.id)) return;
+        context.addIssue({
+          code: "custom",
+          path: ["nodes", index, "id"],
+          message: `Component node without incoming edges must be a declared root: ${node.id}`,
+        });
+      });
+    }
     const visited = new Set<string>();
     const visiting = new Set<string>();
     const hasCycle = (id: string): boolean => {
       if (visiting.has(id)) return true;
       if (visited.has(id)) return false;
       visiting.add(id);
-      for (const path of controls.get(id)?.when ?? []) {
-        for (const requirement of path) if (hasCycle(requirement.controlId)) return true;
+      for (const path of controls.get(id)?.dependsOn ?? []) {
+        for (const condition of path) if (hasCycle(condition.controlId)) return true;
       }
       visiting.delete(id);
       visited.add(id);
@@ -298,9 +320,14 @@ export const diagramGraphSchema = z
     if ([...controls.keys()].some(hasCycle)) {
       context.addIssue({
         code: "custom",
-        path: ["componentStructure", "controls"],
+        path: ["controls"],
         message: "Component control prerequisites contain a cycle",
       });
     }
   });
 export type DiagramGraph = z.infer<typeof diagramGraphSchema>;
+
+/** True when the graph declares component control structure (roots or controls). */
+export function hasComponentStructure(graph: Pick<DiagramGraph, "controls" | "roots">): boolean {
+  return graph.controls != null || graph.roots != null;
+}

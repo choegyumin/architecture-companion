@@ -3,13 +3,14 @@ import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-grap
 import type { DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
 import { ElkLayeredDiagramRenderer } from "@/client/widgets/elk-layered-diagram-renderer";
 import { SequenceDiagramRenderer } from "@/client/widgets/sequence-diagram-renderer";
+import { hasComponentStructure } from "@/features/diagram/diagram-graph";
 
 export function DiagramRenderer(props: DiagramRendererProps) {
   switch (props.diagram.layout.id) {
     case "dependency-graph":
       return <DependencyGraphDiagramRenderer key={JSON.stringify(props.diagram)} {...props} />;
     case "elk-layered":
-      return props.diagram.graph.componentStructure ? (
+      return hasComponentStructure(props.diagram.graph) ? (
         <ComponentStructureDiagramRenderer {...props} />
       ) : (
         <ElkLayeredDiagramRenderer {...props} />

@@ -108,22 +108,20 @@ it("honors control prerequisites when an authored edge contains only its local r
             type: "default",
             source: "app",
             target: "leaf",
-            component: { paths: [[{ controlId: "child", value: "on" }]] },
+            activeWhen: [[{ controlId: "child", value: "on" }]],
           },
         ],
-        componentStructure: {
-          roots: ["app"],
-          controls: [
-            { id: "parent", source: "app", kind: "conditional", label: "parent", when: [[]] },
-            {
-              id: "child",
-              source: "app",
-              kind: "conditional",
-              label: "child",
-              when: [[{ controlId: "parent", value: "on" }]],
-            },
-          ],
-        },
+        roots: ["app"],
+        controls: [
+          { id: "parent", owner: "app", kind: "conditional", label: "parent", dependsOn: [[]] },
+          {
+            id: "child",
+            owner: "app",
+            kind: "conditional",
+            label: "child",
+            dependsOn: [[{ controlId: "parent", value: "on" }]],
+          },
+        ],
       },
     });
     const user = userEvent.setup();
@@ -160,7 +158,7 @@ it("does not activate a shared consumer's output through an inactive supplier's 
             type: "default",
             source: "App",
             target: "Supplier",
-            component: { paths: [[{ controlId: "supplier-visible", value: "on" }]] },
+            activeWhen: [[{ controlId: "supplier-visible", value: "on" }]],
           },
           { id: "direct-shared", type: "default", source: "App", target: "Shared" },
           { id: "supplied-shared", type: "default", source: "Supplier", target: "Shared" },
@@ -169,16 +167,14 @@ it("does not activate a shared consumer's output through an inactive supplier's 
             type: "default",
             source: "Shared",
             target: "Leaf",
-            component: { paths: [[{ controlId: "leaf", value: "on" }]] },
+            activeWhen: [[{ controlId: "leaf", value: "on" }]],
           },
         ],
-        componentStructure: {
-          roots: ["App"],
-          controls: [
-            { id: "supplier-visible", source: "App", kind: "conditional", label: "supplier visible", when: [[]] },
-            { id: "leaf", source: "Supplier", kind: "conditional", label: "leaf", when: [[]] },
-          ],
-        },
+        roots: ["App"],
+        controls: [
+          { id: "supplier-visible", owner: "App", kind: "conditional", label: "supplier visible", dependsOn: [[]] },
+          { id: "leaf", owner: "Supplier", kind: "conditional", label: "leaf", dependsOn: [[]] },
+        ],
       },
     });
     const user = userEvent.setup();

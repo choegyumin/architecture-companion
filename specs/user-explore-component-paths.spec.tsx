@@ -56,56 +56,50 @@ const diagram = {
         type: "default",
         source: "app",
         target: "main",
-        component: {
-          paths: [
-            [
-              { controlId: "show-page", value: "on" },
-              { controlId: "view", value: "main" },
-            ],
+        activeWhen: [
+          [
+            { controlId: "show-page", value: "on" },
+            { controlId: "view", value: "main" },
           ],
-        },
+        ],
       },
-      { id: "main-child", type: "default", source: "main", target: "main-child", component: { paths: [[]] } },
+      { id: "main-child", type: "default", source: "main", target: "main-child", activeWhen: [[]] },
       {
         id: "z-preview",
         type: "default",
         source: "app",
         target: "preview",
-        component: {
-          paths: [
-            [
-              { controlId: "show-page", value: "on" },
-              { controlId: "view", value: "preview" },
-            ],
+        activeWhen: [
+          [
+            { controlId: "show-page", value: "on" },
+            { controlId: "view", value: "preview" },
           ],
-        },
+        ],
       },
       {
         id: "preview-footer",
         type: "default",
         source: "preview",
         target: "footer",
-        component: { paths: [[{ controlId: "show-footer", value: "on" }]] },
+        activeWhen: [[{ controlId: "show-footer", value: "on" }]],
       },
     ],
-    componentStructure: {
-      roots: ["app"],
-      controls: [
-        { id: "show-page", source: "app", kind: "conditional", label: "showPage", when: [[]] },
-        {
-          id: "view",
-          source: "app",
-          kind: "branch",
-          label: "view",
-          when: [[{ controlId: "show-page", value: "on" }]],
-          alternatives: [
-            { id: "main", label: "Main" },
-            { id: "preview", label: "Preview" },
-          ],
-        },
-        { id: "show-footer", source: "preview", kind: "conditional", label: "showFooter", when: [[]] },
-      ],
-    },
+    roots: ["app"],
+    controls: [
+      { id: "show-page", owner: "app", kind: "conditional", label: "showPage", dependsOn: [[]] },
+      {
+        id: "view",
+        owner: "app",
+        kind: "branch",
+        label: "view",
+        dependsOn: [[{ controlId: "show-page", value: "on" }]],
+        cases: [
+          { id: "main", label: "Main" },
+          { id: "preview", label: "Preview" },
+        ],
+      },
+      { id: "show-footer", owner: "preview", kind: "conditional", label: "showFooter", dependsOn: [[]] },
+    ],
   },
 } satisfies Diagram;
 

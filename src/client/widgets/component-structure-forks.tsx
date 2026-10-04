@@ -4,7 +4,7 @@ import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
 import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
 import { DIAGRAM_EDGE_COLOR } from "@/client/widgets/diagram-renderer.react-flow";
 import { toPolylinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
-import type { ComponentControl, DefaultDiagramEdge, DiagramEdge } from "@/features/diagram/diagram-graph";
+import type { DefaultDiagramEdge, DiagramControl, DiagramEdge } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramLayoutPoint } from "@/features/diagram/diagram-spatial";
 import { BranchEdgeLabel } from "@/shared/react-flow/branch-edge-label";
 import { ConditionalEdgeLabel } from "@/shared/react-flow/conditional-edge-label";
@@ -81,9 +81,7 @@ type ComponentForkEmphasis = Readonly<{
 
 type ComponentControlForksProps = Readonly<{
   graph: Readonly<{ nodes: readonly unknown[]; edges: readonly DiagramEdge[] }>;
-  componentStructure: Readonly<{
-    controls: readonly ComponentControl[];
-  }>;
+  controls: readonly DiagramControl[];
   layout: DiagramLayout;
   edges: readonly DiagramReactFlowEdge[];
   selection: ComponentSelection;
@@ -103,7 +101,7 @@ function toLabelPlacement(placement: DiagramLayoutEdge | undefined): DiagramLayo
 // their straightened routing; only the drawn paths are re-anchored to the fork.
 export function applyComponentControlForks({
   graph,
-  componentStructure,
+  controls,
   layout,
   edges,
   selection,
@@ -135,7 +133,7 @@ export function applyComponentControlForks({
     });
   };
 
-  for (const control of componentStructure.controls) {
+  for (const control of controls) {
     const active = emphasis.controls.has(control.id);
     const description = active ? "Active path" : "Inactive path; selecting activates ancestors";
     const chip =
@@ -144,8 +142,8 @@ export function applyComponentControlForks({
           description={description}
           label={control.label}
           onSelect={(value) => onSelect(control.id, value)}
-          options={control.alternatives}
-          value={selection[control.id] ?? control.alternatives.at(0)!.id}
+          options={control.cases}
+          value={selection[control.id] ?? control.cases.at(0)!.id}
         />
       ) : (
         <ConditionalEdgeLabel
@@ -158,10 +156,10 @@ export function applyComponentControlForks({
       );
     const outgoing = graph.edges.filter(
       (edge): edge is DefaultDiagramEdge =>
-        edge.source === control.source && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
+        edge.source === control.owner && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
     );
     const mentionsControl = (edge: DefaultDiagramEdge) =>
-      (edge.component?.paths ?? []).some((path) => path.some(({ controlId }) => controlId === control.id));
+      (edge.activeWhen ?? []).some((path) => path.some(({ controlId }) => controlId === control.id));
     const memberEdges = outgoing.filter(mentionsControl);
     // A when-only control can sit on a source without outgoing edges; anchor
     // its chip on an incoming edge so it stays reachable next to its source.
@@ -170,7 +168,7 @@ export function applyComponentControlForks({
       if (outgoing.length) return outgoing;
       return graph.edges.filter(
         (edge): edge is DefaultDiagramEdge =>
-          edge.target === control.source && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
+          edge.target === control.owner && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
       );
     };
     const meanLabelPosition = (edges: readonly DefaultDiagramEdge[]): DiagramLayoutPoint | undefined => {
@@ -194,14 +192,14 @@ export function applyComponentControlForks({
     }
 
     // A branch edge belongs to one alternative only; edges reachable under
-    // several alternatives stay whole and never get cut.
+    // several cases stay whole and never get cut.
     const branchEdges = memberEdges.filter((edge) => {
       const values = new Set(
-        (edge.component?.paths ?? [])
+        (edge.activeWhen ?? [])
           .flatMap((path) => path.filter(({ controlId }) => controlId === control.id))
           .map(({ value }) => value),
       );
-      return values.size === 1 && control.alternatives.some(({ id }) => values.has(id));
+      return values.size === 1 && control.cases.some(({ id }) => values.has(id));
     });
 
     const anchorEdges = anchorEdgesFor(branchEdges);

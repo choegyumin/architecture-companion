@@ -47,13 +47,11 @@ const diagram = {
         type: "default",
         source: "app",
         target: "details",
-        component: { paths: [[{ controlId: "show-details", value: "on" }]] },
+        activeWhen: [[{ controlId: "show-details", value: "on" }]],
       },
     ],
-    componentStructure: {
-      roots: ["app"],
-      controls: [{ id: "show-details", source: "app", label: "showDetails", kind: "conditional", when: [[]] }],
-    },
+    roots: ["app"],
+    controls: [{ id: "show-details", owner: "app", label: "showDetails", kind: "conditional", dependsOn: [[]] }],
   },
 } satisfies Diagram;
 
@@ -63,22 +61,20 @@ function branchGraph(edges: DiagramGraph["edges"]): DiagramGraph {
     groups: [],
     nodes: ids.map((id) => ({ id, type: "default", kind: "component", title: id })),
     edges,
-    componentStructure: {
-      roots: ["app"],
-      controls: [
-        {
-          id: "mode",
-          source: "app",
-          label: "mode",
-          kind: "branch",
-          when: [[]],
-          alternatives: [
-            { id: "small", label: "Small" },
-            { id: "large", label: "Large" },
-          ],
-        },
-      ],
-    },
+    roots: ["app"],
+    controls: [
+      {
+        id: "mode",
+        owner: "app",
+        label: "mode",
+        kind: "branch",
+        dependsOn: [[]],
+        cases: [
+          { id: "small", label: "Small" },
+          { id: "large", label: "Large" },
+        ],
+      },
+    ],
   };
 }
 
@@ -88,7 +84,7 @@ function connection(id: string, source: string, target: string, alternative?: st
     type: "default",
     source,
     target,
-    component: { paths: alternative ? [[{ controlId: "mode", value: alternative }]] : [[]] },
+    activeWhen: alternative ? [[{ controlId: "mode", value: alternative }]] : [[]],
   };
 }
 
@@ -102,21 +98,19 @@ function sharedGraph(): DiagramGraph {
       title: id,
     })),
     edges: [
-      { ...connection("a-left", "app", "left"), component: { paths: [[{ controlId: "left", value: "on" }]] } },
-      { ...connection("z-right", "app", "right"), component: { paths: [[{ controlId: "right", value: "on" }]] } },
+      { ...connection("a-left", "app", "left"), activeWhen: [[{ controlId: "left", value: "on" }]] },
+      { ...connection("z-right", "app", "right"), activeWhen: [[{ controlId: "right", value: "on" }]] },
       connection("left-shared", "left", "shared"),
       connection("right-shared", "right", "shared"),
       connection("right-extra", "right", "extra"),
-      { ...connection("shared-leaf", "shared", "leaf"), component: { paths: [[{ controlId: "leaf", value: "on" }]] } },
+      { ...connection("shared-leaf", "shared", "leaf"), activeWhen: [[{ controlId: "leaf", value: "on" }]] },
     ],
-    componentStructure: {
-      roots: ["app"],
-      controls: [
-        { id: "left", source: "app", label: "left", kind: "conditional", when: [[]] },
-        { id: "right", source: "app", label: "right", kind: "conditional", when: [[]] },
-        { id: "leaf", source: "shared", label: "leaf", kind: "conditional", when: [[]] },
-      ],
-    },
+    roots: ["app"],
+    controls: [
+      { id: "left", owner: "app", label: "left", kind: "conditional", dependsOn: [[]] },
+      { id: "right", owner: "app", label: "right", kind: "conditional", dependsOn: [[]] },
+      { id: "leaf", owner: "shared", label: "leaf", kind: "conditional", dependsOn: [[]] },
+    ],
   };
 }
 
@@ -148,26 +142,23 @@ describe("component structure paths", () => {
       connection("app-shell", "app", "shell"),
       {
         ...connection("shell-large", "shell", "large"),
-        component: { paths: [[{ controlId: "details", value: "on" }]] },
+        activeWhen: [[{ controlId: "details", value: "on" }]],
       },
       connection("large-one", "large", "one"),
       connection("one-two", "one", "two"),
     ]);
     const graph: DiagramGraph = {
       ...base,
-      componentStructure: {
-        ...base.componentStructure!,
-        controls: [
-          ...base.componentStructure!.controls,
-          {
-            id: "details",
-            source: "app",
-            kind: "conditional",
-            label: "details",
-            when: [[{ controlId: "mode", value: "large" }]],
-          },
-        ],
-      },
+      controls: [
+        ...base.controls!,
+        {
+          id: "details",
+          owner: "app",
+          kind: "conditional",
+          label: "details",
+          dependsOn: [[{ controlId: "mode", value: "large" }]],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -288,30 +279,25 @@ describe("component structure paths", () => {
           ? {
               ...edge,
               type: "default",
-              component: {
-                paths: [
-                  [
-                    { controlId: "right", value: "on" },
-                    { controlId: "extra-gate", value: "on" },
-                  ],
+              activeWhen: [
+                [
+                  { controlId: "right", value: "on" },
+                  { controlId: "extra-gate", value: "on" },
                 ],
-              },
+              ],
             }
           : edge,
       ),
-      componentStructure: {
-        ...base.componentStructure!,
-        controls: [
-          ...base.componentStructure!.controls,
-          {
-            id: "extra-gate",
-            source: "app",
-            label: "extraGate",
-            kind: "conditional",
-            when: [[{ controlId: "right", value: "on" }]],
-          },
-        ],
-      },
+      controls: [
+        ...base.controls!,
+        {
+          id: "extra-gate",
+          owner: "app",
+          label: "extraGate",
+          kind: "conditional",
+          dependsOn: [[{ controlId: "right", value: "on" }]],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -335,19 +321,15 @@ describe("component structure paths", () => {
         edge.type === "default" && edge.source === "app"
           ? {
               ...edge,
-              component: {
-                paths: edge.component!.paths.map((path) => [{ controlId: "show-mode", value: "on" }, ...path]),
-              },
+              activeWhen: edge.activeWhen!.map((path) => [{ controlId: "show-mode", value: "on" }, ...path]),
             }
           : edge,
       ),
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "show-mode", source: "app", label: "showMode", kind: "conditional", when: [[]] },
-          { ...branch.componentStructure!.controls.at(0)!, when: [[{ controlId: "show-mode", value: "on" }]] },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "show-mode", owner: "app", label: "showMode", kind: "conditional", dependsOn: [[]] },
+        { ...branch.controls!.at(0)!, dependsOn: [[{ controlId: "show-mode", value: "on" }]] },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -369,44 +351,38 @@ describe("component structure paths", () => {
       edges: [
         {
           ...connection("a-plain", "app", "plain"),
-          component: {
-            paths: [
-              [
-                { controlId: "parent", value: "on" },
-                { controlId: "view", value: "off" },
-              ],
+          activeWhen: [
+            [
+              { controlId: "parent", value: "on" },
+              { controlId: "view", value: "off" },
             ],
-          },
+          ],
         },
         {
           ...connection("z-preview", "app", "preview"),
-          component: {
-            paths: [
-              [
-                { controlId: "parent", value: "on" },
-                { controlId: "view", value: "on" },
-              ],
+          activeWhen: [
+            [
+              { controlId: "parent", value: "on" },
+              { controlId: "view", value: "on" },
             ],
-          },
+          ],
         },
       ],
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "parent", source: "app", label: "showPage", kind: "conditional", when: [[]] },
-          {
-            id: "view",
-            source: "app",
-            label: "view",
-            kind: "branch",
-            when: [[{ controlId: "parent", value: "on" }]],
-            alternatives: [
-              { id: "off", label: "No preview" },
-              { id: "on", label: "Preview" },
-            ],
-          },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "parent", owner: "app", label: "showPage", kind: "conditional", dependsOn: [[]] },
+        {
+          id: "view",
+          owner: "app",
+          label: "view",
+          kind: "branch",
+          dependsOn: [[{ controlId: "parent", value: "on" }]],
+          cases: [
+            { id: "off", label: "No preview" },
+            { id: "on", label: "Preview" },
+          ],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -436,19 +412,17 @@ describe("component structure paths", () => {
       groups: [],
       nodes: ["app", "panel", "details"].map((id) => ({ id, type: "default", kind: "component", title: id })),
       edges: [
-        { ...connection("app-panel", "app", "panel"), component: { paths: [[{ controlId: "panel", value: "on" }]] } },
+        { ...connection("app-panel", "app", "panel"), activeWhen: [[{ controlId: "panel", value: "on" }]] },
         {
           ...connection("panel-details", "panel", "details"),
-          component: { paths: [[{ controlId: "details", value: "on" }]] },
+          activeWhen: [[{ controlId: "details", value: "on" }]],
         },
       ],
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "panel", source: "app", label: "showPanel", kind: "conditional", when: [[]] },
-          { id: "details", source: "panel", label: "showDetails", kind: "conditional", when: [[]] },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "panel", owner: "app", label: "showPanel", kind: "conditional", dependsOn: [[]] },
+        { id: "details", owner: "panel", label: "showDetails", kind: "conditional", dependsOn: [[]] },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -480,19 +454,16 @@ describe("component structure paths", () => {
         connection("z-large", "app", "large", "large"),
         {
           ...connection("small-leaf", "small", "leaf"),
-          component: { paths: [[{ controlId: "show-leaf", value: "on" }]] },
+          activeWhen: [[{ controlId: "show-leaf", value: "on" }]],
         },
         connection("large-one", "large", "one"),
         connection("one-two", "one", "two"),
       ]),
     };
-    graph.componentStructure!.controls.push({
-      id: "show-leaf",
-      source: "small",
-      label: "showLeaf",
-      kind: "conditional",
-      when: [[]],
-    });
+    graph.controls = [
+      ...graph.controls!,
+      { id: "show-leaf", owner: "small", label: "showLeaf", kind: "conditional", dependsOn: [[]] },
+    ];
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
 
@@ -619,29 +590,27 @@ describe("component structure paths", () => {
       edges: [
         {
           ...connection("app-supplier", "app", "supplier"),
-          component: { paths: [[{ controlId: "supplier-visible", value: "on" }]] },
+          activeWhen: [[{ controlId: "supplier-visible", value: "on" }]],
         },
         connection("app-shared", "app", "shared"),
         connection("supplier-shared", "supplier", "shared"),
         {
           ...connection("shared-leaf", "shared", "leaf"),
-          component: { paths: [[{ controlId: "child", value: "on" }]] },
+          activeWhen: [[{ controlId: "child", value: "on" }]],
         },
       ],
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "supplier-visible", source: "app", label: "supplier visible", kind: "conditional", when: [[]] },
-          { id: "parent", source: "supplier", label: "parent", kind: "conditional", when: [[]] },
-          {
-            id: "child",
-            source: "shared",
-            label: "child",
-            kind: "conditional",
-            when: [[{ controlId: "parent", value: "on" }]],
-          },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "supplier-visible", owner: "app", label: "supplier visible", kind: "conditional", dependsOn: [[]] },
+        { id: "parent", owner: "supplier", label: "parent", kind: "conditional", dependsOn: [[]] },
+        {
+          id: "child",
+          owner: "shared",
+          label: "child",
+          kind: "conditional",
+          dependsOn: [[{ controlId: "parent", value: "on" }]],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -660,25 +629,23 @@ describe("component structure paths", () => {
       edges: [
         {
           ...connection("app-supplier", "app", "supplier"),
-          component: { paths: [[{ controlId: "supplier-visible", value: "on" }]] },
+          activeWhen: [[{ controlId: "supplier-visible", value: "on" }]],
         },
-        { ...connection("app-leaf", "app", "leaf"), component: { paths: [[{ controlId: "child", value: "on" }]] } },
+        { ...connection("app-leaf", "app", "leaf"), activeWhen: [[{ controlId: "child", value: "on" }]] },
       ],
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "supplier-visible", source: "app", label: "supplier visible", kind: "conditional", when: [[]] },
-          { id: "direct", source: "app", label: "direct", kind: "conditional", when: [[]] },
-          { id: "supplied", source: "supplier", label: "supplied", kind: "conditional", when: [[]] },
-          {
-            id: "child",
-            source: "app",
-            label: "child",
-            kind: "conditional",
-            when: [[{ controlId: "direct", value: "on" }], [{ controlId: "supplied", value: "on" }]],
-          },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "supplier-visible", owner: "app", label: "supplier visible", kind: "conditional", dependsOn: [[]] },
+        { id: "direct", owner: "app", label: "direct", kind: "conditional", dependsOn: [[]] },
+        { id: "supplied", owner: "supplier", label: "supplied", kind: "conditional", dependsOn: [[]] },
+        {
+          id: "child",
+          owner: "app",
+          label: "child",
+          kind: "conditional",
+          dependsOn: [[{ controlId: "direct", value: "on" }], [{ controlId: "supplied", value: "on" }]],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();
@@ -700,36 +667,34 @@ describe("component structure paths", () => {
       groups: [],
       nodes: ["app", "plain", "preview"].map((id) => ({ id, type: "default", kind: "component", title: id })),
       edges: [
-        { ...connection("a-plain", "app", "plain"), component: { paths: [[{ controlId: "view", value: "plain" }]] } },
+        { ...connection("a-plain", "app", "plain"), activeWhen: [[{ controlId: "view", value: "plain" }]] },
         {
           ...connection("z-preview", "app", "preview"),
-          component: { paths: [[{ controlId: "view", value: "preview" }]] },
+          activeWhen: [[{ controlId: "view", value: "preview" }]],
         },
       ],
-      componentStructure: {
-        roots: ["app"],
-        controls: [
-          { id: "grandparent", source: "app", label: "grandparent", kind: "conditional", when: [[]] },
-          {
-            id: "parent",
-            source: "app",
-            label: "parent",
-            kind: "conditional",
-            when: [[{ controlId: "grandparent", value: "on" }]],
-          },
-          {
-            id: "view",
-            source: "app",
-            label: "view",
-            kind: "branch",
-            when: [[{ controlId: "parent", value: "on" }]],
-            alternatives: [
-              { id: "plain", label: "Plain" },
-              { id: "preview", label: "Preview" },
-            ],
-          },
-        ],
-      },
+      roots: ["app"],
+      controls: [
+        { id: "grandparent", owner: "app", label: "grandparent", kind: "conditional", dependsOn: [[]] },
+        {
+          id: "parent",
+          owner: "app",
+          label: "parent",
+          kind: "conditional",
+          dependsOn: [[{ controlId: "grandparent", value: "on" }]],
+        },
+        {
+          id: "view",
+          owner: "app",
+          label: "view",
+          kind: "branch",
+          dependsOn: [[{ controlId: "parent", value: "on" }]],
+          cases: [
+            { id: "plain", label: "Plain" },
+            { id: "preview", label: "Preview" },
+          ],
+        },
+      ],
     };
     render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
     await waitForDiagramReady();

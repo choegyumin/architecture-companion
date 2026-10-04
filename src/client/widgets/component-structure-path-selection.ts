@@ -1,4 +1,4 @@
-import type { ComponentControl, ComponentPaths, DiagramEdge, DiagramGraph } from "@/features/diagram/diagram-graph";
+import type { DiagramControl, DiagramControlPaths, DiagramEdge, DiagramGraph } from "@/features/diagram/diagram-graph";
 
 export type ComponentSelection = Readonly<Record<string, string>>;
 
@@ -95,9 +95,9 @@ function compareMetrics(left: ReturnType<typeof routeMetrics>, right: ReturnType
 }
 
 function componentPathsMatch(
-  paths: ComponentPaths,
+  paths: DiagramControlPaths,
   selection: ComponentSelection,
-  controls: readonly ComponentControl[],
+  controls: readonly DiagramControl[],
   reachableNodes: ReadonlySet<string>,
 ): boolean {
   return paths.some((path) =>
@@ -105,7 +105,7 @@ function componentPathsMatch(
       if (selection[controlId] !== value) return false;
       const control = controls.find((item) => item.id === controlId)!;
       return (
-        reachableNodes.has(control.source) && componentPathsMatch(control.when, selection, controls, reachableNodes)
+        reachableNodes.has(control.owner) && componentPathsMatch(control.dependsOn, selection, controls, reachableNodes)
       );
     }),
   );
@@ -113,7 +113,7 @@ function componentPathsMatch(
 
 type RouteCandidate = Readonly<{ requirements: ReadonlyMap<string, string>; edges: readonly string[] }>;
 
-function mergeRequirements(candidate: RouteCandidate, path: ComponentPaths[number]): RouteCandidate | undefined {
+function mergeRequirements(candidate: RouteCandidate, path: DiagramControlPaths[number]): RouteCandidate | undefined {
   const requirements = new Map(candidate.requirements);
   for (const { controlId, value } of path) {
     const known = requirements.get(controlId);
@@ -124,14 +124,14 @@ function mergeRequirements(candidate: RouteCandidate, path: ComponentPaths[numbe
 }
 
 function ancestorRoutes(graph: DiagramGraph, nodeId: string, visited = new Set<string>()): RouteCandidate[] {
-  if (graph.componentStructure!.roots.includes(nodeId)) return [{ requirements: new Map(), edges: [] }];
+  if (graph.roots!.includes(nodeId)) return [{ requirements: new Map(), edges: [] }];
   if (visited.has(nodeId)) return [];
   const nextVisited = new Set([...visited, nodeId]);
   return graph.edges
     .filter((edge) => edge.target === nodeId)
     .flatMap((edge) =>
       ancestorRoutes(graph, edge.source, nextVisited).flatMap((ancestor) =>
-        (edge.type === "default" ? (edge.component?.paths ?? [[]]) : [[]]).flatMap((path) => {
+        (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((path) => {
           const merged = mergeRequirements(ancestor, path);
           return merged ? [{ ...merged, edges: [...ancestor.edges, edge.id] }] : [];
         }),
@@ -146,19 +146,19 @@ function withPrerequisites(
 ): RouteCandidate[] {
   const pending = [...candidate.requirements.keys()].find((controlId) => !expanded.has(controlId));
   if (pending === undefined) return [candidate];
-  const control = graph.componentStructure!.controls.find((item) => item.id === pending)!;
+  const control = graph.controls!.find((item) => item.id === pending)!;
   const nextExpanded = new Set([...expanded, pending]);
-  return control.when.flatMap((path) => {
+  return control.dependsOn.flatMap((path) => {
     const merged = mergeRequirements(candidate, path);
     return merged ? withPrerequisites(graph, merged, nextExpanded) : [];
   });
 }
 
-function branchMetrics(graph: DiagramGraph, control: ComponentControl, value: string) {
+function branchMetrics(graph: DiagramGraph, control: DiagramControl, value: string) {
   const pathsByEdge = new Map(
     graph.edges.map((edge) => [
       edge.id,
-      (edge.type === "default" ? (edge.component?.paths ?? [[]]) : [[]]).flatMap((path) =>
+      (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((path) =>
         withPrerequisites(graph, {
           requirements: new Map(path.map(({ controlId, value }) => [controlId, value])),
           edges: [],
@@ -173,7 +173,7 @@ function branchMetrics(graph: DiagramGraph, control: ComponentControl, value: st
       return required === undefined || required === value;
     }),
   );
-  const reachable = new Set(graph.componentStructure!.roots);
+  const reachable = new Set(graph.roots!);
   const pending = [...reachable];
   while (pending.length) {
     const source = pending.pop()!;
@@ -188,33 +188,33 @@ function branchMetrics(graph: DiagramGraph, control: ComponentControl, value: st
   const starts = candidateGraph.edges.filter((edge) =>
     pathsByEdge.get(edge.id)!.some((path) => path.requirements.get(control.id) === value),
   );
-  return routeMetrics(candidateGraph, condensedComponents(candidateGraph), starts, control.source);
+  return routeMetrics(candidateGraph, condensedComponents(candidateGraph), starts, control.owner);
 }
 
 export function initialComponentSelection(graph: DiagramGraph): ComponentSelection {
   return Object.fromEntries(
-    graph.componentStructure!.controls.map((control) => {
+    graph.controls!.map((control) => {
       if (control.kind === "conditional") return [control.id, "off"];
-      const alternatives = control.alternatives.map((alternative) => ({
+      const cases = control.cases.map((alternative) => ({
         ...alternative,
         metrics: branchMetrics(graph, control, alternative.id),
       }));
-      alternatives.sort((left, right) => compareMetrics(left.metrics, right.metrics));
-      return [control.id, alternatives.at(0)!.id];
+      cases.sort((left, right) => compareMetrics(left.metrics, right.metrics));
+      return [control.id, cases.at(0)!.id];
     }),
   );
 }
 
 export function componentPathEmphasis(graph: DiagramGraph, selection: ComponentSelection) {
-  const controls = graph.componentStructure!.controls;
-  const nodes = new Set(graph.componentStructure!.roots);
+  const controls = graph.controls!;
+  const nodes = new Set(graph.roots!);
   const edges = new Set<string>();
   let changed = true;
   while (changed) {
     changed = false;
     for (const edge of graph.edges) {
       if (!nodes.has(edge.source)) continue;
-      if (edge.type === "default" && !componentPathsMatch(edge.component?.paths ?? [[]], selection, controls, nodes))
+      if (edge.type === "default" && !componentPathsMatch(edge.activeWhen ?? [[]], selection, controls, nodes))
         continue;
       edges.add(edge.id);
       if (!nodes.has(edge.target)) {
@@ -225,7 +225,9 @@ export function componentPathEmphasis(graph: DiagramGraph, selection: ComponentS
   }
   const activeControls = new Set(
     controls
-      .filter((control) => nodes.has(control.source) && componentPathsMatch(control.when, selection, controls, nodes))
+      .filter(
+        (control) => nodes.has(control.owner) && componentPathsMatch(control.dependsOn, selection, controls, nodes),
+      )
       .map((control) => control.id),
   );
   return { nodes, edges, controls: activeControls };
@@ -242,7 +244,7 @@ function withReachableOwners(
   const missingSources = [
     ...new Set(
       [...candidate.requirements.keys()].map(
-        (controlId) => graph.componentStructure!.controls.find((control) => control.id === controlId)!.source,
+        (controlId) => graph.controls!.find((control) => control.id === controlId)!.owner,
       ),
     ),
   ].filter((source) => !reachable.has(source));
@@ -269,10 +271,10 @@ export function selectComponentPath(
   value: string,
 ): ComponentSelection {
   const selected = { ...selection, [controlId]: value };
-  const control = graph.componentStructure!.controls.find((item) => item.id === controlId)!;
+  const control = graph.controls!.find((item) => item.id === controlId)!;
   if (control.kind === "conditional" && value === "off") return selected;
   if (componentPathEmphasis(graph, selected).controls.has(control.id)) return selected;
-  const candidates = ancestorRoutes(graph, control.source).flatMap((route) => {
+  const candidates = ancestorRoutes(graph, control.owner).flatMap((route) => {
     const requested = mergeRequirements(route, [{ controlId, value }]);
     return requested
       ? withPrerequisites(graph, requested).flatMap((candidate) => withReachableOwners(graph, selected, candidate))

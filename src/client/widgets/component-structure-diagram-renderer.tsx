@@ -85,7 +85,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         nodes: decorateNodes(model.nodes, selection),
         edges: applyComponentControlForks({
           graph: diagram.graph,
-          componentStructure: diagram.graph.componentStructure!,
+          controls: diagram.graph.controls!,
           layout,
           edges: dimmed,
           selection,
