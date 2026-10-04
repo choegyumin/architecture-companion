@@ -15,6 +15,7 @@ import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotati
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
@@ -402,6 +403,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const [requestedReviewView, setRequestedReviewView] = useState<ReviewView>("process");
   const [activeProcessId, setActiveProcessId] = useState("");
   const [activeDesignId, setActiveDesignId] = useState("");
+  const [spotlight, setSpotlight] = useState<ArtifactSpotlight | null>(null);
   const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
   const pressedKeys = useRef<ReadonlySet<string>>(new Set());
@@ -546,14 +548,38 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         if (cancelled) return;
         dispatchReview({ type: "load-failed", mode: "refresh", message: error.message });
       },
+      (value) => {
+        if (!cancelled) setSpotlight(value);
+      },
     );
     void synchronizeReview("initial");
+    void client
+      .getSpotlight()
+      .then((value) => {
+        if (!cancelled) setSpotlight(value);
+      })
+      .catch(() => undefined);
 
     return () => {
       cancelled = true;
       unsubscribe();
     };
   }, [client]);
+
+  useEffect(() => {
+    if (!spotlight || state.status !== "ready" || !state.review.catalog) return;
+    const { catalog } = state.review;
+
+    if (catalog.behaviors.some((artifact) => artifact.id === spotlight.artifactId)) {
+      setRequestedReviewView("process");
+      setActiveProcessId(spotlight.artifactId);
+      return;
+    }
+    if (catalog.designs.some((artifact) => artifact.id === spotlight.artifactId)) {
+      setRequestedReviewView("design");
+      setActiveDesignId(spotlight.artifactId);
+    }
+  }, [spotlight, state.review, state.status]);
 
   async function confirmAnnotationClose(): Promise<boolean> {
     if (!hasUnsavedAnnotationChanges(annotationState)) return true;
@@ -970,6 +996,11 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                   artifact={activeDiagramCollection.activeDiagram}
                   commentEnabled={annotationState.isModeEnabled}
                   onOpenSource={openSource}
+                  spotlight={
+                    spotlight && spotlight.artifactId === activeDiagramCollection.activeDiagram.id
+                      ? spotlight
+                      : undefined
+                  }
                 />
               </div>
             </div>
