@@ -469,8 +469,8 @@ describe("component structure paths", () => {
       route,
     );
     expect(screen.getAllByRole("article")).toHaveLength(3);
-    // Two connections plus one trunk per forked control path.
-    expect(screen.getAllByRole("img")).toHaveLength(4);
+    // Two connections; conditional guards attach chips without fork trunks.
+    expect(screen.getAllByRole("img")).toHaveLength(2);
   });
 
   it("turns an inactive child off without activating its ancestors", async () => {

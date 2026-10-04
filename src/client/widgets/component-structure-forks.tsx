@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
-import { ComponentControlChip } from "@/client/widgets/component-structure-control-chip";
 import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
 import { DIAGRAM_EDGE_COLOR } from "@/client/widgets/diagram-renderer.react-flow";
 import { toPolylinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
 import type { ComponentControl, DefaultDiagramEdge, DiagramEdge } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramLayoutPoint } from "@/features/diagram/diagram-spatial";
+import { BranchEdgeLabel } from "@/shared/react-flow/branch-edge-label";
+import { ConditionalEdgeLabel } from "@/shared/react-flow/conditional-edge-label";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 
 const PROP_KIND_PATTERN = /^(\S+)\s+\((.+)\)$/;
@@ -135,14 +136,26 @@ export function applyComponentControlForks({
   };
 
   for (const control of componentStructure.controls) {
-    const chip = (
-      <ComponentControlChip
-        control={control}
-        selection={selection}
-        activeControls={emphasis.controls}
-        onSelect={onSelect}
-      />
-    );
+    const active = emphasis.controls.has(control.id);
+    const description = active ? "Active path" : "Inactive path; selecting activates ancestors";
+    const chip =
+      control.kind === "branch" ? (
+        <BranchEdgeLabel
+          description={description}
+          label={control.label}
+          onSelect={(value) => onSelect(control.id, value)}
+          options={control.alternatives}
+          value={selection[control.id] ?? control.alternatives.at(0)!.id}
+        />
+      ) : (
+        <ConditionalEdgeLabel
+          active={active}
+          description={description}
+          label={control.label}
+          onToggle={() => onSelect(control.id, selection[control.id] === "on" ? "off" : "on")}
+          pressed={selection[control.id] === "on"}
+        />
+      );
     const outgoing = graph.edges.filter(
       (edge): edge is DefaultDiagramEdge =>
         edge.source === control.source && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
@@ -150,8 +163,35 @@ export function applyComponentControlForks({
     const mentionsControl = (edge: DefaultDiagramEdge) =>
       (edge.component?.paths ?? []).some((path) => path.some(({ controlId }) => controlId === control.id));
     const memberEdges = outgoing.filter(mentionsControl);
-    const alternatives =
-      control.kind === "branch" ? control.alternatives : ([{ id: "on", label: control.label }] as const);
+    // A when-only control can sit on a source without outgoing edges; anchor
+    // its chip on an incoming edge so it stays reachable next to its source.
+    const anchorEdgesFor = (primary: readonly DefaultDiagramEdge[]): readonly DefaultDiagramEdge[] => {
+      if (primary.length) return primary;
+      if (outgoing.length) return outgoing;
+      return graph.edges.filter(
+        (edge): edge is DefaultDiagramEdge =>
+          edge.target === control.source && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
+      );
+    };
+    const meanLabelPosition = (edges: readonly DefaultDiagramEdge[]): DiagramLayoutPoint | undefined => {
+      const placements = edges
+        .map((edge) => toLabelPlacement(placementByEdgeId.get(edge.id)))
+        .filter((position): position is DiagramLayoutPoint => position != null);
+      if (!placements.length) return undefined;
+      return {
+        x: placements.reduce((sum, position) => sum + position.x, 0) / placements.length,
+        y: placements.reduce((sum, position) => sum + position.y, 0) / placements.length,
+      };
+    };
+
+    // A conditional guard wraps a single rendering path, not a fork: its chip
+    // rides the guarded edge and the routing stays as the layout made it.
+    if (control.kind !== "branch") {
+      const anchorEdges = anchorEdgesFor(memberEdges);
+      const position = meanLabelPosition(anchorEdges);
+      if (position) attachChip(anchorEdges.at(0)!.id, position, chip);
+      continue;
+    }
 
     // A branch edge belongs to one alternative only; edges reachable under
     // several alternatives stay whole and never get cut.
@@ -161,27 +201,12 @@ export function applyComponentControlForks({
           .flatMap((path) => path.filter(({ controlId }) => controlId === control.id))
           .map(({ value }) => value),
       );
-      return values.size === 1 && alternatives.some(({ id }) => values.has(id));
+      return values.size === 1 && control.alternatives.some(({ id }) => values.has(id));
     });
 
-    // A when-only control can sit on a source without outgoing edges; anchor
-    // its chip on an incoming edge so it stays reachable next to its source.
-    const anchorEdges = branchEdges.length
-      ? branchEdges
-      : outgoing.length
-        ? outgoing
-        : graph.edges.filter(
-            (edge): edge is DefaultDiagramEdge =>
-              edge.target === control.source && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
-          );
-    const anchorPlacements = anchorEdges
-      .map((edge) => toLabelPlacement(placementByEdgeId.get(edge.id)))
-      .filter((position): position is DiagramLayoutPoint => position != null);
-    if (!anchorPlacements.length) continue;
-    const forkPoint = {
-      x: anchorPlacements.reduce((sum, position) => sum + position.x, 0) / anchorPlacements.length,
-      y: anchorPlacements.reduce((sum, position) => sum + position.y, 0) / anchorPlacements.length,
-    };
+    const anchorEdges = anchorEdgesFor(branchEdges);
+    const forkPoint = meanLabelPosition(anchorEdges);
+    if (!forkPoint) continue;
 
     if (!branchEdges.length) {
       // The control guards deeper edges only: keep the chip on the source's
