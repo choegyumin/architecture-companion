@@ -30,6 +30,7 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
+import { DecisionNode, type DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
@@ -43,7 +44,8 @@ export type DiagramReactFlowNode =
   | LabeledGroupReactFlowNode
   | LifelineReactFlowNode
   | FragmentReactFlowNode
-  | BoundingGroupReactFlowNode;
+  | BoundingGroupReactFlowNode
+  | DecisionReactFlowNode;
 export type DiagramReactFlowEdge = RouteReactFlowEdge | MessageReactFlowEdge;
 
 type NodeRendererRegistry<NodeType extends Node> = {
@@ -55,6 +57,7 @@ type EdgeRendererRegistry<EdgeType extends Edge> = {
 
 const diagramNodeTypes = {
   card: CardNode,
+  decision: DecisionNode,
   "labeled-group": LabeledGroupNode,
   fragment: FragmentNode,
   lifeline: LifelineNode,

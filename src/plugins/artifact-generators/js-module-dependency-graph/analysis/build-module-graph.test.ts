@@ -341,7 +341,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
       const externalNodeIds = graph.nodes
-        .filter(({ kind }) => kind === "External package")
+        .filter((node) => node.type === "default" && node.kind === "External package")
         .map(({ id }) => id)
         .toSorted();
 
@@ -487,7 +487,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(
         graph.nodes
-          .filter(({ kind }) => kind === "External package")
+          .filter((node) => node.type === "default" && node.kind === "External package")
           .map(({ id }) => id)
           .toSorted(),
       ).toEqual(["external:require-only-package", "external:sample-package", "external:types-only-package"]);

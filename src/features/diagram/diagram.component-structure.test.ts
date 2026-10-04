@@ -54,7 +54,7 @@ describe("component structure diagram contract", () => {
           ],
         },
       }),
-    ).toThrow("Component structure supports only default nodes");
+    ).toThrow("Component structure supports only default and decision nodes");
     expect(() =>
       parseArtifact({
         ...componentDiagram,
@@ -227,5 +227,106 @@ describe("component structure diagram contract", () => {
         },
       }),
     ).toThrow("Component node without incoming edges must be a declared root: orphan");
+  });
+
+  const branchControl = {
+    id: "mode",
+    owner: "app",
+    kind: "branch",
+    label: "mode",
+    dependsOn: [[]],
+    cases: [
+      { id: "first", label: "First" },
+      { id: "second", label: "Second" },
+    ],
+  } as const;
+  const decisionGraph = {
+    groups: [],
+    nodes: [
+      { type: "default", id: "app", title: "App" },
+      { type: "decision", id: "mode", title: "mode" },
+      { type: "default", id: "body", title: "Body" },
+    ],
+    edges: [
+      { type: "default", id: "app-mode", source: "app", target: "mode" },
+      {
+        type: "default",
+        id: "mode-body",
+        source: "mode",
+        target: "body",
+        sourcePort: "first",
+        activeWhen: [[{ controlId: "mode", value: "first" }]],
+        guards: [[{ controlId: "mode", value: "first" }]],
+      },
+    ],
+    roots: ["app"],
+    controls: [branchControl],
+  } as const;
+
+  it("accepts a decision node wired to its branch control", () => {
+    expect(() => parseArtifact({ ...componentDiagram, graph: decisionGraph })).not.toThrow();
+  });
+
+  it.each([
+    {
+      mutate: (graph: typeof decisionGraph) => ({
+        ...graph,
+        nodes: [...graph.nodes.slice(0, 1), { type: "decision", id: "stranger", title: "stranger" }, graph.nodes.at(2)],
+        edges: [
+          { type: "default", id: "app-mode", source: "app", target: "stranger" },
+          { type: "default", id: "stranger-body", source: "stranger", target: "body", sourcePort: "first" },
+        ],
+      }),
+      error: "Decision node must reuse its branch control id: stranger",
+    },
+    {
+      mutate: (graph: typeof decisionGraph) => ({
+        ...graph,
+        edges: [graph.edges.at(1)],
+      }),
+      error: "Decision node without incoming edges: mode",
+    },
+    {
+      mutate: (graph: typeof decisionGraph) => ({
+        ...graph,
+        edges: [graph.edges.at(0)],
+      }),
+      error: "Decision node without outgoing edges: mode",
+    },
+  ])("rejects malformed decision wiring: $error", ({ mutate, error }) => {
+    expect(() => parseArtifact({ ...componentDiagram, graph: mutate(decisionGraph) })).toThrow(error);
+  });
+
+  it.each([
+    {
+      source: "app",
+      sourcePort: "first",
+      error: "Source port requires a decision-node source: app",
+    },
+    {
+      source: "mode",
+      sourcePort: "missing",
+      error: "Unknown source port for decision mode: missing",
+    },
+  ])("rejects invalid source ports: $error", ({ source, sourcePort, error }) => {
+    expect(() =>
+      parseArtifact({
+        ...componentDiagram,
+        graph: {
+          ...decisionGraph,
+          edges: [
+            decisionGraph.edges.at(0),
+            {
+              type: "default",
+              id: "mode-body",
+              source,
+              target: "body",
+              sourcePort,
+              activeWhen: [[{ controlId: "mode", value: "first" }]],
+            },
+          ],
+        },
+      }),
+    ).toThrow(error);
   });
 });

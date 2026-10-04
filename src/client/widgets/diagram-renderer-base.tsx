@@ -141,7 +141,7 @@ function DiagramRendererContent({
       <ul aria-label="Diagram elements and connections" className="sr-only">
         {diagram.graph.nodes.map((node) => (
           <li key={node.id}>
-            {node.kind}: {node.title}
+            {node.type === "decision" ? node.type : node.kind}: {node.title}
           </li>
         ))}
         {diagram.graph.edges.map((edge) => (

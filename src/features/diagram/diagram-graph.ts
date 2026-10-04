@@ -96,6 +96,15 @@ export const lifelineDiagramNodeSchema = z
   .strict();
 export type LifelineDiagramNode = z.infer<typeof lifelineDiagramNodeSchema>;
 
+/** A decision point for one branch control. The node's id is the control's id. */
+export const decisionDiagramNodeSchema = z
+  .object({
+    ...diagramNodeBaseShape,
+    type: z.literal("decision"),
+  })
+  .strict();
+export type DecisionDiagramNode = z.infer<typeof decisionDiagramNodeSchema>;
+
 const fragmentBranchSchema = z
   .object({
     id: diagramIdSchema,
@@ -117,6 +126,7 @@ export type FragmentDiagramNode = z.infer<typeof fragmentDiagramNodeSchema>;
 
 export const diagramNodeSchema = z.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
+  decisionDiagramNodeSchema,
   lifelineDiagramNodeSchema,
   fragmentDiagramNodeSchema,
 ]);
@@ -134,6 +144,10 @@ export const defaultDiagramEdgeSchema = z
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
     activeWhen: diagramControlPathsSchema.optional(),
+    /** The decision-node port (branch case id) this edge leaves from. */
+    sourcePort: diagramIdSchema.optional(),
+    /** Edge-label guards: the conditions rendered on this edge's label. */
+    guards: diagramControlPathsSchema.optional(),
   })
   .strict();
 export type DefaultDiagramEdge = z.infer<typeof defaultDiagramEdgeSchema>;
@@ -182,11 +196,11 @@ export const diagramGraphSchema = z
     const hasComponentStructure = graph.controls != null || graph.roots != null;
     if (hasComponentStructure) {
       graph.nodes.forEach((node, index) => {
-        if (node.type !== "default") {
+        if (node.type !== "default" && node.type !== "decision") {
           context.addIssue({
             code: "custom",
             path: ["nodes", index, "type"],
-            message: "Component structure supports only default nodes",
+            message: "Component structure supports only default and decision nodes",
           });
         }
       });
@@ -251,6 +265,37 @@ export const diagramGraphSchema = z
         });
       }
     });
+    const branchControls = new Map(
+      (graph.controls ?? []).filter((control) => control.kind === "branch").map((control) => [control.id, control]),
+    );
+    const outgoingSources = new Set(graph.edges.map((edge) => edge.source));
+    const incomingTargets = new Set(graph.edges.map((edge) => edge.target));
+    graph.nodes.forEach((node, index) => {
+      if (node.type !== "decision") return;
+      const control = branchControls.get(node.id);
+      if (!control) {
+        context.addIssue({
+          code: "custom",
+          path: ["nodes", index, "id"],
+          message: `Decision node must reuse its branch control id: ${node.id}`,
+        });
+        return;
+      }
+      if (!incomingTargets.has(node.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["nodes", index, "id"],
+          message: `Decision node without incoming edges: ${node.id}`,
+        });
+      }
+      if (!outgoingSources.has(node.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["nodes", index, "id"],
+          message: `Decision node without outgoing edges: ${node.id}`,
+        });
+      }
+    });
     const validatePaths = (paths: DiagramControlPaths, path: (string | number)[]) => {
       paths.forEach((conditions, pathIndex) => {
         const values = new Map<string, string>();
@@ -286,7 +331,25 @@ export const diagramGraphSchema = z
       });
     };
     graph.edges.forEach((edge, index) => {
-      if (edge.type === "default" && edge.activeWhen) validatePaths(edge.activeWhen, ["edges", index, "activeWhen"]);
+      if (edge.type !== "default") return;
+      if (edge.activeWhen) validatePaths(edge.activeWhen, ["edges", index, "activeWhen"]);
+      if (edge.guards) validatePaths(edge.guards, ["edges", index, "guards"]);
+      if (edge.sourcePort) {
+        const control = branchControls.get(edge.source);
+        if (!control) {
+          context.addIssue({
+            code: "custom",
+            path: ["edges", index, "sourcePort"],
+            message: `Source port requires a decision-node source: ${edge.source}`,
+          });
+        } else if (!control.cases.some((branchCase) => branchCase.id === edge.sourcePort)) {
+          context.addIssue({
+            code: "custom",
+            path: ["edges", index, "sourcePort"],
+            message: `Unknown source port for decision ${edge.source}: ${edge.sourcePort}`,
+          });
+        }
+      }
     });
     graph.controls?.forEach((control, index) => {
       validatePaths(control.dependsOn, ["controls", index, "dependsOn"]);

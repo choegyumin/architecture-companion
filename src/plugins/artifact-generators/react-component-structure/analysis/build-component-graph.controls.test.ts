@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
+import { type DefaultDiagramEdge, type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 import { buildComponentGraph } from "./build-component-graph";
 
@@ -29,7 +29,7 @@ async function graphFor(
 }
 
 function edgeTo(graph: DiagramGraph, title: string) {
-  const target = graph.nodes.find((node) => node.title === title)!;
+  const target = graph.nodes.find((node) => node.type === "default" && node.title === title)!;
   return graph.edges.find((edge) => edge.target === target.id)!;
 }
 
@@ -60,14 +60,20 @@ describe("component rendering controls", () => {
       function Leaf() { return <span />; }
       export function App({ outer, hidden, mode }) { ${body} }
     `);
-    const edge = edgeTo(graph, "Leaf");
+    // Decision projection splits one edge into per-case arms, so the contract
+    // reads every edge entering the target and unions their paths.
+    const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
     const controls = new Map(graph.controls!.map((control) => [control.id, control]));
+    const entered = graph.edges.flatMap((edge) =>
+      edge.target === target.id && edge.type === "default" ? (edge.activeWhen ?? [[]]) : [],
+    );
     expect(
-      edge.type === "default" &&
-        edge.activeWhen!.map((path) =>
-          path.map(({ controlId, value }) => ({ label: controls.get(controlId)!.label, value })),
+      new Set(
+        entered.map((path) =>
+          JSON.stringify(path.map(({ controlId, value }) => ({ label: controls.get(controlId)!.label, value }))),
         ),
-    ).toEqual(paths);
+      ),
+    ).toEqual(new Set(paths.map((path) => JSON.stringify(path))));
   });
 
   it.each([
@@ -222,9 +228,14 @@ describe("component rendering controls", () => {
       export function App() { return <Wrapper><Leaf /></Wrapper>; }
     `);
     const choice = graph.controls!.find(({ label }) => label === "choice")!;
-    expect(edgeTo(graph, "Leaf")).toMatchObject({
-      activeWhen: [[{ controlId: choice.id, value: "true" }], [{ controlId: choice.id, value: "false" }]],
-    });
+    const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
+    const arms = graph.edges
+      .filter((edge): edge is DefaultDiagramEdge => edge.type === "default" && edge.target === target.id)
+      .toSorted((left, right) => (left.sourcePort ?? "").localeCompare(right.sourcePort ?? ""));
+    expect(arms.map((arm) => ({ port: arm.sourcePort, activeWhen: arm.activeWhen }))).toEqual([
+      { port: "false", activeWhen: [[{ controlId: choice.id, value: "false" }]] },
+      { port: "true", activeWhen: [[{ controlId: choice.id, value: "true" }]] },
+    ]);
   });
 
   it("recognizes aliased roots and JSX consumers that only return supplied nodes", async () => {

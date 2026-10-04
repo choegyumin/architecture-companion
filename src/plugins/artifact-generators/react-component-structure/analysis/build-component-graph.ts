@@ -6,6 +6,7 @@ import ignore from "ignore";
 import micromatch from "micromatch";
 import type ts from "typescript";
 
+import { combineControlPaths, unionControlPaths } from "@/features/diagram/diagram-control-paths";
 import type {
   DefaultDiagramEdge,
   DefaultDiagramNode,
@@ -16,6 +17,7 @@ import type {
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
 import { collectSourceFiles } from "./collect-source-files";
+import { projectDecisionNodes } from "./decision-nodes";
 import { loadTypeScript } from "./load-typescript";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
@@ -2044,25 +2046,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   function unionPaths(...sets: DiagramControlPaths[]): DiagramControlPaths {
-    const paths = new Map<string, DiagramControlPaths[number]>();
-    for (const path of sets.flat()) paths.set(JSON.stringify(path), path);
-    return [...paths.values()];
+    return unionControlPaths(...sets);
   }
 
   function combinePaths(left: DiagramControlPaths, right: DiagramControlPaths): DiagramControlPaths {
-    return unionPaths(
-      left.flatMap((prefix) =>
-        right.flatMap((suffix) => {
-          const path = [...prefix];
-          for (const requirement of suffix) {
-            const existing = path.find(({ controlId }) => controlId === requirement.controlId);
-            if (existing && existing.value !== requirement.value) return [];
-            if (!existing) path.push(requirement);
-          }
-          return [path];
-        }),
-      ),
-    );
+    return combineControlPaths(left, right);
   }
 
   function controlPaths(
@@ -3183,7 +3171,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       options.rootPatterns && options.rootPatterns.length > 0
         ? focusGraphOnRoots(graph, [...options.rootPatterns], collapsed.instances)
         : graph;
-    return mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships);
+    return projectDecisionNodes(mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships));
   }
   return buildComponentGraph;
 }

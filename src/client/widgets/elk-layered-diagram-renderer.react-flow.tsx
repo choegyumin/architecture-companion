@@ -35,6 +35,8 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
       id: edge.id,
       source: edge.source,
       target: edge.target,
+      // Decision-node ports bind edges to branch cases by handle id.
+      ...(edge.sourcePort ? { sourceHandle: edge.sourcePort } : {}),
       focusable: false,
       selectable: false,
       markerEnd: { type: MarkerType.ArrowClosed, color: DIAGRAM_EDGE_COLOR },
