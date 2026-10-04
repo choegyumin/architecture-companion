@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
-import { ComponentStructureControls } from "@/client/widgets/component-structure-controls";
+import { applyComponentControlForks, collectComponentOrigins } from "@/client/widgets/component-structure-forks";
 import {
   componentPathEmphasis,
   type ComponentSelection,
@@ -37,44 +37,23 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   const decorateNodes = useCallback(
     (nodes: readonly DiagramReactFlowNode[], selected: ComponentSelection): DiagramReactFlowNode[] => {
       const emphasis = componentPathEmphasis(diagram.graph, selected);
+      const origins = collectComponentOrigins(diagram.graph);
       return nodes.map((node) => {
         if (node.type !== "card") return node;
-        const controls = diagram.graph.componentStructure!.controls.filter((control) => control.source === node.id);
         const active = emphasis.nodes.has(node.id);
-        const original = diagram.graph.nodes.find((item) => item.id === node.id)!;
-        const origins = original.type === "default" ? (original.component?.origins ?? []) : [];
+        const nodeOrigins = origins.get(node.id) ?? [];
         return {
           ...node,
           data: {
             ...node.data,
             accessibleDescription: active ? "Active path" : "Inactive path",
             className: active ? "border-primary/50 bg-primary/5" : "border-dashed bg-muted/50 opacity-60",
-            children: (
-              <>
-                {origins.length ? (
-                  <ul aria-label="Supplied content origins" className="mt-3 space-y-1 text-xs text-muted-foreground">
-                    {origins.map((origin) => (
-                      <li key={`${origin.supplierId}:${origin.prop}`}>
-                        {origin.supplierTitle} → {origin.prop}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {controls.length ? (
-                  <ComponentStructureControls
-                    controls={controls}
-                    activeControls={emphasis.controls}
-                    selection={selected}
-                    onSelect={onSelect}
-                  />
-                ) : null}
-              </>
-            ),
+            details: [...(node.data.details ?? []), ...nodeOrigins],
           },
         };
       });
     },
-    [diagram, onSelect],
+    [diagram],
   );
   const buildMeasurementNodes = useCallback(
     (measuredDiagram: Diagram, onOpenSource: (href: string) => void) =>
@@ -89,17 +68,33 @@ function ComponentStructureContent(props: DiagramRendererProps) {
     ): DiagramReactFlowRenderModel => {
       const model = buildElkLayeredDiagramReactFlowRenderModel(renderedDiagram, layout, onOpenSource);
       const emphasis = componentPathEmphasis(diagram.graph, selection);
+      const dimmed = model.edges.map((edge) => {
+        const ariaLabel = `${edge.source} to ${edge.target}: ${emphasis.edges.has(edge.id) ? "Active path" : "Inactive path"}`;
+        const style = { ...edge.style, opacity: emphasis.edges.has(edge.id) ? 1 : 0.25 };
+        if (edge.type !== "route" || !edge.data) return { ...edge, ariaLabel, style };
+        // "from X" labels live in the origin bullets inside cards and slot
+        // kinds already show there, so the edges themselves stay bare.
+        const { eyebrow, ...data } = edge.data;
+        void eyebrow;
+        const { label, ...bare } = edge;
+        void label;
+        return { ...bare, ariaLabel, style, data };
+      });
       return {
         ...model,
         nodes: decorateNodes(model.nodes, selection),
-        edges: model.edges.map((edge) => ({
-          ...edge,
-          ariaLabel: `${edge.source} to ${edge.target}: ${emphasis.edges.has(edge.id) ? "Active path" : "Inactive path"}`,
-          style: { ...edge.style, opacity: emphasis.edges.has(edge.id) ? 1 : 0.25 },
-        })),
+        edges: applyComponentControlForks({
+          graph: diagram.graph,
+          componentStructure: diagram.graph.componentStructure!,
+          layout,
+          edges: dimmed,
+          selection,
+          emphasis,
+          onSelect,
+        }),
       };
     },
-    [decorateNodes, diagram, selection],
+    [decorateNodes, diagram, onSelect, selection],
   );
 
   return (

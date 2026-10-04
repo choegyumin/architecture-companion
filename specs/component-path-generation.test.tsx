@@ -70,12 +70,12 @@ it("keeps supplied conditional paths operable after generating and serializing t
     await waitForDiagramReady();
     expect(screen.getByRole("article", { name: /\bLeaf$/ })).toHaveAccessibleDescription(/\binactive\b/i);
 
-    const consumerSwitch = await screen.findByRole("switch", { name: "enabled" });
+    const consumerSwitch = await screen.findByRole("button", { name: "enabled" });
     expect(consumerSwitch).not.toBeDisabled();
     await user.click(consumerSwitch);
     await waitFor(() => {
-      expect(screen.getByRole("switch", { name: "open" })).toBeChecked();
-      expect(screen.getByRole("switch", { name: "enabled" })).toBeChecked();
+      expect(screen.getByRole("button", { name: "open" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "enabled" })).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByRole("article", { name: /Leaf$/ })).toHaveAccessibleDescription(/^active /i);
     });
     expect(screen.getByText(/App.*children/)).toBeVisible();
@@ -129,11 +129,11 @@ it("honors control prerequisites when an authored edge contains only its local r
     const user = userEvent.setup();
     render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
     await waitForDiagramReady();
-    await user.click(screen.getByRole("switch", { name: "child" }));
+    await user.click(screen.getByRole("button", { name: "child" }));
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^active /i);
-    await user.click(screen.getByRole("switch", { name: "parent" }));
+    await user.click(screen.getByRole("button", { name: "parent" }));
 
-    expect(screen.getByRole("switch", { name: "child" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "child" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^inactive /i);
   } finally {
     cleanup();
@@ -184,11 +184,11 @@ it("does not activate a shared consumer's output through an inactive supplier's 
     const user = userEvent.setup();
     render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
     await waitForDiagramReady();
-    await user.click(screen.getByRole("switch", { name: "leaf" }));
+    await user.click(screen.getByRole("button", { name: "leaf" }));
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^active /i);
-    await user.click(screen.getByRole("switch", { name: "supplier visible" }));
+    await user.click(screen.getByRole("button", { name: "supplier visible" }));
 
-    expect(screen.getByRole("switch", { name: "leaf" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "leaf" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "Supplier" })).toHaveAccessibleDescription(/^inactive /i);
     expect(screen.getByRole("article", { name: "Shared" })).toHaveAccessibleDescription(/^active /i);
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^inactive /i);

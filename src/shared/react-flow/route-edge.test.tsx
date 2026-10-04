@@ -82,6 +82,29 @@ describe("route edge", () => {
     expect(onActivate).toHaveBeenCalledOnce();
   });
 
+  it("renders a label control at the label position with full opacity", () => {
+    const control = <button type="button">Render path</button>;
+    render(
+      <RouteEdge
+        data={{ path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 }, labelControl: control }}
+        id="fork"
+        source="source"
+        sourcePosition={Position.Right}
+        sourceX={0}
+        sourceY={0}
+        style={{ opacity: 0.25 }}
+        target="target"
+        targetPosition={Position.Left}
+        targetX={100}
+        targetY={100}
+        type="route"
+      />,
+    );
+
+    const host = screen.getByRole("button", { name: "Render path" }).parentElement!;
+    expect(host).toHaveStyle({ left: "50px", top: "50px", opacity: "1" });
+  });
+
   it("does not render an empty path", () => {
     const { container } = render(
       <RouteEdge

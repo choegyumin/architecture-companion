@@ -122,12 +122,12 @@ it("reviewer reaches supplied content from an inactive path and opens its source
   await waitForDiagramReady();
 
   expect(screen.getByRole("article", { name: "component: Preview" })).toHaveAccessibleDescription("Inactive path");
-  await user.click(screen.getByRole("switch", { name: "showFooter" }));
+  await user.click(screen.getByRole("button", { name: "showFooter" }));
 
-  expect(screen.getByRole("switch", { name: "showPage" })).toBeChecked();
-  expect(screen.getByRole("radio", { name: "Preview" })).toBeChecked();
+  expect(screen.getByRole("button", { name: "showPage" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("article", { name: "component: Footer" })).toHaveAccessibleDescription("Active path");
-  expect(screen.getByText("App → footer")).toBeVisible();
+  expect(screen.getByText("from App (footer)")).toBeVisible();
   expect(screen.getByRole("article", { name: "component: Main" })).toHaveAccessibleDescription("Inactive path");
   await user.click(screen.getByRole("button", { name: "Open footer.tsx" }));
   expect(onOpenSource).toHaveBeenCalledWith("source:///src/footer.tsx");
