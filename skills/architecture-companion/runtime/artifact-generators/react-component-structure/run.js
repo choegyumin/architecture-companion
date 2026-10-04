@@ -3999,15 +3999,6 @@ async function acquireInstallationLock(cachePath) {
     await setTimeout(50);
   }
 }
-async function installFallback(cacheRoot, cachePath) {
-  const releaseLock = await acquireInstallationLock(cachePath);
-  try {
-    if (await hasCachedPackage(cachePath)) return;
-    await installFallbackPackage(cacheRoot, cachePath);
-  } finally {
-    await releaseLock();
-  }
-}
 async function installFallbackPackage(cacheRoot, cachePath) {
   const directory = await mkdtemp(join2(cacheRoot, `${version}-install-`));
   try {
@@ -4056,6 +4047,15 @@ async function installFallbackPackage(cacheRoot, cachePath) {
     }
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+}
+async function installFallback(cacheRoot, cachePath) {
+  const releaseLock = await acquireInstallationLock(cachePath);
+  try {
+    if (await hasCachedPackage(cachePath)) return;
+    await installFallbackPackage(cacheRoot, cachePath);
+  } finally {
+    await releaseLock();
   }
 }
 async function loadFallback() {
