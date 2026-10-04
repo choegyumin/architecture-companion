@@ -136,24 +136,6 @@ export function applyComponentControlForks({
   for (const control of controls) {
     const active = emphasis.controls.has(control.id);
     const description = active ? "Active path" : "Inactive path; selecting activates ancestors";
-    const chip =
-      control.kind === "branch" ? (
-        <BranchEdgeLabel
-          description={description}
-          label={control.label}
-          onSelect={(value) => onSelect(control.id, value)}
-          options={control.cases}
-          value={selection[control.id] ?? control.cases.at(0)!.id}
-        />
-      ) : (
-        <ConditionalEdgeLabel
-          active={active}
-          description={description}
-          label={control.label}
-          onToggle={() => onSelect(control.id, selection[control.id] === "on" ? "off" : "on")}
-          pressed={selection[control.id] === "on"}
-        />
-      );
     const outgoing = graph.edges.filter(
       (edge): edge is DefaultDiagramEdge =>
         edge.source === control.owner && edge.type === "default" && byEdgeId.get(edge.id)?.type === "route",
@@ -185,6 +167,15 @@ export function applyComponentControlForks({
     // A conditional guard wraps a single rendering path, not a fork: its chip
     // rides the guarded edge and the routing stays as the layout made it.
     if (control.kind !== "branch") {
+      const chip = (
+        <ConditionalEdgeLabel
+          active={active}
+          description={description}
+          label={control.label}
+          onToggle={() => onSelect(control.id, selection[control.id] === "on" ? "off" : "on")}
+          pressed={selection[control.id] === "on"}
+        />
+      );
       const anchorEdges = anchorEdgesFor(memberEdges);
       const position = meanLabelPosition(anchorEdges);
       if (position) attachChip(anchorEdges.at(0)!.id, position, chip);
@@ -205,6 +196,45 @@ export function applyComponentControlForks({
     const anchorEdges = anchorEdgesFor(branchEdges);
     const forkPoint = meanLabelPosition(anchorEdges);
     if (!forkPoint) continue;
+
+    // Options follow the drawn port order — leftmost target anchor first — so
+    // the first button matches the leftmost exit. Cases without a port keep
+    // their authored order after the ported ones.
+    const rankByCase = new Map<string, [number, number]>();
+    for (const edge of branchEdges) {
+      const caseValue = (edge.activeWhen ?? [])
+        .flatMap((path) => path.filter(({ controlId }) => controlId === control.id))
+        .map(({ value }) => value)
+        .at(0);
+      const point = caseValue != null ? placementByEdgeId.get(edge.id)?.points.at(-1) : undefined;
+      if (caseValue == null || point == null) continue;
+      const [knownX, knownY] = rankByCase.get(caseValue) ?? [];
+      if (knownX == null || knownY == null || point.x < knownX || (point.x === knownX && point.y < knownY)) {
+        rankByCase.set(caseValue, [point.x, point.y]);
+      }
+    }
+    const options = control.cases
+      .map((authoredCase, index) => ({ authoredCase, index, rank: rankByCase.get(authoredCase.id) }))
+      .toSorted((left, right) => {
+        if (left.rank != null && right.rank != null) {
+          const [leftX, leftY] = left.rank;
+          const [rightX, rightY] = right.rank;
+          return leftX - rightX || leftY - rightY;
+        }
+        if (left.rank != null) return -1;
+        if (right.rank != null) return 1;
+        return left.index - right.index;
+      })
+      .map(({ authoredCase }) => authoredCase);
+    const chip = (
+      <BranchEdgeLabel
+        description={description}
+        label={control.label}
+        onSelect={(value) => onSelect(control.id, value)}
+        options={options}
+        value={selection[control.id] ?? control.cases.at(0)!.id}
+      />
+    );
 
     if (!branchEdges.length) {
       // The control guards deeper edges only: keep the chip on the source's
