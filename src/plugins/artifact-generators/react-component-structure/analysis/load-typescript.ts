@@ -72,16 +72,6 @@ async function acquireInstallationLock(cachePath: string): Promise<() => Promise
   }
 }
 
-async function installFallback(cacheRoot: string, cachePath: string): Promise<void> {
-  const releaseLock = await acquireInstallationLock(cachePath);
-  try {
-    if (await hasCachedPackage(cachePath)) return;
-    await installFallbackPackage(cacheRoot, cachePath);
-  } finally {
-    await releaseLock();
-  }
-}
-
 async function installFallbackPackage(cacheRoot: string, cachePath: string): Promise<void> {
   const directory = await mkdtemp(join(cacheRoot, `${fallbackVersion}-install-`));
   try {
@@ -137,6 +127,16 @@ async function installFallbackPackage(cacheRoot: string, cachePath: string): Pro
     }
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+}
+
+async function installFallback(cacheRoot: string, cachePath: string): Promise<void> {
+  const releaseLock = await acquireInstallationLock(cachePath);
+  try {
+    if (await hasCachedPackage(cachePath)) return;
+    await installFallbackPackage(cacheRoot, cachePath);
+  } finally {
+    await releaseLock();
   }
 }
 
