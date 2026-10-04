@@ -1,4 +1,4 @@
-import { parseDiagram } from "@/features/diagram/diagram";
+import { parseArtifact } from "@/features/artifact/artifact";
 
 const componentDiagram = {
   id: "component-paths",
@@ -37,14 +37,14 @@ const componentDiagram = {
 
 describe("component structure diagram contract", () => {
   it.each(["dependency-graph", "sequence"])("rejects component controls with the %s layout", (id) => {
-    expect(() => parseDiagram({ ...componentDiagram, layout: { id } })).toThrow(
+    expect(() => parseArtifact({ ...componentDiagram, layout: { id } })).toThrow(
       "Component structure requires ELK layered layout",
     );
   });
 
   it("rejects unsupported component node and edge types", () => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -56,7 +56,7 @@ describe("component structure diagram contract", () => {
       }),
     ).toThrow("Component structure supports only default nodes");
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -67,12 +67,12 @@ describe("component structure diagram contract", () => {
   });
 
   it("preserves component metadata through serialization", () => {
-    expect(parseDiagram(JSON.parse(JSON.stringify(componentDiagram)))).toEqual(componentDiagram);
+    expect(parseArtifact(JSON.parse(JSON.stringify(componentDiagram)))).toEqual(componentDiagram);
   });
 
   it("rejects a path referencing an unknown control", () => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -105,7 +105,7 @@ describe("component structure diagram contract", () => {
     },
   ])("rejects a value outside the control cases: $value", ({ control, value }) => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -157,7 +157,7 @@ describe("component structure diagram contract", () => {
     },
   ])("rejects inconsistent metadata: $error", ({ roots, controls, error }) => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: { ...componentDiagram.graph, edges: [], roots, controls },
       }),
@@ -166,7 +166,7 @@ describe("component structure diagram contract", () => {
 
   it.each(["show", "other"])("rejects cyclic control prerequisites through %s", (dependency) => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -191,7 +191,7 @@ describe("component structure diagram contract", () => {
 
   it("rejects contradictory requirements within one path", () => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,
@@ -214,12 +214,12 @@ describe("component structure diagram contract", () => {
   it("rejects controls without declared roots", () => {
     const { roots: _roots, ...graph } = componentDiagram.graph;
     void _roots;
-    expect(() => parseDiagram({ ...componentDiagram, graph })).toThrow("Component controls require declared roots");
+    expect(() => parseArtifact({ ...componentDiagram, graph })).toThrow("Component controls require declared roots");
   });
 
   it("rejects a node without incoming edges that is not a declared root", () => {
     expect(() =>
-      parseDiagram({
+      parseArtifact({
         ...componentDiagram,
         graph: {
           ...componentDiagram.graph,

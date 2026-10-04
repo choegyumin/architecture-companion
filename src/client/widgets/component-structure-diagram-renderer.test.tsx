@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DefaultDiagramEdge, DiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
@@ -53,7 +53,7 @@ const diagram = {
     roots: ["app"],
     controls: [{ id: "show-details", owner: "app", label: "showDetails", kind: "conditional", dependsOn: [[]] }],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 function branchGraph(edges: DiagramGraph["edges"]): DiagramGraph {
   const ids = [...new Set(["app", ...edges.flatMap((edge) => [edge.source, edge.target])])];

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
@@ -101,7 +101,7 @@ const diagram = {
       { id: "show-footer", owner: "preview", kind: "conditional", label: "showFooter", dependsOn: [[]] },
     ],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 let restoreBrowserMeasurements: () => void;
 beforeEach(() => {

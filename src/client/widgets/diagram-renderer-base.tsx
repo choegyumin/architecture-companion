@@ -28,7 +28,7 @@ type DiagramRendererBaseProps = DiagramRendererProps &
   Readonly<{
     calculateLayout: (diagram: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
     children?: ReactNode;
-    buildMeasurementNodes?: (diagram: Diagram, onOpenSource: (href: string) => void) => DiagramReactFlowNode[];
+    buildMeasurementNodes?: (diagram: Artifact, onOpenSource: (href: string) => void) => DiagramReactFlowNode[];
     buildRenderModel: (
       diagram: Artifact,
       layout: DiagramLayout,
@@ -93,7 +93,7 @@ function DiagramRendererContent({
       try {
         measuredNodeSizes = resolveDiagramNodeSizes(diagram, getNodes());
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Diagram measurement failed.";
+        const message = error instanceof Error ? error.message : "Artifact measurement failed.";
         setState({ status: "error", message });
         return;
       }
@@ -104,7 +104,7 @@ function DiagramRendererContent({
           if (!cancelled) setState({ status: "ready", layout });
         })
         .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : "Diagram layout failed.";
+          const message = error instanceof Error ? error.message : "Artifact layout failed.";
           if (!cancelled) setState({ status: "error", message });
         });
     };
@@ -127,7 +127,7 @@ function DiagramRendererContent({
     } catch (error: unknown) {
       return {
         status: "error",
-        message: error instanceof Error ? error.message : "Diagram rendering failed.",
+        message: error instanceof Error ? error.message : "Artifact rendering failed.",
       } as const;
     }
   }, [state, diagram, onOpenSource, buildRenderModel]);

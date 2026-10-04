@@ -9,8 +9,8 @@ import userEvent from "@testing-library/user-event";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import { parseDiagram } from "@/features/diagram/diagram";
-import { buildComponentGraph } from "@/plugins/diagram-generators/react-component-structure/analysis/build-component-graph";
+import { parseArtifact } from "@/features/artifact/artifact";
+import { buildComponentGraph } from "@/plugins/artifact-generators/react-component-structure/analysis/build-component-graph";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
@@ -52,7 +52,7 @@ it("keeps supplied conditional paths operable after generating and serializing t
     `,
     );
     const graph = await buildComponentGraph({ scopePath, sourcePaths: ["components.tsx"], rootPatterns: ["App"] });
-    const diagram = parseDiagram(
+    const diagram = parseArtifact(
       JSON.parse(
         JSON.stringify({
           id: "generated-components",
@@ -89,7 +89,7 @@ it("keeps supplied conditional paths operable after generating and serializing t
 it("honors control prerequisites when an authored edge contains only its local requirement", async () => {
   const restoreBrowserMeasurements = installComponentDiagramBrowserMeasurements();
   try {
-    const diagram = parseDiagram({
+    const diagram = parseArtifact({
       id: "nested-metadata",
       title: "Nested metadata",
       updatedAt: "2026-10-04T09:00:00.000Z",
@@ -142,7 +142,7 @@ it("honors control prerequisites when an authored edge contains only its local r
 it("does not activate a shared consumer's output through an inactive supplier's retained local selection", async () => {
   const restoreBrowserMeasurements = installComponentDiagramBrowserMeasurements();
   try {
-    const diagram = parseDiagram({
+    const diagram = parseArtifact({
       id: "supplier-metadata",
       title: "Supplier metadata",
       updatedAt: "2026-10-04T09:00:00.000Z",
