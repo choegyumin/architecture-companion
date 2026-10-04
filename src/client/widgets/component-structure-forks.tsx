@@ -115,6 +115,32 @@ export function applyComponentControlForks({
   for (const edge of edges) byEdgeId.set(edge.id, edge);
   const trunks: DiagramReactFlowEdge[] = [];
 
+  // Chips whose footprints overlap share one anchor edge: the label control
+  // stacks its children vertically, while separate anchor edges at the same
+  // point would render on top of each other. Footprints come from the label
+  // text (text-xs) plus control chrome, since chips build before the DOM can
+  // measure them.
+  const chipStacks: { edgeId: string; position: DiagramLayoutPoint; halfWidth: number }[] = [];
+  const chipStackAnchorFor = (
+    control: DiagramControl,
+    edgeId: string,
+    position: DiagramLayoutPoint,
+  ): { edgeId: string; position: DiagramLayoutPoint } => {
+    const halfWidth =
+      (control.kind === "branch"
+        ? control.cases.reduce((sum, option) => sum + 7 * option.label.length + 20, 8)
+        : 7 * control.label.length + 44) / 2;
+    const near = chipStacks.find(
+      (stack) =>
+        Math.abs(stack.position.x - position.x) < stack.halfWidth + halfWidth + 8 &&
+        Math.abs(stack.position.y - position.y) < 45,
+    );
+    if (near) return near;
+    const stack = { edgeId, position, halfWidth };
+    chipStacks.push(stack);
+    return stack;
+  };
+
   const attachChip = (edgeId: string, position: DiagramLayoutPoint, chip: ReactNode): void => {
     const current = byEdgeId.get(edgeId);
     if (current?.type !== "route" || !current.data) return;
@@ -178,7 +204,10 @@ export function applyComponentControlForks({
       );
       const anchorEdges = anchorEdgesFor(memberEdges);
       const position = meanLabelPosition(anchorEdges);
-      if (position) attachChip(anchorEdges.at(0)!.id, position, chip);
+      if (position) {
+        const stack = chipStackAnchorFor(control, anchorEdges.at(0)!.id, position);
+        attachChip(stack.edgeId, stack.position, chip);
+      }
       continue;
     }
 
@@ -239,7 +268,8 @@ export function applyComponentControlForks({
     if (!branchEdges.length) {
       // The control guards deeper edges only: keep the chip on the source's
       // first outgoing edge without re-anchoring its path.
-      attachChip(anchorEdges.at(0)!.id, forkPoint, chip);
+      const stack = chipStackAnchorFor(control, anchorEdges.at(0)!.id, forkPoint);
+      attachChip(stack.edgeId, stack.position, chip);
       continue;
     }
 
@@ -285,7 +315,8 @@ export function applyComponentControlForks({
       },
       data: { path: toPolylinePath([sourceAnchor, forkPoint]), labelPosition: forkPoint },
     });
-    attachChip(representative.id, forkPoint, chip);
+    const stack = chipStackAnchorFor(control, representative.id, forkPoint);
+    attachChip(stack.edgeId, stack.position, chip);
   }
 
   return [...edges.map((edge) => byEdgeId.get(edge.id) ?? edge), ...trunks];
