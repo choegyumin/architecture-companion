@@ -6,6 +6,7 @@ import ignore from "ignore";
 import micromatch from "micromatch";
 import type ts from "typescript";
 
+import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import { combineControlPaths, unionControlPaths } from "@/features/diagram/diagram-control-paths";
 import type {
   DefaultDiagramEdge,
@@ -17,7 +18,6 @@ import type {
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
 import { collectSourceFiles } from "./collect-source-files";
-import { projectDecisionNodes } from "./decision-nodes";
 import { loadTypeScript } from "./load-typescript";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */

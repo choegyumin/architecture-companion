@@ -5,6 +5,7 @@ import type { AnnotationCanvasController } from "@/client/parts/annotation-layer
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
 import type { Artifact } from "@/features/artifact/artifact";
+import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DefaultDiagramEdge, DiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
@@ -35,7 +36,7 @@ const diagram = {
   generator: "built-in:react-component-structure",
   instructions: "## Purpose\nExplore rendering paths.\n\n## Regeneration\nRead the component sources.",
   layout: { id: "elk-layered" },
-  graph: {
+  graph: projectDecisionNodes({
     groups: [],
     nodes: [
       { id: "app", type: "default", kind: "component", title: "App" },
@@ -52,7 +53,7 @@ const diagram = {
     ],
     roots: ["app"],
     controls: [{ id: "show-details", owner: "app", label: "showDetails", kind: "conditional", dependsOn: [[]] }],
-  },
+  }),
 } satisfies Artifact;
 
 function branchGraph(edges: DiagramGraph["edges"]): DiagramGraph {
@@ -130,7 +131,13 @@ describe("component structure paths", () => {
       connection("large-one", "large", "one"),
       connection("large-two", "large", "two"),
     ]);
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
@@ -160,25 +167,50 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    // The chosen case guards project onto every edge naming it.
+    expect(
+      screen
+        .getAllByRole("button", { name: "Large" })
+        .every((button) => button.getAttribute("aria-pressed") === "true"),
+    ).toBe(true);
     expect(screen.getByRole("button", { name: "details" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Inactive path");
   });
 
-  it("excludes unreachable and opposite-alternative output from initial branch ranking", async () => {
+  it("excludes the opposite alternative's output from initial branch ranking", async () => {
     const graph = branchGraph([
       connection("z-small", "app", "shared", "small"),
       connection("a-large", "app", "large", "large"),
-      connection("shared-tail", "shared", "tail", "large"),
+      connection("shared-tail", "shared", "tail", "small"),
     ]);
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("article", { name: "component: tail" })).toHaveAccessibleDescription("Inactive path");
+    // Ranking the small arm counts shared and tail; the large arm counts only
+    // large, so Small wins and its descendants light up. The chosen case
+    // projects onto every edge naming it.
+    expect(
+      screen
+        .getAllByRole("button", { name: "Small" })
+        .every((button) => button.getAttribute("aria-pressed") === "true"),
+    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("article", { name: "component: tail" })).toHaveAccessibleDescription("Active path");
   });
 
   it("breaks descendant ties by the longest finite depth, without counting recursive cycles as depth", async () => {
@@ -191,7 +223,13 @@ describe("component structure paths", () => {
       connection("large-three", "large", "three"),
       connection("three-four", "three", "four"),
     ]);
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
@@ -202,7 +240,13 @@ describe("component structure paths", () => {
       connection("a-small", "app", "small", "small"),
       connection("Z-large", "app", "large", "large"),
     ]);
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
@@ -210,7 +254,13 @@ describe("component structure paths", () => {
 
   it("activates only the richer diverging ancestor route for an unreachable shared node", async () => {
     const graph = sharedGraph();
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "leaf" }));
@@ -231,7 +281,13 @@ describe("component structure paths", () => {
         connection("extra-shared", "extra", "shared"),
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "leaf" }));
@@ -248,7 +304,13 @@ describe("component structure paths", () => {
         .filter((edge) => edge.id !== "right-extra")
         .map((edge) => (edge.id === "z-right" ? { ...edge, id: "Z-right" } : edge)),
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "leaf" }));
@@ -259,7 +321,13 @@ describe("component structure paths", () => {
 
   it("keeps an already active ancestor route instead of enabling a richer route", async () => {
     const graph = sharedGraph();
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     await userEvent.click(screen.getByRole("button", { name: "left" }));
 
@@ -299,7 +367,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "leaf" }));
@@ -331,7 +405,13 @@ describe("component structure paths", () => {
         { ...branch.controls!.at(0)!, dependsOn: [[{ controlId: "show-mode", value: "on" }]] },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Large" })).toHaveAccessibleDescription(
@@ -384,7 +464,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "No preview" }));
@@ -398,7 +484,13 @@ describe("component structure paths", () => {
       ...diagram.graph,
       edges: [{ ...diagram.graph.edges.at(0)!, label: "optional" }, connection("always", "app", "details")],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     expect(screen.getByRole("article", { name: "component: Details" })).toHaveAccessibleDescription("Active path");
@@ -424,7 +516,13 @@ describe("component structure paths", () => {
         { id: "details", owner: "panel", label: "showDetails", kind: "conditional", dependsOn: [[]] },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     const route = screen
       .getByRole("img", { name: "panel to details: Inactive path" })
@@ -464,7 +562,13 @@ describe("component structure paths", () => {
       ...graph.controls!,
       { id: "show-leaf", owner: "small", label: "showLeaf", kind: "conditional", dependsOn: [[]] },
     ];
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "showLeaf" }));
@@ -486,13 +590,13 @@ describe("component structure paths", () => {
         <DiagramRenderer
           ariaLabel="First composition"
           annotations={annotations}
-          diagram={{ ...diagram, graph }}
+          diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
           onOpenSource={() => {}}
         />
         <DiagramRenderer
           ariaLabel="Second composition"
           annotations={annotations}
-          diagram={{ ...diagram, graph }}
+          diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
           onOpenSource={() => {}}
         />
       </>,
@@ -501,20 +605,23 @@ describe("component structure paths", () => {
     const first = within(screen.getByRole("region", { name: "First composition" }));
     const second = within(screen.getByRole("region", { name: "Second composition" }));
 
-    await userEvent.click(first.getByRole("button", { name: "Large" }));
+    await userEvent.click(first.getByRole("button", { name: "Small" }));
 
-    expect(first.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
-    expect(second.getByRole("button", { name: "Small" })).toHaveAttribute("aria-pressed", "true");
-    expect(second.getByRole("article", { name: "component: small" })).toHaveAccessibleDescription("Active path");
+    expect(first.getByRole("button", { name: "Small" })).toHaveAttribute("aria-pressed", "true");
+    expect(second.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(second.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Active path");
   });
 
   it("retains the component title and displays every supplier-prop pair of a merged node", async () => {
     const graph: DiagramGraph = {
       ...diagram.graph,
       nodes: [
-        diagram.graph.nodes.at(0)!,
+        { id: "app", type: "default", kind: "component", title: "App" },
         {
-          ...diagram.graph.nodes.at(1)!,
+          id: "details",
+          type: "default",
+          kind: "component",
+          title: "Details",
           component: {
             definitionId: "src/details.tsx:Details",
             origins: [
@@ -552,7 +659,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     const card = screen.getByRole("article", { name: "component: Details" });
 
@@ -612,7 +725,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("button", { name: "child" }));
@@ -647,7 +766,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     await userEvent.click(screen.getByRole("button", { name: "supplied" }));
     await userEvent.click(screen.getByRole("button", { name: "supplier visible" }));
@@ -696,7 +821,13 @@ describe("component structure paths", () => {
         },
       ],
     };
-    render(<DiagramRenderer annotations={annotations} diagram={{ ...diagram, graph }} onOpenSource={() => {}} />);
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
     await waitForDiagramReady();
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
 

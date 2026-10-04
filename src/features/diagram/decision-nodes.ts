@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 
-import { unionControlPaths } from "@/features/diagram/diagram-control-paths";
+import { combineControlPaths, unionControlPaths } from "@/features/diagram/diagram-control-paths";
 import type {
   DecisionDiagramNode,
   DefaultDiagramEdge,
   DefaultDiagramNode,
+  DiagramControl,
   DiagramControlCondition,
   DiagramControlPaths,
   DiagramGraph,
@@ -27,6 +28,44 @@ function segmentId(segment: Omit<Segment, "guards" | "activeWhen">): string {
     .slice(0, 16)}`;
 }
 
+const conditionKey = (condition: DiagramControlCondition): string => `${condition.controlId}\0${condition.value}`;
+
+/**
+ * Authored graphs may keep an edge's `activeWhen` local and declare the rest of
+ * a control's prerequisites through `dependsOn`. Rendering needs every guard
+ * visible, so the projection lifts those prerequisites onto the segment that
+ * reaches the control: a decision's entry segment names what must hold before
+ * the branch applies, and untraversed conditional prerequisites ride the same
+ * edge as the control they gate. Disjunctive prerequisites stay disjunctive —
+ * the alternatives spread across guard clauses instead of contradicting.
+ */
+function missingGuardPaths(
+  seeds: readonly DiagramControlCondition[],
+  path: readonly DiagramControlCondition[],
+  controlsById: ReadonlyMap<string, Pick<DiagramControl, "dependsOn">>,
+): DiagramControlPaths {
+  const claimed = new Set(path.map(conditionKey));
+  const expanded = new Set<string>();
+  let results: DiagramControlPaths = [[]];
+  const queue = [...seeds];
+  while (queue.length > 0) {
+    const seed = queue.shift()!;
+    if (expanded.has(seed.controlId)) continue;
+    expanded.add(seed.controlId);
+    const additions = (controlsById.get(seed.controlId)?.dependsOn ?? [[]]).map((dependencyPath) =>
+      dependencyPath.filter((dependency) => !claimed.has(conditionKey(dependency))),
+    );
+    for (const addition of additions) {
+      for (const dependency of addition) {
+        claimed.add(conditionKey(dependency));
+        queue.push(dependency);
+      }
+    }
+    results = combineControlPaths(results, additions);
+  }
+  return results;
+}
+
 /**
  * Splits one path through a branch chain into hop segments. Each branch
  * condition ends a segment at that control's decision node; the segment's
@@ -39,20 +78,25 @@ function segmentsOf(
   path: readonly DiagramControlCondition[],
   edge: DefaultDiagramEdge,
   isBranch: (controlId: string) => boolean,
+  controlsById: ReadonlyMap<string, Pick<DiagramControl, "dependsOn">>,
 ): Segment[] {
-  const segments: Segment[] = [];
+  const segments: (Segment & { seeds: DiagramControlCondition[] })[] = [];
   let start = edge.source;
   let startPort: string | undefined;
+  let portCondition: DiagramControlCondition | undefined;
   const activeWhen: DiagramControlCondition[] = [];
-  let guards: DiagramControlCondition[] = [];
+  let span: DiagramControlCondition[] = [];
 
-  const push = (target: string): void => {
-    // Snapshot the accumulators: later paths keep mutating them.
+  const push = (target: string, reached?: DiagramControlCondition): void => {
+    // Snapshot the accumulators: later paths keep mutating them. The label
+    // keeps the port choice; prerequisite lifting seeds only from the span —
+    // the port branch's own prerequisites belong to the segment entering it.
     segments.push({
       source: start,
       target,
       ...(startPort ? { sourcePort: startPort } : {}),
-      guards: [[...guards]],
+      guards: [[...(portCondition ? [portCondition] : []), ...span]],
+      seeds: [...span, ...(reached ? [reached] : [])],
       activeWhen: [[...activeWhen]],
     });
   };
@@ -60,17 +104,24 @@ function segmentsOf(
   for (const condition of path) {
     if (!isBranch(condition.controlId)) {
       activeWhen.push(condition);
-      guards.push(condition);
+      span.push(condition);
       continue;
     }
-    push(condition.controlId);
+    push(condition.controlId, condition);
     start = condition.controlId;
     startPort = condition.value;
+    portCondition = condition;
     activeWhen.push(condition);
-    guards = [condition];
+    span = [];
   }
   push(edge.target);
-  return segments;
+
+  // Lift declared-but-untraversed prerequisites onto the segments that reach
+  // their controls, so every guard renders somewhere.
+  return segments.map(({ seeds, ...segment }) => {
+    const missing = missingGuardPaths(seeds, path, controlsById);
+    return { ...segment, guards: combineControlPaths(segment.guards, missing) };
+  });
 }
 
 /**
@@ -84,6 +135,7 @@ function segmentsOf(
  */
 export function projectDecisionNodes(graph: DiagramGraph): DiagramGraph {
   const controls = graph.controls ?? [];
+  const controlsById = new Map(controls.map((control) => [control.id, control]));
   const branchControls = controls.filter((control) => control.kind === "branch");
   const branchControlIds = new Set(branchControls.map(({ id }) => id));
 
@@ -104,15 +156,15 @@ export function projectDecisionNodes(graph: DiagramGraph): DiagramGraph {
 
     if (branchless.length > 0) {
       // The edge stays whole: no branch ever cuts it, so its guards are the
-      // plain conjunctions of its own paths.
+      // plain conjunctions of its own paths plus their untraversed prerequisites.
       edgesById.set(edge.id, {
         ...edge,
         activeWhen: branchless.length === paths.length ? edge.activeWhen : branchless,
-        guards: branchless,
+        guards: branchless.flatMap((path) => combineControlPaths([path], missingGuardPaths(path, path, controlsById))),
       });
     }
     for (const path of branched) {
-      for (const segment of segmentsOf(path, edge, (controlId) => branchControlIds.has(controlId))) {
+      for (const segment of segmentsOf(path, edge, branchControlIds.has.bind(branchControlIds), controlsById)) {
         const key = [segment.source, segment.target, segment.sourcePort ?? ""].join("\0");
         const existing = segments.get(key);
         const terminal = segment.target === edge.target;

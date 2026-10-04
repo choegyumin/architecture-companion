@@ -5,6 +5,7 @@ import type { AnnotationCanvasController } from "@/client/parts/annotation-layer
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
 import type { Artifact } from "@/features/artifact/artifact";
+import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
@@ -34,7 +35,7 @@ const diagram = {
   generator: "built-in:react-component-structure",
   instructions: "## Purpose\nExplore supplied page content.\n\n## Regeneration\nRead the page composition sources.",
   layout: { id: "elk-layered" },
-  graph: {
+  graph: projectDecisionNodes({
     groups: [],
     nodes: [
       { id: "app", type: "default", kind: "component", title: "App" },
@@ -100,7 +101,7 @@ const diagram = {
       },
       { id: "show-footer", owner: "preview", kind: "conditional", label: "showFooter", dependsOn: [[]] },
     ],
-  },
+  }),
 } satisfies Artifact;
 
 let restoreBrowserMeasurements: () => void;

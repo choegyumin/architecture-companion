@@ -78,9 +78,12 @@ function routeMetrics(
       0,
       ...starts.filter((edge) => descendants.has(edge.target)).map((edge) => depth(components.get(edge.target)!)),
     ),
+    // Decision arms tie-break by their case id (the option identity), while
+    // other edges keep their authored id: projected arm ids are hashes, but
+    // the case they leave from is the stable, authored ordering.
     edgeId:
       starts
-        .map((edge) => edge.id)
+        .map((edge) => (edge.type === "default" && edge.sourcePort ? edge.sourcePort : edge.id))
         .sort()
         .at(0) ?? "",
   };

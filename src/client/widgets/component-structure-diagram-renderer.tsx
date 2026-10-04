@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
-import { applyComponentControlForks, collectComponentOrigins } from "@/client/widgets/component-structure-forks";
+import { attachGuardLabels, collectComponentOrigins } from "@/client/widgets/component-structure-guards";
 import {
   componentPathEmphasis,
   type ComponentSelection,
@@ -39,8 +39,18 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       const emphasis = componentPathEmphasis(diagram.graph, selected);
       const origins = collectComponentOrigins(diagram.graph);
       return nodes.map((node) => {
-        if (node.type !== "card") return node;
         const active = emphasis.nodes.has(node.id);
+        if (node.type === "decision") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              active,
+              accessibleDescription: active ? "Active path" : "Inactive path",
+            },
+          };
+        }
+        if (node.type !== "card") return node;
         const nodeOrigins = origins.get(node.id) ?? [];
         return {
           ...node,
@@ -83,10 +93,9 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       return {
         ...model,
         nodes: decorateNodes(model.nodes, selection),
-        edges: applyComponentControlForks({
+        edges: attachGuardLabels({
           graph: diagram.graph,
           controls: diagram.graph.controls!,
-          layout,
           edges: dimmed,
           selection,
           emphasis,

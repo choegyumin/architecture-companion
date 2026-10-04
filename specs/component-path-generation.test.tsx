@@ -10,6 +10,7 @@ import type { AnnotationCanvasController } from "@/client/parts/annotation-layer
 import { installComponentDiagramBrowserMeasurements } from "@/client/widgets/component-structure-test-browser";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
 import { parseArtifact } from "@/features/artifact/artifact";
+import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import { buildComponentGraph } from "@/plugins/artifact-generators/react-component-structure/analysis/build-component-graph";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
@@ -96,7 +97,7 @@ it("honors control prerequisites when an authored edge contains only its local r
       generator: "built-in:react-component-structure",
       instructions: "Review nested rendering prerequisites.",
       layout: { id: "elk-layered" },
-      graph: {
+      graph: projectDecisionNodes({
         groups: [],
         nodes: [
           { id: "app", type: "default", title: "App" },
@@ -122,7 +123,7 @@ it("honors control prerequisites when an authored edge contains only its local r
             dependsOn: [[{ controlId: "parent", value: "on" }]],
           },
         ],
-      },
+      }),
     });
     const user = userEvent.setup();
     render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
@@ -149,7 +150,7 @@ it("does not activate a shared consumer's output through an inactive supplier's 
       generator: "built-in:react-component-structure",
       instructions: "Review conditional supplied output through a shared consumer.",
       layout: { id: "elk-layered" },
-      graph: {
+      graph: projectDecisionNodes({
         groups: [],
         nodes: ["App", "Supplier", "Shared", "Leaf"].map((title) => ({ id: title, type: "default", title })),
         edges: [
@@ -175,7 +176,7 @@ it("does not activate a shared consumer's output through an inactive supplier's 
           { id: "supplier-visible", owner: "App", kind: "conditional", label: "supplier visible", dependsOn: [[]] },
           { id: "leaf", owner: "Supplier", kind: "conditional", label: "leaf", dependsOn: [[]] },
         ],
-      },
+      }),
     });
     const user = userEvent.setup();
     render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
