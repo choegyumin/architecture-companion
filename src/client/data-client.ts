@@ -6,8 +6,8 @@ import {
   parseRevisionAnnotationsRead,
   type RevisionAnnotationsRead,
 } from "@/features/annotation/revision-annotations";
-import type { ArtifactRevisionId } from "@/features/artifact/artifact-revision-id";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
 
@@ -36,12 +36,12 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
 }
 
 type AnnotationRevision = Readonly<{
-  artifactRevisionId: ArtifactRevisionId;
+  catalogRevisionId: CompanionCatalogRevisionId;
   etag: string;
 }>;
 
-function sortDiagramsByTitle(diagrams: readonly Diagram[]): readonly Diagram[] {
-  return diagrams.toSorted((left, right) => left.title.localeCompare(right.title));
+function sortArtifactsByTitle(artifacts: readonly Artifact[]): readonly Artifact[] {
+  return artifacts.toSorted((left, right) => left.title.localeCompare(right.title));
 }
 
 export function createDataClient(baseUrl: string, fetcher: typeof fetch = globalThis.fetch) {
@@ -57,7 +57,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
   async function getAnnotations(): Promise<RevisionAnnotationsRead> {
     const response = await rpc.api.annotations.$get();
 
-    if (response.status === 422) return { artifactRevisionId: null, document: null };
+    if (response.status === 422) return { catalogRevisionId: null, document: null };
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, `Annotation request failed with status ${response.status}.`));
     }
@@ -66,7 +66,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
     if (revisionAnnotations.document === null) return revisionAnnotations;
 
     annotationRevisions.set(revisionAnnotations.document, {
-      artifactRevisionId: revisionAnnotations.artifactRevisionId,
+      catalogRevisionId: revisionAnnotations.catalogRevisionId,
       etag: readAnnotationEtag(response),
     });
     return revisionAnnotations;
@@ -84,7 +84,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
     if (!revision) throw new Error("Annotation revision is unavailable. Reload before saving.");
 
     const response = await rpc.api.annotations.$put(
-      { json: { artifactRevisionId: revision.artifactRevisionId, document } },
+      { json: { catalogRevisionId: revision.catalogRevisionId, document } },
       {
         headers: {
           "If-Match": revision.etag,
@@ -101,7 +101,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
 
     const saved = parseRevisionAnnotations(await response.json());
     annotationRevisions.set(saved.document, {
-      artifactRevisionId: saved.artifactRevisionId,
+      catalogRevisionId: saved.catalogRevisionId,
       etag: readAnnotationEtag(response),
     });
     return saved.document;
@@ -157,14 +157,14 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
       }
 
       const review = await response.json();
-      if (!review.artifact) return review;
+      if (!review.catalog) return review;
 
       return {
         ...review,
-        artifact: {
-          ...review.artifact,
-          behaviors: sortDiagramsByTitle(review.artifact.behaviors),
-          designs: sortDiagramsByTitle(review.artifact.designs),
+        catalog: {
+          ...review.catalog,
+          behaviors: sortArtifactsByTitle(review.catalog.behaviors),
+          designs: sortArtifactsByTitle(review.catalog.designs),
         },
       };
     },

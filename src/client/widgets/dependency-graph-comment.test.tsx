@@ -10,7 +10,7 @@ import {
   parseAnnotationDocument,
 } from "@/features/annotation/annotation-document";
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 
 const sizes = {
   one: { width: 288, height: 80 },
@@ -41,7 +41,7 @@ const diagram = {
       { id: "one-two", type: "default", source: "one", target: "two" },
     ],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 vi.mock("@xyflow/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@xyflow/react")>()),

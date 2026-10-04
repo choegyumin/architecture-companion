@@ -1,6 +1,6 @@
 # Artifact authoring rules
 
-These authoring rules apply to all generators. See [`schemas/diagram.schema.json`](schemas/diagram.schema.json) and its referenced schemas for JSON structure and constraints. Follow the `GENERATOR.md` of the generator selected after discovery for diagram-specific construction and execution instructions.
+These authoring rules apply to all generators. See [`schemas/artifact.schema.json`](schemas/artifact.schema.json) and its referenced schemas for JSON structure and constraints. Follow the `GENERATOR.md` of the generator selected after discovery for diagram-specific construction and execution instructions.
 
 ## Review questions and evidence
 
@@ -13,7 +13,7 @@ Each diagram should answer one central review question. Avoid repeating the same
 
 ## File organization and preserving existing artifacts
 
-An artifact is the complete set of diagram files. Store each diagram in its own JSON file.
+A catalog is the complete set of artifacts. Each artifact contains one diagram and is stored in its own JSON file.
 
 - Product Behavior: `<scope>/.architecture-companion/behaviors/<id>.json`
 - Code Design: `<scope>/.architecture-companion/designs/<id>.json`
@@ -27,7 +27,7 @@ Architecture Companion calculates coordinates and dimensions, so do not store th
 ## Authoring metadata
 
 - `updatedAt`: Record the current content's completion time from the system clock in UTC ISO 8601. Do not refresh it on reads, validation, unchanged saves, or Annotation changes.
-- `vcs.revision`: Record the code revision used as the basis, not the artifact's own commit or internal artifact revision ID. Use the version control system's native identifier; for Git, use the full commit hash. Omit `vcs` entirely when no version-controlled code basis exists.
+- `vcs.revision`: Record the code revision used as the basis, not the artifact's own commit or internal catalog revision ID. Use the version control system's native identifier; for Git, use the full commit hash. Omit `vcs` entirely when no version-controlled code basis exists.
 - `vcs.divergesFromRevision`: Set to `true` only when the represented behavior, structure, or design differs from that revision, including uncommitted implementation changes or unimplemented proposals; otherwise use `false`. Do not infer divergence from working-tree status or post-generation edits. Source interpretation, summarization, and intentional presentation refinements recorded in `instructions` do not by themselves constitute divergence.
 
 On content changes, update `updatedAt`; if `vcs` is present, reassess `divergesFromRevision`. Retain `revision` unless the code basis changes; when it does, verify retained content against the new basis and set both VCS fields together.

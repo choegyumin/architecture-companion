@@ -2,13 +2,13 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 
-import { resolveConsumerScope, resolveConsumerScopePath } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope, resolveCompanionScopePath } from "@/server/resolve-companion-scope";
 import { startServer } from "@/server/start-server";
 
 import { getDevelopmentCacheDirectory, readDevelopmentServerState, writeDevelopmentServerState } from "./_dev-session";
 
 async function watchDevelopmentServer(): Promise<void> {
-  const scopePath = await resolveConsumerScopePath(process.env.DEVELOPMENT_SERVER_SCOPE ?? process.cwd());
+  const scopePath = await resolveCompanionScopePath(process.env.DEVELOPMENT_SERVER_SCOPE ?? process.cwd());
   const child = spawn(
     process.execPath,
     [
@@ -37,7 +37,7 @@ async function watchDevelopmentServer(): Promise<void> {
 }
 
 async function startDevelopmentServer(scopePath: string, ownerPid: number): Promise<void> {
-  const scope = await resolveConsumerScope(scopePath);
+  const scope = await resolveCompanionScope(scopePath);
   const previous = await readDevelopmentServerState();
   const port = previous?.ownerPid === ownerPid ? Number(new URL(previous.url).port) : 4318;
   const server = await startServer(scope, { port, fallbackPort: true, staticRoot: false });

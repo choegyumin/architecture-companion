@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DefaultDiagramNode, LifelineDiagramNode, MessageDiagramEdge } from "@/features/diagram/diagram-graph";
 import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
 import type {
@@ -103,7 +103,7 @@ function toLifelineNodeData(
 }
 
 export function buildDiagramMeasurementNodes(
-  diagram: Diagram,
+  diagram: Artifact,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowNode[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
@@ -161,7 +161,7 @@ export function buildDiagramMeasurementNodes(
 }
 
 export function resolveDiagramNodeSizes(
-  diagram: Diagram,
+  diagram: Artifact,
   nodes: readonly Pick<Node, "id" | "measured" | "type">[],
 ): DiagramNodeSizes {
   const measuredNodeSizes = Object.fromEntries(
@@ -181,7 +181,7 @@ export function resolveDiagramNodeSizes(
 }
 
 export function buildDiagramReactFlowNodes(
-  diagram: Diagram,
+  diagram: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   nodesActivatable = false,

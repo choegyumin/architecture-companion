@@ -6,9 +6,9 @@ import {
   pathsCross,
   pathsOverlap,
 } from "@/client/widgets/dependency-graph-route-test-geometry";
+import { parseArtifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import { type DependencyEdgeProjection, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
-import { parseDiagram } from "@/features/diagram/diagram";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 import artifactJson from "../../../.architecture-companion/designs/dependency-graph.json";
@@ -68,7 +68,7 @@ function overlappingPairs(
 }
 
 async function focusedRoutes(focusId?: string) {
-  const diagram = parseDiagram(diagramJson);
+  const diagram = parseArtifact(diagramJson);
   const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
   const layout = await layoutDependencyGraph(diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
@@ -91,7 +91,7 @@ async function focusedRoutes(focusId?: string) {
 
 describe("dependency aggregate routes on the checked-in design", () => {
   it("does not wrap unrelated groups or travel beyond the destination to avoid other edges", async () => {
-    const diagram = parseDiagram(diagramJson);
+    const diagram = parseArtifact(diagramJson);
     const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
     const layout = await layoutDependencyGraph(diagram.graph, sizes);
     const bounds = getDependencyElementBounds(layout);
@@ -175,7 +175,7 @@ describe("dependency aggregate routes on the checked-in design", () => {
   });
 
   it("keeps distinct aggregate edges on separate straight tracks", async () => {
-    const diagram = parseDiagram(diagramJson);
+    const diagram = parseArtifact(diagramJson);
     const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
     const layout = await layoutDependencyGraph(diagram.graph, sizes);
     const projections = projectDependencyEdges(diagram.graph).filter(
@@ -190,7 +190,7 @@ describe("dependency aggregate routes on the checked-in design", () => {
   // One `it` per group so the five-second timeout applies to each focus rather
   // than to the sweep as a whole; a shared layout keeps the scene cached across
   // the generated tests.
-  const boundaryDiagram = parseDiagram(diagramJson);
+  const boundaryDiagram = parseArtifact(diagramJson);
   const sharedLayout = layoutDependencyGraph(
     boundaryDiagram.graph,
     Object.fromEntries(boundaryDiagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),

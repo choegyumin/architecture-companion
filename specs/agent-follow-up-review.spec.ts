@@ -4,13 +4,13 @@ import { join } from "node:path";
 
 import { executeViewAnnotationsCommand } from "@/cli/view-annotations.command";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { createFileAnnotationRepository } from "@/server/file-annotation-repository";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
-const artifact: Artifact = {
+const catalog: CompanionCatalog = {
   behaviors: [
     {
       id: "checkout",
@@ -84,10 +84,10 @@ describe("coding agent retrieves reviewer comments", () => {
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, artifact);
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, catalog);
+      const scope = await resolveCompanionScope(scopePath);
       await createFileAnnotationRepository(scope.path).save({
-        artifactRevisionId: createArtifactRevisionId(artifact),
+        catalogRevisionId: createCatalogRevisionId(catalog),
         document,
         expectedDocument: { annotations: [] },
       });
@@ -98,7 +98,7 @@ describe("coding agent retrieves reviewer comments", () => {
 
       expect(outputs.at(0)?.endsWith("\n")).toBe(true);
       expect(JSON.parse(outputs.at(0) as string)).toEqual({
-        artifactRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
+        catalogRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
         document,
       });
     } finally {

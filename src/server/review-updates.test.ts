@@ -3,14 +3,14 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { BEHAVIORS_RELATIVE_PATH, readArtifact } from "@/server/read-artifact";
+import { BEHAVIORS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/server/review-updates";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
-function behavior(title: string): Artifact["behaviors"][number] {
+function behavior(title: string): CompanionCatalog["behaviors"][number] {
   return {
     id: "checkout",
     title: "Workflow",
@@ -27,16 +27,16 @@ function behavior(title: string): Artifact["behaviors"][number] {
   };
 }
 
-function artifact(title: string): Artifact {
+function catalog(title: string): CompanionCatalog {
   return { behaviors: [behavior(title)], designs: [] };
 }
 
 async function writeAnnotations(
   scopePath: string,
-  activeArtifact: Artifact,
+  activeArtifact: CompanionCatalog,
   document: AnnotationDocument,
 ): Promise<void> {
-  const annotationsPath = join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(activeArtifact)));
+  const annotationsPath = join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(activeArtifact)));
   await mkdir(dirname(annotationsPath), { recursive: true });
   await writeFile(annotationsPath, JSON.stringify(document));
 }
@@ -62,16 +62,16 @@ function annotations(body: string): AnnotationDocument {
 }
 
 describe("review updates", () => {
-  test("publishes only Annotation changes for the current Artifact revision", async () => {
+  test("publishes only Annotation changes for the current Catalog revision", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-updates-"));
-    const activeArtifact = artifact("Checkout requested");
-    const inactiveArtifact = artifact("Checkout completed");
+    const activeArtifact = catalog("Checkout requested");
+    const inactiveArtifact = catalog("Checkout completed");
     let updatesSeen: readonly ReviewUpdate[] = [];
     let updates: ReviewUpdates | undefined;
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, activeArtifact);
+      await writeCatalog(scopePath, activeArtifact);
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       updates.subscribe((update) => {
         updatesSeen = [...updatesSeen, update];
@@ -84,7 +84,7 @@ describe("review updates", () => {
       await writeAnnotations(scopePath, activeArtifact, annotations("Active revision"));
       await vi.waitFor(() => expect(updatesSeen).toEqual([{ revision: 1, status: "valid" }]));
 
-      await writeArtifact(scopePath, inactiveArtifact);
+      await writeCatalog(scopePath, inactiveArtifact);
       await vi.waitFor(() =>
         expect(updatesSeen).toEqual([
           { revision: 1, status: "valid" },
@@ -96,7 +96,7 @@ describe("review updates", () => {
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(2);
 
-      await writeArtifact(scopePath, activeArtifact);
+      await writeCatalog(scopePath, activeArtifact);
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
     } finally {
       await updates?.close();
@@ -106,22 +106,22 @@ describe("review updates", () => {
   test("neither reads nor publishes changes outside the scope through a symlinked Annotation path", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-updates-"));
     const outsidePath = await mkdtemp(join(tmpdir(), "architecture-companion-outside-"));
-    const activeArtifact = artifact("Checkout requested");
-    const artifactRevisionId = createArtifactRevisionId(activeArtifact);
+    const activeArtifact = catalog("Checkout requested");
+    const catalogRevisionId = createCatalogRevisionId(activeArtifact);
     let updatesSeen: readonly ReviewUpdate[] = [];
     let updates: ReviewUpdates | undefined;
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, activeArtifact);
-      await writeFile(join(outsidePath, `${artifactRevisionId}.json`), JSON.stringify(annotations("Outside")));
+      await writeCatalog(scopePath, activeArtifact);
+      await writeFile(join(outsidePath, `${catalogRevisionId}.json`), JSON.stringify(annotations("Outside")));
       await symlink(outsidePath, join(scopePath, ".architecture-companion/annotations"), "dir");
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       updates.subscribe((update) => {
         updatesSeen = [...updatesSeen, update];
       });
 
-      await writeFile(join(outsidePath, `${artifactRevisionId}.json`), JSON.stringify(annotations("Changed outside")));
+      await writeFile(join(outsidePath, `${catalogRevisionId}.json`), JSON.stringify(annotations("Changed outside")));
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toEqual([]);
     } finally {
@@ -133,13 +133,13 @@ describe("review updates", () => {
 
   test("keeps polling and closes even when the Annotation revision path is unreadable", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-updates-"));
-    const activeArtifact = artifact("Checkout requested");
+    const activeArtifact = catalog("Checkout requested");
     let updates: ReviewUpdates | undefined;
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, activeArtifact);
-      await mkdir(join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(activeArtifact))), {
+      await writeCatalog(scopePath, activeArtifact);
+      await mkdir(join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(activeArtifact))), {
         recursive: true,
       });
 
@@ -153,23 +153,23 @@ describe("review updates", () => {
     }
   });
 
-  it("publishes one valid update for a changed artifact and ignores an identical rewrite", async () => {
+  it("publishes one valid update for a changed catalog and ignores an identical rewrite", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-updates-"));
     let updatesSeen: readonly ReviewUpdate[] = [];
     let updates: ReviewUpdates | undefined;
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, artifact("Checkout requested"));
+      await writeCatalog(scopePath, catalog("Checkout requested"));
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       const unsubscribe = updates.subscribe((update) => {
         updatesSeen = [...updatesSeen, update];
       });
 
-      await writeArtifact(scopePath, artifact("Checkout started"));
+      await writeCatalog(scopePath, catalog("Checkout started"));
       await vi.waitFor(() => expect(updatesSeen).toEqual([{ revision: 1, status: "valid" }]));
 
-      await writeArtifact(scopePath, artifact("Checkout started"));
+      await writeCatalog(scopePath, catalog("Checkout started"));
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toEqual([{ revision: 1, status: "valid" }]);
 
@@ -187,7 +187,7 @@ describe("review updates", () => {
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeArtifact(scopePath, artifact("Checkout requested"));
+      await writeCatalog(scopePath, catalog("Checkout requested"));
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       updates.subscribe((update) => {
         updatesSeen = [...updatesSeen, update];
@@ -195,27 +195,27 @@ describe("review updates", () => {
 
       await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
       await vi.waitFor(() => expect(updatesSeen).toEqual([{ revision: 1, status: "invalid" }]));
-      expect(await readArtifact(scopePath)).toEqual({
+      expect(await readCatalog(scopePath)).toEqual({
         status: "invalid",
-        message: "Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        message: "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
       });
 
-      await writeAnnotations(scopePath, artifact("Checkout requested"), annotations("Ignored while invalid"));
+      await writeAnnotations(scopePath, catalog("Checkout requested"), annotations("Ignored while invalid"));
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(1);
 
-      await writeArtifact(scopePath, { behaviors: [{ ...behavior("Unsupported"), unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { behaviors: [{ ...behavior("Unsupported"), unexpected: true }], designs: [] });
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 2, status: "invalid" }));
-      expect(await readArtifact(scopePath)).toMatchObject({
+      expect(await readCatalog(scopePath)).toMatchObject({
         status: "invalid",
-        message: expect.stringContaining("Artifact is invalid: .architecture-companion/behaviors/checkout.json"),
+        message: expect.stringContaining("Catalog is invalid: .architecture-companion/behaviors/checkout.json"),
       });
 
-      await writeArtifact(scopePath, artifact("Checkout recovered"));
+      await writeCatalog(scopePath, catalog("Checkout recovered"));
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
-      expect(await readArtifact(scopePath)).toMatchObject({
+      expect(await readCatalog(scopePath)).toMatchObject({
         status: "valid",
-        artifact: { behaviors: [{ graph: { nodes: [{ title: "Checkout recovered" }] } }] },
+        catalog: { behaviors: [{ graph: { nodes: [{ title: "Checkout recovered" }] } }] },
       });
     } finally {
       await updates?.close();

@@ -3,10 +3,10 @@ import { streamSSE } from "hono/streaming";
 import { validator } from "hono/validator";
 
 import { parseRevisionAnnotations, type RevisionAnnotations } from "@/features/annotation/revision-annotations";
-import type { ArtifactRevisionId } from "@/features/artifact/artifact-revision-id";
-import type { ConsumerScope } from "@/server/consumer-scope";
+import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import type { CompanionScope } from "@/server/companion-scope";
 import { createAnnotationEtag } from "@/server/create-annotation-etag";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import {
   AnnotationDocumentConflictError,
   createFileAnnotationRepository,
@@ -15,7 +15,7 @@ import {
 import { isLocalAppActionRequestAllowed } from "@/server/local-app-action-request";
 import { type OpenPath, openSourceReference } from "@/server/open-source-reference";
 import { readActiveRevisionAnnotations } from "@/server/read-active-revision-annotations";
-import { readArtifact } from "@/server/read-artifact";
+import { readCatalog } from "@/server/read-catalog";
 import type { ReviewUpdates } from "@/server/review-updates";
 import { isSourceOpenRequestAllowed } from "@/server/source-open-request";
 import { openLocalPath } from "@/shared/node/open-local-path";
@@ -33,42 +33,45 @@ const defaultOpenPath: OpenPath = async ({ path, line }) => {
   await openLocalPath(path);
 };
 
-type ReadArtifactRevisionResult =
+type ReadCatalogRevisionResult =
   | Readonly<{ status: "missing" }>
   | Readonly<{ status: "invalid"; message: string }>
-  | Readonly<{ status: "valid"; artifactRevisionId: ArtifactRevisionId }>;
+  | Readonly<{ status: "valid"; catalogRevisionId: CompanionCatalogRevisionId }>;
 
-class ArtifactRevisionConflictError extends Error {}
-class InvalidArtifactForAnnotationsError extends Error {}
+class CatalogRevisionConflictError extends Error {}
+class InvalidCatalogForAnnotationsError extends Error {}
 
-async function readArtifactRevision(scopePath: string): Promise<ReadArtifactRevisionResult> {
-  const result = await readArtifact(scopePath);
+async function readCatalogRevision(scopePath: string): Promise<ReadCatalogRevisionResult> {
+  const result = await readCatalog(scopePath);
   if (result.status !== "valid") return result;
-  return { status: "valid", artifactRevisionId: createArtifactRevisionId(result.artifact) };
+  return { status: "valid", catalogRevisionId: createCatalogRevisionId(result.catalog) };
 }
 
-async function validateArtifactRevision(scopePath: string, expectedRevisionId: ArtifactRevisionId): Promise<void> {
-  const result = await readArtifactRevision(scopePath);
-  if (result.status === "invalid") throw new InvalidArtifactForAnnotationsError(result.message);
-  if (result.status === "missing" || result.artifactRevisionId !== expectedRevisionId) {
-    throw new ArtifactRevisionConflictError();
+async function validateCatalogRevision(
+  scopePath: string,
+  expectedRevisionId: CompanionCatalogRevisionId,
+): Promise<void> {
+  const result = await readCatalogRevision(scopePath);
+  if (result.status === "invalid") throw new InvalidCatalogForAnnotationsError(result.message);
+  if (result.status === "missing" || result.catalogRevisionId !== expectedRevisionId) {
+    throw new CatalogRevisionConflictError();
   }
 }
 
-export function createApp(scope: ConsumerScope, dependencies: CreateAppDependencies = {}) {
+export function createApp(scope: CompanionScope, dependencies: CreateAppDependencies = {}) {
   const openPath = dependencies.openPath ?? defaultOpenPath;
   const reviewUpdates = dependencies.reviewUpdates;
   const annotationRepository = dependencies.annotationRepository ?? createFileAnnotationRepository(scope.path);
 
   return new Hono()
     .get("/api/review", async (context) => {
-      const result = await readArtifact(scope.path);
+      const result = await readCatalog(scope.path);
 
       if (result.status === "invalid") {
         return context.json(
           {
             scope,
-            artifact: null,
+            catalog: null,
             error: { message: result.message },
           },
           422,
@@ -78,12 +81,12 @@ export function createApp(scope: ConsumerScope, dependencies: CreateAppDependenc
       if (result.status === "valid") {
         return context.json({
           scope,
-          artifact: result.artifact,
-          artifactRevisionId: createArtifactRevisionId(result.artifact),
+          catalog: result.catalog,
+          catalogRevisionId: createCatalogRevisionId(result.catalog),
         });
       }
 
-      return context.json({ scope, artifact: null });
+      return context.json({ scope, catalog: null });
     })
     .get("/api/review/events", (context) =>
       streamSSE(context, async (stream) => {
@@ -114,7 +117,7 @@ export function createApp(scope: ConsumerScope, dependencies: CreateAppDependenc
       }
 
       const revisionAnnotations = result.revisionAnnotations;
-      if (revisionAnnotations.artifactRevisionId === null) return context.json(revisionAnnotations);
+      if (revisionAnnotations.catalogRevisionId === null) return context.json(revisionAnnotations);
 
       context.header("ETag", createAnnotationEtag(revisionAnnotations));
       return context.json(revisionAnnotations);
@@ -155,23 +158,23 @@ export function createApp(scope: ConsumerScope, dependencies: CreateAppDependenc
         }
 
         try {
-          const artifactResult = await readArtifactRevision(scope.path);
-          if (artifactResult.status === "invalid") {
-            return context.json({ error: { message: artifactResult.message } }, 422);
+          const catalogResult = await readCatalogRevision(scope.path);
+          if (catalogResult.status === "invalid") {
+            return context.json({ error: { message: catalogResult.message } }, 422);
           }
           if (
-            artifactResult.status === "missing" ||
-            artifactResult.artifactRevisionId !== revisionAnnotations.artifactRevisionId
+            catalogResult.status === "missing" ||
+            catalogResult.catalogRevisionId !== revisionAnnotations.catalogRevisionId
           ) {
             return context.json(
-              { error: { message: "Artifact changed or is unavailable. Reload before saving annotations." } },
+              { error: { message: "Catalog changed or is unavailable. Reload before saving annotations." } },
               409,
             );
           }
 
           const currentRevisionAnnotations: RevisionAnnotations = {
-            artifactRevisionId: revisionAnnotations.artifactRevisionId,
-            document: await annotationRepository.load(revisionAnnotations.artifactRevisionId),
+            catalogRevisionId: revisionAnnotations.catalogRevisionId,
+            document: await annotationRepository.load(revisionAnnotations.catalogRevisionId),
           };
           if (expectedEtag !== createAnnotationEtag(currentRevisionAnnotations)) {
             return context.json(
@@ -183,7 +186,7 @@ export function createApp(scope: ConsumerScope, dependencies: CreateAppDependenc
           await annotationRepository.save({
             ...revisionAnnotations,
             expectedDocument: currentRevisionAnnotations.document,
-            validateBeforeCommit: () => validateArtifactRevision(scope.path, revisionAnnotations.artifactRevisionId),
+            validateBeforeCommit: () => validateCatalogRevision(scope.path, revisionAnnotations.catalogRevisionId),
           });
           context.header("ETag", createAnnotationEtag(revisionAnnotations));
           return context.json(revisionAnnotations);
@@ -194,12 +197,12 @@ export function createApp(scope: ConsumerScope, dependencies: CreateAppDependenc
               412,
             );
           }
-          if (error instanceof InvalidArtifactForAnnotationsError) {
+          if (error instanceof InvalidCatalogForAnnotationsError) {
             return context.json({ error: { message: error.message } }, 422);
           }
-          if (error instanceof ArtifactRevisionConflictError) {
+          if (error instanceof CatalogRevisionConflictError) {
             return context.json(
-              { error: { message: "Artifact changed or is unavailable. Reload before saving annotations." } },
+              { error: { message: "Catalog changed or is unavailable. Reload before saving annotations." } },
               409,
             );
           }

@@ -3,20 +3,20 @@ import { useCallback, useState } from "react";
 
 import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
 import { DiagramRendererBase, type DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
+import type { Artifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import type { DependencyFocus } from "@/features/diagram/dependency-edge-projection";
-import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { Button } from "@/shared/react-ui/button";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/react-ui/item";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-function calculateLayout(diagram: Diagram, nodeSizes: DiagramNodeSizes) {
+function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
   if (diagram.layout.id !== "dependency-graph") throw new Error("Expected a dependency graph layout.");
   return layoutDependencyGraph(diagram.graph, nodeSizes);
 }
 
-function describeDependencyFocus(diagram: Diagram, focus: DependencyFocus): string {
+function describeDependencyFocus(diagram: Artifact, focus: DependencyFocus): string {
   if (focus.type !== "aggregate") {
     const element =
       focus.type === "node"
@@ -47,7 +47,7 @@ function DependencyGraphFocusIndicator({
   focus,
   onClear,
 }: Readonly<{
-  diagram: Diagram;
+  diagram: Artifact;
   focus: DependencyFocus;
   onClear: () => void;
 }>) {
@@ -81,7 +81,7 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
     !props.annotations.isManaging &&
     !props.annotations.isPublishing;
   const buildRenderModel = useCallback(
-    (diagram: Diagram, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
+    (diagram: Artifact, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
       buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, onOpenSource, {
         focus,
         nodesActivatable: canFocus,

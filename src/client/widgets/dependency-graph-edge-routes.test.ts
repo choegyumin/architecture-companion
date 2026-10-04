@@ -12,9 +12,9 @@ import {
   pathsOverlap,
 } from "@/client/widgets/dependency-graph-route-test-geometry";
 import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
+import { parseArtifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
-import { parseDiagram } from "@/features/diagram/diagram";
 import type { DiagramLayout, DiagramLayoutGroup } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
@@ -161,7 +161,7 @@ function expectReadableRoutes(
 }
 
 async function focusedAggregateRoutes(focusId: string) {
-  const diagram = parseDiagram({ ...artifactJson, updatedAt: "2026-10-03T09:15:00.000Z" });
+  const diagram = parseArtifact({ ...artifactJson, updatedAt: "2026-10-03T09:15:00.000Z" });
   const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
   const layout = await layoutDependencyGraph(diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);

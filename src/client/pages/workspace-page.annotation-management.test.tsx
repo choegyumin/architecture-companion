@@ -9,16 +9,16 @@ import { OverlayProvider } from "overlay-kit";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
-const artifact: Artifact = {
+const catalog: CompanionCatalog = {
   behaviors: [
     {
       id: "checkout",
@@ -90,15 +90,15 @@ function savedFeedbackDocument(body: string): AnnotationDocument {
 async function createReview(initialDocument?: AnnotationDocument) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comment-management-"));
   await mkdir(join(scopePath, ".architecture-companion"));
-  await writeArtifact(scopePath, artifact);
+  await writeCatalog(scopePath, catalog);
   if (initialDocument) {
     await mkdir(join(scopePath, ".architecture-companion/annotations"));
     await writeFile(
-      join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(artifact))),
+      join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(catalog))),
       JSON.stringify(initialDocument),
     );
   }
-  const scope = await resolveConsumerScope(scopePath);
+  const scope = await resolveCompanionScope(scopePath);
 
   return { scopePath, scope };
 }
@@ -116,7 +116,7 @@ async function getAnnotationDocument(client: ReturnType<typeof createClient>) {
 async function getCanvas(regionName: string): Promise<HTMLElement> {
   const region = await screen.findByRole("region", { name: regionName });
   await waitForDiagramReady(region);
-  return within(region).getByRole("group", { name: "Diagram canvas" });
+  return within(region).getByRole("group", { name: "Artifact canvas" });
 }
 
 function renderWorkspace(client: ReturnType<typeof createClient>) {

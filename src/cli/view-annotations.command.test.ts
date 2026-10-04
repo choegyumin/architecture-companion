@@ -4,9 +4,9 @@ import { join } from "node:path";
 
 import { executeViewAnnotationsCommand } from "@/cli/view-annotations.command";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
   id: "checkout",
@@ -37,7 +37,7 @@ describe("Active revision Annotation query command", () => {
     expect(outputs).toEqual([]);
   });
 
-  test("prints a null envelope on one line when the artifact is missing", async () => {
+  test("prints a null envelope on one line when the catalog is missing", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-annotations-query-"));
     const outputs: string[] = [];
 
@@ -46,7 +46,7 @@ describe("Active revision Annotation query command", () => {
         writeStdout: (output) => outputs.push(output),
       });
 
-      expect(outputs).toEqual(['{"artifactRevisionId":null,"document":null}\n']);
+      expect(outputs).toEqual(['{"catalogRevisionId":null,"document":null}\n']);
     } finally {
       await rm(scopePath, { recursive: true });
     }
@@ -57,7 +57,7 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, emptyArtifact);
+      await writeCatalog(scopePath, emptyArtifact);
 
       await executeViewAnnotationsCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -65,7 +65,7 @@ describe("Active revision Annotation query command", () => {
 
       expect(outputs.at(0)?.endsWith("\n")).toBe(true);
       expect(JSON.parse(outputs.at(0) as string)).toEqual({
-        artifactRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
+        catalogRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
         document: emptyDocument,
       });
     } finally {
@@ -92,10 +92,10 @@ describe("Active revision Annotation query command", () => {
     };
 
     try {
-      await writeArtifact(scopePath, emptyArtifact);
-      const artifactRevisionId = createArtifactRevisionId(emptyArtifact);
+      await writeCatalog(scopePath, emptyArtifact);
+      const catalogRevisionId = createCatalogRevisionId(emptyArtifact);
       await createFileAnnotationRepository(scopePath).save({
-        artifactRevisionId,
+        catalogRevisionId,
         document,
         expectedDocument: emptyDocument,
       });
@@ -106,7 +106,7 @@ describe("Active revision Annotation query command", () => {
 
       expect(outputs.at(0)?.endsWith("\n")).toBe(true);
       expect(JSON.parse(outputs.at(0) as string)).toEqual({
-        artifactRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
+        catalogRevisionId: expect.stringMatching(/^[0-9a-f]{64}$/),
         document,
       });
     } finally {
@@ -114,18 +114,18 @@ describe("Active revision Annotation query command", () => {
     }
   });
 
-  test("fails without stdout when the artifact is invalid", async () => {
+  test("fails without stdout when the catalog is invalid", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-annotations-query-"));
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { behaviors: [{ ...checkoutBehavior, unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { behaviors: [{ ...checkoutBehavior, unexpected: true }], designs: [] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact is invalid: .architecture-companion/behaviors/checkout.json.");
+      ).rejects.toThrow("Catalog is invalid: .architecture-companion/behaviors/checkout.json.");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
@@ -137,9 +137,9 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, emptyArtifact);
-      const artifactRevisionId = createArtifactRevisionId(emptyArtifact);
-      const annotationPath = join(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId));
+      await writeCatalog(scopePath, emptyArtifact);
+      const catalogRevisionId = createCatalogRevisionId(emptyArtifact);
+      const annotationPath = join(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId));
       await mkdir(join(annotationPath, ".."), { recursive: true });
       await writeFile(annotationPath, "{ invalid");
 

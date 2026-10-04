@@ -19,7 +19,7 @@ async function writeGenerator(
   return pluginPath;
 }
 
-describe("diagram generator discovery command", () => {
+describe("artifact generator discovery command", () => {
   it("requires exactly one explicit scope argument", async () => {
     const outputs: string[] = [];
     const environment = {
@@ -91,8 +91,8 @@ describe("diagram generator discovery command", () => {
     const scopePath = join(temporaryRoot, "scope");
     const builtInRoot = join(temporaryRoot, "built-in");
     const homeDirectory = join(temporaryRoot, "home");
-    const globalRoot = join(homeDirectory, ".architecture-companion", "diagram-generators");
-    const projectRoot = join(scopePath, ".architecture-companion", "diagram-generators");
+    const globalRoot = join(homeDirectory, ".architecture-companion", "artifact-generators");
+    const projectRoot = join(scopePath, ".architecture-companion", "artifact-generators");
     const outputs: string[] = [];
 
     try {
@@ -153,7 +153,7 @@ describe("diagram generator discovery command", () => {
   it("discovers the generators from the source built-in root", async () => {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "architecture-companion-generators-"));
     const scopePath = join(temporaryRoot, "scope");
-    const builtInRoot = resolve("src/plugins/diagram-generators");
+    const builtInRoot = resolve("src/plugins/artifact-generators");
     const outputs: string[] = [];
 
     try {

@@ -9,17 +9,17 @@ import { OverlayProvider } from "overlay-kit";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
-function artifact(nodeTitle: string): Artifact {
+function catalog(nodeTitle: string): CompanionCatalog {
   return {
     behaviors: [
       {
@@ -41,8 +41,8 @@ function artifact(nodeTitle: string): Artifact {
   };
 }
 
-const initialArtifact = artifact("Checkout submitted");
-const revisedArtifact = artifact("Checkout started");
+const initialArtifact = catalog("Checkout submitted");
+const revisedArtifact = catalog("Checkout started");
 
 const initialComments: AnnotationDocument = {
   annotations: [
@@ -59,7 +59,7 @@ const initialComments: AnnotationDocument = {
   ],
 };
 
-describe("reviewer continues a review after the artifact is revised", () => {
+describe("reviewer continues a review after the catalog is revised", () => {
   it("continues with the revised diagram while comments from the previous revision are hidden", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-revision-journey-"));
     let updates: ReviewUpdates | undefined;
@@ -67,12 +67,12 @@ describe("reviewer continues a review after the artifact is revised", () => {
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, ".architecture-companion/annotations"));
-      await writeArtifact(scopePath, initialArtifact);
+      await writeCatalog(scopePath, initialArtifact);
       await writeFile(
-        join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(initialArtifact))),
+        join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(initialArtifact))),
         JSON.stringify(initialComments),
       );
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       const app = createApp(scope, { reviewUpdates: updates });
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -91,7 +91,7 @@ describe("reviewer continues a review after the artifact is revised", () => {
           await screen.findByRole("button", { name: "Comment: Please refine the trigger wording." }),
         ).toBeInTheDocument();
 
-        await writeArtifact(scopePath, revisedArtifact);
+        await writeCatalog(scopePath, revisedArtifact);
         expect(await screen.findByText("Checkout started")).toBeInTheDocument();
         await waitForDiagramReady();
         expect(
@@ -100,7 +100,7 @@ describe("reviewer continues a review after the artifact is revised", () => {
 
         await userEvent.click(screen.getByRole("button", { name: "Comment" }));
         const region = await screen.findByRole("region", { name: "Checkout workflow product behavior diagram" });
-        fireEvent.click(within(region).getByRole("group", { name: "Diagram canvas" }), {
+        fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }), {
           clientX: 140,
           clientY: 100,
         });

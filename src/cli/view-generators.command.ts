@@ -1,16 +1,16 @@
 import { lstat, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import type { DiagramGeneratorId } from "@/features/diagram-generator/diagram-generator-id";
-import { parseDiagramGeneratorManifest } from "@/features/diagram-generator/diagram-generator-manifest";
-import type { DiagramGeneratorSource } from "@/features/diagram-generator/diagram-generator-reference";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import type { ArtifactGeneratorId } from "@/features/artifact-generator/artifact-generator-id";
+import { parseArtifactGeneratorManifest } from "@/features/artifact-generator/artifact-generator-manifest";
+import type { ArtifactGeneratorSource } from "@/features/artifact-generator/artifact-generator-reference";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { isMissingPathError } from "@/shared/node/path";
 
-export type DiagramGeneratorDescriptor = Readonly<{
-  id: DiagramGeneratorId;
+export type ArtifactGeneratorDescriptor = Readonly<{
+  id: ArtifactGeneratorId;
   description: string;
-  source: DiagramGeneratorSource;
+  source: ArtifactGeneratorSource;
   path: string;
 }>;
 
@@ -20,7 +20,7 @@ export type ViewGeneratorsCommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
 }>;
 
-const sourceRank: Readonly<Record<DiagramGeneratorSource, number>> = {
+const sourceRank: Readonly<Record<ArtifactGeneratorSource, number>> = {
   "built-in": 0,
   global: 1,
   project: 2,
@@ -32,7 +32,7 @@ function compareText(left: string, right: string): number {
   return 0;
 }
 
-function compareGenerators(left: DiagramGeneratorDescriptor, right: DiagramGeneratorDescriptor): number {
+function compareGenerators(left: ArtifactGeneratorDescriptor, right: ArtifactGeneratorDescriptor): number {
   const idOrder = compareText(left.id, right.id);
   if (idOrder !== 0) return idOrder;
 
@@ -48,24 +48,24 @@ function errorMessage(error: unknown): string {
 
 async function readGenerator(
   pluginPath: string,
-  source: DiagramGeneratorSource,
-): Promise<DiagramGeneratorDescriptor | null> {
+  source: ArtifactGeneratorSource,
+): Promise<ArtifactGeneratorDescriptor | null> {
   const manifestPath = join(pluginPath, "GENERATOR.md");
 
   try {
     await lstat(manifestPath);
   } catch (error) {
     if (isMissingPathError(error)) return null;
-    throw new Error(`Failed to inspect diagram generator manifest at ${manifestPath}: ${errorMessage(error)}`, {
+    throw new Error(`Failed to inspect artifact generator manifest at ${manifestPath}: ${errorMessage(error)}`, {
       cause: error,
     });
   }
 
   try {
-    const manifest = parseDiagramGeneratorManifest(await readFile(manifestPath, "utf8"));
+    const manifest = parseArtifactGeneratorManifest(await readFile(manifestPath, "utf8"));
     return { id: manifest.id, description: manifest.description, source, path: pluginPath };
   } catch (error) {
-    throw new Error(`Failed to load diagram generator manifest at ${manifestPath}: ${errorMessage(error)}`, {
+    throw new Error(`Failed to load artifact generator manifest at ${manifestPath}: ${errorMessage(error)}`, {
       cause: error,
     });
   }
@@ -73,22 +73,22 @@ async function readGenerator(
 
 async function listGeneratorRoot(
   rootPath: string,
-  source: DiagramGeneratorSource,
-): Promise<readonly DiagramGeneratorDescriptor[]> {
+  source: ArtifactGeneratorSource,
+): Promise<readonly ArtifactGeneratorDescriptor[]> {
   let entries;
 
   try {
     entries = await readdir(rootPath, { withFileTypes: true });
   } catch (error) {
     if (isMissingPathError(error)) return [];
-    throw new Error(`Failed to read diagram generator root at ${rootPath}: ${errorMessage(error)}`, { cause: error });
+    throw new Error(`Failed to read artifact generator root at ${rootPath}: ${errorMessage(error)}`, { cause: error });
   }
 
   const generators = await Promise.all(
     entries.filter((entry) => entry.isDirectory()).map((entry) => readGenerator(resolve(rootPath, entry.name), source)),
   );
 
-  return generators.filter((generator): generator is DiagramGeneratorDescriptor => generator !== null);
+  return generators.filter((generator): generator is ArtifactGeneratorDescriptor => generator !== null);
 }
 
 export async function executeViewGeneratorsCommand(
@@ -98,14 +98,14 @@ export async function executeViewGeneratorsCommand(
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === undefined) throw new Error("Usage: node view-generators.js <scope>");
 
-  const scope = await resolveConsumerScope(scopeInput);
+  const scope = await resolveCompanionScope(scopeInput);
   const generatorRoots = [
     { path: resolve(environment.builtInGeneratorsRoot), source: "built-in" },
     {
-      path: resolve(environment.homeDirectory, ".architecture-companion", "diagram-generators"),
+      path: resolve(environment.homeDirectory, ".architecture-companion", "artifact-generators"),
       source: "global",
     },
-    { path: join(scope.path, ".architecture-companion", "diagram-generators"), source: "project" },
+    { path: join(scope.path, ".architecture-companion", "artifact-generators"), source: "project" },
   ] as const;
   const generators = (await Promise.all(generatorRoots.map(({ path, source }) => listGeneratorRoot(path, source))))
     .flat()

@@ -9,12 +9,12 @@ import { OverlayProvider } from "overlay-kit";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
-const artifact = {
+const catalog = {
   behaviors: [
     {
       id: "checkout",
@@ -37,13 +37,13 @@ const artifact = {
 async function createReview() {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-reviewer-comments-"));
   await mkdir(join(scopePath, ".architecture-companion"));
-  await writeArtifact(scopePath, artifact);
-  const scope = await resolveConsumerScope(scopePath);
+  await writeCatalog(scopePath, catalog);
+  const scope = await resolveCompanionScope(scopePath);
 
   return { scope, scopePath };
 }
 
-function renderWorkspace(scope: Awaited<ReturnType<typeof resolveConsumerScope>>) {
+function renderWorkspace(scope: Awaited<ReturnType<typeof resolveCompanionScope>>) {
   const app = createApp(scope);
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
@@ -59,7 +59,7 @@ function renderWorkspace(scope: Awaited<ReturnType<typeof resolveConsumerScope>>
 async function getCanvas(regionName: string): Promise<HTMLElement> {
   const region = await screen.findByRole("region", { name: regionName });
   await waitForDiagramReady(region);
-  return within(region).getByRole("group", { name: "Diagram canvas" });
+  return within(region).getByRole("group", { name: "Artifact canvas" });
 }
 
 describe("reviewer leaves feedback as diagram comments", () => {

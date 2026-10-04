@@ -22,7 +22,7 @@ export function DiagramLinksPanel({ links, onOpenSource }: DiagramLinksPanelProp
 
   return (
     <Panel className="mb-8!" position="bottom-right">
-      <nav aria-label="Diagram links" className="flex max-w-xs flex-col gap-1.5">
+      <nav aria-label="Artifact links" className="flex max-w-xs flex-col gap-1.5">
         {links.map((link, index) => {
           const Icon = isSourceLinkHref(link.href) ? FileCode2 : ExternalLink;
           const label = getDiagramLinkLabel(link);

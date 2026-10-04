@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 
-import type { ConsumerScope } from "@/server/consumer-scope";
+import type { CompanionScope } from "@/server/companion-scope";
 import { createApp } from "@/server/create-app";
 import { createReviewUpdates } from "@/server/review-updates";
 
@@ -19,7 +19,7 @@ type StartServerOptions = Readonly<{
   staticRoot?: string | false;
 }>;
 
-export async function startServer(scope: ConsumerScope, options: StartServerOptions = {}): Promise<StartedServer> {
+export async function startServer(scope: CompanionScope, options: StartServerOptions = {}): Promise<StartedServer> {
   const hostname = options.hostname ?? "127.0.0.1";
   const port = options.port ?? 4318;
   const staticRoot =

@@ -4,14 +4,14 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { resolveConsumerScopePath } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScopePath } from "@/server/resolve-companion-scope";
 
 import { DEVELOPMENT_SERVER_STATE_FILENAME } from "./_dev-session";
 
 async function runDevelopment(args: readonly string[]): Promise<void> {
   const directories = args.at(0) === "--" ? args.slice(1) : args;
   if (directories.length > 1) throw new Error("Usage: pnpm dev [directory]");
-  const scopePath = await resolveConsumerScopePath(directories.at(0) ?? process.cwd());
+  const scopePath = await resolveCompanionScopePath(directories.at(0) ?? process.cwd());
   const cacheRoot = fileURLToPath(new URL("../node_modules/.vite/", import.meta.url));
   await mkdir(cacheRoot, { recursive: true });
   const directory = await mkdtemp(join(cacheRoot, "session-"));

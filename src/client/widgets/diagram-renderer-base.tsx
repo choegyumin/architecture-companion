@@ -11,7 +11,7 @@ import {
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
@@ -19,17 +19,17 @@ import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
 export type DiagramRendererProps = Readonly<{
   ariaLabel?: string;
   annotations: AnnotationCanvasController;
-  diagram: Diagram;
+  diagram: Artifact;
   onOpenSource: (href: string) => void;
   commentEnabled?: boolean;
 }>;
 
 type DiagramRendererBaseProps = DiagramRendererProps &
   Readonly<{
-    calculateLayout: (diagram: Diagram, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
+    calculateLayout: (diagram: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
     children?: ReactNode;
     buildRenderModel: (
-      diagram: Diagram,
+      diagram: Artifact,
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => DiagramReactFlowRenderModel;

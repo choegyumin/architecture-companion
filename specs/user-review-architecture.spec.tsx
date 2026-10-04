@@ -8,12 +8,12 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
-import { writeArtifact } from "@/server/write-artifact";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
-const artifact = {
+const catalog = {
   behaviors: [
     {
       id: "checkout",
@@ -100,9 +100,9 @@ describe("reviewer understands the architecture from diagrams and source evidenc
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await mkdir(join(scopePath, "src"));
-      await writeArtifact(scopePath, artifact);
+      await writeCatalog(scopePath, catalog);
       await writeFile(join(scopePath, "src/catalog-page.ts"), "export const catalogPage = true;\n");
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, {
         openPath: async ({ path }) => {
           openedPaths = [...openedPaths, path];

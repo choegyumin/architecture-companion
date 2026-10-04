@@ -6,7 +6,7 @@ try {
   });
 } catch (error) {
   const message =
-    error instanceof Error ? error.message : "Architecture Companion failed to validate Artifact schemas.";
+    error instanceof Error ? error.message : "Architecture Companion failed to validate CompanionCatalog schemas.";
   process.stderr.write(`${message}\n`);
   process.exitCode = 1;
 }

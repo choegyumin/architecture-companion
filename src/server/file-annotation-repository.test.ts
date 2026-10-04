@@ -6,15 +6,15 @@ import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import { parseArtifactRevisionId } from "@/features/artifact/artifact-revision-id";
+import { parseCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import {
   AnnotationDocumentConflictError,
   createFileAnnotationRepository,
   getAnnotationDocumentRelativePath,
 } from "@/server/file-annotation-repository";
 
-const revisionA = parseArtifactRevisionId("a".repeat(64));
-const revisionB = parseArtifactRevisionId("b".repeat(64));
+const revisionA = parseCatalogRevisionId("a".repeat(64));
+const revisionB = parseCatalogRevisionId("b".repeat(64));
 const emptyDocument: AnnotationDocument = { annotations: [] };
 
 function document(body: string): AnnotationDocument {
@@ -56,19 +56,19 @@ async function runSaveWorker(
   const scriptPath = join(scopePath, `${workerName}.ts`);
   const readyPath = join(scopePath, `${workerName}.ready`);
   const repositoryUrl = pathToFileURL(join(process.cwd(), "src/server/file-annotation-repository.ts")).href;
-  const revisionUrl = pathToFileURL(join(process.cwd(), "src/features/artifact/artifact-revision-id.ts")).href;
+  const revisionUrl = pathToFileURL(join(process.cwd(), "src/features/catalog/catalog-revision-id.ts")).href;
   await writeFile(
     scriptPath,
     `
 import { access, writeFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { createFileAnnotationRepository } from ${JSON.stringify(repositoryUrl)};
-import { parseArtifactRevisionId } from ${JSON.stringify(revisionUrl)};
+import { parseCatalogRevisionId } from ${JSON.stringify(revisionUrl)};
 
 async function main() {
 const [scopePath, readyPath, startPath, revisionSource, body] = process.argv.slice(2);
 if (!scopePath || !readyPath || !startPath || !revisionSource || !body) throw new Error("Missing worker input.");
-const artifactRevisionId = parseArtifactRevisionId(revisionSource);
+const catalogRevisionId = parseCatalogRevisionId(revisionSource);
 const emptyDocument = {annotations: [] };
 const document = {
   annotations: [{
@@ -93,7 +93,7 @@ while (true) {
 }
 try {
   await createFileAnnotationRepository(scopePath).save({
-    artifactRevisionId,
+    catalogRevisionId,
     document,
     expectedDocument: emptyDocument,
     validateBeforeCommit: () => delay(150),
@@ -140,18 +140,18 @@ describe("per-revision Annotation file repository", () => {
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
-      await writeFile(join(scopePath, ".architecture-companion/.gitignore"), "artifact.local.json\n");
+      await writeFile(join(scopePath, ".architecture-companion/.gitignore"), "catalog.local.json\n");
       const repository = createFileAnnotationRepository(scopePath);
       const saved = document("Saved");
 
-      await repository.save({ artifactRevisionId: revisionA, document: saved, expectedDocument: emptyDocument });
-      await repository.save({ artifactRevisionId: revisionA, document: saved, expectedDocument: saved });
+      await repository.save({ catalogRevisionId: revisionA, document: saved, expectedDocument: emptyDocument });
+      await repository.save({ catalogRevisionId: revisionA, document: saved, expectedDocument: saved });
 
       await expect(readFile(join(scopePath, getAnnotationDocumentRelativePath(revisionA)), "utf8")).resolves.toBe(
         `${JSON.stringify(saved, null, 2)}\n`,
       );
       await expect(readFile(join(scopePath, ".architecture-companion/.gitignore"), "utf8")).resolves.toBe(
-        "artifact.local.json\n/annotations/\n",
+        "catalog.local.json\n/annotations/\n",
       );
     } finally {
       await rm(scopePath, { recursive: true });
@@ -167,9 +167,9 @@ describe("per-revision Annotation file repository", () => {
       const secondA = document("Second A");
       const savedB = document("B");
 
-      await repository.save({ artifactRevisionId: revisionA, document: firstA, expectedDocument: emptyDocument });
-      await repository.save({ artifactRevisionId: revisionB, document: savedB, expectedDocument: emptyDocument });
-      await repository.save({ artifactRevisionId: revisionA, document: secondA, expectedDocument: firstA });
+      await repository.save({ catalogRevisionId: revisionA, document: firstA, expectedDocument: emptyDocument });
+      await repository.save({ catalogRevisionId: revisionB, document: savedB, expectedDocument: emptyDocument });
+      await repository.save({ catalogRevisionId: revisionA, document: secondA, expectedDocument: firstA });
 
       const restored = createFileAnnotationRepository(scopePath);
       await expect(restored.load(revisionA)).resolves.toEqual(secondA);
@@ -189,8 +189,8 @@ describe("per-revision Annotation file repository", () => {
       const second = document("Second");
 
       const results = await Promise.allSettled([
-        firstRepository.save({ artifactRevisionId: revisionA, document: first, expectedDocument: emptyDocument }),
-        secondRepository.save({ artifactRevisionId: revisionA, document: second, expectedDocument: emptyDocument }),
+        firstRepository.save({ catalogRevisionId: revisionA, document: first, expectedDocument: emptyDocument }),
+        secondRepository.save({ catalogRevisionId: revisionA, document: second, expectedDocument: emptyDocument }),
       ]);
       const fulfilled = results.filter((result) => result.status === "fulfilled");
       const rejected = results.filter((result) => result.status === "rejected");
@@ -242,7 +242,7 @@ describe("per-revision Annotation file repository", () => {
 
       await expect(
         repository.save({
-          artifactRevisionId: revisionA,
+          catalogRevisionId: revisionA,
           document: document("Blocked"),
           expectedDocument: emptyDocument,
         }),

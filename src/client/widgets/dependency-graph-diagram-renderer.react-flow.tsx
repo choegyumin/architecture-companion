@@ -15,8 +15,8 @@ import {
   type DiagramReactFlowRenderModel,
 } from "@/client/widgets/diagram-renderer.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
+import type { Artifact } from "@/features/artifact/artifact";
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
-import type { Diagram } from "@/features/diagram/diagram";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
@@ -28,7 +28,7 @@ type DependencyRenderOptions = Readonly<{
 }>;
 
 export function buildDependencyGraphDiagramReactFlowRenderModel(
-  diagram: Diagram,
+  diagram: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},

@@ -8,18 +8,18 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient, type DataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
-import type { Artifact } from "@/features/artifact/artifact";
+import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
-import { createArtifactRevisionId } from "@/server/create-artifact-revision-id";
+import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-artifact";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
-function artifact(label: string): Artifact {
+function catalog(label: string): CompanionCatalog {
   return {
     behaviors: [
       {
@@ -89,12 +89,12 @@ const emptyAnnotationDocument: AnnotationDocument = { annotations: [] };
 
 async function writeAnnotations(
   scopePath: string,
-  targetArtifact: Artifact,
+  targetArtifact: CompanionCatalog,
   document: AnnotationDocument,
 ): Promise<void> {
   await mkdir(join(scopePath, ".architecture-companion/annotations"), { recursive: true });
   await writeFile(
-    join(scopePath, getAnnotationDocumentRelativePath(createArtifactRevisionId(targetArtifact))),
+    join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(targetArtifact))),
     JSON.stringify(document),
   );
 }
@@ -116,11 +116,11 @@ async function findDiagramNode(title: string): Promise<HTMLElement> {
 
 async function createReview(initialLabel: string, initialDocument?: AnnotationDocument) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-external-"));
-  const initialArtifact = artifact(initialLabel);
+  const initialArtifact = catalog(initialLabel);
   await mkdir(join(scopePath, ".architecture-companion"));
   if (initialDocument) await writeAnnotations(scopePath, initialArtifact, initialDocument);
-  await writeArtifact(scopePath, initialArtifact);
-  const scope = await resolveConsumerScope(scopePath);
+  await writeCatalog(scopePath, initialArtifact);
+  const scope = await resolveCompanionScope(scopePath);
   const updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
   const app = createApp(scope, { reviewUpdates: updates });
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -138,17 +138,17 @@ async function createReview(initialLabel: string, initialDocument?: AnnotationDo
   };
 }
 
-describe("external artifact review", () => {
+describe("external catalog review", () => {
   it("applies a valid revision and hides comments from the previous revision", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-revision-comments-"));
-    const initialArtifact = artifact("Initial");
-    const changedArtifact = artifact("Changed");
+    const initialArtifact = catalog("Initial");
+    const changedArtifact = catalog("Changed");
 
     try {
       await mkdir(join(scopePath, ".architecture-companion"));
       await writeAnnotations(scopePath, initialArtifact, annotationsFor());
-      await writeArtifact(scopePath, initialArtifact);
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, initialArtifact);
+      const scope = await resolveCompanionScope(scopePath);
       const updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
       const app = createApp(scope, { reviewUpdates: updates });
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -164,7 +164,7 @@ describe("external artifact review", () => {
         await userEvent.click(screen.getByRole("tab", { name: "Code Design" }));
         expect(await findDiagramNode("Initial component")).toBeInTheDocument();
 
-        await writeArtifact(scopePath, changedArtifact);
+        await writeCatalog(scopePath, changedArtifact);
         expect(await findDiagramNode("Changed component")).toBeInTheDocument();
         await userEvent.click(screen.getByRole("tab", { name: "Product Behavior" }));
         expect(await findDiagramNode("Changed workflow")).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe("external artifact review", () => {
       await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
       );
       expect(screen.getByText("Initial workflow")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
@@ -203,7 +203,7 @@ describe("external artifact review", () => {
       await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
       await screen.findByRole("alert");
 
-      await writeArtifact(scopePath, artifact("Recovered"));
+      await writeCatalog(scopePath, catalog("Recovered"));
       expect(await findDiagramNode("Recovered workflow")).toBeInTheDocument();
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     } finally {
@@ -212,18 +212,18 @@ describe("external artifact review", () => {
   });
 
   it("does not combine Review and Annotation responses from different revisions into one screen", async () => {
-    const initialArtifact = artifact("Initial");
-    const otherArtifact = artifact("Other");
-    const initialRevisionId = createArtifactRevisionId(initialArtifact);
-    const otherRevisionId = createArtifactRevisionId(otherArtifact);
+    const initialArtifact = catalog("Initial");
+    const otherArtifact = catalog("Other");
+    const initialRevisionId = createCatalogRevisionId(initialArtifact);
+    const otherRevisionId = createCatalogRevisionId(otherArtifact);
     const scope = { isGitRepository: false, path: "/tmp/revision-mismatch" } as const;
     const reviews = [
-      { scope, artifact: initialArtifact, artifactRevisionId: initialRevisionId },
-      { scope, artifact: initialArtifact, artifactRevisionId: initialRevisionId },
+      { scope, catalog: initialArtifact, catalogRevisionId: initialRevisionId },
+      { scope, catalog: initialArtifact, catalogRevisionId: initialRevisionId },
     ] as const;
     const annotationReads = [
-      { artifactRevisionId: otherRevisionId, document: annotationsFor("Wrong revision") },
-      { artifactRevisionId: initialRevisionId, document: annotationsFor("Matched revision") },
+      { catalogRevisionId: otherRevisionId, document: annotationsFor("Wrong revision") },
+      { catalogRevisionId: initialRevisionId, document: annotationsFor("Matched revision") },
     ] as const;
     let reviewIndex = 0;
     let annotationIndex = 0;
@@ -250,16 +250,16 @@ describe("external artifact review", () => {
   });
 
   it("shows an error after bounded retries when revision responses keep mismatching", async () => {
-    const initialArtifact = artifact("Initial");
-    const otherArtifact = artifact("Other");
+    const initialArtifact = catalog("Initial");
+    const otherArtifact = catalog("Other");
     const scope = { isGitRepository: false, path: "/tmp/permanent-revision-mismatch" } as const;
     const getReview = vi.fn(async () => ({
       scope,
-      artifact: initialArtifact,
-      artifactRevisionId: createArtifactRevisionId(initialArtifact),
+      catalog: initialArtifact,
+      catalogRevisionId: createCatalogRevisionId(initialArtifact),
     }));
     const getAnnotations = vi.fn(async () => ({
-      artifactRevisionId: createArtifactRevisionId(otherArtifact),
+      catalogRevisionId: createCatalogRevisionId(otherArtifact),
       document: annotationsFor("Wrong revision"),
     }));
     const client = {
@@ -288,8 +288,8 @@ describe("external artifact review", () => {
     const client = {
       getReview: async () => ({
         scope,
-        artifact: null,
-        error: { message: "Artifact is invalid." },
+        catalog: null,
+        error: { message: "Catalog is invalid." },
       }),
       getAnnotations,
       saveAnnotations: vi.fn(),
@@ -299,7 +299,7 @@ describe("external artifact review", () => {
     const review = render(<WorkspacePage client={client} />);
 
     try {
-      expect(await screen.findByRole("alert")).toHaveTextContent("Artifact is invalid.");
+      expect(await screen.findByRole("alert")).toHaveTextContent("Catalog is invalid.");
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
       expect(getAnnotations).not.toHaveBeenCalled();
     } finally {
@@ -308,15 +308,15 @@ describe("external artifact review", () => {
   });
 
   it("does not let an earlier A save response overwrite the new A edit after an A→B→A transition", async () => {
-    const initialArtifact = artifact("Initial");
-    const changedArtifact = artifact("Changed");
-    const initialRevisionId = createArtifactRevisionId(initialArtifact);
-    const changedRevisionId = createArtifactRevisionId(changedArtifact);
+    const initialArtifact = catalog("Initial");
+    const changedArtifact = catalog("Changed");
+    const initialRevisionId = createCatalogRevisionId(initialArtifact);
+    const changedRevisionId = createCatalogRevisionId(changedArtifact);
     const saved = createDeferred<AnnotationDocument>();
     const scope = { isGitRepository: false, path: "/tmp/revision-transition" } as const;
-    let currentReview = { scope, artifact: initialArtifact, artifactRevisionId: initialRevisionId };
+    let currentReview = { scope, catalog: initialArtifact, catalogRevisionId: initialRevisionId };
     let currentAnnotations = {
-      artifactRevisionId: initialRevisionId,
+      catalogRevisionId: initialRevisionId,
       document: annotationsFor(),
     };
     let publishUpdate: () => void = () => undefined;
@@ -343,9 +343,9 @@ describe("external artifact review", () => {
       await userEvent.click(screen.getByRole("button", { name: "Save" }));
       await vi.waitFor(() => expect(saveAnnotations).toHaveBeenCalledOnce());
 
-      currentReview = { scope, artifact: changedArtifact, artifactRevisionId: changedRevisionId };
+      currentReview = { scope, catalog: changedArtifact, catalogRevisionId: changedRevisionId };
       currentAnnotations = {
-        artifactRevisionId: changedRevisionId,
+        catalogRevisionId: changedRevisionId,
         document: { annotations: [] },
       };
       act(() => publishUpdate());
@@ -353,9 +353,9 @@ describe("external artifact review", () => {
       expect(await findDiagramNode("Changed workflow")).toBeInTheDocument();
       expect(editor).not.toBeInTheDocument();
 
-      currentReview = { scope, artifact: initialArtifact, artifactRevisionId: initialRevisionId };
+      currentReview = { scope, catalog: initialArtifact, catalogRevisionId: initialRevisionId };
       currentAnnotations = {
-        artifactRevisionId: initialRevisionId,
+        catalogRevisionId: initialRevisionId,
         document: annotationsFor("Reactivated revision"),
       };
       act(() => publishUpdate());
@@ -383,7 +383,7 @@ describe("external artifact review", () => {
 
 describe("external comment review", () => {
   it("reloads a comment changed outside the app", async () => {
-    const reviewArtifact = artifact("External");
+    const reviewArtifact = catalog("External");
     const { cleanup, scopePath } = await createReview("External");
 
     try {
@@ -400,7 +400,7 @@ describe("external comment review", () => {
   });
 
   it("replaces the comment being edited with the external content when the external change is chosen", async () => {
-    const reviewArtifact = artifact("Feedback");
+    const reviewArtifact = catalog("Feedback");
     const { cleanup, scopePath } = await createReview("Feedback", annotationsFor("Original feedback"));
 
     try {
@@ -429,7 +429,7 @@ describe("external comment review", () => {
   });
 
   it("keeps the local draft over an external change and saves the local content", async () => {
-    const reviewArtifact = artifact("Feedback");
+    const reviewArtifact = catalog("Feedback");
     const { cleanup, scopePath } = await createReview("Feedback", annotationsFor("Original feedback"));
 
     try {
@@ -455,7 +455,7 @@ describe("external comment review", () => {
   });
 
   it("restores a locally edited comment that was deleted outside the app", async () => {
-    const reviewArtifact = artifact("Feedback");
+    const reviewArtifact = catalog("Feedback");
     const { cleanup, scopePath } = await createReview("Feedback", annotationsFor("Original feedback"));
 
     try {
@@ -480,7 +480,7 @@ describe("external comment review", () => {
   });
 
   it("discards the local draft when the comment being edited is deleted outside the app", async () => {
-    const reviewArtifact = artifact("Feedback");
+    const reviewArtifact = catalog("Feedback");
     const { cleanup, scopePath } = await createReview("Feedback", annotationsFor("Original feedback"));
 
     try {

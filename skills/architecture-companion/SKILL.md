@@ -15,11 +15,11 @@ Present product behavior and software design as interactive diagrams that can be
 
 For follow-up requests after a Review UI review, start with **Review follow-up**, even if the request includes diagram changes.
 
-| Request                                                         | Starting procedure  | Documents to read                                                                                                                                 |
-| --------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/diagram.schema.json` and its referenced schemas, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
-| Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                                                      |
-| Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                                           |
+| Request                                                         | Starting procedure  | Documents to read                                                                                                                                  |
+| --------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/artifact.schema.json` and its referenced schemas, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
+| Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                                                       |
+| Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                                            |
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
@@ -27,7 +27,7 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
 1. Read any existing diagram files in `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` first. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated diagrams and existing IDs for concepts that retain their meaning.
 
-2. Read `<AC>/schemas/diagram.schema.json` and its referenced `$ref` schemas to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
+2. Read `<AC>/schemas/artifact.schema.json` and its referenced `$ref` schemas to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
 
 3. When generating or regenerating a diagram, discover the installed generators. For simple wording or metadata changes that do not rebuild the graph, skip discovery and execution and proceed to step 5.
 
@@ -47,21 +47,21 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
 5. Check evidence in source code, tests, configuration, and documentation, and edit the diagram files directly. Even if a generator produces a candidate graph, compare it against the existing artifact, including manual refinements, and decide what to preserve, modify, or replace based on the request. For each generated or regenerated diagram, record the selected descriptor's `source` and `id` in `generator` as `<source>:<id>`. Every diagram must include `instructions` and `updatedAt` following the shared authoring rules. Record `vcs` when the diagram has a version-controlled code basis, and reassess its divergence when the content changes.
 
-6. Validate the entire artifact after making changes.
+6. Validate the entire catalog after making changes.
 
    ```sh
    node "<AC>/runtime/cli/validate-schemas.js" "<scope>"
    ```
 
-   On failure, fix the errors reported on stderr and rerun until the command prints `Artifact is valid.` If any files change afterward, validate again before reporting completion or sharing a URL. Separately from validation, check that the artifact covers the full requested scope, answers the review questions, and accurately reflects the evidence and interaction order.
+   On failure, fix the errors reported on stderr and rerun until the command prints `Catalog is valid.` If any files change afterward, validate again before reporting completion or sharing a URL. Separately from validation, check that the catalog covers the full requested scope, answers the review questions, and accurately reflects the evidence and interaction order.
 
    If the user also requested a review interface or URL, continue with **Start the Review UI**.
 
 ## Start the Review UI
 
-1. Check that `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` contain at least one diagram JSON file between them. An empty artifact can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+1. Check that `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` contain at least one diagram JSON file between them. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
 
-   Reuse the latest validation result if the current artifact has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid artifact.
+   Reuse the latest validation result if the current catalog has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid catalog.
 
 2. Reuse a running server only if you can confirm that it serves the same `<scope>`. Otherwise, start a server as a background process.
 
@@ -71,7 +71,7 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
    Once ready, the server prints a single line to stdout with a URL in the form `http://127.0.0.1:<port>`. This command does not open a browser.
 
-3. Briefly describe what the artifact covers and share the URL. Tell the user to leave Annotations and Comments in the UI, then send a follow-up request through the coding harness. Do not use polling or blocking tool calls to wait for that request.
+3. Briefly describe what the catalog covers and share the URL. Tell the user to leave Annotations and Comments in the UI, then send a follow-up request through the coding harness. Do not use polling or blocking tool calls to wait for that request.
 
 ## Review follow-up
 
@@ -81,8 +81,8 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
    node "<AC>/runtime/cli/view-annotations.js" "<scope>"
    ```
 
-   The command validates the current artifact and prints `artifactRevisionId` and `document` as a single line of JSON. Read `<AC>/review-follow-up.md` for rules on interpreting results, handling failures, identifying targets, and interpreting requests. Do not substitute an empty result or Annotations from another revision or scope for a failed retrieval.
+   The command validates the current catalog and prints `catalogRevisionId` and `document` as a single line of JSON. Read `<AC>/review-follow-up.md` for rules on interpreting results, handling failures, identifying targets, and interpreting requests. Do not substitute an empty result or Annotations from another revision or scope for a failed retrieval.
 
 2. Treat the user's message as the primary request and the active revision's Annotations and Comments as review context. Investigate relevant evidence to answer explanation requests, and make code or documentation changes within the requested scope. Continue with **Artifact authoring** only when diagram changes are needed.
 
-3. If the follow-up changes the artifact or the user requests another review, run **Start the Review UI** and share the validated artifact's URL. Always validate after diagram changes, whether or not another review is requested.
+3. If the follow-up changes the catalog or the user requests another review, run **Start the Review UI** and share the validated catalog's URL. Always validate after diagram changes, whether or not another review is requested.

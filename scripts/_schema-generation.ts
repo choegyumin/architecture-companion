@@ -1,12 +1,12 @@
 import { z } from "zod";
 
-import { diagramSchema } from "@/features/diagram/diagram";
+import { artifactSchema } from "@/features/artifact/artifact";
 import { diagramGraphSchema } from "@/features/diagram/diagram-graph";
 
-export const generatedSchemaFileNames = ["diagram-graph.schema.json", "diagram.schema.json"] as const;
+export const generatedSchemaFileNames = ["diagram-graph.schema.json", "artifact.schema.json"] as const;
 
 type GeneratedSchemaFileName = (typeof generatedSchemaFileNames)[number];
-type SchemaId = "Diagram" | "DiagramGraph";
+type SchemaId = "Artifact" | "DiagramGraph";
 
 type SchemaDefinition = Readonly<{
   fileName: GeneratedSchemaFileName;
@@ -16,7 +16,7 @@ type SchemaDefinition = Readonly<{
 
 const schemaDefinitions: readonly SchemaDefinition[] = [
   { id: "DiagramGraph", fileName: "diagram-graph.schema.json", schema: diagramGraphSchema },
-  { id: "Diagram", fileName: "diagram.schema.json", schema: diagramSchema },
+  { id: "Artifact", fileName: "artifact.schema.json", schema: artifactSchema },
 ];
 
 function resolveSchemaUri(id: string): string {

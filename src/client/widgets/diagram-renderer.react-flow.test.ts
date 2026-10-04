@@ -3,7 +3,7 @@ import { MarkerType } from "@xyflow/react";
 import { buildDiagramMeasurementNodes, resolveDiagramNodeSizes } from "@/client/widgets/diagram-renderer.react-flow";
 import { buildElkLayeredDiagramReactFlowRenderModel } from "@/client/widgets/elk-layered-diagram-renderer.react-flow";
 import { buildSequenceDiagramReactFlowRenderModel } from "@/client/widgets/sequence-diagram-renderer.react-flow";
-import type { Diagram } from "@/features/diagram/diagram";
+import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const sequenceDiagram = {
@@ -28,7 +28,7 @@ const sequenceDiagram = {
     ],
     edges: [],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 describe("diagram renderer React Flow adapter", () => {
   it("converts default artifact elements to the generic React Flow contract", () => {
@@ -61,7 +61,7 @@ describe("diagram renderer React Flow adapter", () => {
           },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = {
       groups: [
         {
@@ -136,7 +136,7 @@ describe("diagram renderer React Flow adapter", () => {
         nodes: [{ id: "component", type: "default", title: "Component" }],
         edges: [],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
 
     const [measurementNode] = buildDiagramMeasurementNodes(diagram, vi.fn());
 
@@ -163,7 +163,7 @@ describe("diagram renderer React Flow adapter", () => {
           },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = {
       groups: [],
       nodes: [
@@ -208,7 +208,7 @@ describe("diagram renderer React Flow adapter", () => {
           },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = {
       groups: [],
       nodes: [
@@ -269,7 +269,7 @@ describe("diagram renderer React Flow adapter", () => {
           },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const nodes = buildDiagramMeasurementNodes(diagram, vi.fn());
 
     expect(resolveDiagramNodeSizes(diagram, nodes)).toEqual({
@@ -314,7 +314,7 @@ describe("diagram renderer React Flow adapter", () => {
           { id: "return", type: "message", source: "server", target: "client", messageType: "return" },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = {
       nodes: diagram.graph.nodes.map(({ id }, index) => ({
         id,

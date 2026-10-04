@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { isDeepStrictEqual } from "node:util";
 
 import { type AnnotationDocument, parseAnnotationDocument } from "@/features/annotation/annotation-document";
-import { type ArtifactRevisionId, parseArtifactRevisionId } from "@/features/artifact/artifact-revision-id";
+import { type CompanionCatalogRevisionId, parseCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 
 export const ANNOTATIONS_DIRECTORY_RELATIVE_PATH = ".architecture-companion/annotations";
 
@@ -18,14 +18,14 @@ const emptyDocument: AnnotationDocument = { annotations: [] };
 const saveQueues = new Map<string, Promise<void>>();
 
 type SaveAnnotationsInput = Readonly<{
-  artifactRevisionId: ArtifactRevisionId;
+  catalogRevisionId: CompanionCatalogRevisionId;
   document: AnnotationDocument;
   expectedDocument: AnnotationDocument;
   validateBeforeCommit?: () => Promise<void>;
 }>;
 
 export type RevisionAnnotationRepository = Readonly<{
-  load: (artifactRevisionId: ArtifactRevisionId) => Promise<AnnotationDocument>;
+  load: (catalogRevisionId: CompanionCatalogRevisionId) => Promise<AnnotationDocument>;
   save: (input: SaveAnnotationsInput) => Promise<void>;
 }>;
 
@@ -203,26 +203,26 @@ async function serializeSave<T>(key: string, action: () => Promise<T>): Promise<
   }
 }
 
-export function getAnnotationDocumentRelativePath(artifactRevisionId: ArtifactRevisionId): string {
-  const revisionId = parseArtifactRevisionId(artifactRevisionId);
+export function getAnnotationDocumentRelativePath(catalogRevisionId: CompanionCatalogRevisionId): string {
+  const revisionId = parseCatalogRevisionId(catalogRevisionId);
   return join(ANNOTATIONS_DIRECTORY_RELATIVE_PATH, `${revisionId}.json`);
 }
 
 export async function assertAnnotationDocumentPathIsSafe(
   scopePath: string,
-  artifactRevisionId: ArtifactRevisionId,
+  catalogRevisionId: CompanionCatalogRevisionId,
 ): Promise<void> {
   await assertNotSymbolicLink(join(scopePath, ARCHITECTURE_COMPANION_RELATIVE_PATH));
   await assertNotSymbolicLink(join(scopePath, ANNOTATIONS_DIRECTORY_RELATIVE_PATH));
-  await assertNotSymbolicLink(join(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId)));
+  await assertNotSymbolicLink(join(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId)));
 }
 
 export function createFileAnnotationRepository(scopePath: string): RevisionAnnotationRepository {
   const annotationsPath = join(scopePath, ANNOTATIONS_DIRECTORY_RELATIVE_PATH);
 
-  const load = async (artifactRevisionId: ArtifactRevisionId): Promise<AnnotationDocument> => {
-    const documentPath = join(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId));
-    await assertAnnotationDocumentPathIsSafe(scopePath, artifactRevisionId);
+  const load = async (catalogRevisionId: CompanionCatalogRevisionId): Promise<AnnotationDocument> => {
+    const documentPath = join(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId));
+    await assertAnnotationDocumentPathIsSafe(scopePath, catalogRevisionId);
 
     try {
       return parseAnnotationDocument(JSON.parse(await readFile(documentPath, "utf8")));
@@ -234,17 +234,17 @@ export function createFileAnnotationRepository(scopePath: string): RevisionAnnot
 
   return {
     load,
-    save: async ({ artifactRevisionId, document: input, expectedDocument: expectedInput, validateBeforeCommit }) => {
+    save: async ({ catalogRevisionId, document: input, expectedDocument: expectedInput, validateBeforeCommit }) => {
       const document = parseAnnotationDocument(input);
       const expectedDocument = parseAnnotationDocument(expectedInput);
-      const documentPath = join(scopePath, getAnnotationDocumentRelativePath(artifactRevisionId));
+      const documentPath = join(scopePath, getAnnotationDocumentRelativePath(catalogRevisionId));
 
       await serializeSave(annotationsPath, async () => {
         await ensureStorage(scopePath);
         const releaseLock = await acquireFileLock(`${documentPath}.lock`);
 
         try {
-          const currentDocument = await load(artifactRevisionId);
+          const currentDocument = await load(catalogRevisionId);
           if (!isDeepStrictEqual(currentDocument, expectedDocument)) throw new AnnotationDocumentConflictError();
 
           await assertNotSymbolicLink(documentPath);
@@ -255,7 +255,7 @@ export function createFileAnnotationRepository(scopePath: string): RevisionAnnot
               encoding: "utf8",
               flag: "wx",
             });
-            const latestDocument = await load(artifactRevisionId);
+            const latestDocument = await load(catalogRevisionId);
             if (!isDeepStrictEqual(latestDocument, expectedDocument)) throw new AnnotationDocumentConflictError();
             await assertNotSymbolicLink(documentPath);
             await validateBeforeCommit?.();

@@ -3,13 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createApp } from "@/server/create-app";
-import { resolveConsumerScope } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { isSourceOpenRequestAllowed } from "@/server/source-open-request";
-import { writeArtifact } from "@/server/write-artifact";
+import { writeCatalog } from "@/server/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 
-function artifact() {
+function catalog() {
   return {
     behaviors: [
       {
@@ -77,8 +77,8 @@ describe("source reference server", () => {
     try {
       await mkdir(join(scopePath, "src"));
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
-      await writeArtifact(scopePath, artifact());
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, catalog());
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, { openPath: async (location) => void openedLocations.push(location) });
       const href = "source:///src/workflow.ts#L42-L60";
 
@@ -100,7 +100,7 @@ describe("source reference server", () => {
     try {
       await mkdir(join(scopePath, "src"));
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
-      const scope = await resolveConsumerScope(scopePath);
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope);
 
       const response = await postOpen(app, "source:///src/workflow.ts#L42");
@@ -122,8 +122,8 @@ describe("source reference server", () => {
 
     try {
       await mkdir(join(scopePath, "src"));
-      await writeArtifact(scopePath, artifact());
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, catalog());
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, { openPath: async () => undefined });
 
       const malformedResponse = await postOpen(app, "source:///src/workflow.ts#L60-L42");
@@ -176,8 +176,8 @@ describe("source reference server", () => {
       await mkdir(join(scopePath, "src"));
       await writeFile(join(outsidePath, "outside.ts"), "export const secret = true;\n");
       await symlink(join(outsidePath, "outside.ts"), join(scopePath, "src/link.ts"));
-      await writeArtifact(scopePath, artifact());
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, catalog());
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, { openPath: async () => undefined });
 
       const response = await postOpen(app, "source:///src/link.ts");
@@ -196,8 +196,8 @@ describe("source reference server", () => {
     try {
       await mkdir(join(scopePath, "src"));
       await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
-      await writeArtifact(scopePath, artifact());
-      const scope = await resolveConsumerScope(scopePath);
+      await writeCatalog(scopePath, catalog());
+      const scope = await resolveCompanionScope(scopePath);
       const app = createApp(scope, { openPath: async () => undefined });
       const response = await app.request(`${baseUrl}/api/source/open`, {
         method: "POST",

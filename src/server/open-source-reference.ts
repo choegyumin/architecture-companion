@@ -1,7 +1,7 @@
 import { realpath, stat } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { ConsumerScope } from "@/server/consumer-scope";
+import type { CompanionScope } from "@/server/companion-scope";
 import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
 export type SourceLocation = Readonly<{
@@ -65,7 +65,7 @@ export function parseSourceHref(href: string): SourceLocation {
 }
 
 export async function openSourceReference(
-  scope: ConsumerScope,
+  scope: CompanionScope,
   href: string,
   openPath: OpenPath,
 ): Promise<OpenSourceReferenceResult> {

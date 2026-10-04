@@ -1,6 +1,6 @@
 import { createFileAnnotationRepository } from "@/server/file-annotation-repository";
 import { readActiveRevisionAnnotations } from "@/server/read-active-revision-annotations";
-import { resolveConsumerScopePath } from "@/server/resolve-consumer-scope";
+import { resolveCompanionScopePath } from "@/server/resolve-companion-scope";
 
 export type ViewAnnotationsCommandOptions = Readonly<{
   writeStdout: (output: string) => void;
@@ -15,7 +15,7 @@ export async function executeViewAnnotationsCommand(
     throw new Error("Usage: node view-annotations.js <scope>");
   }
 
-  const scopePath = await resolveConsumerScopePath(scopeInput);
+  const scopePath = await resolveCompanionScopePath(scopeInput);
   const result = await readActiveRevisionAnnotations(scopePath, createFileAnnotationRepository(scopePath));
 
   if (result.status === "invalid") throw new Error(result.message);

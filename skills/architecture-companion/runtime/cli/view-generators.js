@@ -19686,12 +19686,12 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
-// src/features/diagram-generator/diagram-generator-id.ts
-var diagramGeneratorIdSchema = external_exports.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+// src/features/artifact-generator/artifact-generator-id.ts
+var artifactGeneratorIdSchema = external_exports.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
-// src/features/diagram-generator/diagram-generator-manifest.ts
+// src/features/artifact-generator/artifact-generator-manifest.ts
 function invalidManifest(message) {
-  return new Error(`Invalid diagram generator manifest: ${message}`);
+  return new Error(`Invalid artifact generator manifest: ${message}`);
 }
 function parseManifestField(line) {
   const separatorIndex = line.indexOf(":");
@@ -19701,7 +19701,7 @@ function parseManifestField(line) {
     value: line.slice(separatorIndex + 1).trim()
   };
 }
-function parseDiagramGeneratorManifest(source) {
+function parseArtifactGeneratorManifest(source) {
   const lines = source.replaceAll("\r\n", "\n").split("\n");
   if (lines.at(0) !== "---") throw invalidManifest("Missing opening frontmatter delimiter");
   const closingOffset = lines.slice(1).findIndex((line) => line === "---");
@@ -19718,12 +19718,12 @@ function parseDiagramGeneratorManifest(source) {
   if (!id) throw invalidManifest("Missing id");
   if (!description) throw invalidManifest("Missing description");
   if (!prompt) throw invalidManifest("Missing prompt");
-  const parsedId = diagramGeneratorIdSchema.safeParse(id);
+  const parsedId = artifactGeneratorIdSchema.safeParse(id);
   if (!parsedId.success) throw invalidManifest(`Invalid id: ${id}`);
   return { id: parsedId.data, description, prompt };
 }
 
-// src/server/resolve-consumer-scope.ts
+// src/server/resolve-companion-scope.ts
 import { realpath, stat } from "fs/promises";
 import { dirname, join } from "path";
 async function pathExists(path) {
@@ -19744,7 +19744,7 @@ async function isInsideGitRepository(path) {
     currentPath = parentPath;
   }
 }
-async function resolveConsumerScopePath(inputPath) {
+async function resolveCompanionScopePath(inputPath) {
   let inputStat;
   try {
     inputStat = await stat(inputPath);
@@ -19759,8 +19759,8 @@ async function resolveConsumerScopePath(inputPath) {
   }
   return realpath(inputPath);
 }
-async function resolveConsumerScope(inputPath) {
-  const path = await resolveConsumerScopePath(inputPath);
+async function resolveCompanionScope(inputPath) {
+  const path = await resolveCompanionScopePath(inputPath);
   return {
     path,
     isGitRepository: await isInsideGitRepository(path)
@@ -19800,15 +19800,15 @@ async function readGenerator(pluginPath, source) {
     await lstat(manifestPath);
   } catch (error62) {
     if (isMissingPathError(error62)) return null;
-    throw new Error(`Failed to inspect diagram generator manifest at ${manifestPath}: ${errorMessage(error62)}`, {
+    throw new Error(`Failed to inspect artifact generator manifest at ${manifestPath}: ${errorMessage(error62)}`, {
       cause: error62
     });
   }
   try {
-    const manifest = parseDiagramGeneratorManifest(await readFile(manifestPath, "utf8"));
+    const manifest = parseArtifactGeneratorManifest(await readFile(manifestPath, "utf8"));
     return { id: manifest.id, description: manifest.description, source, path: pluginPath };
   } catch (error62) {
-    throw new Error(`Failed to load diagram generator manifest at ${manifestPath}: ${errorMessage(error62)}`, {
+    throw new Error(`Failed to load artifact generator manifest at ${manifestPath}: ${errorMessage(error62)}`, {
       cause: error62
     });
   }
@@ -19819,7 +19819,7 @@ async function listGeneratorRoot(rootPath, source) {
     entries = await readdir(rootPath, { withFileTypes: true });
   } catch (error62) {
     if (isMissingPathError(error62)) return [];
-    throw new Error(`Failed to read diagram generator root at ${rootPath}: ${errorMessage(error62)}`, { cause: error62 });
+    throw new Error(`Failed to read artifact generator root at ${rootPath}: ${errorMessage(error62)}`, { cause: error62 });
   }
   const generators = await Promise.all(
     entries.filter((entry) => entry.isDirectory()).map((entry) => readGenerator(resolve(rootPath, entry.name), source))
@@ -19829,14 +19829,14 @@ async function listGeneratorRoot(rootPath, source) {
 async function executeViewGeneratorsCommand(args, environment) {
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === void 0) throw new Error("Usage: node view-generators.js <scope>");
-  const scope = await resolveConsumerScope(scopeInput);
+  const scope = await resolveCompanionScope(scopeInput);
   const generatorRoots = [
     { path: resolve(environment.builtInGeneratorsRoot), source: "built-in" },
     {
-      path: resolve(environment.homeDirectory, ".architecture-companion", "diagram-generators"),
+      path: resolve(environment.homeDirectory, ".architecture-companion", "artifact-generators"),
       source: "global"
     },
-    { path: join2(scope.path, ".architecture-companion", "diagram-generators"), source: "project" }
+    { path: join2(scope.path, ".architecture-companion", "artifact-generators"), source: "project" }
   ];
   const generators = (await Promise.all(generatorRoots.map(({ path, source }) => listGeneratorRoot(path, source)))).flat().toSorted(compareGenerators);
   environment.writeStdout(`${JSON.stringify(generators)}
@@ -19846,12 +19846,12 @@ async function executeViewGeneratorsCommand(args, environment) {
 // src/cli/view-generators.ts
 try {
   await executeViewGeneratorsCommand(process.argv.slice(2), {
-    builtInGeneratorsRoot: fileURLToPath(new URL("../diagram-generators", import.meta.url)),
+    builtInGeneratorsRoot: fileURLToPath(new URL("../artifact-generators", import.meta.url)),
     homeDirectory: homedir(),
     writeStdout: (output2) => process.stdout.write(output2)
   });
 } catch (error62) {
-  const message = error62 instanceof Error ? error62.message : "Architecture Companion failed to list diagram generators.";
+  const message = error62 instanceof Error ? error62.message : "Architecture Companion failed to list artifact generators.";
   process.stderr.write(`${message}
 `);
   process.exitCode = 1;

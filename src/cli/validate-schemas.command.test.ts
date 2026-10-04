@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-artifact";
-import { writeArtifact } from "@/server/write-artifact";
+import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
   id: "checkout",
@@ -21,7 +21,7 @@ const checkoutBehavior = {
   },
 } as const;
 
-describe("Artifact schema validation command", () => {
+describe("Catalog schema validation command", () => {
   test("requires exactly one explicit scope argument", async () => {
     const outputs: string[] = [];
     const options = { writeStdout: (output: string) => outputs.push(output) };
@@ -33,30 +33,30 @@ describe("Artifact schema validation command", () => {
     expect(outputs).toEqual([]);
   });
 
-  test("validates a valid artifact and prints a single success line", async () => {
+  test("validates a valid catalog and prints a single success line", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { behaviors: [], designs: [] });
+      await writeCatalog(scopePath, { behaviors: [], designs: [] });
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
       });
 
-      expect(outputs).toEqual(["Artifact is valid.\n"]);
+      expect(outputs).toEqual(["Catalog is valid.\n"]);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("artifact validation is independent of the scope's Git metadata", async () => {
+  test("catalog validation is independent of the scope's Git metadata", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
     const nonDirectoryPath = join(scopePath, "not-a-directory");
     const outputs: string[] = [];
 
     try {
-      await writeArtifact(scopePath, { behaviors: [], designs: [] });
+      await writeCatalog(scopePath, { behaviors: [], designs: [] });
       await writeFile(nonDirectoryPath, "file");
       await symlink(join(nonDirectoryPath, "child"), join(scopePath, ".git"));
 
@@ -64,13 +64,13 @@ describe("Artifact schema validation command", () => {
         writeStdout: (output) => outputs.push(output),
       });
 
-      expect(outputs).toEqual(["Artifact is valid.\n"]);
+      expect(outputs).toEqual(["Catalog is valid.\n"]);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("fails without stdout when the artifact is missing", async () => {
+  test("fails without stdout when the catalog is missing", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
     const outputs: string[] = [];
 
@@ -79,7 +79,7 @@ describe("Artifact schema validation command", () => {
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact is missing: .architecture-companion");
+      ).rejects.toThrow("Catalog is missing: .architecture-companion");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
@@ -98,7 +98,7 @@ describe("Artifact schema validation command", () => {
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Artifact contains invalid JSON: .architecture-companion/behaviors/checkout.json");
+      ).rejects.toThrow("Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
@@ -121,7 +121,7 @@ describe("Artifact schema validation command", () => {
           writeStdout: (output) => outputs.push(output),
         }),
       ).rejects.toThrow(
-        "Diagram file name does not match the diagram ID: .architecture-companion/behaviors/checkout.json must be checkout-workflow.json",
+        "Artifact file name does not match the artifact ID: .architecture-companion/behaviors/checkout.json must be checkout-workflow.json",
       );
       expect(outputs).toEqual([]);
     } finally {

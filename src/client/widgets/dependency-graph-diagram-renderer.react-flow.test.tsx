@@ -1,7 +1,7 @@
 import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
 import { annotationTargetSchema } from "@/features/annotation/annotation-document";
+import type { Artifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import type { Diagram } from "@/features/diagram/diagram";
 
 const diagram = {
   id: "dependencies",
@@ -27,7 +27,7 @@ const diagram = {
       { id: "b-a", type: "default", source: "b", target: "a" },
     ],
   },
-} satisfies Diagram;
+} satisfies Artifact;
 
 const sizes = {
   a: { width: 288, height: 144 },
@@ -129,7 +129,7 @@ describe("dependency graph React Flow adapter", () => {
         nodes: [...diagram.graph.nodes, { id: "bundle:app", type: "default", title: "Root file" }],
         edges: [...diagram.graph.edges, { id: "bundle:app:", type: "default", source: "a", target: "b" }],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = await layoutDependencyGraph(colliding.graph, { ...sizes, "bundle:app": sizes.a });
     const model = buildDependencyGraphDiagramReactFlowRenderModel(colliding, layout, vi.fn());
     expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("card");
@@ -171,7 +171,7 @@ describe("dependency graph React Flow adapter", () => {
         ...diagram.graph,
         edges: [...diagram.graph.edges, { id: "a-b", type: "default", source: "a", target: "b" }],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = await layoutDependencyGraph(withSibling.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(withSibling, layout, vi.fn(), {
       focus: { type: "group", id: "nested" },
@@ -200,7 +200,7 @@ describe("dependency graph React Flow adapter", () => {
           { id: "root-a", type: "default", source: "root", target: "a" },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = await layoutDependencyGraph(withRoot.graph, { ...sizes, root: sizes.a });
     const model = buildDependencyGraphDiagramReactFlowRenderModel(withRoot, layout, vi.fn());
     const forward = model.edges.find((edge) => edge.source === "app" && edge.target === "root");
@@ -228,7 +228,7 @@ describe("dependency graph React Flow adapter", () => {
           { id: "two-one", type: "default", source: "root-two", target: "root-one" },
         ],
       },
-    } satisfies Diagram;
+    } satisfies Artifact;
     const layout = await layoutDependencyGraph(roots.graph, {
       ...sizes,
       "root-one": sizes.a,

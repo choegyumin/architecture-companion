@@ -35,12 +35,12 @@ describe("schema files", () => {
   it("reports every missing or stale tracked schema without rewriting it", async () => {
     await withTemporaryRoot(async (outputRoot) => {
       await writeSchemaFiles(outputRoot);
-      const stalePath = join(outputRoot, "diagram.schema.json");
+      const stalePath = join(outputRoot, "artifact.schema.json");
       await writeFile(stalePath, "{}\n");
       await rm(join(outputRoot, "diagram-graph.schema.json"));
 
       await expect(assertSchemaFilesCurrent(outputRoot)).rejects.toThrow(
-        "Schemas are missing or stale: diagram-graph.schema.json, diagram.schema.json. Run `pnpm run schema-gen`.",
+        "Schemas are missing or stale: diagram-graph.schema.json, artifact.schema.json. Run `pnpm run schema-gen`.",
       );
       expect(await readFile(stalePath, "utf8")).toBe("{}\n");
     });
