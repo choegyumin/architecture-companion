@@ -78,10 +78,13 @@ const diagramEdgeTypes = {
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
 
+export type DiagramFocusView = Readonly<{ key: string; nodeIds: readonly string[] }>;
+
 type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
+  focusView?: DiagramFocusView;
   getNodeLabel?: (node: DiagramReactFlowNode) => string;
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
@@ -102,6 +105,7 @@ export function DiagramCanvas({
   children,
   className,
   edges,
+  focusView,
   getNodeLabel,
   nodes,
   onCanvasClick,
@@ -175,6 +179,19 @@ export function DiagramCanvas({
     await fitViewFraming(flowInstance, initialView, canvasRef.current);
   }, [flowInstance, initialView]);
 
+  const focusSpotlightView = useCallback(async () => {
+    if (!flowInstance || !focusView || !canvasRef.current) return;
+    if (focusView.nodeIds.length > 0) {
+      await flowInstance.fitView({
+        ...DIAGRAM_FIT_VIEW_OPTIONS,
+        duration: 500,
+        nodes: focusView.nodeIds.map((id) => ({ id })),
+      });
+      return;
+    }
+    await fitView();
+  }, [flowInstance, focusView, fitView]);
+
   useEffect(() => {
     let secondFrame = 0;
     const firstFrame = requestAnimationFrame(() => {
@@ -185,6 +202,18 @@ export function DiagramCanvas({
       cancelAnimationFrame(secondFrame);
     };
   }, [fitView]);
+
+  useEffect(() => {
+    if (!focusView) return;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => void focusSpotlightView());
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [focusView, focusSpotlightView]);
 
   function isInteractiveClick(event: MouseEvent): boolean {
     return event.target instanceof Element && Boolean(event.target.closest(interactiveElementSelector));

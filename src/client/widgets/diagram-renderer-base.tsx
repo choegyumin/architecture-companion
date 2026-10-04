@@ -14,8 +14,10 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import type { Artifact } from "@/features/artifact/artifact";
 import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
+import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
+import { applySpotlight } from "@/client/widgets/diagram-spotlight";
 
 export type DiagramRendererProps = Readonly<{
   annotations: AnnotationCanvasController;
@@ -23,6 +25,7 @@ export type DiagramRendererProps = Readonly<{
   ariaLabel?: string;
   commentEnabled?: boolean;
   onOpenSource: (href: string) => void;
+  spotlight?: ArtifactSpotlight;
 }>;
 
 type DiagramRendererBaseProps = DiagramRendererProps &
@@ -57,6 +60,7 @@ function DiagramRendererContent({
   children,
   artifact,
   onOpenSource,
+  spotlight,
   calculateLayout,
   buildMeasurementNodes = buildDiagramMeasurementNodes,
   buildRenderModel,
@@ -135,9 +139,15 @@ function DiagramRendererContent({
     }
   }, [state, artifact, onOpenSource, buildRenderModel]);
 
+  const spotlit = useMemo(
+    () => (rendered?.status === "ready" && spotlight ? applySpotlight(rendered.model, spotlight) : undefined),
+    [rendered, spotlight],
+  );
+  const displayModel = spotlit?.model ?? (rendered?.status === "ready" ? rendered.model : undefined);
+
   useLayoutEffect(() => {
-    if (rendered?.status === "ready") setNodes([...rendered.model.nodes]);
-  }, [rendered, setNodes]);
+    if (displayModel) setNodes([...displayModel.nodes]);
+  }, [displayModel, setNodes]);
 
   return (
     <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
@@ -161,8 +171,11 @@ function DiagramRendererContent({
       </ul>
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
-        edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
-        getNodeLabel={rendered?.status === "ready" ? (node) => searchLabels.get(node.id) ?? "" : undefined}
+        edges={displayModel ? [...displayModel.edges] : []}
+        focusView={
+          spotlit && spotlight ? { key: JSON.stringify(spotlight), nodeIds: spotlit.framedNodeIds } : undefined
+        }
+        getNodeLabel={displayModel ? (node) => searchLabels.get(node.id) ?? "" : undefined}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
@@ -212,6 +225,7 @@ export function DiagramRendererBase({
   children,
   artifact,
   onOpenSource,
+  spotlight,
   calculateLayout,
   buildMeasurementNodes,
   buildRenderModel,
@@ -228,6 +242,7 @@ export function DiagramRendererBase({
         annotations={annotations}
         artifact={artifact}
         onOpenSource={onOpenSource}
+        spotlight={spotlight}
         calculateLayout={calculateLayout}
         buildMeasurementNodes={buildMeasurementNodes}
         buildRenderModel={buildRenderModel}
