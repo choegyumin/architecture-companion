@@ -272,6 +272,51 @@ describe("ELK layered diagram layout", () => {
     );
   });
 
+  it("orders decision ports by case and starts each arm at its port", async () => {
+    const diagram = {
+      ...diagramBase,
+      nodes: [
+        { id: "app", type: "default", kind: "component", title: "App" },
+        { id: "mode", type: "decision", title: "mode" },
+        { id: "first-target", type: "default", kind: "component", title: "First target" },
+        { id: "second-target", type: "default", kind: "component", title: "Second target" },
+      ],
+      edges: [
+        { id: "entry", type: "default", source: "app", target: "mode" },
+        { id: "arm-first", type: "default", source: "mode", target: "first-target", sourcePort: "first" },
+        { id: "arm-second", type: "default", source: "mode", target: "second-target", sourcePort: "second" },
+      ],
+      controls: [
+        {
+          id: "mode",
+          owner: "app",
+          kind: "branch",
+          label: "mode",
+          dependsOn: [[]],
+          cases: [
+            { id: "first", label: "First" },
+            { id: "second", label: "Second" },
+          ],
+        },
+      ],
+    } satisfies DiagramGraph;
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 288, height: 144 }]));
+
+    const result = await layoutElkLayeredDiagram(diagram, nodeSizes);
+    const decision = result.nodes.find(({ id }) => id === "mode");
+    const firstStart = result.edges.find(({ id }) => id === "arm-first")?.points.at(0);
+    const secondStart = result.edges.find(({ id }) => id === "arm-second")?.points.at(0);
+    if (!decision || !firstStart || !secondStart) throw new Error("Layout lost the decision arms.");
+
+    // Case order reads top-to-bottom and each arm leaves the diamond's border.
+    expect(firstStart.y).toBeLessThan(secondStart.y);
+    for (const start of [firstStart, secondStart]) {
+      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width - 1);
+      expect(start.y).toBeGreaterThan(decision.position.y);
+      expect(start.y).toBeLessThan(decision.position.y + decision.size.height);
+    }
+  });
+
   it("returns provider-agnostic placement and directed edge routes", async () => {
     const result = await layoutElkLayeredDiagram(groupedDiagram, groupedNodeSizes);
 

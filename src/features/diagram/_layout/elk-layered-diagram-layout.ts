@@ -1,7 +1,7 @@
 import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import z from "zod";
 
-import type { DiagramGraph, DiagramGroup } from "@/features/diagram/diagram-graph";
+import type { DiagramGraph, DiagramGroup, DiagramNode } from "@/features/diagram/diagram-graph";
 import type {
   DiagramLayout,
   DiagramLayoutEdge,
@@ -135,6 +135,33 @@ function toResolvedElkOptions(map: ElkLayeredDiagramLayoutElkOptions | undefined
   };
 }
 
+// Decision nodes route their outgoing arms through ordered ports on the flow's
+// downstream side, so the case order reads top-to-bottom along the flow and the
+// drawn edges leave exactly where their branch case sits.
+function toElkNode(
+  node: DiagramNode,
+  diagram: DiagramGraph,
+  nodeSizes: DiagramNodeSizes,
+  direction: ElkLayeredDiagramLayoutDirection,
+): ElkNode {
+  const size = getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`);
+  const control = diagram.controls?.find(({ id }) => id === node.id);
+  if (node.type !== "decision" || control?.kind !== "branch") return { id: node.id, ...size };
+  const side =
+    direction === "RIGHT" ? "EAST" : direction === "LEFT" ? "WEST" : direction === "DOWN" ? "SOUTH" : "NORTH";
+  return {
+    id: node.id,
+    ...size,
+    layoutOptions: { "elk.portConstraints": "FIXED_ORDER" },
+    ports: control.cases.map((branchCase) => ({
+      id: branchCase.id,
+      width: 4,
+      height: 4,
+      layoutOptions: { "elk.port.side": side },
+    })),
+  };
+}
+
 function toElkGroup(
   group: DiagramGroup,
   diagram: DiagramGraph,
@@ -147,10 +174,7 @@ function toElkGroup(
       .map((child) => toElkGroup(child, diagram, nodeSizes, direction)),
     ...diagram.nodes
       .filter(({ groupId }) => groupId === group.id)
-      .map((node) => ({
-        id: node.id,
-        ...getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
-      })),
+      .map((node) => toElkNode(node, diagram, nodeSizes, direction)),
   ];
   return {
     id: group.id,
@@ -179,14 +203,14 @@ function toElkInput(
       ...diagram.groups
         .filter(({ parentId }) => !parentId)
         .map((group) => toElkGroup(group, diagram, nodeSizes, direction)),
-      ...diagram.nodes
-        .filter(({ groupId }) => !groupId)
-        .map((node) => ({
-          id: node.id,
-          ...getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
-        })),
+      ...diagram.nodes.filter(({ groupId }) => !groupId).map((node) => toElkNode(node, diagram, nodeSizes, direction)),
     ],
-    edges: diagram.edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
+    edges: diagram.edges.map((edge) => ({
+      id: edge.id,
+      // A port-bound arm leaves from its decision node's port, not its center.
+      sources: [edge.type === "default" && edge.sourcePort ? edge.sourcePort : edge.source],
+      targets: [edge.target],
+    })),
   };
 }
 
