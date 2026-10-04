@@ -1,8 +1,8 @@
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import {
+  type ArtifactSpotlight,
   parseArtifactSpotlight,
   validateSpotlightAgainstCatalog,
-  type ArtifactSpotlight,
 } from "@/features/spotlight/spotlight";
 
 function catalog(): CompanionCatalog {

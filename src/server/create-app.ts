@@ -4,11 +4,7 @@ import { validator } from "hono/validator";
 
 import { parseRevisionAnnotations, type RevisionAnnotations } from "@/features/annotation/revision-annotations";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
-import {
-  parseArtifactSpotlight,
-  validateSpotlightAgainstCatalog,
-  type ArtifactSpotlight,
-} from "@/features/spotlight/spotlight";
+import { parseArtifactSpotlight, validateSpotlightAgainstCatalog } from "@/features/spotlight/spotlight";
 import type { CompanionScope } from "@/server/companion-scope";
 import { createAnnotationEtag } from "@/server/create-annotation-etag";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";

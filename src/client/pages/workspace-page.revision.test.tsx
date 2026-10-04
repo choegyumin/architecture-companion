@@ -236,6 +236,7 @@ describe("external catalog review", () => {
     const client = {
       getReview,
       getAnnotations,
+      getSpotlight: vi.fn(async () => null),
       saveAnnotations: vi.fn(),
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
@@ -269,6 +270,7 @@ describe("external catalog review", () => {
     const client = {
       getReview,
       getAnnotations,
+      getSpotlight: vi.fn(async () => null),
       saveAnnotations: vi.fn(),
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
@@ -296,6 +298,7 @@ describe("external catalog review", () => {
         error: { message: "Catalog is invalid." },
       }),
       getAnnotations,
+      getSpotlight: vi.fn(async () => null),
       saveAnnotations: vi.fn(),
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
@@ -328,6 +331,7 @@ describe("external catalog review", () => {
     const client = {
       getReview: async () => currentReview,
       getAnnotations: async () => currentAnnotations,
+      getSpotlight: vi.fn(async () => null),
       saveAnnotations,
       openSource: vi.fn(),
       subscribeToReviewUpdates: (listener: () => void) => {

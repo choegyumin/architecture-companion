@@ -8,7 +8,7 @@ import {
 } from "@/features/annotation/revision-annotations";
 import { parseCatalog } from "@/features/catalog/catalog";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
-import { parseArtifactSpotlight, type ArtifactSpotlight } from "@/features/spotlight/spotlight";
+import { type ArtifactSpotlight, parseArtifactSpotlight } from "@/features/spotlight/spotlight";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
 

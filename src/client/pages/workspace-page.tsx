@@ -566,21 +566,6 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     };
   }, [client]);
 
-  useEffect(() => {
-    if (!spotlight || state.status !== "ready" || !state.review.catalog) return;
-    const { catalog } = state.review;
-
-    if (catalog.behaviors.some((artifact) => artifact.id === spotlight.artifactId)) {
-      setRequestedReviewView("process");
-      setActiveProcessId(spotlight.artifactId);
-      return;
-    }
-    if (catalog.designs.some((artifact) => artifact.id === spotlight.artifactId)) {
-      setRequestedReviewView("design");
-      setActiveDesignId(spotlight.artifactId);
-    }
-  }, [spotlight, state.review, state.status]);
-
   async function confirmAnnotationClose(): Promise<boolean> {
     if (!hasUnsavedAnnotationChanges(annotationState)) return true;
 
@@ -889,18 +874,29 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   const { catalog } = state.review;
-  const activeProcess = catalog.behaviors.find(({ id }) => id === activeProcessId) ?? catalog.behaviors.at(0);
-  const activeDesign = catalog.designs.find(({ id }) => id === activeDesignId) ?? catalog.designs.at(0);
-  const activeReviewView: ReviewView | null =
-    requestedReviewView === "process" && activeProcess
-      ? "process"
-      : requestedReviewView === "design" && activeDesign
-        ? "design"
-        : activeProcess
-          ? "process"
-          : activeDesign
-            ? "design"
-            : null;
+  // An active spotlight takes over the requested view and artifact selection
+  // until it is replaced or cleared; manual list selection resumes afterwards.
+  const spotlitProcessId =
+    spotlight && catalog.behaviors.some(({ id }) => id === spotlight.artifactId) ? spotlight.artifactId : undefined;
+  const spotlitDesignId =
+    spotlight && catalog.designs.some(({ id }) => id === spotlight.artifactId) ? spotlight.artifactId : undefined;
+  const activeProcess =
+    catalog.behaviors.find(({ id }) => id === (spotlitProcessId ?? activeProcessId)) ?? catalog.behaviors.at(0);
+  const activeDesign =
+    catalog.designs.find(({ id }) => id === (spotlitDesignId ?? activeDesignId)) ?? catalog.designs.at(0);
+  const activeReviewView: ReviewView | null = spotlitProcessId
+    ? "process"
+    : spotlitDesignId
+      ? "design"
+      : requestedReviewView === "process" && activeProcess
+        ? "process"
+        : requestedReviewView === "design" && activeDesign
+          ? "design"
+          : activeProcess
+            ? "process"
+            : activeDesign
+              ? "design"
+              : null;
   const activeDiagramCollection =
     activeReviewView === "process" && activeProcess
       ? {

@@ -1,9 +1,9 @@
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { DiagramReactFlowRenderModel } from "@/client/widgets/diagram-renderer.react-flow";
 import {
+  applySpotlight,
   SPOTLIGHT_DIMMED_CLASS_NAME,
   SPOTLIGHT_EMPHASIZED_CLASS_NAME,
-  applySpotlight,
 } from "@/client/widgets/diagram-spotlight";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
@@ -51,7 +51,7 @@ describe("applySpotlight", () => {
       ["cart", SPOTLIGHT_EMPHASIZED_CLASS_NAME],
       ["pay", SPOTLIGHT_DIMMED_CLASS_NAME],
     ]);
-    const edge = result.model.edges[0];
+    const edge = result.model.edges.at(0);
     expect(edge?.className).toBe(SPOTLIGHT_EMPHASIZED_CLASS_NAME);
     expect(edge?.style).toMatchObject({ stroke: "var(--primary)", strokeWidth: 3 });
   });
@@ -65,7 +65,7 @@ describe("applySpotlight", () => {
       spotlight([{ type: "edge-set", sourceId: "cart", targetId: "pay", edgeIds: ["e2"] }]),
     );
 
-    expect(result.model.edges[0]?.className).toBe(SPOTLIGHT_EMPHASIZED_CLASS_NAME);
+    expect(result.model.edges.at(0)?.className).toBe(SPOTLIGHT_EMPHASIZED_CLASS_NAME);
     expect(result.framedNodeIds).toEqual(["cart", "pay"]);
   });
 

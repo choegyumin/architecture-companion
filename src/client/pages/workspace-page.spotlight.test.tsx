@@ -6,7 +6,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
-import { createApp, type AppType } from "@/server/create-app";
+import { type AppType, createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 

@@ -10,6 +10,7 @@ import {
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
+import { applySpotlight } from "@/client/widgets/diagram-spotlight";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
 import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
@@ -17,7 +18,6 @@ import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
-import { applySpotlight } from "@/client/widgets/diagram-spotlight";
 
 export type DiagramRendererProps = Readonly<{
   annotations: AnnotationCanvasController;
