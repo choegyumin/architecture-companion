@@ -33,6 +33,46 @@ describe("DataClient", () => {
     }
   });
 
+  it("delivers spotlight events and ignores malformed spotlight payloads", async () => {
+    const spotlight = { artifactId: "checkout", diagram: { elements: [{ type: "node", id: "cart" }] } };
+    const fetcher: typeof fetch = vi.fn(async () =>
+      createSseResponse([
+        `event: spotlight\r\ndata: ${JSON.stringify({ spotlight })}\r\n\r\n`,
+        'event: spotlight\r\ndata: {"spotlight":{"artifactId":"checkout"}}\r\n\r\n',
+        'event: spotlight\r\ndata: {"spotlight":null}\r\n\r\n',
+        "event: spotlight\r\ndata: {broken\r\n\r\n",
+      ]),
+    );
+    const onSpotlight = vi.fn();
+    const unsubscribe = createDataClient(baseUrl, fetcher).subscribeToReviewUpdates(vi.fn(), undefined, onSpotlight);
+
+    try {
+      await vi.waitFor(() => expect(onSpotlight).toHaveBeenCalledTimes(2));
+      expect(onSpotlight).toHaveBeenNthCalledWith(1, {
+        artifactId: "checkout",
+        diagram: { elements: [{ type: "node", id: "cart" }] },
+      });
+      expect(onSpotlight).toHaveBeenNthCalledWith(2, null);
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("reads the current spotlight or null", async () => {
+    const spotlight = { artifactId: "checkout", diagram: { elements: [] } };
+    const present = createDataClient(
+      baseUrl,
+      vi.fn(async () => new Response(JSON.stringify({ spotlight }), { status: 200 })),
+    );
+    const absent = createDataClient(
+      baseUrl,
+      vi.fn(async () => new Response(JSON.stringify({ spotlight: null }), { status: 200 })),
+    );
+
+    await expect(present.getSpotlight()).resolves.toEqual(spotlight);
+    await expect(absent.getSpotlight()).resolves.toBeNull();
+  });
+
   it("does not report an AbortError from an unsubscribed request as an error", async () => {
     const fetcher: typeof fetch = vi.fn(async () => {
       await Promise.resolve();
