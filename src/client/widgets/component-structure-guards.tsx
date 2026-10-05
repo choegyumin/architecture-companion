@@ -78,19 +78,12 @@ export function collectComponentOrigins(
   return new Map([...entriesByTarget].map(([target, entries]) => [target, [...entries].toSorted()]));
 }
 
-type ComponentGuardEmphasis = Readonly<{
-  nodes: ReadonlySet<string>;
-  edges: ReadonlySet<string>;
-  controls: ReadonlySet<string>;
-}>;
-
 type ComponentGuardLabelsProps = Readonly<{
   graph: Readonly<{ nodes: readonly { id: string; title?: string }[]; edges: readonly DiagramEdge[] }>;
   controls: readonly DiagramControl[];
   layout: DiagramLayout;
   edges: readonly DiagramReactFlowEdge[];
   selection: ComponentSelection;
-  emphasis: ComponentGuardEmphasis;
   onSelect: (edgeId: string, controlId: string, value: string) => void;
 }>;
 
@@ -111,7 +104,6 @@ export function attachGuardLabels({
   layout,
   edges,
   selection,
-  emphasis,
   onSelect,
 }: ComponentGuardLabelsProps): DiagramReactFlowEdge[] {
   const controlsById = new Map(controls.map((control) => [control.id, control]));
@@ -137,8 +129,6 @@ export function attachGuardLabels({
         seen.add(key);
         const control = controlsById.get(controlId);
         if (!control) continue;
-        const active = emphasis.controls.has(controlId);
-        const description = active ? "Active path" : "Inactive path; selecting activates ancestors";
         const pill =
           control.kind === "branch"
             ? {
@@ -146,8 +136,6 @@ export function attachGuardLabels({
                 kind: "branch" as const,
                 label: control.cases.find((branchCase) => branchCase.id === value)?.label ?? value,
                 pressed: selection[controlId] === value,
-                active,
-                description,
                 onSelect: () => onSelect(edgeId, controlId, value),
               }
             : {
@@ -155,8 +143,6 @@ export function attachGuardLabels({
                 kind: "conditional" as const,
                 label: control.label,
                 pressed: selection[controlId] === value,
-                active,
-                description,
                 onSelect: () => onSelect(edgeId, controlId, value),
               };
         clause.push(pill);

@@ -99,7 +99,6 @@ function ComponentStructureContent(props: DiagramRendererProps) {
           layout,
           edges: dimmed,
           selection,
-          emphasis,
           onSelect,
         }),
       };

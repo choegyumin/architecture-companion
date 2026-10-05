@@ -414,9 +414,6 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAccessibleDescription(
-      "Inactive path; selecting activates ancestors",
-    );
 
     await userEvent.click(screen.getByRole("button", { name: "Large" }));
 
@@ -903,9 +900,6 @@ describe("component structure paths", () => {
     expect(screen.getByRole("button", { name: "parent" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Plain" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
-    expect(screen.getByRole("button", { name: "Plain" })).toHaveAccessibleDescription(
-      "Inactive path; selecting activates ancestors",
-    );
     await userEvent.click(screen.getByRole("button", { name: "Plain" }));
     expect(screen.getByRole("button", { name: "grandparent" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");

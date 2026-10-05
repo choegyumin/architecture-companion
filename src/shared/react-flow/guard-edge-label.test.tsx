@@ -5,8 +5,6 @@ import { GuardEdgeLabel, type GuardPill } from "@/shared/react-flow/guard-edge-l
 const pill = (overrides: Partial<GuardPill> & Pick<GuardPill, "kind" | "label">): GuardPill => ({
   id: `${overrides.kind}:${overrides.label}`,
   pressed: false,
-  active: true,
-  description: "Active path",
   onSelect: () => {},
   ...overrides,
 });

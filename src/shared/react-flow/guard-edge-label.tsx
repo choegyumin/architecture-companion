@@ -8,8 +8,6 @@ export type GuardPill = Readonly<{
   kind: "branch" | "conditional";
   label: string;
   pressed: boolean;
-  active: boolean;
-  description: string;
   onSelect: () => void;
 }>;
 
@@ -24,13 +22,11 @@ function GuardPillButton({ pill }: Readonly<{ pill: GuardPill }>) {
   const Icon = pill.kind === "branch" ? Split : Check;
   return (
     <button
-      aria-description={pill.description}
       aria-label={pill.label}
       aria-pressed={pill.pressed}
       className={cn(
         "nodrag nopan inline-flex cursor-pointer items-center gap-1 rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm [&_svg:not([class*='size-'])]:size-3",
         pill.pressed ? "border-primary/60" : "hover:border-primary/60",
-        !pill.active && "opacity-60",
       )}
       onClick={(event) => {
         event.stopPropagation();

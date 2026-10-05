@@ -44,8 +44,6 @@ const routeEdge = (id: string): DiagramReactFlowEdge => ({
   data: { path: "M 0 0 L 300 0", labelPosition: { x: 150, y: 0 } },
 });
 
-const noEmphasis = { nodes: new Set<string>(), edges: new Set<string>(), controls: new Set<string>() };
-
 function labelControlsOf(...graphEdges: DiagramEdge[]) {
   const edges = attachGuardLabels({
     graph: { nodes: [], edges: graphEdges },
@@ -63,7 +61,6 @@ function labelControlsOf(...graphEdges: DiagramEdge[]) {
     ),
     edges: graphEdges.map((edge) => routeEdge(edge.id)),
     selection: {},
-    emphasis: noEmphasis,
     onSelect: () => {},
   }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
   return edges;
@@ -109,7 +106,6 @@ describe("attachGuardLabels", () => {
       }),
       edges: [routeEdge("short")],
       selection: {},
-      emphasis: noEmphasis,
       onSelect: () => {},
     }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
 
@@ -157,7 +153,6 @@ describe("attachGuardLabels", () => {
       },
       edges: [routeEdge("arm")],
       selection: {},
-      emphasis: noEmphasis,
       onSelect: () => {},
     }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
 
