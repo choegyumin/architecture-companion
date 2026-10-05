@@ -18,11 +18,18 @@ const horizontal = (from: number, to: number, y = 0) => [
 ];
 
 describe("estimateGuardLabelSize", () => {
-  it("sums per-pill widths and gaps into one row", () => {
-    expect(estimateGuardLabelSize([{ label: "draft" }])).toEqual({ width: 34 + 6 * 5, height: 26 });
-    expect(estimateGuardLabelSize([{ label: "draft" }, { label: "On" }])).toEqual({
-      width: 34 + 6 * 5 + 4 + 34 + 6 * 2,
+  it("sizes a lone clause as one bare row of pills", () => {
+    expect(estimateGuardLabelSize([[{ label: "draft" }]])).toEqual({ width: 34 + 6 * 5, height: 26 });
+    expect(estimateGuardLabelSize([[{ label: "draft" }], [{ label: "On" }]])).toEqual({
+      width: 34 + 6 * 5 + 6 + 34 + 6 * 2,
       height: 26,
+    });
+  });
+
+  it("adds the tinted box around an AND clause of several pills", () => {
+    expect(estimateGuardLabelSize([[{ label: "draft" }, { label: "On" }]])).toEqual({
+      width: 8 + (34 + 6 * 5) + 4 + (34 + 6 * 2),
+      height: 30,
     });
   });
 });

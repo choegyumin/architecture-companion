@@ -100,7 +100,7 @@ type ComponentGuardLabelsProps = Readonly<{
 const GUARD_LABEL_ENDPOINT_OFFSET = 64;
 const GUARD_LABEL_MIN_SEPARATION = 96;
 
-type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ pills: GuardPill[] }>;
+type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ clauses: readonly (readonly GuardPill[])[] }>;
 
 // Projects one guard pill per condition an edge's guards name. All pills of a
 // control stay in sync because selection is keyed by control. Clicking any
@@ -118,13 +118,19 @@ export function attachGuardLabels({
   const graphEdgeById = new Map(
     graph.edges.filter((edge): edge is DefaultDiagramEdge => edge.type === "default").map((edge) => [edge.id, edge]),
   );
-  const pillsOf = (edgeId: string): { branch: GuardPill[]; conditional: GuardPill[] } => {
+  // Projects one pill per condition, keeping each guard clause together: an
+  // AND clause renders as one box, and OR clauses stay separate units.
+  const clausesOf = (edgeId: string): { branch: GuardPill[][]; conditional: GuardPill[][]; all: GuardPill[][] } => {
     const guards = graphEdgeById.get(edgeId)?.guards;
-    if (!guards) return { branch: [], conditional: [] };
-    const seen = new Set<string>();
-    const branch: GuardPill[] = [];
-    const conditional: GuardPill[] = [];
-    for (const path of guards) {
+    if (!guards) return { branch: [], conditional: [], all: [] };
+    const branch: GuardPill[][] = [];
+    const conditional: GuardPill[][] = [];
+    const all: GuardPill[][] = [];
+    for (const [pathIndex, path] of guards.entries()) {
+      const branchClause: GuardPill[] = [];
+      const conditionalClause: GuardPill[] = [];
+      const clause: GuardPill[] = [];
+      const seen = new Set<string>();
       for (const { controlId, value } of path as DiagramControlCondition[]) {
         const key = `${controlId}\0${value}`;
         if (seen.has(key)) continue;
@@ -136,7 +142,7 @@ export function attachGuardLabels({
         const pill =
           control.kind === "branch"
             ? {
-                id: key,
+                id: `${pathIndex}:${key}`,
                 kind: "branch" as const,
                 label: control.cases.find((branchCase) => branchCase.id === value)?.label ?? value,
                 pressed: selection[controlId] === value,
@@ -145,7 +151,7 @@ export function attachGuardLabels({
                 onSelect: () => onSelect(edgeId, controlId, value),
               }
             : {
-                id: key,
+                id: `${pathIndex}:${key}`,
                 kind: "conditional" as const,
                 label: control.label,
                 pressed: selection[controlId] === value,
@@ -153,10 +159,14 @@ export function attachGuardLabels({
                 description,
                 onSelect: () => onSelect(edgeId, controlId, value),
               };
-        (control.kind === "branch" ? branch : conditional).push(pill);
+        clause.push(pill);
+        (control.kind === "branch" ? branchClause : conditionalClause).push(pill);
       }
+      if (clause.length > 0) all.push(clause);
+      if (branchClause.length > 0) branch.push(branchClause);
+      if (conditionalClause.length > 0) conditional.push(conditionalClause);
     }
-    return { branch, conditional };
+    return { branch, conditional, all };
   };
   const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
   const anchorAlong = (
@@ -166,12 +176,12 @@ export function attachGuardLabels({
     from: "start" | "end",
   ) => (points.length < 2 ? (points.at(0) ?? fallback) : pointAlongPolyline(points, offset, from));
 
-  // First pass: project each edge's guards into anchored pill groups.
+  // First pass: project each edge's guards into anchored clause groups.
   const groupsByEdge = new Map<string, ProjectedGuardGroup[]>();
   for (const edge of edges) {
     if (edge.type !== "route" || !edge.data) continue;
-    const { branch, conditional } = pillsOf(edge.id);
-    if (branch.length === 0 && conditional.length === 0) continue;
+    const { branch, conditional, all } = clausesOf(edge.id);
+    if (all.length === 0) continue;
     const points = pointsByEdgeId.get(edge.id) ?? [];
     const arc = polylineArcLength(points);
     const fallback = edge.data.labelPosition;
@@ -181,15 +191,15 @@ export function attachGuardLabels({
       arc >= 2 * GUARD_LABEL_ENDPOINT_OFFSET + GUARD_LABEL_MIN_SEPARATION;
     const entries = separated
       ? [
-          { from: "start" as const, pills: branch, offset: GUARD_LABEL_ENDPOINT_OFFSET },
-          { from: "end" as const, pills: conditional, offset: GUARD_LABEL_ENDPOINT_OFFSET },
+          { from: "start" as const, clauses: branch, offset: GUARD_LABEL_ENDPOINT_OFFSET },
+          { from: "end" as const, clauses: conditional, offset: GUARD_LABEL_ENDPOINT_OFFSET },
         ]
       : [
           {
             // Never anchor past the midpoint, so pills on short edges stay on
             // the edge instead of clamping onto the node at the far end.
             from: (branch.length > 0 ? "start" : "end") as "start" | "end",
-            pills: [...branch, ...conditional],
+            clauses: all,
             offset: Math.min(GUARD_LABEL_ENDPOINT_OFFSET, arc / 2),
           },
         ];
@@ -198,11 +208,11 @@ export function attachGuardLabels({
       entries.map((entry) => ({
         edgeId: edge.id,
         from: entry.from,
-        pills: entry.pills,
+        clauses: entry.clauses,
         offset: entry.offset,
         points,
         fallback,
-        size: estimateGuardLabelSize(entry.pills),
+        size: estimateGuardLabelSize(entry.clauses),
       })),
     );
   }
@@ -221,7 +231,7 @@ export function attachGuardLabels({
     const groups = groupsByEdge.get(edge.id);
     if (!groups) return edge;
     const labelControls = groups.map((group) => ({
-      control: <GuardEdgeLabel pills={group.pills} />,
+      control: <GuardEdgeLabel clauses={group.clauses} />,
       position: anchorAlong(
         group.points,
         group.fallback,

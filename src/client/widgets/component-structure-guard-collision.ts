@@ -2,25 +2,36 @@ import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-plac
 
 type Point = Readonly<{ x: number; y: number }>;
 
-// Guard pills render at text-xs in a single row with a leading or trailing
-// state icon. Sizes are estimated from label lengths instead of measured so
-// placement stays a pure layout-time decision; the margin absorbs the error.
+// Guard pills render at text-xs in a single row with a leading state icon,
+// and one AND clause of several pills shares a tinted box. Sizes are
+// estimated from label lengths instead of measured so placement stays a pure
+// layout-time decision; the margin absorbs the estimation error.
 const PILL_CHAR_WIDTH = 6;
 // Horizontal padding and border, plus the state icon and its gap.
 const PILL_BOX_PADDING = 34;
 const PILL_HEIGHT = 26;
 const PILL_GAP = 4;
+// The clause box (px-1 py-0.5) and the gap between clauses (gap-1.5).
+const CLAUSE_BOX_PADDING = 8;
+const CLAUSE_BOX_VERTICAL = 4;
+const CLAUSE_GAP = 6;
 const COLLISION_MARGIN = 4;
 const PUSH_STEP = 48;
 const RESOLVE_ROUNDS = 4;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
-export function estimateGuardLabelSize(pills: readonly { label: string }[]): GuardLabelSize {
-  const width =
-    pills.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
-    PILL_GAP * Math.max(pills.length - 1, 0);
-  return { width, height: PILL_HEIGHT };
+export function estimateGuardLabelSize(clauses: readonly (readonly { label: string }[])[]): GuardLabelSize {
+  let width = 0;
+  let height = PILL_HEIGHT;
+  for (const [index, clause] of clauses.entries()) {
+    const pills =
+      clause.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
+      PILL_GAP * Math.max(clause.length - 1, 0);
+    width += (clause.length > 1 ? CLAUSE_BOX_PADDING : 0) + pills + (index > 0 ? CLAUSE_GAP : 0);
+    if (clause.length > 1) height = PILL_HEIGHT + CLAUSE_BOX_VERTICAL;
+  }
+  return { width, height };
 }
 
 /** One guard label group anchored `offset` arc length from its edge's `from` end. */

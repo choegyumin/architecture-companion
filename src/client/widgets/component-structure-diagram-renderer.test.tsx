@@ -841,7 +841,8 @@ describe("component structure paths", () => {
     await userEvent.click(screen.getByRole("button", { name: "supplied" }));
     await userEvent.click(screen.getByRole("button", { name: "supplier visible" }));
 
-    await userEvent.click(screen.getByRole("button", { name: "child" }));
+    // "child" projects once per OR clause; either pill requests the same path.
+    await userEvent.click(screen.getAllByRole("button", { name: "child" }).at(0)!);
 
     const direct = screen.getByRole("button", { name: "direct" });
     const supplier = screen.getByRole("button", { name: "supplier visible" });

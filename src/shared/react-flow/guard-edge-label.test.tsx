@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { GuardEdgeLabel, type GuardPill } from "@/shared/react-flow/guard-edge-label";
 
@@ -12,43 +12,38 @@ const pill = (overrides: Partial<GuardPill> & Pick<GuardPill, "kind" | "label">)
 });
 
 describe("guard edge label", () => {
-  it("marks a branch pill with a leading split arrow that dims until selected", () => {
-    const { container } = render(
+  it("wraps an AND clause of several pills in one shared box", () => {
+    render(
       <GuardEdgeLabel
-        pills={[pill({ kind: "branch", label: "On" }), pill({ kind: "branch", label: "Off", pressed: true })]}
-      />,
-    );
-
-    const buttons = screen.getAllByRole("button");
-    const [on, off] = buttons;
-    expect(on?.firstElementChild).toHaveClass("lucide-split", "opacity-25");
-    expect(off?.firstElementChild).toHaveClass("lucide-split");
-    expect(off?.firstElementChild).not.toHaveClass("opacity-25");
-    expect(container.querySelectorAll("[data-icon=inline-start]")).toHaveLength(2);
-    expect(container.querySelectorAll("[data-icon=inline-end]")).toHaveLength(0);
-  });
-
-  it("marks a conditional pill with a leading check that dims until its condition holds", () => {
-    const { container } = render(
-      <GuardEdgeLabel
-        pills={[
-          pill({ kind: "conditional", label: "flag" }),
-          pill({ kind: "conditional", label: "busy", pressed: true }),
+        clauses={[
+          [pill({ kind: "conditional", label: "flag" }), pill({ kind: "conditional", label: "busy", pressed: true })],
         ]}
       />,
     );
 
-    const buttons = screen.getAllByRole("button");
-    const [flag, busy] = buttons;
+    const box = screen.getAllByRole("button").at(0)!.parentElement!;
+    expect(box).toHaveClass("bg-muted/60");
+    const [flag, busy] = within(box).getAllByRole("button");
     expect(flag?.firstElementChild).toHaveClass("lucide-check", "opacity-25");
     expect(busy?.firstElementChild).toHaveClass("lucide-check");
-    expect(busy?.firstElementChild).not.toHaveClass("opacity-25");
-    expect(container.querySelectorAll("[data-icon=inline-start]")).toHaveLength(2);
-    expect(container.querySelectorAll("[data-icon=inline-end]")).toHaveLength(0);
+  });
+
+  it("renders lone clauses bare and keeps OR clauses side by side", () => {
+    const { container } = render(
+      <GuardEdgeLabel
+        clauses={[[pill({ kind: "branch", label: "On" })], [pill({ kind: "branch", label: "Off", pressed: true })]]}
+      />,
+    );
+
+    const boxes = [...container.querySelectorAll(".bg-muted\\/60")];
+    expect(boxes).toHaveLength(0);
+    const [on, off] = screen.getAllByRole("button");
+    expect(on?.firstElementChild).toHaveClass("lucide-split", "opacity-25");
+    expect(off?.firstElementChild).toHaveClass("lucide-split");
   });
 
   it("keeps the pill itself as the pressed button and hides the icons from assistive tech", () => {
-    render(<GuardEdgeLabel pills={[pill({ kind: "branch", label: "On", pressed: true })]} />);
+    render(<GuardEdgeLabel clauses={[[pill({ kind: "branch", label: "On", pressed: true })]]} />);
 
     const button = screen.getByRole("button", { name: "On", pressed: true });
     expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
