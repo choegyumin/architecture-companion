@@ -82,11 +82,15 @@ describe("route edge", () => {
     expect(onActivate).toHaveBeenCalledOnce();
   });
 
-  it("renders a label control at the label position with full opacity", () => {
+  it("renders a label control at its anchor with full opacity", () => {
     const control = <button type="button">Render path</button>;
     render(
       <RouteEdge
-        data={{ path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 }, labelControl: control }}
+        data={{
+          path: "M 0 0 L 100 100",
+          labelPosition: { x: 50, y: 50 },
+          labelControls: [{ control, position: { x: 20, y: 10 } }],
+        }}
         id="fork"
         source="source"
         sourcePosition={Position.Right}
@@ -102,7 +106,38 @@ describe("route edge", () => {
     );
 
     const host = screen.getByRole("button", { name: "Render path" }).parentElement!;
-    expect(host).toHaveStyle({ left: "50px", top: "50px", opacity: "1" });
+    expect(host).toHaveStyle({ left: "20px", top: "10px", opacity: "1" });
+  });
+
+  it("renders several label controls at their own anchors", () => {
+    render(
+      <RouteEdge
+        data={{
+          path: "M 0 0 L 100 100",
+          labelPosition: { x: 50, y: 50 },
+          labelControls: [
+            { control: <button type="button">Branch</button>, position: { x: 10, y: 0 } },
+            { control: <button type="button">Conditional</button>, position: { x: 90, y: 100 } },
+          ],
+        }}
+        id="guards"
+        source="source"
+        sourcePosition={Position.Right}
+        sourceX={0}
+        sourceY={0}
+        target="target"
+        targetPosition={Position.Left}
+        targetX={100}
+        targetY={100}
+        type="route"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Branch" }).parentElement).toHaveStyle({ left: "10px", top: "0px" });
+    expect(screen.getByRole("button", { name: "Conditional" }).parentElement).toHaveStyle({
+      left: "90px",
+      top: "100px",
+    });
   });
 
   it("does not render an empty path", () => {

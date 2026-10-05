@@ -5,6 +5,8 @@ import { BaseEdgeLabel, EDGE_LABEL_Z_INDEX } from "@/shared/react-flow/base-edge
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
+type RouteEdgeLabelAnchor = Readonly<{ control: ReactNode; position: XYPosition }>;
+
 type RouteEdgeData = Readonly<{
   path: string;
   labelPosition: XYPosition;
@@ -12,7 +14,7 @@ type RouteEdgeData = Readonly<{
   href?: string;
   onLinkActivate?: LinkActivationHandler;
   labelAction?: Readonly<{ ariaLabel: string; onActivate: () => void }>;
-  labelControl?: ReactNode;
+  labelControls?: readonly RouteEdgeLabelAnchor[];
 }>;
 
 export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
@@ -33,15 +35,24 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
       <span className="block text-[10px] font-semibold tracking-wide text-muted-foreground">{data.eyebrow}</span>
     ) : null;
 
+  const labelControls = data.labelControls ?? [];
+  const anchoredControls = labelControls.map(({ control, position }) => (
+    <div
+      className="nodrag nopan absolute flex flex-col gap-2"
+      key={`${position.x},${position.y}`}
+      style={{ ...labelStyle, left: position.x, opacity: 1, top: position.y }}
+    >
+      {control}
+    </div>
+  ));
+
   return (
     <>
       <BaseEdge id={id} markerEnd={markerEnd} markerStart={markerStart} path={data.path} style={style} />
-      {data.eyebrow != null || label != null || data.href || data.labelControl != null ? (
+      {data.eyebrow != null || label != null || data.href || anchoredControls.length > 0 ? (
         <EdgeLabelRenderer>
-          {data.labelControl != null ? (
-            <div className="nodrag nopan absolute flex flex-col gap-2" style={{ ...labelStyle, opacity: 1 }}>
-              {data.labelControl}
-            </div>
+          {anchoredControls.length > 0 ? (
+            anchoredControls
           ) : data.labelAction ? (
             <button
               aria-label={data.labelAction.ariaLabel}

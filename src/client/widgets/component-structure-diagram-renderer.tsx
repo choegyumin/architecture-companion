@@ -96,6 +96,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         edges: attachGuardLabels({
           graph: diagram.graph,
           controls: diagram.graph.controls!,
+          layout,
           edges: dimmed,
           selection,
           emphasis,

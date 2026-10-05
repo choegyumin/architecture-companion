@@ -6,7 +6,9 @@ import type {
   DiagramControlCondition,
   DiagramEdge,
 } from "@/features/diagram/diagram-graph";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { GuardEdgeLabel, type GuardPill } from "@/shared/react-flow/guard-edge-label";
+import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
 const PROP_KIND_PATTERN = /^(\S+)\s+\((.+)\)$/;
 // Merged cards carry the definition id while edges point at instances.
@@ -80,11 +82,18 @@ type ComponentGuardEmphasis = Readonly<{
 type ComponentGuardLabelsProps = Readonly<{
   graph: Readonly<{ nodes: readonly { id: string; title?: string }[]; edges: readonly DiagramEdge[] }>;
   controls: readonly DiagramControl[];
+  layout: DiagramLayout;
   edges: readonly DiagramReactFlowEdge[];
   selection: ComponentSelection;
   emphasis: ComponentGuardEmphasis;
   onSelect: (controlId: string, value: string) => void;
 }>;
+
+// Guard pills hug the edge end that decides them: branch cases leave with the
+// edge's start, conditional toggles arrive with its end. Edges too short to
+// separate both groups merge them in start-to-end order at the start anchor.
+const GUARD_LABEL_ENDPOINT_OFFSET = 64;
+const GUARD_LABEL_MIN_SEPARATION = 96;
 
 // Projects one guard pill per condition an edge's guards name. All pills of a
 // control stay in sync because selection is keyed by control: clicking any
@@ -92,6 +101,7 @@ type ComponentGuardLabelsProps = Readonly<{
 export function attachGuardLabels({
   graph,
   controls,
+  layout,
   edges,
   selection,
   emphasis,
@@ -101,11 +111,12 @@ export function attachGuardLabels({
   const graphEdgeById = new Map(
     graph.edges.filter((edge): edge is DefaultDiagramEdge => edge.type === "default").map((edge) => [edge.id, edge]),
   );
-  const pillsOf = (edgeId: string): GuardPill[] => {
+  const pillsOf = (edgeId: string): { branch: GuardPill[]; conditional: GuardPill[] } => {
     const guards = graphEdgeById.get(edgeId)?.guards;
-    if (!guards) return [];
+    if (!guards) return { branch: [], conditional: [] };
     const seen = new Set<string>();
-    const pills: GuardPill[] = [];
+    const branch: GuardPill[] = [];
+    const conditional: GuardPill[] = [];
     for (const path of guards) {
       for (const { controlId, value } of path as DiagramControlCondition[]) {
         const key = `${controlId}\0${value}`;
@@ -115,7 +126,7 @@ export function attachGuardLabels({
         if (!control) continue;
         const active = emphasis.controls.has(controlId);
         const description = active ? "Active path" : "Inactive path; selecting activates ancestors";
-        pills.push(
+        const pill =
           control.kind === "branch"
             ? {
                 id: key,
@@ -132,22 +143,55 @@ export function attachGuardLabels({
                 active,
                 description,
                 onSelect: () => onSelect(controlId, selection[controlId] === "on" ? "off" : "on"),
-              },
-        );
+              };
+        (control.kind === "branch" ? branch : conditional).push(pill);
       }
     }
-    return pills;
+    return { branch, conditional };
   };
+  const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
+  // Never anchor past the edge's midpoint, so pills on short edges stay on the
+  // edge instead of clamping onto the node at the far end.
+  const anchorAlong = (
+    points: readonly { x: number; y: number }[],
+    fallback: { x: number; y: number },
+    from: "start" | "end",
+  ) =>
+    points.length < 2
+      ? (points.at(0) ?? fallback)
+      : pointAlongPolyline(points, Math.min(GUARD_LABEL_ENDPOINT_OFFSET, polylineArcLength(points) / 2), from);
 
   return edges.map((edge) => {
     if (edge.type !== "route" || !edge.data) return edge;
-    const pills = pillsOf(edge.id);
-    if (pills.length === 0) return edge;
+    const { branch, conditional } = pillsOf(edge.id);
+    if (branch.length === 0 && conditional.length === 0) return edge;
+    const points = pointsByEdgeId.get(edge.id) ?? [];
+    const separated =
+      branch.length > 0 &&
+      conditional.length > 0 &&
+      polylineArcLength(points) >= 2 * GUARD_LABEL_ENDPOINT_OFFSET + GUARD_LABEL_MIN_SEPARATION;
+    const labelControls = separated
+      ? [
+          {
+            control: <GuardEdgeLabel pills={branch} />,
+            position: anchorAlong(points, edge.data.labelPosition, "start"),
+          },
+          {
+            control: <GuardEdgeLabel pills={conditional} />,
+            position: anchorAlong(points, edge.data.labelPosition, "end"),
+          },
+        ]
+      : [
+          {
+            control: <GuardEdgeLabel pills={[...branch, ...conditional]} />,
+            position: anchorAlong(points, edge.data.labelPosition, branch.length > 0 ? "start" : "end"),
+          },
+        ];
     return {
       ...edge,
       data: {
         ...edge.data,
-        labelControl: <GuardEdgeLabel pills={pills} />,
+        labelControls,
       },
     };
   });
