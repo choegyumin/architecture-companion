@@ -71,4 +71,43 @@ describe("selectEdgePath", () => {
 
     expect(selection).toEqual({ a: "on" });
   });
+
+  it("restores a partially held clause from a pressed pill", () => {
+    const selection = selectEdgePath(graph, { a: "on", b: "off", c: "off" }, "guarded", "a", "on");
+
+    expect(selection).toEqual({ a: "on", b: "on", c: "off" });
+  });
+
+  it("keeps conditions another satisfied clause still uses when turning a clause off", () => {
+    const selection = selectEdgePath(graph, { a: "on", b: "on", c: "on" }, "guarded", "b", "on");
+
+    expect(selection).toEqual({ a: "on", b: "off", c: "on" });
+  });
+
+  it("turns every condition off when no other clause shares them", () => {
+    const selection = selectEdgePath(graph, { a: "on", b: "on", c: "off" }, "guarded", "b", "on");
+
+    expect(selection).toEqual({ a: "off", b: "off", c: "off" });
+  });
+
+  it("forces a lone shared condition off when nothing can be spared", () => {
+    const sharedGraph: DiagramGraph = {
+      ...graph,
+      edges: [
+        ...graph.edges,
+        {
+          id: "spare",
+          type: "default",
+          source: "app",
+          target: "leaf",
+          activeWhen: [[{ controlId: "a", value: "on" }]],
+          guards: [[{ controlId: "a", value: "on" }]],
+        },
+      ],
+    };
+
+    const selection = selectEdgePath(sharedGraph, { a: "on", b: "on", c: "on" }, "spare", "a", "on");
+
+    expect(selection).toEqual({ a: "off", b: "on", c: "on" });
+  });
 });

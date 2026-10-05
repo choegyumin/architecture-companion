@@ -899,7 +899,8 @@ describe("component structure paths", () => {
     await userEvent.click(screen.getByRole("button", { name: "Plain" }));
     await userEvent.click(screen.getByRole("button", { name: "grandparent" }));
 
-    expect(screen.getByRole("button", { name: "parent" })).toHaveAttribute("aria-pressed", "true");
+    // Releasing the prerequisite clause turns its conditions off as one unit.
+    expect(screen.getByRole("button", { name: "parent" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Plain" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
     expect(screen.getByRole("button", { name: "Plain" })).toHaveAccessibleDescription(

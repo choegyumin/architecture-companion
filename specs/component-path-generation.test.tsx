@@ -132,7 +132,8 @@ it("honors control prerequisites when an authored edge contains only its local r
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^active /i);
     await user.click(screen.getByRole("button", { name: "parent" }));
 
-    expect(screen.getByRole("button", { name: "child" })).toHaveAttribute("aria-pressed", "true");
+    // Releasing the clause turns its merged prerequisite conditions off too.
+    expect(screen.getByRole("button", { name: "child" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("article", { name: "Leaf" })).toHaveAccessibleDescription(/^inactive /i);
   } finally {
     cleanup();

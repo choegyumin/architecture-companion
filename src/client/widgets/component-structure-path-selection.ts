@@ -1,4 +1,10 @@
-import type { DiagramControl, DiagramControlPaths, DiagramEdge, DiagramGraph } from "@/features/diagram/diagram-graph";
+import type {
+  DiagramControl,
+  DiagramControlCondition,
+  DiagramControlPaths,
+  DiagramEdge,
+  DiagramGraph,
+} from "@/features/diagram/diagram-graph";
 
 export type ComponentSelection = Readonly<Record<string, string>>;
 
@@ -320,14 +326,47 @@ export function selectComponentPath(
   return chosen ? { ...selected, ...Object.fromEntries(chosen.requirements) } : selected;
 }
 
-// Clicking a guard pill means "make this edge render", not "toggle one
-// condition": one click satisfies a whole AND clause of the edge's guards —
-// the clause naming the clicked condition, applied starting from it — so a
-// path hidden behind several conditions activates in a single interaction.
-// Clicking a conditional pill whose value already holds first tries to repair
-// its clause (a stale path behind a flipped sibling repairs in place); when
-// that would change nothing, or only succeed by moving branch selections, it
-// dismisses the condition instead of rerouting the graph.
+// Turning a satisfied clause off keeps the conditions that other active
+// clauses also name — their pills stay pressed — so a shared clause ends
+// partial rather than off. Only conditional conditions switch off, because a
+// branch control always holds one case; a clause with nothing left to spare
+// forces off entirely.
+function releaseGuardClause(
+  graph: DiagramGraph,
+  selection: ComponentSelection,
+  clause: DiagramControlPaths[number],
+  activeEdges: ReadonlySet<string>,
+  selfEdgeId: string,
+  selfIndex: number,
+): ComponentSelection {
+  const holds = (condition: DiagramControlCondition) => selection[condition.controlId] === condition.value;
+  const satisfied = graph.edges.flatMap((edge) => {
+    if (edge.type !== "default" || !edge.guards || !activeEdges.has(edge.id)) return [];
+    return edge.guards
+      .map((path, index) => ({ edgeId: edge.id, index, path }))
+      .filter((other) => (other.edgeId !== selfEdgeId || other.index !== selfIndex) && other.path.every(holds));
+  });
+  const shared = (condition: DiagramControlCondition) =>
+    satisfied.some((other) =>
+      other.path.some((item) => item.controlId === condition.controlId && item.value === condition.value),
+    );
+  const switchable = clause.filter(
+    (condition) => graph.controls!.find((control) => control.id === condition.controlId)?.kind === "conditional",
+  );
+  const exclusive = switchable.filter((condition) => !shared(condition));
+  return (exclusive.length > 0 ? exclusive : switchable).reduce(
+    (next, { controlId, value }) => ({ ...next, [controlId]: value === "on" ? "off" : "on" }),
+    selection,
+  );
+}
+
+// Clicking a guard pill drives its whole AND clause like a nested checkbox:
+// an unmet or partially met clause clicks fully on — the clause naming the
+// clicked condition, applied starting from it — while a clause already
+// holding on a rendering edge clicks off as one unit. Values can hold on a
+// path that lost reachability; clicking there still asks to render it, so a
+// conditional pill first repairs in place and only releases when nothing
+// repairs or a branch move would be forced.
 export function selectEdgePath(
   graph: DiagramGraph,
   selection: ComponentSelection,
@@ -339,9 +378,11 @@ export function selectEdgePath(
   const control = controls.find((item) => item.id === controlId)!;
   const edge = graph.edges.find((item) => item.type === "default" && item.id === edgeId);
   const guards = edge && edge.type === "default" ? edge.guards : undefined;
-  const clause =
-    guards?.find((path) => path.some((condition) => condition.controlId === controlId && condition.value === value)) ??
-    guards?.at(0);
+  const clauseIndex =
+    guards?.findIndex((path) =>
+      path.some((condition) => condition.controlId === controlId && condition.value === value),
+    ) ?? -1;
+  const clause = clauseIndex >= 0 ? guards!.at(clauseIndex) : guards?.at(0);
   // The clicked condition applies first: rerouting starts from what the user
   // asked for, and sibling conditions then land on an already-repaired path.
   const applyClause = (from: ComponentSelection): ComponentSelection => {
@@ -353,12 +394,17 @@ export function selectEdgePath(
       from,
     );
   };
-  if (control.kind === "conditional" && selection[controlId] === value) {
+  const holds = clause != null && clause.every((condition) => selection[condition.controlId] === condition.value);
+  const activeEdges = componentPathEmphasis(graph, selection).edges;
+  if (holds && activeEdges.has(edgeId)) {
+    return releaseGuardClause(graph, selection, clause!, activeEdges, edgeId, clauseIndex);
+  }
+  if (holds && control.kind === "conditional") {
     const repaired = applyClause(selection);
     const movedBranch = controls.some((item) => item.kind === "branch" && repaired[item.id] !== selection[item.id]);
     const changed = Object.keys(repaired).some((id) => repaired[id] !== selection[id]);
     if (changed && !movedBranch) return repaired;
-    return selectComponentPath(graph, selection, controlId, value === "on" ? "off" : "on");
+    return releaseGuardClause(graph, selection, clause!, activeEdges, edgeId, clauseIndex);
   }
   return applyClause(selection);
 }
