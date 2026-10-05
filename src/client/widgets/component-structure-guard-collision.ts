@@ -2,11 +2,12 @@ import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-plac
 
 type Point = Readonly<{ x: number; y: number }>;
 
-// Guard pills render at text-xs in a single row. Sizes are estimated from
-// label lengths instead of measured so placement stays a pure layout-time
-// decision; the margin absorbs the estimation error.
+// Guard pills render at text-xs in a single row with a leading or trailing
+// state icon. Sizes are estimated from label lengths instead of measured so
+// placement stays a pure layout-time decision; the margin absorbs the error.
 const PILL_CHAR_WIDTH = 6;
-const PILL_BOX_PADDING = 18;
+// Horizontal padding and border, plus the state icon and its gap.
+const PILL_BOX_PADDING = 34;
 const PILL_HEIGHT = 26;
 const PILL_GAP = 4;
 const COLLISION_MARGIN = 4;

@@ -19,9 +19,9 @@ const horizontal = (from: number, to: number, y = 0) => [
 
 describe("estimateGuardLabelSize", () => {
   it("sums per-pill widths and gaps into one row", () => {
-    expect(estimateGuardLabelSize([{ label: "draft" }])).toEqual({ width: 18 + 6 * 5, height: 26 });
+    expect(estimateGuardLabelSize([{ label: "draft" }])).toEqual({ width: 34 + 6 * 5, height: 26 });
     expect(estimateGuardLabelSize([{ label: "draft" }, { label: "On" }])).toEqual({
-      width: 18 + 6 * 5 + 4 + 18 + 6 * 2,
+      width: 34 + 6 * 5 + 4 + 34 + 6 * 2,
       height: 26,
     });
   });

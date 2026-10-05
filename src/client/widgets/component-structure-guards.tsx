@@ -137,6 +137,7 @@ export function attachGuardLabels({
           control.kind === "branch"
             ? {
                 id: key,
+                kind: "branch" as const,
                 label: control.cases.find((branchCase) => branchCase.id === value)?.label ?? value,
                 pressed: selection[controlId] === value,
                 active,
@@ -145,6 +146,7 @@ export function attachGuardLabels({
               }
             : {
                 id: key,
+                kind: "conditional" as const,
                 label: control.label,
                 pressed: selection[controlId] === value,
                 active,
