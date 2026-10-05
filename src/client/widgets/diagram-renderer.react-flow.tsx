@@ -39,8 +39,6 @@ const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
 export const DECISION_NODE_SIZE = { height: 48, width: 48 } as const;
-// Diamonds keep a fixed footprint; taller boxes only spread the outgoing edges.
-const decisionNodeHeight = (ports: number): number => Math.max(DECISION_NODE_SIZE.height, 24 * ports + 24);
 
 function toDecisionNodeData(node: DecisionDiagramNode, diagram: Artifact): DecisionReactFlowNode["data"] {
   const control = diagram.graph.controls?.find(({ id }) => id === node.id);
@@ -168,7 +166,7 @@ export function buildDiagramMeasurementNodes(
           opacity: 0,
           pointerEvents: "none",
           width: DECISION_NODE_SIZE.width,
-          height: decisionNodeHeight(data.ports.length),
+          height: DECISION_NODE_SIZE.height,
         },
       };
     }

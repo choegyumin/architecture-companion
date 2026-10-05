@@ -300,7 +300,12 @@ describe("ELK layered diagram layout", () => {
         },
       ],
     } satisfies DiagramGraph;
-    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 288, height: 144 }]));
+    const nodeSizes = Object.fromEntries(
+      diagram.nodes.map(({ id, type }) => [
+        id,
+        type === "decision" ? { width: 48, height: 48 } : { width: 288, height: 144 },
+      ]),
+    );
 
     const result = await layoutElkLayeredDiagram(diagram, nodeSizes);
     const decision = result.nodes.find(({ id }) => id === "mode");
@@ -308,10 +313,12 @@ describe("ELK layered diagram layout", () => {
     const secondStart = result.edges.find(({ id }) => id === "arm-second")?.points.at(0);
     if (!decision || !firstStart || !secondStart) throw new Error("Layout lost the decision arms.");
 
-    // Rightward flow: the arms leave the east edge in case order, top to bottom.
+    // Rightward flow: the arms leave the diamond's right vertex edges in case
+    // order, top to bottom, anchored on the drawn outline.
     expect(firstStart.y).toBeLessThan(secondStart.y);
     for (const start of [firstStart, secondStart]) {
-      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width - 3);
+      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width / 2 - 4);
+      expect(start.x).toBeLessThanOrEqual(decision.position.x + decision.size.width + 4);
       expect(start.y).toBeGreaterThan(decision.position.y);
       expect(start.y).toBeLessThan(decision.position.y + decision.size.height);
     }
@@ -341,12 +348,19 @@ describe("ELK layered diagram layout", () => {
       edges: [
         { id: "entry-first", type: "default", source: "app", target: "first-mode" },
         { id: "entry-second", type: "default", source: "app", target: "second-mode" },
-        { id: "arm-first", type: "default", source: "first-mode", target: "first-empty", sourcePort: "true" },
-        { id: "arm-second", type: "default", source: "second-mode", target: "second-empty", sourcePort: "true" },
+        { id: "arm-first-true", type: "default", source: "first-mode", target: "first-empty", sourcePort: "true" },
+        { id: "arm-first-false", type: "default", source: "first-mode", target: "first-empty", sourcePort: "false" },
+        { id: "arm-second-true", type: "default", source: "second-mode", target: "second-empty", sourcePort: "true" },
+        { id: "arm-second-false", type: "default", source: "second-mode", target: "second-empty", sourcePort: "false" },
       ],
       controls: [branch("first-mode", "app"), branch("second-mode", "app")],
     } satisfies DiagramGraph;
-    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 288, height: 144 }]));
+    const nodeSizes = Object.fromEntries(
+      diagram.nodes.map(({ id, type }) => [
+        id,
+        type === "decision" ? { width: 48, height: 48 } : { width: 288, height: 144 },
+      ]),
+    );
 
     // The artifact pipeline: downward flow with obstacle nudging enabled.
     const result = await layoutElkLayeredDiagram(diagram, nodeSizes, {
@@ -354,18 +368,27 @@ describe("ELK layered diagram layout", () => {
       elk: { direction: "DOWN" },
     });
 
-    for (const [decisionId, armId] of [
-      ["first-mode", "arm-first"],
-      ["second-mode", "arm-second"],
-    ] as const) {
+    for (const decisionId of ["first-mode", "second-mode"]) {
       const decision = result.nodes.find(({ id }) => id === decisionId);
-      const start = result.edges.find(({ id }) => id === armId)?.points.at(0);
-      if (!decision || !start) throw new Error(`Layout lost ${armId}.`);
+      if (!decision) throw new Error(`Layout lost ${decisionId}.`);
+      const starts = diagram.edges
+        .filter((edge) => edge.type === "default" && edge.source === decisionId && edge.sourcePort)
+        .map((edge) => {
+          const start = result.edges.find(({ id }) => id === edge.id)?.points.at(0);
+          if (!start) throw new Error(`Layout lost ${edge.id}.`);
+          return { port: edge.sourcePort, start };
+        })
+        .toSorted((left, right) => left.start.x - right.start.x);
 
-      // Downward flow: the arm leaves its own decision node's south edge.
-      expect(start.y).toBeGreaterThanOrEqual(decision.position.y + decision.size.height - 3);
-      expect(start.x).toBeGreaterThan(decision.position.x);
-      expect(start.x).toBeLessThan(decision.position.x + decision.size.width);
+      // Downward flow: every arm leaves its own diamond's lower vertex edges,
+      // in case order left to right.
+      for (const { start } of starts) {
+        expect(start.y).toBeGreaterThanOrEqual(decision.position.y + decision.size.height / 2 - 4);
+        expect(start.y).toBeLessThanOrEqual(decision.position.y + decision.size.height + 4);
+        expect(start.x).toBeGreaterThan(decision.position.x);
+        expect(start.x).toBeLessThan(decision.position.x + decision.size.width);
+      }
+      expect(starts.map(({ port }) => port)).toEqual(["true", "false"]);
     }
   });
 

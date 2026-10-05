@@ -142,11 +142,40 @@ function elkPortId(nodeId: string, caseId: string): string {
   return `${nodeId}\u0000${caseId}`;
 }
 
-// Decision nodes route their outgoing arms through ordered ports on the flow's
-// downstream edge, so the case order reads along that edge and each drawn edge
-// leaves exactly where its branch case sits. FIXED_ORDER left the side to ELK,
-// which scattered arms across north and east edges; FIXED_POS pins every case
-// to its slot on the downstream edge instead.
+// The diamond outline the decision node renders, as [north, east, south, west]
+// vertices, matching the polygon in decision-node.tsx.
+function diamondVertices(rect: Rect): [DiagramLayoutPoint, DiagramLayoutPoint, DiagramLayoutPoint, DiagramLayoutPoint] {
+  const { min, max } = rect;
+  return [
+    { x: (min.x + max.x) / 2, y: min.y + 2 },
+    { x: max.x - 2, y: (min.y + max.y) / 2 },
+    { x: (min.x + max.x) / 2, y: max.y - 2 },
+    { x: min.x + 2, y: (min.y + max.y) / 2 },
+  ];
+}
+
+// Walks `fraction` (0..1) of a point chain's total arc length.
+function pointAlongChain(points: readonly DiagramLayoutPoint[], fraction: number): DiagramLayoutPoint {
+  const segments = points.slice(0, -1).map((from, index) => ({ from, to: points.at(index + 1)! }));
+  const lengths = segments.map(({ from, to }) => Math.hypot(to.x - from.x, to.y - from.y));
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  let walked = fraction * total;
+  for (const [index, { from, to }] of segments.entries()) {
+    const length = lengths.at(index)!;
+    if (walked > length) {
+      walked -= length;
+      continue;
+    }
+    const t = length === 0 ? 0 : walked / length;
+    return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+  }
+  return points.at(-1)!;
+}
+
+// Decision nodes route their outgoing arms through ordered ports pinned to the
+// diamond's outline, so the case order reads along the downstream vertex and
+// each arm leaves exactly where its branch case sits — anchored to the drawn
+// shape, not the node's bounding box.
 function toElkNode(
   node: DiagramNode,
   diagram: DiagramGraph,
@@ -156,20 +185,24 @@ function toElkNode(
   const size = getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`);
   const control = diagram.controls?.find(({ id }) => id === node.id);
   if (node.type !== "decision" || control?.kind !== "branch") return { id: node.id, ...size };
-  const vertical = direction === "DOWN" || direction === "UP";
-  const downstream = direction === "UP" || direction === "LEFT";
+  const [north, east, south, west] = diamondVertices({
+    id: node.id,
+    min: { x: 0, y: 0 },
+    max: { x: size.width, y: size.height },
+  });
+  // The two outline segments meeting at the downstream vertex, in reading
+  // order: left to right for vertical flows, top to bottom for horizontal.
+  const chain =
+    direction === "DOWN"
+      ? [west, south, east]
+      : direction === "UP"
+        ? [west, north, east]
+        : direction === "RIGHT"
+          ? [north, east, south]
+          : [north, west, south];
   const ports = control.cases.map((branchCase, index) => {
-    // The slot is the port center, spread evenly across the downstream edge;
-    // the 4px port is placed so its center lands 2px inside that edge.
-    const center = ((index + 1) / (control.cases.length + 1)) * (vertical ? size.width : size.height);
-    return {
-      id: elkPortId(node.id, branchCase.id),
-      width: 4,
-      height: 4,
-      ...(vertical
-        ? { x: center - 2, y: downstream ? 0 : size.height - 4 }
-        : { x: downstream ? 0 : size.width - 4, y: center - 2 }),
-    };
+    const anchor = pointAlongChain(chain, (index + 1) / (control.cases.length + 1));
+    return { id: elkPortId(node.id, branchCase.id), width: 4, height: 4, x: anchor.x - 2, y: anchor.y - 2 };
   });
   return {
     id: node.id,
@@ -450,12 +483,56 @@ function portAnchorOf(
   };
 }
 
+function segmentCross(
+  a1: DiagramLayoutPoint,
+  a2: DiagramLayoutPoint,
+  b1: DiagramLayoutPoint,
+  b2: DiagramLayoutPoint,
+): DiagramLayoutPoint | undefined {
+  const d1 = { x: a2.x - a1.x, y: a2.y - a1.y };
+  const d2 = { x: b2.x - b1.x, y: b2.y - b1.y };
+  const denominator = d1.x * d2.y - d1.y * d2.x;
+  if (denominator === 0) return undefined;
+  const t = ((b1.x - a1.x) * d2.y - (b1.y - a1.y) * d2.x) / denominator;
+  const u = ((b1.x - a1.x) * d1.y - (b1.y - a1.y) * d1.x) / denominator;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return undefined;
+  return { x: a1.x + d1.x * t, y: a1.y + d1.y * t };
+}
+
+// Where the straight sightline enters its target: diamonds clip at their drawn
+// outline, cards at the bounding-box border.
+function targetEntryOf(
+  start: DiagramLayoutPoint,
+  target: Rect,
+  targetCenter: DiagramLayoutPoint,
+  isDecision: boolean,
+): DiagramLayoutPoint {
+  const clipped = clipSegment(start, targetCenter, target);
+  const boxEntry = lerp(start, targetCenter, clipped ? clipped.at(0)! : 1);
+  if (!isDecision) return boxEntry;
+  const outline = diamondVertices(target);
+  const outlineEdges = outline.map((from, index) => ({ from, to: outline.at((index + 1) % outline.length)! }));
+  return (
+    outlineEdges
+      .map(({ from, to }) => segmentCross(start, targetCenter, from, to))
+      .filter((point): point is DiagramLayoutPoint => point != null)
+      .sort(
+        (left, right) =>
+          (left.x - targetCenter.x) ** 2 +
+          (left.y - targetCenter.y) ** 2 -
+          ((right.x - targetCenter.x) ** 2 + (right.y - targetCenter.y) ** 2),
+      )
+      .at(0) ?? boxEntry
+  );
+}
+
 function toStraightEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
   rects: ReadonlyMap<string, Rect>,
 ): DiagramLayoutEdge[] {
   const originalRects = toNodeRects(layout);
+  const decisionIds = new Set(graph.nodes.filter((node) => node.type === "decision").map((node) => node.id));
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
     const edge = graph.edges.find(({ id }) => id === placement.id);
     if (!edge || edge.type === "message") return placement;
@@ -468,15 +545,19 @@ function toStraightEdges(
     const portAnchor = portAnchorOf(edge, placement, rects, originalRects);
     const targetCenter = centerOf(target);
     if (portAnchor) {
-      const [targetEntry] = clipSegment(portAnchor, targetCenter, target) ?? [0];
-      return { id: placement.id, points: [portAnchor, lerp(portAnchor, targetCenter, targetEntry ?? 0)] };
+      return {
+        id: placement.id,
+        points: [portAnchor, targetEntryOf(portAnchor, target, targetCenter, decisionIds.has(edge.target))],
+      };
     }
     const sourceCenter = centerOf(source);
     const [, sourceExit] = clipSegment(sourceCenter, targetCenter, source) ?? [0, 1];
-    const [targetEntry] = clipSegment(sourceCenter, targetCenter, target) ?? [1, 0];
     return {
       id: placement.id,
-      points: [lerp(sourceCenter, targetCenter, sourceExit ?? 1), lerp(sourceCenter, targetCenter, targetEntry ?? 0)],
+      points: [
+        lerp(sourceCenter, targetCenter, sourceExit ?? 1),
+        targetEntryOf(sourceCenter, target, targetCenter, decisionIds.has(edge.target)),
+      ],
     };
   });
 }
