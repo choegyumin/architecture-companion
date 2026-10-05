@@ -272,7 +272,7 @@ describe("ELK layered diagram layout", () => {
     );
   });
 
-  it("orders decision ports by case and starts each arm at its port", async () => {
+  it("anchors decision arms and entries at the diamond's vertices", async () => {
     const diagram = {
       ...diagramBase,
       nodes: [
@@ -311,17 +311,17 @@ describe("ELK layered diagram layout", () => {
     const decision = result.nodes.find(({ id }) => id === "mode");
     const firstStart = result.edges.find(({ id }) => id === "arm-first")?.points.at(0);
     const secondStart = result.edges.find(({ id }) => id === "arm-second")?.points.at(0);
-    if (!decision || !firstStart || !secondStart) throw new Error("Layout lost the decision arms.");
+    const entryEnd = result.edges.find(({ id }) => id === "entry")?.points.at(-1);
+    if (!decision || !firstStart || !secondStart || !entryEnd) throw new Error("Layout lost the decision edges.");
 
-    // Rightward flow: the arms leave the diamond's right vertex edges in case
-    // order, top to bottom, anchored on the drawn outline.
-    expect(firstStart.y).toBeLessThan(secondStart.y);
+    // Rightward flow: every arm leaves the east vertex, and the entry arrives
+    // at the west vertex — UML-style vertex anchoring, not face clipping.
     for (const start of [firstStart, secondStart]) {
-      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width / 2 - 4);
-      expect(start.x).toBeLessThanOrEqual(decision.position.x + decision.size.width + 4);
-      expect(start.y).toBeGreaterThan(decision.position.y);
-      expect(start.y).toBeLessThan(decision.position.y + decision.size.height);
+      expect(Math.abs(start.x - (decision.position.x + decision.size.width - 2))).toBeLessThanOrEqual(4);
+      expect(Math.abs(start.y - (decision.position.y + decision.size.height / 2))).toBeLessThanOrEqual(4);
     }
+    expect(Math.abs(entryEnd.x - (decision.position.x + 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(entryEnd.y - (decision.position.y + decision.size.height / 2))).toBeLessThanOrEqual(4);
   });
 
   it("binds every decision arm to its own node's downstream port even when case ids collide", async () => {
@@ -376,19 +376,15 @@ describe("ELK layered diagram layout", () => {
         .map((edge) => {
           const start = result.edges.find(({ id }) => id === edge.id)?.points.at(0);
           if (!start) throw new Error(`Layout lost ${edge.id}.`);
-          return { port: edge.sourcePort, start };
-        })
-        .toSorted((left, right) => left.start.x - right.start.x);
+          return start;
+        });
 
-      // Downward flow: every arm leaves its own diamond's lower vertex edges,
-      // in case order left to right.
-      for (const { start } of starts) {
-        expect(start.y).toBeGreaterThanOrEqual(decision.position.y + decision.size.height / 2 - 4);
-        expect(start.y).toBeLessThanOrEqual(decision.position.y + decision.size.height + 4);
-        expect(start.x).toBeGreaterThan(decision.position.x);
-        expect(start.x).toBeLessThan(decision.position.x + decision.size.width);
+      // Downward flow: every arm leaves its own diamond's south vertex, all
+      // cases fanning out from the one tip.
+      for (const start of starts) {
+        expect(Math.abs(start.x - (decision.position.x + decision.size.width / 2))).toBeLessThanOrEqual(4);
+        expect(Math.abs(start.y - (decision.position.y + decision.size.height - 2))).toBeLessThanOrEqual(4);
       }
-      expect(starts.map(({ port }) => port)).toEqual(["true", "false"]);
     }
   });
 

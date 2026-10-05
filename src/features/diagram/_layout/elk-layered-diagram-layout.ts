@@ -154,28 +154,11 @@ function diamondVertices(rect: Rect): [DiagramLayoutPoint, DiagramLayoutPoint, D
   ];
 }
 
-// Walks `fraction` (0..1) of a point chain's total arc length.
-function pointAlongChain(points: readonly DiagramLayoutPoint[], fraction: number): DiagramLayoutPoint {
-  const segments = points.slice(0, -1).map((from, index) => ({ from, to: points.at(index + 1)! }));
-  const lengths = segments.map(({ from, to }) => Math.hypot(to.x - from.x, to.y - from.y));
-  const total = lengths.reduce((sum, length) => sum + length, 0);
-  let walked = fraction * total;
-  for (const [index, { from, to }] of segments.entries()) {
-    const length = lengths.at(index)!;
-    if (walked > length) {
-      walked -= length;
-      continue;
-    }
-    const t = length === 0 ? 0 : walked / length;
-    return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
-  }
-  return points.at(-1)!;
-}
+// Decision nodes anchor every edge at a diamond vertex, UML-style: all arms
+// leave the downstream tip and fan out — each case is identified by its guard
+// pill on the edge — while entries arrive at the upstream tip.
+const DECISION_ENTRY_PORT = "\u0000entry";
 
-// Decision nodes route their outgoing arms through ordered ports pinned to the
-// diamond's outline, so the case order reads along the downstream vertex and
-// each arm leaves exactly where its branch case sits — anchored to the drawn
-// shape, not the node's bounding box.
 function toElkNode(
   node: DiagramNode,
   diagram: DiagramGraph,
@@ -190,19 +173,21 @@ function toElkNode(
     min: { x: 0, y: 0 },
     max: { x: size.width, y: size.height },
   });
-  // The two outline segments meeting at the downstream vertex, in reading
-  // order: left to right for vertical flows, top to bottom for horizontal.
-  const chain =
-    direction === "DOWN"
-      ? [west, south, east]
-      : direction === "UP"
-        ? [west, north, east]
-        : direction === "RIGHT"
-          ? [north, east, south]
-          : [north, west, south];
-  const ports = control.cases.map((branchCase, index) => {
-    const anchor = pointAlongChain(chain, (index + 1) / (control.cases.length + 1));
-    return { id: elkPortId(node.id, branchCase.id), width: 4, height: 4, x: anchor.x - 2, y: anchor.y - 2 };
+  const tip = direction === "DOWN" ? south : direction === "UP" ? north : direction === "RIGHT" ? east : west;
+  const entryTip = direction === "DOWN" ? north : direction === "UP" ? south : direction === "RIGHT" ? west : east;
+  const ports = control.cases.map((branchCase) => ({
+    id: elkPortId(node.id, branchCase.id),
+    width: 4,
+    height: 4,
+    x: tip.x - 2,
+    y: tip.y - 2,
+  }));
+  ports.push({
+    id: elkPortId(node.id, DECISION_ENTRY_PORT),
+    width: 4,
+    height: 4,
+    x: entryTip.x - 2,
+    y: entryTip.y - 2,
   });
   return {
     id: node.id,
@@ -246,6 +231,7 @@ function toElkInput(
   direction: ElkLayeredDiagramLayoutDirection,
   layoutOptions: Record<string, string>,
 ): ElkNode {
+  const decisionIds = new Set(diagram.nodes.filter((node) => node.type === "decision").map((node) => node.id));
   return {
     id: ROOT_ID,
     layoutOptions,
@@ -257,9 +243,14 @@ function toElkInput(
     ],
     edges: diagram.edges.map((edge) => ({
       id: edge.id,
-      // A port-bound arm leaves from its decision node's port, not its center.
+      // A port-bound arm leaves from its decision node's port, not its center;
+      // a decision entry arrives at the diamond's upstream vertex port.
       sources: [edge.type === "default" && edge.sourcePort ? elkPortId(edge.source, edge.sourcePort) : edge.source],
-      targets: [edge.target],
+      targets: [
+        edge.type === "default" && decisionIds.has(edge.target)
+          ? elkPortId(edge.target, DECISION_ENTRY_PORT)
+          : edge.target,
+      ],
     })),
   };
 }
@@ -483,56 +474,38 @@ function portAnchorOf(
   };
 }
 
-function segmentCross(
-  a1: DiagramLayoutPoint,
-  a2: DiagramLayoutPoint,
-  b1: DiagramLayoutPoint,
-  b2: DiagramLayoutPoint,
-): DiagramLayoutPoint | undefined {
-  const d1 = { x: a2.x - a1.x, y: a2.y - a1.y };
-  const d2 = { x: b2.x - b1.x, y: b2.y - b1.y };
-  const denominator = d1.x * d2.y - d1.y * d2.x;
-  if (denominator === 0) return undefined;
-  const t = ((b1.x - a1.x) * d2.y - (b1.y - a1.y) * d2.x) / denominator;
-  const u = ((b1.x - a1.x) * d1.y - (b1.y - a1.y) * d1.x) / denominator;
-  if (t < 0 || t > 1 || u < 0 || u > 1) return undefined;
-  return { x: a1.x + d1.x * t, y: a1.y + d1.y * t };
-}
-
-// Where the straight sightline enters its target: diamonds clip at their drawn
-// outline, cards at the bounding-box border.
+// Where the straight sightline enters its target: cards clip at the
+// bounding-box border, while diamonds take every entry at their upstream
+// vertex — the mirror of where the arms leave.
 function targetEntryOf(
   start: DiagramLayoutPoint,
   target: Rect,
   targetCenter: DiagramLayoutPoint,
-  isDecision: boolean,
+  vertex: DiagramLayoutPoint | undefined,
 ): DiagramLayoutPoint {
+  if (vertex) return vertex;
   const clipped = clipSegment(start, targetCenter, target);
-  const boxEntry = lerp(start, targetCenter, clipped ? clipped.at(0)! : 1);
-  if (!isDecision) return boxEntry;
-  const outline = diamondVertices(target);
-  const outlineEdges = outline.map((from, index) => ({ from, to: outline.at((index + 1) % outline.length)! }));
-  return (
-    outlineEdges
-      .map(({ from, to }) => segmentCross(start, targetCenter, from, to))
-      .filter((point): point is DiagramLayoutPoint => point != null)
-      .sort(
-        (left, right) =>
-          (left.x - targetCenter.x) ** 2 +
-          (left.y - targetCenter.y) ** 2 -
-          ((right.x - targetCenter.x) ** 2 + (right.y - targetCenter.y) ** 2),
-      )
-      .at(0) ?? boxEntry
-  );
+  return lerp(start, targetCenter, clipped ? clipped.at(0)! : 1);
+}
+
+// The diamond vertex a `direction` flow enters through: the upstream tip.
+function upstreamVertex(rect: Rect, direction: ElkLayeredDiagramLayoutDirection): DiagramLayoutPoint {
+  const [north, east, south, west] = diamondVertices(rect);
+  return direction === "DOWN" ? north : direction === "UP" ? south : direction === "RIGHT" ? west : east;
 }
 
 function toStraightEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
   rects: ReadonlyMap<string, Rect>,
+  direction: ElkLayeredDiagramLayoutDirection,
 ): DiagramLayoutEdge[] {
   const originalRects = toNodeRects(layout);
-  const decisionIds = new Set(graph.nodes.filter((node) => node.type === "decision").map((node) => node.id));
+  const decisionVertices = new Map(
+    graph.nodes
+      .filter((node) => node.type === "decision")
+      .map((node) => [node.id, upstreamVertex(rects.get(node.id)!, direction)] as const),
+  );
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
     const edge = graph.edges.find(({ id }) => id === placement.id);
     if (!edge || edge.type === "message") return placement;
@@ -547,7 +520,7 @@ function toStraightEdges(
     if (portAnchor) {
       return {
         id: placement.id,
-        points: [portAnchor, targetEntryOf(portAnchor, target, targetCenter, decisionIds.has(edge.target))],
+        points: [portAnchor, targetEntryOf(portAnchor, target, targetCenter, decisionVertices.get(edge.target))],
       };
     }
     const sourceCenter = centerOf(source);
@@ -556,7 +529,7 @@ function toStraightEdges(
       id: placement.id,
       points: [
         lerp(sourceCenter, targetCenter, sourceExit ?? 1),
-        targetEntryOf(sourceCenter, target, targetCenter, decisionIds.has(edge.target)),
+        targetEntryOf(sourceCenter, target, targetCenter, decisionVertices.get(edge.target)),
       ],
     };
   });
@@ -637,7 +610,7 @@ export function straightenLayeredEdges(
     };
   });
 
-  return { ...layout, nodes, edges: toStraightEdges(graph, layout, rects) };
+  return { ...layout, nodes, edges: toStraightEdges(graph, layout, rects, direction) };
 }
 
 function toBezierRoutedLayout(layout: DiagramLayout): DiagramLayout {
@@ -679,7 +652,10 @@ export async function layoutElkLayeredDiagram(
   if (options?.bezierEdges === true) {
     // Border-to-border segments without obstacle nudging; the renderer sways
     // each two-point edge into a natural bezier and smooths any leftover route.
-    return toBezierRoutedLayout({ ...layout, edges: toStraightEdges(diagram, layout, toNodeRects(layout)) });
+    return toBezierRoutedLayout({
+      ...layout,
+      edges: toStraightEdges(diagram, layout, toNodeRects(layout), resolved.direction),
+    });
   }
   return layout;
 }
