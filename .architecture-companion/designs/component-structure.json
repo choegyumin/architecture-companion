@@ -1,7 +1,7 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-04T19:36:32.496Z",
+  "updatedAt": "2026-10-05T06:11:56.583Z",
   "vcs": {
     "revision": "276681a",
     "divergesFromRevision": false
@@ -41,9 +41,19 @@
         "title": "state.status === \"loading\""
       },
       {
+        "type": "default",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:true:non-component",
+        "title": "Non-component"
+      },
+      {
         "type": "decision",
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
         "title": "state.status === \"error\""
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1:true:non-component",
+        "title": "Non-component"
       },
       {
         "type": "decision",
@@ -54,6 +64,11 @@
         "type": "decision",
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
         "title": "reviewErrorMessage"
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3:true:non-component",
+        "title": "Non-component"
       },
       {
         "type": "default",
@@ -291,6 +306,11 @@
         "type": "decision",
         "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
         "title": "props.diagram.layout.id"
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0:case:3:non-component",
+        "title": "Non-component"
       },
       {
         "type": "decision",
@@ -584,9 +604,19 @@
         "title": "data.labelControl != null"
       },
       {
+        "type": "default",
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2:true:non-component",
+        "title": "Non-component"
+      },
+      {
         "type": "decision",
         "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
         "title": "data.labelAction"
+      },
+      {
+        "type": "default",
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3:true:non-component",
+        "title": "Non-component"
       },
       {
         "type": "default",
@@ -1235,11 +1265,6 @@
           "definitionId": "external:@xyflow/react#ReactFlowProvider",
           "origins": []
         }
-      },
-      {
-        "type": "default",
-        "id": "non-component",
-        "title": "Non-component"
       }
     ],
     "edges": [
@@ -1410,29 +1435,6 @@
       },
       {
         "type": "default",
-        "id": "edge:21c26ef3327de924",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-        "target": "non-component",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "true"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:23496e67f0e043ad",
         "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
         "target": "component:src/shared/react-ui/empty.tsx#EmptyMedia",
@@ -1464,79 +1466,11 @@
       },
       {
         "type": "default",
-        "id": "edge:302db1de876a740c",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "target": "non-component",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "true"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:3097bfc18895ba09",
         "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
         "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:3199345ae4e60495",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "target": "non-component",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "false"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "false"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "true"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -1612,6 +1546,29 @@
             {
               "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
               "value": "case:2"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:4331f2a3013b66bf",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0:case:3:non-component",
+        "sourcePort": "case:3",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:3"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:3"
             }
           ]
         ]
@@ -1791,6 +1748,51 @@
       },
       {
         "type": "default",
+        "id": "edge:62525590084de0b9",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3:true:non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:62cb3f1e802e37bd",
         "source": "external:@xyflow/react#Panel@94500793580ab6b4",
         "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
@@ -1939,29 +1941,6 @@
       },
       {
         "type": "default",
-        "id": "edge:769dce0f35dc2c8e",
-        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-        "target": "non-component",
-        "sourcePort": "case:3",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-              "value": "case:3"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-              "value": "case:3"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:78a8fc1397495a58",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
@@ -2007,6 +1986,33 @@
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:8184fef2acd78089",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1:true:non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
             }
           ]
         ]
@@ -2106,33 +2112,6 @@
             {
               "controlId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode:control:0",
               "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:97008f720bcb7fce",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-        "target": "non-component",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "false"
-            },
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "true"
             }
           ]
         ]
@@ -2240,6 +2219,66 @@
       },
       {
         "type": "default",
+        "id": "edge:b302d22bb9f426f2",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3:true:non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:b3763a8912fc7f47",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2:true:non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:b7928ea654727eb6",
         "source": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
         "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
@@ -2324,6 +2363,29 @@
         "target": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c2bec263bbe872c4",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:true:non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "true"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2532,43 +2594,6 @@
             {
               "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
               "value": "case:1"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:f3061ce99cde73b9",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-        "target": "non-component",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "true"
             }
           ]
         ]

@@ -145,10 +145,10 @@ The projection of a branch control as a decision diamond. Its id reuses the cont
 In a component structure diagram, the condition under which an edge's rendering path applies, rendered as a label on the edge. Not the sequence-diagram guard, which describes a fragment's branch.
 
 **Dead Arm**:
-A branch case no rendering path requires. Its arm routes to the shared Non-component node instead of disappearing, so rendering nothing stays a selectable rendering path.
+A branch case no rendering path requires. Its arm routes to its own Non-component node instead of disappearing, so rendering nothing stays a selectable rendering path.
 
 **Non-component**:
-The shared node a dead arm reaches. It carries no component information; it only marks that the branch case renders no component.
+The node a dead arm reaches. Nodes are per case and never merged: each is an individual piece of markup at its own branch site, not a reused definition the way identical component internals are.
 
 **Component Origin**:
 The supplier and slot through which a merged component instance was composed, listed on the component's card.

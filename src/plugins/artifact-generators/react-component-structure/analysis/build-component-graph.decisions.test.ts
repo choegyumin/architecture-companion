@@ -89,17 +89,18 @@ describe("decision node projection", () => {
     });
   });
 
-  it("routes dead cases to a shared selectable Non-component node", async () => {
+  it("routes dead cases to their own selectable Non-component nodes", async () => {
     const graph = await graphFor(`
       function Leaf() { return <span />; }
       export function App({ mode }) { switch (mode) { case 0: return <Leaf />; } return null; }
     `);
     const mode = graph.controls!.find(({ label }) => label === "mode")!;
-    expect(graph.nodes.find(({ id }) => id === "non-component")).toMatchObject({
+    const deadNodeId = `${mode.id}:case:1:non-component`;
+    expect(graph.nodes.find(({ id }) => id === deadNodeId)).toMatchObject({
       title: "Non-component",
     });
     expect(branchArm(graph, "mode", "case:1")).toMatchObject({
-      target: "non-component",
+      target: deadNodeId,
       guards: [[{ controlId: mode.id, value: "case:1" }]],
     });
   });

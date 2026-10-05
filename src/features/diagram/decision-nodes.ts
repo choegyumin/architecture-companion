@@ -11,7 +11,12 @@ import type {
   DiagramGraph,
 } from "@/features/diagram/diagram-graph";
 
-export const NON_COMPONENT_NODE_ID = "non-component";
+// Each dead case gets its own Non-component node: a case that renders nothing
+// is its own piece of markup at its own branch site, not a shared definition
+// the way identical component internals are.
+function nonComponentNodeId(controlId: string, caseId: string): string {
+  return `${controlId}:${caseId}:non-component`;
+}
 
 type Segment = Readonly<{
   source: string;
@@ -128,7 +133,7 @@ function segmentsOf(
  * Projects branch controls as decision nodes. Every branch control gains a
  * decision node whose id is the control's id; edges are re-cut into hops
  * through the chain of decision nodes their paths traverse, with the leaving
- * case as the source port. Branch cases no edge requires route to a shared
+ * case as the source port. Branch cases no edge requires route to their own
  * "Non-component" node instead of disappearing: rendering nothing is still a
  * rendering path, so the option stays selectable. Conditional controls gain no
  * node — their guards ride the edge labels of the hop they constrain.
@@ -187,17 +192,25 @@ export function projectDecisionNodes(graph: DiagramGraph): DiagramGraph {
   }
 
   // Dead arms: a case no edge in the graph requires renders no component, so
-  // it routes to the shared Non-component node and stays selectable.
+  // it routes to its own Non-component node and stays selectable. The nodes are
+  // per case, never merged: each is an individual piece of markup at its own
+  // branch site, not a reused definition.
   const deadArms: (Segment & { kind?: string; label?: string; href?: string })[] = [];
+  const nonComponentNodes: DefaultDiagramNode[] = [];
   for (const control of branchControls) {
     for (const branchCase of control.cases) {
       if (alivePairs.has(`${control.id}\0${branchCase.id}`)) continue;
       deadArms.push({
         source: control.id,
-        target: NON_COMPONENT_NODE_ID,
+        target: nonComponentNodeId(control.id, branchCase.id),
         sourcePort: branchCase.id,
         guards: [[{ controlId: control.id, value: branchCase.id }]],
         activeWhen: control.dependsOn.map((path) => [...path, { controlId: control.id, value: branchCase.id }]),
+      });
+      nonComponentNodes.push({
+        type: "default",
+        id: nonComponentNodeId(control.id, branchCase.id),
+        title: "Non-component",
       });
     }
   }
@@ -207,8 +220,6 @@ export function projectDecisionNodes(graph: DiagramGraph): DiagramGraph {
     id: control.id,
     title: control.label,
   }));
-  const nonComponentNode: DefaultDiagramNode | undefined =
-    deadArms.length > 0 ? { type: "default", id: NON_COMPONENT_NODE_ID, title: "Non-component" } : undefined;
 
   const projectedEdges = [...segments.values(), ...deadArms].map((segment) => ({
     type: "default" as const,
@@ -225,7 +236,7 @@ export function projectDecisionNodes(graph: DiagramGraph): DiagramGraph {
     guards: segment.guards,
   }));
 
-  const nodes = [...graph.nodes, ...decisionNodes, ...(nonComponentNode ? [nonComponentNode] : [])];
+  const nodes = [...graph.nodes, ...decisionNodes, ...nonComponentNodes];
   return {
     ...graph,
     nodes: nodes.toSorted((left, right) => left.id.localeCompare(right.id)),
