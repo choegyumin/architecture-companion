@@ -69,6 +69,10 @@ type SuppliedRenderRelationship = Readonly<{
   kind: SuppliedValueKind;
   propName: string;
   supplierIds: readonly string[];
+  // The supplying usage instances: `supplierIds` name definitions for display,
+  // while these identify the exact contexts so merging can compare suppliers
+  // structurally instead of by definition.
+  supplierInstanceIds: readonly string[];
   origins: readonly Readonly<{ supplierId: string; prop: string }>[];
 }>;
 
@@ -2681,6 +2685,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               ...relationship,
               paths,
               supplierIds: [...new Set([...existing.supplierIds, ...relationship.supplierIds])].toSorted(),
+              supplierInstanceIds: [
+                ...new Set([...existing.supplierInstanceIds, ...relationship.supplierInstanceIds]),
+              ].toSorted(),
               origins: [
                 ...new Map(
                   [...existing.origins, ...relationship.origins].map((origin) => [JSON.stringify(origin), origin]),
@@ -2733,6 +2740,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         kind,
         propName,
         supplierIds: [targetUse.ownerId],
+        supplierInstanceIds: [owner.id],
         origins: [{ supplierId: targetUse.ownerId, prop: originPropName }],
         paths: targetPaths,
       });
@@ -2941,14 +2949,6 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   ): DiagramGraph {
     const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
     const relationshipsByEdgeId = new Map(relationships.map((relationship) => [edgeId(relationship), relationship]));
-    // A component whose render output includes elements supplied by an
-    // ancestor — a node, render prop, or component prop — is customized per
-    // usage, so every usage keeps its own node. Supplied values themselves stay
-    // mergeable: they are the reused content, not the customized receiver. The
-    // relationship binds the final renderer as its source, so flag sources.
-    const suppliedRenderers = new Set(
-      relationships.filter(({ kind }) => kind !== "direct-render").map(({ source }) => source),
-    );
     const edgesBySource = new Map<string, (typeof graph.edges)[number][]>();
     for (const edge of graph.edges) {
       const edges = edgesBySource.get(edge.source) ?? [];
@@ -2999,7 +2999,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
           const { id, source: _source, target, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id)!;
-          const suppliers = relationship.kind === "direct-render" ? [] : relationship.supplierIds;
+          // Suppliers compare by their usage classes, not their definition
+          // ids: a receiver merges only with usages whose supplied content
+          // came from structurally identical suppliers. Suppliers outside the
+          // focused graph have no class and keep their raw ids.
+          const suppliers =
+            relationship.kind === "direct-render"
+              ? []
+              : relationship.supplierInstanceIds.map((instanceId) => classes.get(instanceId) ?? instanceId).toSorted();
           return JSON.stringify([
             {
               ...metadata,
@@ -3015,15 +3022,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             dependsOn: normalizePaths(dependsOn, classes),
           }),
         );
-        const signature = JSON.stringify([
-          classes.get(node.id),
-          // Supplied renderers carry their own instance id: structurally
-          // identical receivers still stay apart, one node per customizing
-          // usage.
-          ...(suppliedRenderers.has(node.id) ? [node.id] : []),
-          ownedControls,
-          [...new Set(outgoing)].toSorted(),
-        ]);
+        const signature = JSON.stringify([classes.get(node.id), ownedControls, [...new Set(outgoing)].toSorted()]);
         if (!representatives.has(signature)) representatives.set(signature, node.id);
         refined.set(node.id, representatives.get(signature)!);
       }
