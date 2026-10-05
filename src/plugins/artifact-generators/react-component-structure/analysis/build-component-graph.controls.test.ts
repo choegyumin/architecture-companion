@@ -263,6 +263,120 @@ describe("component rendering controls", () => {
     expect(graph.controls!.map(({ label }) => label)).toEqual(["a", "b", "c", "d"]);
   });
 
+  it("merges scattered polarity gates of one operand into an exclusive branch", async () => {
+    const graph = await graphFor(`
+      function Narrow() { return <span />; }
+      function Wide() { return <aside />; }
+      export function App({ ready, roomy }) {
+        return <>{ready && roomy && <Wide />}{ready && !roomy && <Narrow />}</>;
+      }
+    `);
+    expect(graph.controls).toHaveLength(2);
+    const [ready, roomy] = graph.controls!;
+    expect(ready).toMatchObject({ kind: "conditional", label: "ready", dependsOn: [[]] });
+    expect(roomy).toMatchObject({
+      kind: "branch",
+      label: "roomy",
+      dependsOn: [[{ controlId: ready.id, value: "on" }]],
+      cases: [
+        { id: "roomy", label: "roomy" },
+        { id: "!roomy", label: "!roomy" },
+      ],
+    });
+    expect(edgeTo(graph, "Wide")).toMatchObject({
+      activeWhen: [
+        [
+          { controlId: ready.id, value: "on" },
+          { controlId: roomy.id, value: "roomy" },
+        ],
+      ],
+    });
+    expect(edgeTo(graph, "Narrow")).toMatchObject({
+      activeWhen: [
+        [
+          { controlId: ready.id, value: "on" },
+          { controlId: roomy.id, value: "!roomy" },
+        ],
+      ],
+    });
+  });
+
+  it("strips double negation when pairing polarity gates", async () => {
+    const graph = await graphFor(`
+      function Narrow() { return <span />; }
+      function Wide() { return <aside />; }
+      export function App({ roomy }) { return <>{!!roomy && <Wide />}{!roomy && <Narrow />}</>; }
+    `);
+    const [roomy] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(roomy).toMatchObject({
+      kind: "branch",
+      label: "!!roomy",
+      cases: [
+        { id: "!!roomy", label: "!!roomy" },
+        { id: "!roomy", label: "!roomy" },
+      ],
+    });
+    expect(edgeTo(graph, "Wide")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!!roomy" }]] });
+    expect(edgeTo(graph, "Narrow")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!roomy" }]] });
+  });
+
+  it("pairs comparison gates through operator inversion", async () => {
+    const graph = await graphFor(`
+      function Empty() { return <span />; }
+      function Filled() { return <aside />; }
+      export function App({ count }) { return <>{count > 0 && <Filled />}{count <= 0 && <Empty />}</>; }
+    `);
+    const [count] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(count).toMatchObject({
+      kind: "branch",
+      label: "count > 0",
+      cases: [
+        { id: "count > 0", label: "count > 0" },
+        { id: "count <= 0", label: "count <= 0" },
+      ],
+    });
+    expect(edgeTo(graph, "Filled")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count > 0" }]] });
+    expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count <= 0" }]] });
+  });
+
+  it("enumerates equality gates over one subject as branch cases", async () => {
+    const graph = await graphFor(`
+      function Dark() { return <span />; }
+      function Light() { return <aside />; }
+      export function App({ tone }) { return <>{tone === "dark" && <Dark />}{tone === "light" && <Light />}</>; }
+    `);
+    const [tone] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(tone).toMatchObject({
+      kind: "branch",
+      cases: [
+        { id: 'tone === "dark"', label: 'tone === "dark"' },
+        { id: 'tone === "light"', label: 'tone === "light"' },
+      ],
+    });
+    expect(edgeTo(graph, "Dark")).toMatchObject({
+      activeWhen: [[{ controlId: tone.id, value: 'tone === "dark"' }]],
+    });
+    expect(edgeTo(graph, "Light")).toMatchObject({
+      activeWhen: [[{ controlId: tone.id, value: 'tone === "light"' }]],
+    });
+  });
+
+  it("folds repeated single-polarity gates into one conditional", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      export function App({ flag }) { return <>{flag && <First />}{flag && <Second />}</>; }
+    `);
+    const [flag] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(flag).toMatchObject({ kind: "conditional", label: "flag", dependsOn: [[]] });
+    expect(edgeTo(graph, "First")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
+    expect(edgeTo(graph, "Second")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
+  });
+
   it("preserves original supplier prop pairs when forwarding renames them before merged rendering", async () => {
     const graph = await graphFor(`
       function Leaf() { return <span />; }
@@ -416,7 +530,9 @@ describe("component rendering controls", () => {
       }
     `);
     const controls = graph.controls!;
-    expect(controls).toHaveLength(8);
+    // The four `ready` gates and four `show` gates each fold into one control:
+    // one owner, one operand, one switch over it.
+    expect(controls).toHaveLength(2);
     const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
     for (const [title, prop] of [
       ["Child", "children"],

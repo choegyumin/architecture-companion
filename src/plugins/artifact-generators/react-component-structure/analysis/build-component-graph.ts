@@ -164,6 +164,20 @@ type AnalysisContext = Readonly<{
 
 // AST predicates, enum values, the checker, and declarations must use the same compiler.
 function createComponentGraphBuilder(ts: typeof import("typescript")) {
+  /** Comparison operators that complement each other, grouped by operand pair family. */
+  const COMPLEMENTARY_OPERATORS: Readonly<
+    Partial<Record<ts.SyntaxKind, Readonly<{ family: string; inverted: boolean }>>>
+  > = {
+    [ts.SyntaxKind.GreaterThanToken]: { family: "greater", inverted: false },
+    [ts.SyntaxKind.LessThanEqualsToken]: { family: "greater", inverted: true },
+    [ts.SyntaxKind.GreaterThanEqualsToken]: { family: "greater-or-equal", inverted: false },
+    [ts.SyntaxKind.LessThanToken]: { family: "greater-or-equal", inverted: true },
+    [ts.SyntaxKind.EqualsEqualsEqualsToken]: { family: "equal", inverted: false },
+    [ts.SyntaxKind.ExclamationEqualsEqualsToken]: { family: "equal", inverted: true },
+    [ts.SyntaxKind.EqualsEqualsToken]: { family: "loosely-equal", inverted: false },
+    [ts.SyntaxKind.ExclamationEqualsToken]: { family: "loosely-equal", inverted: true },
+  };
+
   function formatDiagnostic(diagnostic: ts.Diagnostic): string {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
   }
@@ -2964,6 +2978,248 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     };
   }
 
+  /**
+   * Conditional gates that test one operand through opposite polarities are a
+   * switch over that operand, not two independent flags: `X && …` and `!X && …`
+   * collected from separate gates must never be selectable at once. The merge
+   * groups each owner's conditional controls by canonical operand — recursive
+   * `!` stripping, comparison-operator inversion (`>` with `<=`, `===` with
+   * `!==`), and `===` literals over one subject — and replaces every group with
+   * a single control whose cases are the observed polarity expressions, in
+   * source order. A group that never observes a second case stays conditional;
+   * only its duplicate instances fold together.
+   */
+  function mergePolarityConditionals(context: AnalysisContext, rulesByComponentId: Map<string, ConsumerRules>): void {
+    type Polarity = Readonly<{
+      group: string;
+      caseKey: string;
+      positive: boolean;
+      enumSubject?: string;
+      enumCase?: string;
+    }>;
+    const parsedLabels = new Map<string, ts.Expression | undefined>();
+    const parseLabel = (label: string): ts.Expression | undefined => {
+      if (!parsedLabels.has(label)) {
+        const sourceFile = ts.createSourceFile("label.ts", label, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+        const [statement] = sourceFile.statements;
+        parsedLabels.set(label, ts.isExpressionStatement(statement) ? statement.expression : undefined);
+      }
+      return parsedLabels.get(label);
+    };
+    const unwrapPolarity = (node: ts.Expression): { core: ts.Expression; parity: number } => {
+      let core = node;
+      let parity = 0;
+      for (;;) {
+        if (ts.isParenthesizedExpression(core)) {
+          core = core.expression;
+          continue;
+        }
+        if (ts.isPrefixUnaryExpression(core) && core.operator === ts.SyntaxKind.ExclamationToken) {
+          parity ^= 1;
+          core = core.operand;
+          continue;
+        }
+        return { core, parity };
+      }
+    };
+    const isEnumSubject = (node: ts.Expression): boolean =>
+      ts.isIdentifier(node) || (ts.isPropertyAccessExpression(node) && isEnumSubject(node.expression));
+    const isEnumLiteral = (node: ts.Expression): boolean =>
+      ts.isStringLiteral(node) ||
+      ts.isNumericLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node) ||
+      node.kind === ts.SyntaxKind.TrueKeyword ||
+      node.kind === ts.SyntaxKind.FalseKeyword;
+    const polarityOf = (control: DiagramControl): Polarity | undefined => {
+      const expression = parseLabel(control.label);
+      if (!expression) return undefined;
+      const { core, parity } = unwrapPolarity(expression);
+      if (!ts.isBinaryExpression(core) || !COMPLEMENTARY_OPERATORS[core.operatorToken.kind])
+        return { group: `expression\0${core.getText()}`, caseKey: `polarity:${parity}`, positive: parity === 0 };
+      const operator = COMPLEMENTARY_OPERATORS[core.operatorToken.kind]!;
+      const left = unwrapPolarity(core.left).core.getText();
+      const right = unwrapPolarity(core.right).core.getText();
+      const polarity = parity ^ (operator.inverted ? 1 : 0);
+      return {
+        group: `comparison\0${operator.family}\0${left}\0${right}`,
+        caseKey: `polarity:${polarity}`,
+        positive: polarity === 0,
+        ...(parity === 0 && !operator.inverted && isEnumSubject(core.left) && isEnumLiteral(core.right)
+          ? { enumSubject: left, enumCase: right }
+          : {}),
+      };
+    };
+
+    type Member = Readonly<{ control: DiagramControl; polarity: Polarity }>;
+    const groups = new Map<string, Member[]>();
+    for (const control of context.controls.values()) {
+      if (control.kind !== "conditional") continue;
+      const polarity = polarityOf(control);
+      if (!polarity) continue;
+      const key = `${control.owner}\0${polarity.group}`;
+      const members = groups.get(key) ?? [];
+      members.push({ control, polarity });
+      groups.set(key, members);
+    }
+
+    // Equality comparisons with no observed complement enumerate one subject's
+    // values instead, so single-polarity `===` groups regroup by their subject
+    // and take each literal as its own case.
+    const finalGroups: Member[][] = [];
+    const enumBuckets = new Map<string, Member[]>();
+    for (const members of groups.values()) {
+      const caseKeys = new Set(members.map(({ polarity }) => polarity.caseKey));
+      const enumerable = members.filter(({ polarity }) => polarity.enumCase !== undefined);
+      const subjects = new Set(
+        members.map(({ polarity }) => polarity.enumSubject).filter((subject) => subject !== undefined),
+      );
+      if (caseKeys.size === 1 && enumerable.length === members.length && subjects.size === 1) {
+        const subject = subjects.values().next().value!;
+        const key = `${members.at(0)!.control.owner}\0enum\0${subject}`;
+        enumBuckets.set(key, [
+          ...(enumBuckets.get(key) ?? []),
+          ...members.map(({ control, polarity }) => ({
+            control,
+            polarity: { ...polarity, caseKey: `value\0${polarity.enumCase!}` },
+          })),
+        ]);
+        continue;
+      }
+      finalGroups.push(members);
+    }
+
+    type Replacement = Readonly<{ controlId: string; on: string; off?: string }>;
+    const replacements = new Map<string, Replacement>();
+    const memberIds = new Set<string>();
+    const mergedGroups = new Map<string, Member[]>();
+    for (const members of [...finalGroups, ...enumBuckets.values()]) {
+      const representative = members.at(0)!.control;
+      const caseTextByKey = new Map<string, string>();
+      for (const { control, polarity } of members) {
+        if (!caseTextByKey.has(polarity.caseKey)) caseTextByKey.set(polarity.caseKey, control.label);
+        memberIds.add(control.id);
+      }
+      const complementText = (caseKey: string): string | undefined =>
+        caseKey.startsWith("polarity:") ? caseTextByKey.get(`polarity:${caseKey === "polarity:0" ? 1 : 0}`) : undefined;
+      // A group that never sees a second case stays conditional, so its value
+      // space is still "on"/"off"; only the duplicate control ids fold together.
+      const staysConditional = caseTextByKey.size < 2;
+      for (const { control, polarity } of members) {
+        const off = complementText(polarity.caseKey);
+        replacements.set(control.id, {
+          controlId: representative.id,
+          ...(staysConditional
+            ? { on: "on", off: "off" }
+            : { on: caseTextByKey.get(polarity.caseKey)!, ...(off ? { off } : {}) }),
+        });
+      }
+      mergedGroups.set(representative.id, members);
+    }
+
+    const rewrite = (ruleset: DiagramRouteRequirementRuleset): DiagramRouteRequirementRuleset =>
+      ruleset.map((rule) =>
+        rule.map((requirement) => {
+          const replacement = replacements.get(requirement.controlId);
+          if (!replacement) return requirement;
+          const value = requirement.value === "off" ? replacement.off : replacement.on;
+          return value === undefined ? requirement : { controlId: replacement.controlId, value };
+        }),
+      );
+
+    const controls = new Map<string, DiagramControl>();
+    for (const control of context.controls.values()) {
+      const members = mergedGroups.get(control.id);
+      if (members) {
+        const casesByKey = new Map<string, { id: string; label: string; positive: boolean }>();
+        for (const { control: member, polarity } of members) {
+          if (!casesByKey.has(polarity.caseKey))
+            casesByKey.set(polarity.caseKey, { id: member.label, label: member.label, positive: polarity.positive });
+        }
+        const cases = [...casesByKey.values()].map(({ id, label }) => ({ id, label }));
+        const label = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;
+        controls.set(control.id, {
+          id: control.id,
+          owner: control.owner,
+          label,
+          ...(cases.length >= 2 ? { kind: "branch", cases } : { kind: "conditional" }),
+          dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
+        });
+        continue;
+      }
+      if (memberIds.has(control.id)) continue;
+      controls.set(control.id, { ...control, dependsOn: rewrite(control.dependsOn) });
+    }
+    // Gates ordered `A && B` at one site and `B && A` at another make the
+    // merged controls prerequisites of each other. Peers gated in conflicting
+    // orders are not prerequisites — the later control drops the requirement
+    // that closes the cycle, in source order, until the graph is acyclic.
+    const creationOrder = new Map([...controls.keys()].map((id, index) => [id, index]));
+    const dependents = (control: DiagramControl) => [
+      ...new Set(control.dependsOn.flat().map(({ controlId }) => controlId)),
+    ];
+    for (;;) {
+      const state = new Map<string, "visiting" | "done">();
+      const path: string[] = [];
+      const visit = (id: string): readonly string[] | undefined => {
+        state.set(id, "visiting");
+        path.push(id);
+        for (const successor of dependents(controls.get(id)!)) {
+          if (!controls.has(successor)) continue;
+          if (state.get(successor) === "visiting") return [...path.slice(path.indexOf(successor)), successor];
+          if (!state.has(successor)) {
+            const cycle = visit(successor);
+            if (cycle) return cycle;
+          }
+        }
+        state.set(id, "done");
+        path.pop();
+        return undefined;
+      };
+      let cycle: readonly string[] | undefined;
+      for (const id of controls.keys()) {
+        if (!state.has(id)) {
+          cycle = visit(id);
+          if (cycle) break;
+        }
+      }
+      if (!cycle) break;
+      const ring = cycle.slice(0, -1);
+      const latest = ring.reduce((left, right) =>
+        creationOrder.get(left)! > creationOrder.get(right)! ? left : right,
+      );
+      const successor = ring[(ring.indexOf(latest) + 1) % ring.length]!;
+      const control = controls.get(latest)!;
+      controls.set(latest, {
+        ...control,
+        dependsOn: control.dependsOn.map((rule) => rule.filter(({ controlId }) => controlId !== successor)),
+      });
+    }
+    context.controls.clear();
+    for (const [id, control] of controls) context.controls.set(id, control);
+
+    for (const [useId, ruleset] of context.useRulesets) context.useRulesets.set(useId, rewrite(ruleset));
+    for (const [useId, use] of context.uses) {
+      context.uses.set(useId, {
+        ...use,
+        suppliedValues: use.suppliedValues.map((supplied) => ({
+          ...supplied,
+          targets: supplied.targets.map((target) => ({ ...target, ruleset: rewrite(target.ruleset) })),
+        })),
+      });
+    }
+    for (const [componentId, rules] of rulesByComponentId) {
+      rulesByComponentId.set(componentId, {
+        exact: new Map(
+          [...rules.exact].map(([propName, list]) => [
+            propName,
+            list.map((rule) => ({ ...rule, ruleset: rewrite(rule.ruleset) })),
+          ]),
+        ),
+        spreads: rules.spreads.map((spread) => ({ ...spread, ruleset: rewrite(spread.ruleset) })),
+      });
+    }
+  }
+
   function mergeEquivalentContexts(
     graph: DiagramGraph,
     instances: readonly ComponentInstance[],
@@ -3189,6 +3445,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const bindings = context.propBindings.get(definition.id)!;
       rulesByComponentId.set(definition.id, analyzeConsumerRules(definition, context, bindings));
     }
+    mergePolarityConditionals(context, rulesByComponentId);
 
     const visibility = createVisibilityByTarget(
       definitions,
