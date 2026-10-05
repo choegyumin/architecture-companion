@@ -1,7 +1,7 @@
 import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import z from "zod";
 
-import type { DiagramGraph, DiagramGroup, DiagramNode } from "@/features/diagram/diagram-graph";
+import type { DiagramEdge, DiagramGraph, DiagramGroup, DiagramNode } from "@/features/diagram/diagram-graph";
 import type {
   DiagramLayout,
   DiagramLayoutEdge,
@@ -135,9 +135,18 @@ function toResolvedElkOptions(map: ElkLayeredDiagramLayoutElkOptions | undefined
   };
 }
 
+// elkjs resolves edge sources against every node and port id in the graph, so
+// port ids must be globally unique: case ids alone collide across decision
+// nodes and every arm would bind to whichever node declared that id first.
+function elkPortId(nodeId: string, caseId: string): string {
+  return `${nodeId}\u0000${caseId}`;
+}
+
 // Decision nodes route their outgoing arms through ordered ports on the flow's
-// downstream side, so the case order reads top-to-bottom along the flow and the
-// drawn edges leave exactly where their branch case sits.
+// downstream edge, so the case order reads along that edge and each drawn edge
+// leaves exactly where its branch case sits. FIXED_ORDER left the side to ELK,
+// which scattered arms across north and east edges; FIXED_POS pins every case
+// to its slot on the downstream edge instead.
 function toElkNode(
   node: DiagramNode,
   diagram: DiagramGraph,
@@ -147,18 +156,26 @@ function toElkNode(
   const size = getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`);
   const control = diagram.controls?.find(({ id }) => id === node.id);
   if (node.type !== "decision" || control?.kind !== "branch") return { id: node.id, ...size };
-  const side =
-    direction === "RIGHT" ? "EAST" : direction === "LEFT" ? "WEST" : direction === "DOWN" ? "SOUTH" : "NORTH";
+  const vertical = direction === "DOWN" || direction === "UP";
+  const downstream = direction === "UP" || direction === "LEFT";
+  const ports = control.cases.map((branchCase, index) => {
+    // The slot is the port center, spread evenly across the downstream edge;
+    // the 4px port is placed so its center lands 2px inside that edge.
+    const center = ((index + 1) / (control.cases.length + 1)) * (vertical ? size.width : size.height);
+    return {
+      id: elkPortId(node.id, branchCase.id),
+      width: 4,
+      height: 4,
+      ...(vertical
+        ? { x: center - 2, y: downstream ? 0 : size.height - 4 }
+        : { x: downstream ? 0 : size.width - 4, y: center - 2 }),
+    };
+  });
   return {
     id: node.id,
     ...size,
-    layoutOptions: { "elk.portConstraints": "FIXED_ORDER" },
-    ports: control.cases.map((branchCase) => ({
-      id: branchCase.id,
-      width: 4,
-      height: 4,
-      layoutOptions: { "elk.port.side": side },
-    })),
+    layoutOptions: { "elk.portConstraints": "FIXED_POS" },
+    ports,
   };
 }
 
@@ -208,7 +225,7 @@ function toElkInput(
     edges: diagram.edges.map((edge) => ({
       id: edge.id,
       // A port-bound arm leaves from its decision node's port, not its center.
-      sources: [edge.type === "default" && edge.sourcePort ? edge.sourcePort : edge.source],
+      sources: [edge.type === "default" && edge.sourcePort ? elkPortId(edge.source, edge.sourcePort) : edge.source],
       targets: [edge.target],
     })),
   };
@@ -413,11 +430,32 @@ function toNodeRects(layout: DiagramLayout): ReadonlyMap<string, Rect> {
   return rects;
 }
 
+// A decision arm's ELK route starts at its port anchor; nudging may shift the
+// decision node afterwards, so the anchor is an offset from the node's original
+// top-left corner, rebased onto whatever rect the node holds now.
+function portAnchorOf(
+  edge: DiagramEdge,
+  placement: DiagramLayoutEdge | undefined,
+  rects: ReadonlyMap<string, Rect>,
+  originalRects: ReadonlyMap<string, Rect>,
+): DiagramLayoutPoint | undefined {
+  if (!placement || edge.type !== "default" || !edge.sourcePort || placement.points.length === 0) return undefined;
+  const original = originalRects.get(edge.source);
+  const current = rects.get(edge.source);
+  if (!original || !current) return undefined;
+  const anchor = placement.points.at(0)!;
+  return {
+    x: current.min.x + (anchor.x - original.min.x),
+    y: current.min.y + (anchor.y - original.min.y),
+  };
+}
+
 function toStraightEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
   rects: ReadonlyMap<string, Rect>,
 ): DiagramLayoutEdge[] {
+  const originalRects = toNodeRects(layout);
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
     const edge = graph.edges.find(({ id }) => id === placement.id);
     if (!edge || edge.type === "message") return placement;
@@ -425,8 +463,15 @@ function toStraightEdges(
     const target = rects.get(edge.target);
     if (!source || !target) return placement;
 
-    const sourceCenter = centerOf(source);
+    // Arms leave from their port anchor; other edges cut the sightline at the
+    // source border as before.
+    const portAnchor = portAnchorOf(edge, placement, rects, originalRects);
     const targetCenter = centerOf(target);
+    if (portAnchor) {
+      const [targetEntry] = clipSegment(portAnchor, targetCenter, target) ?? [0];
+      return { id: placement.id, points: [portAnchor, lerp(portAnchor, targetCenter, targetEntry ?? 0)] };
+    }
+    const sourceCenter = centerOf(source);
     const [, sourceExit] = clipSegment(sourceCenter, targetCenter, source) ?? [0, 1];
     const [targetEntry] = clipSegment(sourceCenter, targetCenter, target) ?? [1, 0];
     return {
@@ -454,8 +499,10 @@ export function straightenLayeredEdges(
   }
 
   const nodeParents = new Map(layout.nodes.map(({ id, parentId }) => [id, parentId]));
+  const originalRects = toNodeRects(layout);
   // A mutable copy: nudging shifts obstacle rects as later sightlines are tested.
-  const rects = new Map(toNodeRects(layout));
+  const rects = new Map(originalRects);
+  const placementById = new Map(layout.edges.map((placement) => [placement.id, placement]));
 
   const shifted = new Map<string, number>();
   for (const edge of graph.edges) {
@@ -464,19 +511,19 @@ export function straightenLayeredEdges(
     const target = rects.get(edge.target);
     if (!source || !target) continue;
 
-    const sourceCenter = centerOf(source);
+    // Arms sightline from their port anchor; everything else from the center.
+    const start = portAnchorOf(edge, placementById.get(edge.id), rects, originalRects) ?? centerOf(source);
     const targetCenter = centerOf(target);
     for (const [obstacleId, obstacle] of rects) {
       if (obstacleId === edge.source || obstacleId === edge.target) continue;
-      const [t0, t1] = clipSegment(sourceCenter, targetCenter, expanded(obstacle, OBSTACLE_MARGIN)) ?? [-1, -1];
+      const [t0, t1] = clipSegment(start, targetCenter, expanded(obstacle, OBSTACLE_MARGIN)) ?? [-1, -1];
       if (t1 - t0 <= 0.02) continue;
 
       const obstacleCenter = centerOf(obstacle);
       const rawT =
-        (plane.primary(obstacleCenter) - plane.primary(sourceCenter)) /
-        (plane.primary(targetCenter) - plane.primary(sourceCenter));
+        (plane.primary(obstacleCenter) - plane.primary(start)) / (plane.primary(targetCenter) - plane.primary(start));
       const t = Number.isFinite(rawT) ? Math.min(1, Math.max(0, rawT)) : 0.5;
-      const sightSecondary = plane.secondary(lerp(sourceCenter, targetCenter, t));
+      const sightSecondary = plane.secondary(lerp(start, targetCenter, t));
       const half = (plane.secondary(obstacle.max) - plane.secondary(obstacle.min)) / 2;
       const shortfall = half + CLEARANCE - Math.abs(plane.secondary(obstacleCenter) - sightSecondary);
       if (shortfall <= 0) continue;

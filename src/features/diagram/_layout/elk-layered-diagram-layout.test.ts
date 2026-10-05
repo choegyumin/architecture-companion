@@ -308,12 +308,64 @@ describe("ELK layered diagram layout", () => {
     const secondStart = result.edges.find(({ id }) => id === "arm-second")?.points.at(0);
     if (!decision || !firstStart || !secondStart) throw new Error("Layout lost the decision arms.");
 
-    // Case order reads top-to-bottom and each arm leaves the diamond's border.
+    // Rightward flow: the arms leave the east edge in case order, top to bottom.
     expect(firstStart.y).toBeLessThan(secondStart.y);
     for (const start of [firstStart, secondStart]) {
-      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width - 1);
+      expect(start.x).toBeGreaterThanOrEqual(decision.position.x + decision.size.width - 3);
       expect(start.y).toBeGreaterThan(decision.position.y);
       expect(start.y).toBeLessThan(decision.position.y + decision.size.height);
+    }
+  });
+
+  it("binds every decision arm to its own node's downstream port even when case ids collide", async () => {
+    const branch = (id: string, owner: string) => ({
+      id,
+      owner,
+      kind: "branch" as const,
+      label: id,
+      dependsOn: [[]],
+      cases: [
+        { id: "true", label: "True" },
+        { id: "false", label: "False" },
+      ],
+    });
+    const diagram = {
+      ...diagramBase,
+      nodes: [
+        { id: "app", type: "default", kind: "component", title: "App" },
+        { id: "first-mode", type: "decision", title: "First mode" },
+        { id: "second-mode", type: "decision", title: "Second mode" },
+        { id: "first-empty", type: "default", kind: "component", title: "First empty" },
+        { id: "second-empty", type: "default", kind: "component", title: "Second empty" },
+      ],
+      edges: [
+        { id: "entry-first", type: "default", source: "app", target: "first-mode" },
+        { id: "entry-second", type: "default", source: "app", target: "second-mode" },
+        { id: "arm-first", type: "default", source: "first-mode", target: "first-empty", sourcePort: "true" },
+        { id: "arm-second", type: "default", source: "second-mode", target: "second-empty", sourcePort: "true" },
+      ],
+      controls: [branch("first-mode", "app"), branch("second-mode", "app")],
+    } satisfies DiagramGraph;
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 288, height: 144 }]));
+
+    // The artifact pipeline: downward flow with obstacle nudging enabled.
+    const result = await layoutElkLayeredDiagram(diagram, nodeSizes, {
+      nudgeObstacleNodes: true,
+      elk: { direction: "DOWN" },
+    });
+
+    for (const [decisionId, armId] of [
+      ["first-mode", "arm-first"],
+      ["second-mode", "arm-second"],
+    ] as const) {
+      const decision = result.nodes.find(({ id }) => id === decisionId);
+      const start = result.edges.find(({ id }) => id === armId)?.points.at(0);
+      if (!decision || !start) throw new Error(`Layout lost ${armId}.`);
+
+      // Downward flow: the arm leaves its own decision node's south edge.
+      expect(start.y).toBeGreaterThanOrEqual(decision.position.y + decision.size.height - 3);
+      expect(start.x).toBeGreaterThan(decision.position.x);
+      expect(start.x).toBeLessThan(decision.position.x + decision.size.width);
     }
   });
 
