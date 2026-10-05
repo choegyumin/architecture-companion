@@ -91,7 +91,7 @@ type ComponentGuardLabelsProps = Readonly<{
   edges: readonly DiagramReactFlowEdge[];
   selection: ComponentSelection;
   emphasis: ComponentGuardEmphasis;
-  onSelect: (controlId: string, value: string) => void;
+  onSelect: (edgeId: string, controlId: string, value: string) => void;
 }>;
 
 // Guard pills hug the edge end that decides them: branch cases leave with the
@@ -103,8 +103,8 @@ const GUARD_LABEL_MIN_SEPARATION = 96;
 type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ pills: GuardPill[] }>;
 
 // Projects one guard pill per condition an edge's guards name. All pills of a
-// control stay in sync because selection is keyed by control: clicking any
-// projection of the same guard applies the same choice everywhere.
+// control stay in sync because selection is keyed by control. Clicking any
+// pill requests its whole edge's path, not a single condition.
 export function attachGuardLabels({
   graph,
   controls,
@@ -142,7 +142,7 @@ export function attachGuardLabels({
                 pressed: selection[controlId] === value,
                 active,
                 description,
-                onSelect: () => onSelect(controlId, value),
+                onSelect: () => onSelect(edgeId, controlId, value),
               }
             : {
                 id: key,
@@ -151,7 +151,7 @@ export function attachGuardLabels({
                 pressed: selection[controlId] === value,
                 active,
                 description,
-                onSelect: () => onSelect(controlId, selection[controlId] === "on" ? "off" : "on"),
+                onSelect: () => onSelect(edgeId, controlId, value),
               };
         (control.kind === "branch" ? branch : conditional).push(pill);
       }

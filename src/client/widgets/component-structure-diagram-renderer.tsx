@@ -6,7 +6,7 @@ import {
   componentPathEmphasis,
   type ComponentSelection,
   initialComponentSelection,
-  selectComponentPath,
+  selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
 import {
   buildDiagramMeasurementNodes,
@@ -28,8 +28,8 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   const initialSelection = useMemo(() => initialComponentSelection(diagram.graph), [diagram]);
   const [selection, setSelection] = useState<ComponentSelection>(initialSelection);
   const onSelect = useCallback(
-    (controlId: string, value: string) => {
-      setSelection((current) => selectComponentPath(diagram.graph, current, controlId, value));
+    (edgeId: string, controlId: string, value: string) => {
+      setSelection((current) => selectEdgePath(diagram.graph, current, edgeId, controlId, value));
     },
     [diagram],
   );

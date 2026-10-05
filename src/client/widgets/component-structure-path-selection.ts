@@ -319,3 +319,46 @@ export function selectComponentPath(
   const chosen = candidates.at(0);
   return chosen ? { ...selected, ...Object.fromEntries(chosen.requirements) } : selected;
 }
+
+// Clicking a guard pill means "make this edge render", not "toggle one
+// condition": one click satisfies a whole AND clause of the edge's guards —
+// the clause naming the clicked condition, applied starting from it — so a
+// path hidden behind several conditions activates in a single interaction.
+// Clicking a conditional pill whose value already holds first tries to repair
+// its clause (a stale path behind a flipped sibling repairs in place); when
+// that would change nothing, or only succeed by moving branch selections, it
+// dismisses the condition instead of rerouting the graph.
+export function selectEdgePath(
+  graph: DiagramGraph,
+  selection: ComponentSelection,
+  edgeId: string,
+  controlId: string,
+  value: string,
+): ComponentSelection {
+  const controls = graph.controls!;
+  const control = controls.find((item) => item.id === controlId)!;
+  const edge = graph.edges.find((item) => item.type === "default" && item.id === edgeId);
+  const guards = edge && edge.type === "default" ? edge.guards : undefined;
+  const clause =
+    guards?.find((path) => path.some((condition) => condition.controlId === controlId && condition.value === value)) ??
+    guards?.at(0);
+  // The clicked condition applies first: rerouting starts from what the user
+  // asked for, and sibling conditions then land on an already-repaired path.
+  const applyClause = (from: ComponentSelection): ComponentSelection => {
+    const rest = (clause ?? [{ controlId, value }]).filter(
+      (condition) => condition.controlId !== controlId || condition.value !== value,
+    );
+    return [{ controlId, value }, ...rest].reduce(
+      (next, condition) => selectComponentPath(graph, next, condition.controlId, condition.value),
+      from,
+    );
+  };
+  if (control.kind === "conditional" && selection[controlId] === value) {
+    const repaired = applyClause(selection);
+    const movedBranch = controls.some((item) => item.kind === "branch" && repaired[item.id] !== selection[item.id]);
+    const changed = Object.keys(repaired).some((id) => repaired[id] !== selection[id]);
+    if (changed && !movedBranch) return repaired;
+    return selectComponentPath(graph, selection, controlId, value === "on" ? "off" : "on");
+  }
+  return applyClause(selection);
+}
