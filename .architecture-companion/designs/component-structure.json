@@ -1,13 +1,13 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-04T08:49:51.317Z",
+  "updatedAt": "2026-10-04T19:36:32.496Z",
   "vcs": {
     "revision": "276681a",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
-  "instructions": "## Purpose\nReview how WorkspacePage composes the Review UI through local components and external component boundaries.\n\n## Regeneration\nRun from the scope root:\n\n```sh\npnpm exec tsx src/plugins/diagram-generators/react-component-structure/run.ts \\\n  --base \".\" \\\n  --exclude-component \"external:@base-ui/react#*\" \\\n  --exclude-component \"external:lucide-react#*\" \\\n  --root \"WorkspacePage\" \\\n  \"src/client\" \\\n  \"src/shared/react-flow\" \\\n  \"src/shared/react-ui/button.tsx\" \\\n  \"src/shared/react-ui/card.tsx\" \\\n  \"src/shared/react-ui/empty.tsx\" \\\n  \"src/shared/react-ui/form.tsx\" \\\n  \"src/shared/react-ui/tabs.tsx\" \\\n  \"src/shared/react-ui/theme-toggle.tsx\" \\\n  \"src/shared/react-ui/toggle.tsx\"\n```",
+  "instructions": "## Purpose\nReview how WorkspacePage composes the Review UI through local components and external component boundaries.\n\n## Regeneration\nRun from the scope root:\n\n```sh\npnpm exec tsx src/plugins/artifact-generators/react-component-structure/run.ts \\\n  --base \".\" \\\n  --exclude-component \"external:@base-ui/react#*\" \\\n  --exclude-component \"external:lucide-react#*\" \\\n  --root \"WorkspacePage\" \\\n  \"src/client\" \\\n  \"src/shared/react-flow\" \\\n  \"src/shared/react-ui/button.tsx\" \\\n  \"src/shared/react-ui/card.tsx\" \\\n  \"src/shared/react-ui/empty.tsx\" \\\n  \"src/shared/react-ui/form.tsx\" \\\n  \"src/shared/react-ui/tabs.tsx\" \\\n  \"src/shared/react-ui/theme-toggle.tsx\" \\\n  \"src/shared/react-ui/toggle.tsx\"\n```",
   "layout": {
     "id": "elk-layered",
     "options": {
@@ -21,10 +21,10 @@
     "groups": [],
     "nodes": [
       {
+        "type": "default",
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
         "title": "WorkspacePage",
         "description": "src/client/pages/workspace-page.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -36,10 +36,30 @@
         }
       },
       {
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
+        "type": "decision",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "title": "state.status === \"loading\""
+      },
+      {
+        "type": "decision",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "title": "state.status === \"error\""
+      },
+      {
+        "type": "decision",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "title": "!state.review.catalog"
+      },
+      {
+        "type": "decision",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "title": "reviewErrorMessage"
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "title": "WorkspaceShell",
         "description": "src/client/pages/workspace-page.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -57,10 +77,10 @@
         }
       },
       {
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
+        "type": "default",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
         "title": "WorkspaceShell",
         "description": "src/client/pages/workspace-page.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/pages/workspace-page.tsx"
@@ -78,10 +98,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
         "title": "AnnotationLayer",
         "description": "src/client/parts/annotation-layer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/parts/annotation-layer.tsx"
@@ -99,10 +119,41 @@
         }
       },
       {
+        "type": "decision",
+        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "title": "controller.edit.conflict?.kind === \"changed\""
+      },
+      {
+        "type": "decision",
+        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "title": "controller.edit.conflict?.kind === \"deleted\""
+      },
+      {
+        "type": "default",
+        "id": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+        "title": "ArtifactList",
+        "description": "src/client/parts/artifact-list.tsx",
+        "links": [
+          {
+            "href": "source:///src/client/parts/artifact-list.tsx"
+          }
+        ],
+        "component": {
+          "definitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+          "origins": [
+            {
+              "supplierId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
+              "supplierTitle": "WorkspacePage",
+              "prop": "children"
+            }
+          ]
+        }
+      },
+      {
+        "type": "default",
         "id": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
         "title": "DiagramCanvas",
         "description": "src/client/parts/diagram-canvas.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/parts/diagram-canvas.tsx"
@@ -114,31 +165,10 @@
         }
       },
       {
-        "id": "component:src/client/parts/diagram-list.tsx#DiagramList",
-        "title": "DiagramList",
-        "description": "src/client/parts/diagram-list.tsx",
         "type": "default",
-        "links": [
-          {
-            "href": "source:///src/client/parts/diagram-list.tsx"
-          }
-        ],
-        "component": {
-          "definitionId": "component:src/client/parts/diagram-list.tsx#DiagramList",
-          "origins": [
-            {
-              "supplierId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-              "supplierTitle": "WorkspacePage",
-              "prop": "children"
-            }
-          ]
-        }
-      },
-      {
         "id": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
         "title": "ComponentStructureContent",
         "description": "src/client/widgets/component-structure-diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/component-structure-diagram-renderer.tsx"
@@ -150,10 +180,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
         "title": "ComponentStructureDiagramRenderer",
         "description": "src/client/widgets/component-structure-diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/component-structure-diagram-renderer.tsx"
@@ -165,10 +195,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
         "title": "DependencyGraphDiagramRenderer",
         "description": "src/client/widgets/dependency-graph-diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.tsx"
@@ -180,10 +210,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
         "title": "DiagramLinksPanel",
         "description": "src/client/widgets/diagram-links-panel.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/diagram-links-panel.tsx"
@@ -201,10 +231,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
         "title": "DiagramRendererBase",
         "description": "src/client/widgets/diagram-renderer-base.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/diagram-renderer-base.tsx"
@@ -216,10 +246,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
         "title": "DiagramRendererContent",
         "description": "src/client/widgets/diagram-renderer-base.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/diagram-renderer-base.tsx"
@@ -237,10 +267,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
         "title": "DiagramRenderer",
         "description": "src/client/widgets/diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/diagram-renderer.tsx"
@@ -258,10 +288,20 @@
         }
       },
       {
+        "type": "decision",
+        "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "title": "props.diagram.layout.id"
+      },
+      {
+        "type": "decision",
+        "id": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+        "title": "hasComponentStructure(props.diagram.graph)"
+      },
+      {
+        "type": "default",
         "id": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
         "title": "ElkLayeredDiagramRenderer",
         "description": "src/client/widgets/elk-layered-diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/elk-layered-diagram-renderer.tsx"
@@ -273,10 +313,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
         "title": "SequenceDiagramRenderer",
         "description": "src/client/widgets/sequence-diagram-renderer.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/client/widgets/sequence-diagram-renderer.tsx"
@@ -288,10 +328,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
         "title": "BaseEdgeLabel",
         "description": "src/shared/react-flow/base-edge-label.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/base-edge-label.tsx"
@@ -314,10 +354,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
         "title": "BaseOverlayPanel",
         "description": "src/shared/react-flow/base-overlay-panel.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
@@ -335,10 +375,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
         "title": "BoundingGroupNode",
         "description": "src/shared/react-flow/bounding-group-node.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/bounding-group-node.tsx"
@@ -356,10 +396,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/card-node.tsx#CardNode",
         "title": "CardNode",
         "description": "src/shared/react-flow/card-node.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/card-node.tsx"
@@ -377,10 +417,31 @@
         }
       },
       {
+        "type": "default",
+        "id": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
+        "title": "DecisionNode",
+        "description": "src/shared/react-flow/decision-node.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-flow/decision-node.tsx"
+          }
+        ],
+        "component": {
+          "definitionId": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
+          "origins": [
+            {
+              "supplierId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
+              "supplierTitle": "DiagramCanvas",
+              "prop": "nodeTypes"
+            }
+          ]
+        }
+      },
+      {
+        "type": "default",
         "id": "component:src/shared/react-flow/fragment-node.tsx#FragmentNode",
         "title": "FragmentNode",
         "description": "src/shared/react-flow/fragment-node.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/fragment-node.tsx"
@@ -398,10 +459,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
         "title": "LabeledGroupNode",
         "description": "src/shared/react-flow/labeled-group-node.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
@@ -419,10 +480,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
         "title": "LifelineNode",
         "description": "src/shared/react-flow/lifeline-node.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/lifeline-node.tsx"
@@ -440,10 +501,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
         "title": "MessageEdge",
         "description": "src/shared/react-flow/message-edge.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/message-edge.tsx"
@@ -461,10 +522,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
         "title": "NodeSearch",
         "description": "src/shared/react-flow/node-search.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/node-search.tsx"
@@ -482,10 +543,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/node-search.tsx#NodeSearchInternal",
         "title": "NodeSearchInternal",
         "description": "src/shared/react-flow/node-search.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/node-search.tsx"
@@ -497,10 +558,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
         "title": "RouteEdge",
         "description": "src/shared/react-flow/route-edge.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-flow/route-edge.tsx"
@@ -518,10 +579,20 @@
         }
       },
       {
+        "type": "decision",
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "title": "data.labelControl != null"
+      },
+      {
+        "type": "decision",
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "title": "data.labelAction"
+      },
+      {
+        "type": "default",
         "id": "component:src/shared/react-ui/button.tsx#Button",
         "title": "Button",
         "description": "src/shared/react-ui/button.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/button.tsx"
@@ -544,10 +615,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#Card@58f453b0c49b9677",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
         "title": "Card",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -565,31 +636,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#Card@bb3c62046dd34969",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#Card@57f461c43561acd7",
         "title": "Card",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
-        "links": [
-          {
-            "href": "source:///src/shared/react-ui/card.tsx"
-          }
-        ],
-        "component": {
-          "definitionId": "component:src/shared/react-ui/card.tsx#Card",
-          "origins": [
-            {
-              "supplierId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-              "supplierTitle": "AnnotationLayer",
-              "prop": "children"
-            }
-          ]
-        }
-      },
-      {
-        "id": "component:src/shared/react-ui/card.tsx#Card@d5f914228c72094f",
-        "title": "Card",
-        "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -601,10 +651,31 @@
         }
       },
       {
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "title": "Card",
+        "description": "src/shared/react-ui/card.tsx",
+        "links": [
+          {
+            "href": "source:///src/shared/react-ui/card.tsx"
+          }
+        ],
+        "component": {
+          "definitionId": "component:src/shared/react-ui/card.tsx#Card",
+          "origins": [
+            {
+              "supplierId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+              "supplierTitle": "AnnotationLayer",
+              "prop": "children"
+            }
+          ]
+        }
+      },
+      {
+        "type": "default",
         "id": "component:src/shared/react-ui/card.tsx#CardContent",
         "title": "CardContent",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -619,18 +690,18 @@
               "prop": "children"
             },
             {
-              "supplierId": "component:src/client/parts/diagram-list.tsx#DiagramList",
-              "supplierTitle": "DiagramList",
+              "supplierId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+              "supplierTitle": "ArtifactList",
               "prop": "children"
             }
           ]
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#CardFooter@11dd473c6289262b",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#CardFooter@01f1bbea3ba52569",
         "title": "CardFooter",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -648,10 +719,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#CardFooter@52c9363d8cc8bd83",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#CardFooter@0ed7ecaeb3c299e3",
         "title": "CardFooter",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -669,10 +740,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#CardHeader@0ba64b6854436233",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
         "title": "CardHeader",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -690,10 +761,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/card.tsx#CardHeader@2d9fd37be1d7e197",
+        "type": "default",
+        "id": "component:src/shared/react-ui/card.tsx#CardHeader@fcf687b5c4ec07a8",
         "title": "CardHeader",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -703,18 +774,18 @@
           "definitionId": "component:src/shared/react-ui/card.tsx#CardHeader",
           "origins": [
             {
-              "supplierId": "component:src/client/parts/diagram-list.tsx#DiagramList",
-              "supplierTitle": "DiagramList",
+              "supplierId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+              "supplierTitle": "ArtifactList",
               "prop": "children"
             }
           ]
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/card.tsx#CardTitle",
         "title": "CardTitle",
         "description": "src/shared/react-ui/card.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/card.tsx"
@@ -724,23 +795,23 @@
           "definitionId": "component:src/shared/react-ui/card.tsx#CardTitle",
           "origins": [
             {
-              "supplierId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-              "supplierTitle": "AnnotationLayer",
+              "supplierId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+              "supplierTitle": "ArtifactList",
               "prop": "children"
             },
             {
-              "supplierId": "component:src/client/parts/diagram-list.tsx#DiagramList",
-              "supplierTitle": "DiagramList",
+              "supplierId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+              "supplierTitle": "AnnotationLayer",
               "prop": "children"
             }
           ]
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#Empty",
         "title": "Empty",
         "description": "src/shared/react-ui/empty.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/empty.tsx"
@@ -758,10 +829,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#EmptyDescription",
         "title": "EmptyDescription",
         "description": "src/shared/react-ui/empty.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/empty.tsx"
@@ -779,10 +850,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
         "title": "EmptyHeader",
         "description": "src/shared/react-ui/empty.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/empty.tsx"
@@ -800,10 +871,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#EmptyMedia",
         "title": "EmptyMedia",
         "description": "src/shared/react-ui/empty.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/empty.tsx"
@@ -821,10 +892,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/empty.tsx#EmptyTitle",
         "title": "EmptyTitle",
         "description": "src/shared/react-ui/empty.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/empty.tsx"
@@ -842,10 +913,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/form.tsx#Form@31008be58d04b855",
+        "type": "default",
+        "id": "component:src/shared/react-ui/form.tsx#Form@0778ade414a7c54d",
         "title": "Form",
         "description": "src/shared/react-ui/form.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/form.tsx"
@@ -857,10 +928,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/form.tsx#Form@658e91eca2be1709",
+        "type": "default",
+        "id": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
         "title": "Form",
         "description": "src/shared/react-ui/form.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/form.tsx"
@@ -872,10 +943,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/tabs.tsx#Tabs@51be83183cc170c0",
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
         "title": "Tabs",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -887,10 +958,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/tabs.tsx#Tabs@bd61845fe123d5af",
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
         "title": "Tabs",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -902,10 +973,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/tabs.tsx#TabsContent@20f8e4d72c9038f4",
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
         "title": "TabsContent",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -923,10 +994,10 @@
         }
       },
       {
-        "id": "component:src/shared/react-ui/tabs.tsx#TabsContent@7e51210f3cba0fd5",
+        "type": "default",
+        "id": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
         "title": "TabsContent",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -944,10 +1015,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#TabsList",
         "title": "TabsList",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -965,10 +1036,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
         "title": "TabsTrigger",
         "description": "src/shared/react-ui/tabs.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/tabs.tsx"
@@ -986,10 +1057,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
         "title": "ThemeToggle",
         "description": "src/shared/react-ui/theme-toggle.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/theme-toggle.tsx"
@@ -1001,10 +1072,10 @@
         }
       },
       {
+        "type": "default",
         "id": "component:src/shared/react-ui/toggle.tsx#Toggle",
         "title": "Toggle",
         "description": "src/shared/react-ui/toggle.tsx",
-        "type": "default",
         "links": [
           {
             "href": "source:///src/shared/react-ui/toggle.tsx"
@@ -1022,10 +1093,10 @@
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#Background",
         "title": "Background",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#Background",
           "origins": [
@@ -1038,20 +1109,20 @@
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#BaseEdge",
         "title": "BaseEdge",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#BaseEdge",
           "origins": []
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#ControlButton",
         "title": "ControlButton",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#ControlButton",
           "origins": [
@@ -1064,10 +1135,10 @@
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#Controls",
         "title": "Controls",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#Controls",
           "origins": [
@@ -1080,40 +1151,60 @@
         }
       },
       {
-        "id": "external:@xyflow/react#EdgeLabelRenderer@30daebb09c24b75f",
+        "type": "default",
+        "id": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
         "title": "EdgeLabelRenderer",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#EdgeLabelRenderer",
           "origins": []
         }
       },
       {
-        "id": "external:@xyflow/react#EdgeLabelRenderer@3c345b9f651fb049",
+        "type": "default",
+        "id": "external:@xyflow/react#EdgeLabelRenderer@7c8e25d2f23a8cd1",
         "title": "EdgeLabelRenderer",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#EdgeLabelRenderer",
           "origins": []
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#Handle",
         "title": "Handle",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#Handle",
           "origins": []
         }
       },
       {
-        "id": "external:@xyflow/react#Panel@06b0c9c4d37808d1",
+        "type": "default",
+        "id": "external:@xyflow/react#Panel@0d1bda260501738b",
         "title": "Panel",
         "description": "@xyflow/react boundary",
+        "component": {
+          "definitionId": "external:@xyflow/react#Panel",
+          "origins": []
+        }
+      },
+      {
         "type": "default",
+        "id": "external:@xyflow/react#Panel@2e27a067c9000fb4",
+        "title": "Panel",
+        "description": "@xyflow/react boundary",
+        "component": {
+          "definitionId": "external:@xyflow/react#Panel",
+          "origins": []
+        }
+      },
+      {
+        "type": "default",
+        "id": "external:@xyflow/react#Panel@94500793580ab6b4",
+        "title": "Panel",
+        "description": "@xyflow/react boundary",
         "component": {
           "definitionId": "external:@xyflow/react#Panel",
           "origins": [
@@ -1126,151 +1217,155 @@
         }
       },
       {
-        "id": "external:@xyflow/react#Panel@08c8d8f2be7cc5a5",
-        "title": "Panel",
-        "description": "@xyflow/react boundary",
         "type": "default",
-        "component": {
-          "definitionId": "external:@xyflow/react#Panel",
-          "origins": []
-        }
-      },
-      {
-        "id": "external:@xyflow/react#Panel@30de6c81b32079db",
-        "title": "Panel",
-        "description": "@xyflow/react boundary",
-        "type": "default",
-        "component": {
-          "definitionId": "external:@xyflow/react#Panel",
-          "origins": []
-        }
-      },
-      {
         "id": "external:@xyflow/react#ReactFlow",
         "title": "ReactFlow",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#ReactFlow",
           "origins": []
         }
       },
       {
+        "type": "default",
         "id": "external:@xyflow/react#ReactFlowProvider",
         "title": "ReactFlowProvider",
         "description": "@xyflow/react boundary",
-        "type": "default",
         "component": {
           "definitionId": "external:@xyflow/react#ReactFlowProvider",
           "origins": []
         }
+      },
+      {
+        "type": "default",
+        "id": "non-component",
+        "title": "Non-component"
       }
     ],
     "edges": [
       {
-        "id": "edge:07ce8a2ddab01458",
         "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@bb3c62046dd34969",
-        "target": "component:src/shared/react-ui/card.tsx#CardFooter@11dd473c6289262b",
-        "activeWhen": [[]]
+        "id": "edge:05501eb0a1076aaa",
+        "source": "component:src/shared/react-ui/card.tsx#CardFooter@0ed7ecaeb3c299e3",
+        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "guards": [[]]
       },
       {
-        "id": "edge:0961dd88712b2864",
         "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
-        "target": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
+        "id": "edge:06148543754bb3f1",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:1040325867e0d6de",
+        "source": "external:@xyflow/react#ReactFlowProvider",
+        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:1125b654783cb471",
+        "source": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
+        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:1239baecf30dd9f5",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:17e115eefec304a6",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+        "target": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
+        "sourcePort": "false",
         "activeWhen": [
           [
             {
               "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-              "value": "case:2"
+              "value": "case:1"
+            },
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+              "value": "false"
             }
           ]
         ]
       },
       {
-        "id": "edge:0c7bc4726f11cb22",
         "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@bb3c62046dd34969",
-        "target": "component:src/shared/react-ui/card.tsx#CardContent",
-        "activeWhen": [[]]
+        "id": "edge:198d97fe2837f6bd",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "guards": [[]]
       },
       {
-        "id": "edge:1040325867e0d6de",
         "type": "default",
-        "source": "external:@xyflow/react#ReactFlowProvider",
-        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-        "activeWhen": [[]]
+        "id": "edge:1a3a9a209cd782b7",
+        "source": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:1125b654783cb471",
         "type": "default",
-        "source": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
-        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:1239baecf30dd9f5",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:145709d929b09fb8",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
-        "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:1a2d0b51b8480dc2",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@58f453b0c49b9677",
-        "target": "component:src/shared/react-ui/card.tsx#CardContent",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:1f942dc38c22c564",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
-        "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:1fd815f8ef6106bc",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
-        "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@20f8e4d72c9038f4",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:21e598f5a78ccc5e",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@d5f914228c72094f",
-        "target": "component:src/shared/react-ui/card.tsx#CardHeader@2d9fd37be1d7e197",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:23496e67f0e043ad",
-        "type": "default",
-        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
-        "target": "component:src/shared/react-ui/empty.tsx#EmptyMedia",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:25be877ae69f8121",
-        "type": "default",
-        "source": "component:src/shared/react-ui/tabs.tsx#Tabs@51be83183cc170c0",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:2790ece4887fcbc9",
-        "type": "default",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "target": "external:@xyflow/react#EdgeLabelRenderer@3c345b9f651fb049",
+        "id": "edge:1ae122c4b90222b4",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "sourcePort": "false",
         "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:1b024e713c81b845",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
+        "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:1bb14e42e86dd123",
+        "source": "external:@xyflow/react#EdgeLabelRenderer@7c8e25d2f23a8cd1",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "guards": [
+          [],
           [
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
@@ -1284,225 +1379,20 @@
         ]
       },
       {
-        "id": "edge:2a00fe69cf97484d",
         "type": "default",
-        "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
-        "target": "external:@xyflow/react#Handle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:3097bfc18895ba09",
-        "type": "default",
-        "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
-        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:361bbe67ace3e77b",
-        "type": "default",
-        "source": "external:@xyflow/react#EdgeLabelRenderer@3c345b9f651fb049",
-        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "false"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "false"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "edge:4024ae1e7e8c9cf0",
-        "type": "default",
-        "source": "external:@xyflow/react#Panel@30de6c81b32079db",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:46bd0fff396acce2",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:4a637bbafd9fff8d",
-        "type": "default",
-        "source": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
-        "target": "external:@xyflow/react#Panel@08c8d8f2be7cc5a5",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:4b37ec09948c64d8",
-        "type": "default",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@20f8e4d72c9038f4",
-        "target": "component:src/shared/react-ui/empty.tsx#Empty",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "false"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "edge:4cb95705fa4bf8c7",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
-        "target": "external:@xyflow/react#Panel@30de6c81b32079db",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "edge:4e153de912b6f65b",
-        "type": "default",
-        "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
-        "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:4f518badd10ea820",
-        "type": "default",
-        "source": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearchInternal",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:5347b8ae7a890d28",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@d5f914228c72094f",
-        "target": "component:src/shared/react-ui/card.tsx#CardContent",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:60f68b38854d3292",
-        "type": "default",
-        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
-        "target": "component:src/shared/react-ui/empty.tsx#EmptyTitle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:62c95342487da821",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#CardHeader@2d9fd37be1d7e197",
-        "target": "component:src/shared/react-ui/card.tsx#CardTitle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:63ed758cd3c032d7",
-        "type": "default",
-        "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:6769fc822b6197fe",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:678842c62a8a1392",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "external:@xyflow/react#Controls",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:69e67a52fffb25f6",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-        "target": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:73e82cc28567766a",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:7437dbde39b1daa5",
-        "type": "default",
-        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
-        "target": "component:src/shared/react-ui/empty.tsx#EmptyDescription",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:7bf33ec6723fa523",
-        "type": "default",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-        "target": "component:src/shared/react-ui/form.tsx#Form@31008be58d04b855",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "edge:7c68b619b6dcc1f3",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "external:@xyflow/react#Panel@06b0c9c4d37808d1",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "edge:7cd30060a4b1291d",
-        "type": "default",
-        "source": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
-        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:81352b7bb36df336",
-        "type": "default",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@7e51210f3cba0fd5",
-        "target": "component:src/client/parts/diagram-list.tsx#DiagramList",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:828eca59e4009367",
-        "type": "default",
-        "source": "component:src/shared/react-ui/form.tsx#Form@31008be58d04b855",
-        "target": "component:src/shared/react-ui/card.tsx#Card@58f453b0c49b9677",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:8a50b07f1ebc7ac2",
-        "type": "default",
-        "source": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
-        "target": "external:@xyflow/react#Handle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:8de825d7dad5659a",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
+        "id": "edge:1e85599b4c662788",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
         "target": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
+        "sourcePort": "case:0",
         "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:0"
+            }
+          ]
+        ],
+        "guards": [
           [
             {
               "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
@@ -1512,24 +1402,304 @@
         ]
       },
       {
-        "id": "edge:8fb80b2ba48f017c",
         "type": "default",
-        "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "id": "edge:1ff38b8824438b66",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:21c26ef3327de924",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "target": "non-component",
+        "sourcePort": "true",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode:control:0",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:23496e67f0e043ad",
+        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
+        "target": "component:src/shared/react-ui/empty.tsx#EmptyMedia",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:2a00fe69cf97484d",
+        "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
+        "target": "external:@xyflow/react#Handle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:2b0f69e3e7bc4ae2",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:2fcb10e85d8bf253",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:302db1de876a740c",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "target": "non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:3097bfc18895ba09",
+        "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
+        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:3199345ae4e60495",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "target": "non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:3325dc414912e38a",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:39db3e18598961d5",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
+        "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:3bb65aaefe94a03d",
+        "source": "component:src/shared/react-ui/form.tsx#Form@0778ade414a7c54d",
+        "target": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:3d8c8b8b6d8f0a39",
+        "source": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "target": "component:src/shared/react-ui/card.tsx#CardContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:3e661c3f5b6d4188",
+        "source": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
+        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:430fbf434fff2c55",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "target": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
+        "sourcePort": "case:2",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:2"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:2"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:46bd0fff396acce2",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:4b3e3c5681683f33",
+        "source": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
+        "target": "external:@xyflow/react#Handle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:4e153de912b6f65b",
+        "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
+        "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:4ee6313d234f6285",
+        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "target": "component:src/shared/react-ui/card.tsx#CardContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:4f518badd10ea820",
+        "source": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
+        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearchInternal",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:4fe7c78e2d072503",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+        "target": "component:src/shared/react-ui/form.tsx#Form@0778ade414a7c54d",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
               "value": "on"
             }
           ]
         ]
       },
       {
-        "id": "edge:9047495b1a7cb0e0",
         "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#CardFooter@52c9363d8cc8bd83",
+        "id": "edge:55824f6ad9930efc",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
+        "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:58ea9a5db45c9d19",
+        "source": "component:src/shared/react-ui/card.tsx#CardHeader@fcf687b5c4ec07a8",
+        "target": "component:src/shared/react-ui/card.tsx#CardTitle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:5a09db462f42269f",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
         "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "false",
         "activeWhen": [
           [
             {
@@ -1538,39 +1708,186 @@
             },
             {
               "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
               "value": "false"
-            },
+            }
+          ]
+        ],
+        "guards": [
+          [
             {
               "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
               "value": "false"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "true"
             }
           ]
         ]
       },
       {
-        "id": "edge:90c8a9920962d8d9",
         "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@58f453b0c49b9677",
-        "target": "component:src/shared/react-ui/card.tsx#CardHeader@0ba64b6854436233",
-        "activeWhen": [[]]
+        "id": "edge:5a958b0827344f6d",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "target": "external:@xyflow/react#EdgeLabelRenderer@7c8e25d2f23a8cd1",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "id": "edge:90ca4efba1dedf1e",
         "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@51be83183cc170c0",
+        "id": "edge:5c04ef47cee6e237",
+        "source": "component:src/shared/react-ui/card.tsx#Card@57f461c43561acd7",
+        "target": "component:src/shared/react-ui/card.tsx#CardHeader@fcf687b5c4ec07a8",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:5dfb0654cb523379",
+        "source": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
+        "target": "external:@xyflow/react#Panel@2e27a067c9000fb4",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:60f68b38854d3292",
+        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
+        "target": "component:src/shared/react-ui/empty.tsx#EmptyTitle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:62cb3f1e802e37bd",
+        "source": "external:@xyflow/react#Panel@94500793580ab6b4",
+        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:63aa6f3fa868fab1",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:63ed758cd3c032d7",
+        "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:651a12f43689f226",
+        "source": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
+        "target": "external:@xyflow/react#Panel@0d1bda260501738b",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:6769fc822b6197fe",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:678842c62a8a1392",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Controls",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:68498956972e1018",
+        "source": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "target": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:69e67a52fffb25f6",
+        "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
+        "target": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:701198571c553fc7",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
+        "sourcePort": "true",
         "activeWhen": [
           [
             {
@@ -1583,182 +1900,178 @@
             },
             {
               "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-              "value": "false"
+              "value": "true"
             }
           ]
-        ]
-      },
-      {
-        "id": "edge:972f5d8293a2c684",
-        "type": "default",
-        "source": "component:src/shared/react-ui/form.tsx#Form@658e91eca2be1709",
-        "target": "component:src/shared/react-ui/card.tsx#Card@bb3c62046dd34969",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:9980ed2deaab2118",
-        "type": "default",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "target": "external:@xyflow/react#BaseEdge",
-        "activeWhen": [
+        ],
+        "guards": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "true"
             }
           ]
         ]
       },
       {
-        "id": "edge:9d882f8de2de5e0f",
         "type": "default",
-        "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
-        "target": "external:@xyflow/react#Handle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:a09a91ace637d95e",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#CardFooter@11dd473c6289262b",
+        "id": "edge:70b4bdb330e81aad",
+        "source": "component:src/shared/react-ui/card.tsx#CardFooter@01f1bbea3ba52569",
         "target": "component:src/shared/react-ui/button.tsx#Button",
-        "activeWhen": [[]]
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:a629c2ac594c5f84",
         "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
-        "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-        "activeWhen": [[]]
+        "id": "edge:73e82cc28567766a",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:a7144a0f14bbca87",
         "type": "default",
-        "source": "component:src/shared/react-ui/empty.tsx#Empty",
-        "target": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
-        "activeWhen": [[]]
+        "id": "edge:7437dbde39b1daa5",
+        "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
+        "target": "component:src/shared/react-ui/empty.tsx#EmptyDescription",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:a9b097b0d148ef20",
         "type": "default",
-        "source": "external:@xyflow/react#Panel@06b0c9c4d37808d1",
-        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:aa416d7d36eff145",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@bb3c62046dd34969",
-        "target": "component:src/shared/react-ui/card.tsx#CardHeader@0ba64b6854436233",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:b23a3ba96d4528bb",
-        "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#Card@58f453b0c49b9677",
-        "target": "component:src/shared/react-ui/card.tsx#CardFooter@52c9363d8cc8bd83",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:b67909a44516aba8",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
-        "target": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
+        "id": "edge:769dce0f35dc2c8e",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "target": "non-component",
+        "sourcePort": "case:3",
         "activeWhen": [
           [
             {
               "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-              "value": "case:1"
+              "value": "case:3"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:3"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:78a8fc1397495a58",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:7b8524d080648e87",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
+        "target": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:7cd30060a4b1291d",
+        "source": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
+        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:7ecf545163453e33",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "false"
             },
             {
-              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "false"
             }
           ]
         ]
       },
       {
-        "id": "edge:b778c7931dca4711",
         "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
-        "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:b7928ea654727eb6",
-        "type": "default",
-        "source": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
-        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:b949f0e948f43eb1",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:b9f65c9e1998c66a",
-        "type": "default",
-        "source": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
-        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:baf2026d85eac2b1",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
-        "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:bcb2253cbb0a7372",
-        "type": "default",
-        "source": "external:@xyflow/react#EdgeLabelRenderer@30daebb09c24b75f",
-        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:bd54918589ba6dcf",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:bfe89ea86d7b0f9e",
-        "type": "default",
-        "source": "external:@xyflow/react#Controls",
-        "target": "external:@xyflow/react#ControlButton",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:c15b82dd64043283",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-        "target": "external:@xyflow/react#ReactFlowProvider",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:c191d34b4a6c74b2",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/fragment-node.tsx#FragmentNode",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:c2aaf2dd552ac8d3",
-        "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:c4456a9524d866eb",
-        "type": "default",
-        "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-        "target": "external:@xyflow/react#EdgeLabelRenderer@30daebb09c24b75f",
+        "id": "edge:8492dd79d93a9829",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "target": "component:src/shared/react-ui/empty.tsx#Empty",
+        "sourcePort": "false",
         "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:8a50b07f1ebc7ac2",
+        "source": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
+        "target": "external:@xyflow/react#Handle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:8cbdc39e9ce853c9",
+        "source": "component:src/client/parts/artifact-list.tsx#ArtifactList",
+        "target": "component:src/shared/react-ui/card.tsx#Card@57f461c43561acd7",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:8ebb5477f4e55ec5",
+        "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+        "target": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
           [
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
@@ -1776,67 +2089,264 @@
         ]
       },
       {
-        "id": "edge:c538ab18d15aa618",
         "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "external:@xyflow/react#Background",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:c6a365ec4924a2b8",
-        "type": "default",
-        "source": "component:src/client/parts/diagram-list.tsx#DiagramList",
-        "target": "component:src/shared/react-ui/card.tsx#Card@d5f914228c72094f",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:cbc689fc2fe111d9",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
-        "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:d246d4016671f628",
-        "type": "default",
-        "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
+        "id": "edge:8fb80b2ba48f017c",
+        "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
         "target": "component:src/shared/react-ui/button.tsx#Button",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/card-node.tsx#CardNode:control:0",
+              "controlId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode:control:0",
               "value": "on"
             }
           ]
         ]
       },
       {
-        "id": "edge:d58341e647fcabaa",
         "type": "default",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "component:src/shared/react-flow/card-node.tsx#CardNode",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:d7b2fb071d492ba1",
-        "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@df2dc532ec41345e",
-        "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@7e51210f3cba0fd5",
+        "id": "edge:97008f720bcb7fce",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "target": "non-component",
+        "sourcePort": "true",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:9980ed2deaab2118",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "target": "external:@xyflow/react#BaseEdge",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
               "value": "on"
             }
           ]
         ]
       },
       {
-        "id": "edge:e70563650d79bfa2",
         "type": "default",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-        "target": "component:src/shared/react-ui/form.tsx#Form@658e91eca2be1709",
+        "id": "edge:9c5538e86fdc43c3",
+        "source": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:9d882f8de2de5e0f",
+        "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
+        "target": "external:@xyflow/react#Handle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:a1f2a2a7e966814e",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "true",
         "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:a2e17f013a86c049",
+        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "target": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:a473752bf86b26d4",
+        "source": "external:@xyflow/react#Panel@2e27a067c9000fb4",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:a7144a0f14bbca87",
+        "source": "component:src/shared/react-ui/empty.tsx#Empty",
+        "target": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:ab6144963b32b8ae",
+        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "target": "component:src/shared/react-ui/card.tsx#CardFooter@0ed7ecaeb3c299e3",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:b1b66ed45e6e35ef",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
+        "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:b7928ea654727eb6",
+        "source": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
+        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:b7e5fdb53ac450cf",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:b949f0e948f43eb1",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:b9f65c9e1998c66a",
+        "source": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
+        "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:bd54918589ba6dcf",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:bfe89ea86d7b0f9e",
+        "source": "external:@xyflow/react#Controls",
+        "target": "external:@xyflow/react#ControlButton",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c15b82dd64043283",
+        "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
+        "target": "external:@xyflow/react#ReactFlowProvider",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c191d34b4a6c74b2",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/fragment-node.tsx#FragmentNode",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c2aaf2dd552ac8d3",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c538ab18d15aa618",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Background",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c7edaef769d8fb35",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+        "target": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
           [
             {
               "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
@@ -1846,50 +2356,269 @@
         ]
       },
       {
-        "id": "edge:f103a4c4dda2808c",
         "type": "default",
+        "id": "edge:cf3b05bb748a012e",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:d246d4016671f628",
+        "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/card-node.tsx#CardNode:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/card-node.tsx#CardNode:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:d41c38b5385bbf7c",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "false"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:d58341e647fcabaa",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "component:src/shared/react-flow/card-node.tsx#CardNode",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:e058a8f98cc58637",
+        "source": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
+        "target": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:e5b26ec05e2dfe16",
+        "source": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "target": "component:src/shared/react-ui/card.tsx#CardFooter@01f1bbea3ba52569",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:e84e179f3f9a9445",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+        "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:1"
+            },
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:ec050f35a5fdc42c",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:ee5983ec08ec4f7c",
+        "source": "component:src/shared/react-ui/card.tsx#Card@57f461c43561acd7",
+        "target": "component:src/shared/react-ui/card.tsx#CardContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:ee80a8466867bdde",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
+        "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:f103a4c4dda2808c",
         "source": "component:src/shared/react-ui/tabs.tsx#TabsList",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsTrigger",
-        "activeWhen": [[]]
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:f3a4b2ac8dce9733",
         "type": "default",
+        "id": "edge:f20d22714430931a",
+        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
+        "sourcePort": "case:1",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:1"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
+              "value": "case:1"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:f3061ce99cde73b9",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "target": "non-component",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "true"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:f3a4b2ac8dce9733",
         "source": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
         "target": "external:@xyflow/react#Handle",
-        "activeWhen": [[]]
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:f4a04ba8a7ed9bd8",
         "type": "default",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@7e51210f3cba0fd5",
-        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
-        "activeWhen": [[]]
-      },
-      {
-        "id": "edge:f67d8472a976b4c9",
-        "type": "default",
-        "source": "component:src/shared/react-ui/tabs.tsx#Tabs@bd61845fe123d5af",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@a5b35580608727e3",
-        "activeWhen": [[]]
-      },
-      {
         "id": "edge:f7b64f6f66fa6c29",
-        "type": "default",
         "source": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
         "target": "external:@xyflow/react#ReactFlow",
-        "activeWhen": [[]]
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
-        "id": "edge:fa198b9e1afb0819",
         "type": "default",
-        "source": "component:src/shared/react-ui/card.tsx#CardHeader@0ba64b6854436233",
-        "target": "component:src/shared/react-ui/card.tsx#CardTitle",
-        "activeWhen": [[]]
+        "id": "edge:f80e9ddb028439eb",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "true"
+            }
+          ]
+        ]
       },
       {
+        "type": "default",
         "id": "edge:fa9d84eef3cbaad2",
-        "type": "default",
         "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
         "target": "external:@xyflow/react#BaseEdge",
         "activeWhen": [
@@ -1903,44 +2632,46 @@
               "value": "on"
             }
           ]
-        ]
-      },
-      {
-        "id": "edge:fc4ac04bb3c8165c",
-        "type": "default",
-        "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
-        "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
-        "activeWhen": [
+        ],
+        "guards": [
           [
             {
-              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
-              "value": "case:1"
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
             },
             {
-              "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:1",
-              "value": "true"
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "on"
             }
           ]
         ]
       },
       {
-        "id": "edge:fe4d1afc9b4fa8a0",
         "type": "default",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@bd61845fe123d5af",
+        "id": "edge:fb62a03135f75207",
+        "source": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
+        "target": "component:src/shared/react-ui/card.tsx#CardTitle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:fe70e017c6b68b8d",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Panel@94500793580ab6b4",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "false"
-            },
+              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "false"
-            },
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-              "value": "true"
+              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
+              "value": "on"
             }
           ]
         ]
@@ -1992,7 +2723,7 @@
       {
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
         "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "label": "!state.review.artifact",
+        "label": "!state.review.catalog",
         "dependsOn": [
           [
             {
@@ -2009,11 +2740,11 @@
         "cases": [
           {
             "id": "true",
-            "label": "!state.review.artifact"
+            "label": "!state.review.catalog"
           },
           {
             "id": "false",
-            "label": "!(!state.review.artifact)"
+            "label": "!(!state.review.catalog)"
           }
         ]
       },
