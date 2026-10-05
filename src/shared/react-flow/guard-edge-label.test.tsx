@@ -22,10 +22,36 @@ describe("guard edge label", () => {
     );
 
     const box = screen.getAllByRole("button").at(0)!.parentElement!;
-    expect(box).toHaveClass("bg-muted/60");
+    // Only some conditions hold, so the box reads as indeterminate.
+    expect(box).toHaveClass("border-dashed", "bg-muted/60");
     const [flag, busy] = within(box).getAllByRole("button");
     expect(flag?.firstElementChild).toHaveClass("lucide-check", "opacity-25");
     expect(busy?.firstElementChild).toHaveClass("lucide-check");
+  });
+
+  it("tints the clause box when every condition holds", () => {
+    render(
+      <GuardEdgeLabel
+        clauses={[
+          [
+            pill({ kind: "conditional", label: "flag", pressed: true }),
+            pill({ kind: "branch", label: "On", pressed: true }),
+          ],
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("border-primary/40", "bg-primary/10");
+  });
+
+  it("keeps the clause box plain when no condition holds", () => {
+    render(
+      <GuardEdgeLabel
+        clauses={[[pill({ kind: "conditional", label: "flag" }), pill({ kind: "branch", label: "On" })]]}
+      />,
+    );
+
+    expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("border-transparent", "bg-muted/60");
   });
 
   it("renders lone clauses bare and keeps OR clauses side by side", () => {

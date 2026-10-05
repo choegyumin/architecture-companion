@@ -28,8 +28,8 @@ describe("estimateGuardLabelSize", () => {
 
   it("adds the tinted box around an AND clause of several pills", () => {
     expect(estimateGuardLabelSize([[{ label: "draft" }, { label: "On" }]])).toEqual({
-      width: 8 + (34 + 6 * 5) + 4 + (34 + 6 * 2),
-      height: 30,
+      width: 10 + (34 + 6 * 5) + 4 + (34 + 6 * 2),
+      height: 32,
     });
   });
 });

@@ -45,12 +45,31 @@ function GuardPillButton({ pill }: Readonly<{ pill: GuardPill }>) {
   );
 }
 
+// A multi-condition clause box reads like a nested checkbox: a solid tinted
+// border when every condition holds, a dashed one when only some hold, and a
+// plain box when none do. The border stays present in every state so the box
+// does not shift as the selection changes.
+const CLAUSE_BOX_STATE_CLASS = {
+  satisfied: "border-primary/40 bg-primary/10",
+  partial: "border-dashed border-primary/40 bg-muted/60",
+  off: "border-transparent bg-muted/60",
+} as const;
+
+const clauseState = (pills: readonly GuardPill[]): keyof typeof CLAUSE_BOX_STATE_CLASS =>
+  pills.every((pill) => pill.pressed) ? "satisfied" : pills.some((pill) => pill.pressed) ? "partial" : "off";
+
 export function GuardEdgeLabel({ clauses }: Readonly<{ clauses: readonly (readonly GuardPill[])[] }>) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {clauses.map((clause, clauseIndex) =>
         clause.length > 1 ? (
-          <div className="flex items-center gap-1 rounded-md bg-muted/60 px-1 py-0.5" key={clauseIndex}>
+          <div
+            className={cn(
+              "flex items-center gap-1 rounded-md border px-1 py-0.5",
+              CLAUSE_BOX_STATE_CLASS[clauseState(clause)],
+            )}
+            key={clauseIndex}
+          >
             {clause.map((pill) => (
               <GuardPillButton key={pill.id} pill={pill} />
             ))}

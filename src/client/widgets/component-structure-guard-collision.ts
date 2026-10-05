@@ -11,9 +11,10 @@ const PILL_CHAR_WIDTH = 6;
 const PILL_BOX_PADDING = 34;
 const PILL_HEIGHT = 26;
 const PILL_GAP = 4;
-// The clause box (px-1 py-0.5) and the gap between clauses (gap-1.5).
-const CLAUSE_BOX_PADDING = 8;
-const CLAUSE_BOX_VERTICAL = 4;
+// The clause box (px-1 py-0.5 plus its 1px border) and the gap between
+// clauses (gap-1.5).
+const CLAUSE_BOX_PADDING = 10;
+const CLAUSE_BOX_VERTICAL = 6;
 const CLAUSE_GAP = 6;
 const COLLISION_MARGIN = 4;
 const PUSH_STEP = 48;
