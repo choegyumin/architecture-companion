@@ -124,6 +124,35 @@ A description of the condition under which a fragment's branch applies.
 **Aggregated Dependency Path**:
 A displayed path that groups dependency edges between the same visible endpoints, whether nodes or groups. The path is distinct from the individual underlying edges it represents.
 
+#### Component Structure Diagrams
+
+**Component Structure Diagram**:
+A code design diagram that shows the components of a component tree and the rendering paths through which they compose.
+
+**Rendering Path**:
+A conjunction of control choices under which a component renders. An edge applies when at least one of its rendering paths matches the current selection.
+
+**Control**:
+A branching or conditional decision in component source that gates rendering paths. Branch controls choose exactly one of their cases; conditional controls toggle on or off. Represented in code as `DiagramControl`.
+
+**Root**:
+A node of the authored graph that renders without any incoming rendering path.
+
+**Decision Node**:
+The projection of a branch control as a decision diamond. Its id reuses the control's id, its ports are the control's cases, and one arm leaves through each port.
+
+**Guard**:
+In a component structure diagram, the condition under which an edge's rendering path applies, rendered as a label on the edge. Not the sequence-diagram guard, which describes a fragment's branch.
+
+**Dead Arm**:
+A branch case no rendering path requires. Its arm routes to the shared Non-component node instead of disappearing, so rendering nothing stays a selectable rendering path.
+
+**Non-component**:
+The shared node a dead arm reaches. It carries no component information; it only marks that the branch case renders no component.
+
+**Component Origin**:
+The supplier and slot through which a merged component instance was composed, listed on the component's card.
+
 ### Review and Feedback
 
 **Review**:
