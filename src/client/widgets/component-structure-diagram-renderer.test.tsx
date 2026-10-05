@@ -479,6 +479,70 @@ describe("component structure paths", () => {
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");
   });
 
+  it("reroutes an unrelated gating choice to reach a root-owned control's dead arm", async () => {
+    const graph: DiagramGraph = {
+      groups: [],
+      nodes: ["app", "small", "large", "empty"].map((id) => ({ id, type: "default", kind: "component", title: id })),
+      edges: [
+        connection("a-small", "app", "small", "small"),
+        connection("a-large", "app", "large", "large"),
+        {
+          id: "large-empty",
+          type: "default",
+          source: "large",
+          target: "empty",
+          activeWhen: [
+            [
+              { controlId: "mode", value: "large" },
+              { controlId: "fallback", value: "no" },
+            ],
+          ],
+        },
+      ],
+      roots: ["app"],
+      controls: [
+        {
+          id: "mode",
+          owner: "app",
+          label: "mode",
+          kind: "branch",
+          dependsOn: [[]],
+          cases: [
+            { id: "small", label: "Small" },
+            { id: "large", label: "Large" },
+          ],
+        },
+        {
+          id: "fallback",
+          owner: "large",
+          label: "fallback",
+          kind: "branch",
+          dependsOn: [[]],
+          cases: [
+            { id: "yes", label: "Yes" },
+            { id: "no", label: "No" },
+          ],
+        },
+      ],
+    };
+    render(
+      <DiagramRenderer
+        annotations={annotations}
+        diagram={{ ...diagram, graph: projectDecisionNodes(graph) }}
+        onOpenSource={() => {}}
+      />,
+    );
+    await waitForDiagramReady();
+    await userEvent.click(screen.getByRole("button", { name: "Small" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+    const largePills = screen.getAllByRole("button", { name: "Large" });
+    expect(largePills.every((pill) => pill.getAttribute("aria-pressed") === "true")).toBe(true);
+    expect(screen.getByRole("img", { name: "fallback" })).toHaveAccessibleDescription("Active path");
+    expect(screen.getByRole("article", { name: "Non-component" })).toHaveAccessibleDescription("Active path");
+  });
+
   it("dims an inactive connection and its label even when both endpoint cards are active", async () => {
     const graph: DiagramGraph = {
       ...diagram.graph,

@@ -275,9 +275,27 @@ export function selectComponentPath(
 ): ComponentSelection {
   const selected = { ...selection, [controlId]: value };
   const control = graph.controls!.find((item) => item.id === controlId)!;
-  if (control.kind === "conditional" && value === "off") return selected;
-  if (componentPathEmphasis(graph, selected).controls.has(control.id)) return selected;
-  const candidates = ancestorRoutes(graph, control.owner).flatMap((route) => {
+  const emphasis = componentPathEmphasis(graph, selected);
+  if (control.kind === "conditional") {
+    if (value === "off" || emphasis.controls.has(control.id)) return selected;
+  } else {
+    // A branch needs rerouting only when its arm is unreachable: the control
+    // being active just means its owner renders, while the arm leaves the
+    // decision node, whose incoming chain may stay gated by other choices.
+    const armActive = graph.edges.some(
+      (edge) =>
+        edge.type === "default" &&
+        edge.source === controlId &&
+        edge.sourcePort === value &&
+        emphasis.edges.has(edge.id),
+    );
+    if (armActive) return selected;
+  }
+  // Branch arms reroute to the decision node itself — its incoming chain names
+  // the choices that must hold before the arm exists. Conditional controls own
+  // no node, so they reroute to their owner.
+  const rerouteTarget = control.kind === "branch" ? control.id : control.owner;
+  const candidates = ancestorRoutes(graph, rerouteTarget).flatMap((route) => {
     const requested = mergeRequirements(route, [{ controlId, value }]);
     return requested
       ? withPrerequisites(graph, requested).flatMap((candidate) => withReachableOwners(graph, selected, candidate))
