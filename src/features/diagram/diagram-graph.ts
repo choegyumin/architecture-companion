@@ -14,21 +14,27 @@ export const diagramLinkSchema = z
   .strict();
 export type DiagramLink = z.infer<typeof diagramLinkSchema>;
 
-/* === Component structure === */
+/* === Control === */
 
-/** One condition of a control path: the control `controlId` must currently hold `value`. */
-const diagramControlConditionSchema = z.object({ controlId: diagramIdSchema, value: z.string().min(1) }).strict();
-export type DiagramControlCondition = z.infer<typeof diagramControlConditionSchema>;
+/** One route requirement: the control `controlId` must currently hold `value`. */
+export const diagramRouteRequirementSchema = z
+  .object({ controlId: diagramIdSchema, value: z.string().min(1) })
+  .strict();
+export type DiagramRouteRequirement = z.infer<typeof diagramRouteRequirementSchema>;
 
-/** Disjunctive normal form: the connection holds when at least one AND clause holds. */
-export const diagramControlPathsSchema = z.array(z.array(diagramControlConditionSchema)).min(1);
-export type DiagramControlPaths = z.infer<typeof diagramControlPathsSchema>;
+/** Route requirements joined by AND: the rule holds only when every requirement in it holds. An empty rule holds unconditionally. */
+export const diagramRouteRequirementRuleSchema = z.array(diagramRouteRequirementSchema);
+export type DiagramRouteRequirementRule = z.infer<typeof diagramRouteRequirementRuleSchema>;
+
+/** Rules joined by OR, in no particular order: the ruleset holds when any one rule holds. */
+export const diagramRouteRequirementRulesetSchema = z.array(diagramRouteRequirementRuleSchema).min(1);
+export type DiagramRouteRequirementRuleset = z.infer<typeof diagramRouteRequirementRulesetSchema>;
 
 const diagramControlBaseShape = {
   id: diagramIdSchema,
   owner: diagramIdSchema,
   label: z.string().min(1),
-  dependsOn: diagramControlPathsSchema,
+  dependsOn: diagramRouteRequirementRulesetSchema,
 };
 export const diagramControlSchema = z.discriminatedUnion("kind", [
   z.object({ ...diagramControlBaseShape, kind: z.literal("conditional") }).strict(),
@@ -42,7 +48,9 @@ export const diagramControlSchema = z.discriminatedUnion("kind", [
 ]);
 export type DiagramControl = z.infer<typeof diagramControlSchema>;
 
-const componentNodeMetadataSchema = z
+/* === Node === */
+
+const diagramNodeMetadataSchema = z
   .object({
     definitionId: diagramIdSchema,
     origins: z.array(
@@ -50,8 +58,6 @@ const componentNodeMetadataSchema = z
     ),
   })
   .strict();
-
-/* === Node === */
 
 const diagramNodeBaseShape = {
   id: diagramIdSchema,
@@ -67,7 +73,7 @@ export const defaultDiagramNodeSchema = z
     kind: z.string().min(1).optional(),
     type: z.literal("default"),
     links: z.array(diagramLinkSchema).optional(),
-    component: componentNodeMetadataSchema.optional(),
+    component: diagramNodeMetadataSchema.optional(),
   })
   .strict();
 export type DefaultDiagramNode = z.infer<typeof defaultDiagramNodeSchema>;
@@ -143,11 +149,11 @@ export const defaultDiagramEdgeSchema = z
     kind: z.string().min(1).optional(),
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
-    activeWhen: diagramControlPathsSchema.optional(),
+    activeWhen: diagramRouteRequirementRulesetSchema.optional(),
     /** The decision-node port (branch case id) this edge leaves from. */
     sourcePort: diagramIdSchema.optional(),
-    /** Edge-label guards: the conditions rendered on this edge's label. */
-    guards: diagramControlPathsSchema.optional(),
+    /** Edge-label guards: the route requirements rendered on this edge's label. */
+    guards: diagramRouteRequirementRulesetSchema.optional(),
   })
   .strict();
 export type DefaultDiagramEdge = z.infer<typeof defaultDiagramEdgeSchema>;
@@ -296,35 +302,35 @@ export const diagramGraphSchema = z
         });
       }
     });
-    const validatePaths = (paths: DiagramControlPaths, path: (string | number)[]) => {
-      paths.forEach((conditions, pathIndex) => {
+    const validateRuleset = (ruleset: DiagramRouteRequirementRuleset, issuePath: (string | number)[]) => {
+      ruleset.forEach((rule, ruleIndex) => {
         const values = new Map<string, string>();
-        conditions.forEach((condition, conditionIndex) => {
-          const previous = values.get(condition.controlId);
-          if (previous !== undefined && previous !== condition.value) {
+        rule.forEach((requirement, requirementIndex) => {
+          const previous = values.get(requirement.controlId);
+          if (previous !== undefined && previous !== requirement.value) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, conditionIndex],
-              message: `Contradictory component path: ${condition.controlId}`,
+              path: [...issuePath, ruleIndex, requirementIndex],
+              message: `Contradictory rule for control: ${requirement.controlId}`,
             });
           }
-          values.set(condition.controlId, condition.value);
-          const control = controls.get(condition.controlId);
+          values.set(requirement.controlId, requirement.value);
+          const control = controls.get(requirement.controlId);
           if (!control) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, conditionIndex, "controlId"],
-              message: `Unknown component control: ${condition.controlId}`,
+              path: [...issuePath, ruleIndex, requirementIndex, "controlId"],
+              message: `Unknown component control: ${requirement.controlId}`,
             });
           } else if (
             control.kind === "conditional"
-              ? condition.value !== "on" && condition.value !== "off"
-              : !control.cases.some((branchCase) => branchCase.id === condition.value)
+              ? requirement.value !== "on" && requirement.value !== "off"
+              : !control.cases.some((branchCase) => branchCase.id === requirement.value)
           ) {
             context.addIssue({
               code: "custom",
-              path: [...path, pathIndex, conditionIndex, "value"],
-              message: `Invalid value for component control ${condition.controlId}: ${condition.value}`,
+              path: [...issuePath, ruleIndex, requirementIndex, "value"],
+              message: `Invalid value for component control ${requirement.controlId}: ${requirement.value}`,
             });
           }
         });
@@ -332,8 +338,8 @@ export const diagramGraphSchema = z
     };
     graph.edges.forEach((edge, index) => {
       if (edge.type !== "default") return;
-      if (edge.activeWhen) validatePaths(edge.activeWhen, ["edges", index, "activeWhen"]);
-      if (edge.guards) validatePaths(edge.guards, ["edges", index, "guards"]);
+      if (edge.activeWhen) validateRuleset(edge.activeWhen, ["edges", index, "activeWhen"]);
+      if (edge.guards) validateRuleset(edge.guards, ["edges", index, "guards"]);
       if (edge.sourcePort) {
         const control = branchControls.get(edge.source);
         if (!control) {
@@ -352,7 +358,7 @@ export const diagramGraphSchema = z
       }
     });
     graph.controls?.forEach((control, index) => {
-      validatePaths(control.dependsOn, ["controls", index, "dependsOn"]);
+      validateRuleset(control.dependsOn, ["controls", index, "dependsOn"]);
     });
     if (hasComponentStructure) {
       const targetsWithIncoming = new Set(

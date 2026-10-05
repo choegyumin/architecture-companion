@@ -1,9 +1,10 @@
 import type {
   DiagramControl,
-  DiagramControlCondition,
-  DiagramControlPaths,
   DiagramEdge,
   DiagramGraph,
+  DiagramRouteRequirement,
+  DiagramRouteRequirementRule,
+  DiagramRouteRequirementRuleset,
 } from "@/features/diagram/diagram-graph";
 
 export type ComponentSelection = Readonly<Record<string, string>>;
@@ -103,18 +104,19 @@ function compareMetrics(left: ReturnType<typeof routeMetrics>, right: ReturnType
   );
 }
 
-function componentPathsMatch(
-  paths: DiagramControlPaths,
+function componentRulesetHolds(
+  ruleset: DiagramRouteRequirementRuleset,
   selection: ComponentSelection,
   controls: readonly DiagramControl[],
   reachableNodes: ReadonlySet<string>,
 ): boolean {
-  return paths.some((path) =>
-    path.every(({ controlId, value }) => {
+  return ruleset.some((rule) =>
+    rule.every(({ controlId, value }) => {
       if (selection[controlId] !== value) return false;
       const control = controls.find((item) => item.id === controlId)!;
       return (
-        reachableNodes.has(control.owner) && componentPathsMatch(control.dependsOn, selection, controls, reachableNodes)
+        reachableNodes.has(control.owner) &&
+        componentRulesetHolds(control.dependsOn, selection, controls, reachableNodes)
       );
     }),
   );
@@ -122,9 +124,9 @@ function componentPathsMatch(
 
 type RouteCandidate = Readonly<{ requirements: ReadonlyMap<string, string>; edges: readonly string[] }>;
 
-function mergeRequirements(candidate: RouteCandidate, path: DiagramControlPaths[number]): RouteCandidate | undefined {
+function mergeRequirements(candidate: RouteCandidate, rule: DiagramRouteRequirementRule): RouteCandidate | undefined {
   const requirements = new Map(candidate.requirements);
-  for (const { controlId, value } of path) {
+  for (const { controlId, value } of rule) {
     const known = requirements.get(controlId);
     if (known !== undefined && known !== value) return undefined;
     requirements.set(controlId, value);
@@ -140,8 +142,8 @@ function ancestorRoutes(graph: DiagramGraph, nodeId: string, visited = new Set<s
     .filter((edge) => edge.target === nodeId)
     .flatMap((edge) =>
       ancestorRoutes(graph, edge.source, nextVisited).flatMap((ancestor) =>
-        (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((path) => {
-          const merged = mergeRequirements(ancestor, path);
+        (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((rule) => {
+          const merged = mergeRequirements(ancestor, rule);
           return merged ? [{ ...merged, edges: [...ancestor.edges, edge.id] }] : [];
         }),
       ),
@@ -157,28 +159,28 @@ function withPrerequisites(
   if (pending === undefined) return [candidate];
   const control = graph.controls!.find((item) => item.id === pending)!;
   const nextExpanded = new Set([...expanded, pending]);
-  return control.dependsOn.flatMap((path) => {
-    const merged = mergeRequirements(candidate, path);
+  return control.dependsOn.flatMap((rule) => {
+    const merged = mergeRequirements(candidate, rule);
     return merged ? withPrerequisites(graph, merged, nextExpanded) : [];
   });
 }
 
 function branchMetrics(graph: DiagramGraph, control: DiagramControl, value: string) {
-  const pathsByEdge = new Map(
+  const routesByEdge = new Map(
     graph.edges.map((edge) => [
       edge.id,
-      (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((path) =>
+      (edge.type === "default" ? (edge.activeWhen ?? [[]]) : [[]]).flatMap((rule) =>
         withPrerequisites(graph, {
-          requirements: new Map(path.map(({ controlId, value }) => [controlId, value])),
+          requirements: new Map(rule.map(({ controlId, value }) => [controlId, value])),
           edges: [],
         }),
       ),
     ]),
   );
-  // Other controls remain undecided, but an alternative cannot count its own opposite paths.
+  // Other controls remain undecided, but an alternative cannot count its own opposite routes.
   const eligibleEdges = graph.edges.filter((edge) =>
-    pathsByEdge.get(edge.id)!.some((path) => {
-      const required = path.requirements.get(control.id);
+    routesByEdge.get(edge.id)!.some((route) => {
+      const required = route.requirements.get(control.id);
       return required === undefined || required === value;
     }),
   );
@@ -195,7 +197,7 @@ function branchMetrics(graph: DiagramGraph, control: DiagramControl, value: stri
   }
   const candidateGraph = { ...graph, edges: eligibleEdges.filter((edge) => reachable.has(edge.source)) };
   const starts = candidateGraph.edges.filter((edge) =>
-    pathsByEdge.get(edge.id)!.some((path) => path.requirements.get(control.id) === value),
+    routesByEdge.get(edge.id)!.some((route) => route.requirements.get(control.id) === value),
   );
   return routeMetrics(candidateGraph, condensedComponents(candidateGraph), starts, control.owner);
 }
@@ -223,7 +225,7 @@ export function componentPathEmphasis(graph: DiagramGraph, selection: ComponentS
     changed = false;
     for (const edge of graph.edges) {
       if (!nodes.has(edge.source)) continue;
-      if (edge.type === "default" && !componentPathsMatch(edge.activeWhen ?? [[]], selection, controls, nodes))
+      if (edge.type === "default" && !componentRulesetHolds(edge.activeWhen ?? [[]], selection, controls, nodes))
         continue;
       edges.add(edge.id);
       if (!nodes.has(edge.target)) {
@@ -235,7 +237,7 @@ export function componentPathEmphasis(graph: DiagramGraph, selection: ComponentS
   const activeControls = new Set(
     controls
       .filter(
-        (control) => nodes.has(control.owner) && componentPathsMatch(control.dependsOn, selection, controls, nodes),
+        (control) => nodes.has(control.owner) && componentRulesetHolds(control.dependsOn, selection, controls, nodes),
       )
       .map((control) => control.id),
   );
@@ -326,43 +328,43 @@ export function selectComponentPath(
   return chosen ? { ...selected, ...Object.fromEntries(chosen.requirements) } : selected;
 }
 
-// Turning a satisfied clause off keeps the conditions that other active
-// clauses also name — their pills stay pressed — so a shared clause ends
-// partial rather than off. Only conditional conditions switch off, because a
-// branch control always holds one case; a clause with nothing left to spare
+// Turning a satisfied rule off keeps the requirements that other active
+// rules also name — their pills stay pressed — so a shared rule ends
+// partial rather than off. Only conditional requirements switch off, because a
+// branch control always holds one case; a rule with nothing left to spare
 // forces off entirely.
-function releaseGuardClause(
+function releaseGuardRule(
   graph: DiagramGraph,
   selection: ComponentSelection,
-  clause: DiagramControlPaths[number],
+  rule: DiagramRouteRequirementRule,
   activeEdges: ReadonlySet<string>,
   selfEdgeId: string,
   selfIndex: number,
 ): ComponentSelection {
-  const holds = (condition: DiagramControlCondition) => selection[condition.controlId] === condition.value;
+  const holds = (requirement: DiagramRouteRequirement) => selection[requirement.controlId] === requirement.value;
   const satisfied = graph.edges.flatMap((edge) => {
     if (edge.type !== "default" || !edge.guards || !activeEdges.has(edge.id)) return [];
     return edge.guards
-      .map((path, index) => ({ edgeId: edge.id, index, path }))
-      .filter((other) => (other.edgeId !== selfEdgeId || other.index !== selfIndex) && other.path.every(holds));
+      .map((other, index) => ({ edgeId: edge.id, index, rule: other }))
+      .filter((other) => (other.edgeId !== selfEdgeId || other.index !== selfIndex) && other.rule.every(holds));
   });
-  const shared = (condition: DiagramControlCondition) =>
+  const shared = (requirement: DiagramRouteRequirement) =>
     satisfied.some((other) =>
-      other.path.some((item) => item.controlId === condition.controlId && item.value === condition.value),
+      other.rule.some((item) => item.controlId === requirement.controlId && item.value === requirement.value),
     );
-  const switchable = clause.filter(
-    (condition) => graph.controls!.find((control) => control.id === condition.controlId)?.kind === "conditional",
+  const switchable = rule.filter(
+    (requirement) => graph.controls!.find((control) => control.id === requirement.controlId)?.kind === "conditional",
   );
-  const exclusive = switchable.filter((condition) => !shared(condition));
+  const exclusive = switchable.filter((requirement) => !shared(requirement));
   return (exclusive.length > 0 ? exclusive : switchable).reduce(
     (next, { controlId, value }) => ({ ...next, [controlId]: value === "on" ? "off" : "on" }),
     selection,
   );
 }
 
-// Clicking a guard pill drives its whole AND clause like a nested checkbox:
-// an unmet or partially met clause clicks fully on — the clause naming the
-// clicked condition, applied starting from it — while a clause already
+// Clicking a guard pill drives its whole AND rule like a nested checkbox:
+// an unmet or partially met rule clicks fully on — the rule naming the
+// clicked requirement, applied starting from it — while a rule already
 // holding on a rendering edge clicks off as one unit. Values can hold on a
 // path that lost reachability; clicking there still asks to render it, so a
 // conditional pill first repairs in place and only releases when nothing
@@ -378,33 +380,33 @@ export function selectEdgePath(
   const control = controls.find((item) => item.id === controlId)!;
   const edge = graph.edges.find((item) => item.type === "default" && item.id === edgeId);
   const guards = edge && edge.type === "default" ? edge.guards : undefined;
-  const clauseIndex =
-    guards?.findIndex((path) =>
-      path.some((condition) => condition.controlId === controlId && condition.value === value),
+  const ruleIndex =
+    guards?.findIndex((rule) =>
+      rule.some((requirement) => requirement.controlId === controlId && requirement.value === value),
     ) ?? -1;
-  const clause = clauseIndex >= 0 ? guards!.at(clauseIndex) : guards?.at(0);
-  // The clicked condition applies first: rerouting starts from what the user
-  // asked for, and sibling conditions then land on an already-repaired path.
-  const applyClause = (from: ComponentSelection): ComponentSelection => {
-    const rest = (clause ?? [{ controlId, value }]).filter(
-      (condition) => condition.controlId !== controlId || condition.value !== value,
+  const rule = ruleIndex >= 0 ? guards!.at(ruleIndex) : guards?.at(0);
+  // The clicked requirement applies first: rerouting starts from what the user
+  // asked for, and sibling requirements then land on an already-repaired path.
+  const applyRule = (from: ComponentSelection): ComponentSelection => {
+    const rest = (rule ?? [{ controlId, value }]).filter(
+      (requirement) => requirement.controlId !== controlId || requirement.value !== value,
     );
     return [{ controlId, value }, ...rest].reduce(
-      (next, condition) => selectComponentPath(graph, next, condition.controlId, condition.value),
+      (next, requirement) => selectComponentPath(graph, next, requirement.controlId, requirement.value),
       from,
     );
   };
-  const holds = clause != null && clause.every((condition) => selection[condition.controlId] === condition.value);
+  const holds = rule != null && rule.every((requirement) => selection[requirement.controlId] === requirement.value);
   const activeEdges = componentPathEmphasis(graph, selection).edges;
   if (holds && activeEdges.has(edgeId)) {
-    return releaseGuardClause(graph, selection, clause!, activeEdges, edgeId, clauseIndex);
+    return releaseGuardRule(graph, selection, rule!, activeEdges, edgeId, ruleIndex);
   }
   if (holds && control.kind === "conditional") {
-    const repaired = applyClause(selection);
+    const repaired = applyRule(selection);
     const movedBranch = controls.some((item) => item.kind === "branch" && repaired[item.id] !== selection[item.id]);
     const changed = Object.keys(repaired).some((id) => repaired[id] !== selection[id]);
     if (changed && !movedBranch) return repaired;
-    return releaseGuardClause(graph, selection, clause!, activeEdges, edgeId, clauseIndex);
+    return releaseGuardRule(graph, selection, rule!, activeEdges, edgeId, ruleIndex);
   }
-  return applyClause(selection);
+  return applyRule(selection);
 }

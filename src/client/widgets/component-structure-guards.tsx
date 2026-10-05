@@ -5,12 +5,7 @@ import {
   resolveGuardLabelOffsets,
 } from "@/client/widgets/component-structure-guard-collision";
 import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
-import type {
-  DefaultDiagramEdge,
-  DiagramControl,
-  DiagramControlCondition,
-  DiagramEdge,
-} from "@/features/diagram/diagram-graph";
+import type { DefaultDiagramEdge, DiagramControl, DiagramEdge } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { GuardEdgeLabel, type GuardPill } from "@/shared/react-flow/guard-edge-label";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
@@ -93,10 +88,9 @@ type ComponentGuardLabelsProps = Readonly<{
 const GUARD_LABEL_ENDPOINT_OFFSET = 64;
 const GUARD_LABEL_MIN_SEPARATION = 96;
 
-type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ clauses: readonly (readonly GuardPill[])[] }>;
+type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ rules: readonly (readonly GuardPill[])[] }>;
 
-// Projects one guard pill per condition an edge's guards name. All pills of a
-// control stay in sync because selection is keyed by control. Clicking any
+// // control stay in sync because selection is keyed by control. Clicking any
 // pill requests its whole edge's path, not a single condition.
 export function attachGuardLabels({
   graph,
@@ -110,20 +104,20 @@ export function attachGuardLabels({
   const graphEdgeById = new Map(
     graph.edges.filter((edge): edge is DefaultDiagramEdge => edge.type === "default").map((edge) => [edge.id, edge]),
   );
-  // Projects one pill per condition, keeping each guard clause together: an
-  // AND clause renders as one box, and OR clauses stay separate units.
-  const clausesOf = (edgeId: string): { branch: GuardPill[][]; conditional: GuardPill[][]; all: GuardPill[][] } => {
+  // Projects one pill per requirement, keeping each guard rule together: an
+  // AND rule renders as one box, and OR rules stay separate units.
+  const rulesOf = (edgeId: string): { branch: GuardPill[][]; conditional: GuardPill[][]; all: GuardPill[][] } => {
     const guards = graphEdgeById.get(edgeId)?.guards;
     if (!guards) return { branch: [], conditional: [], all: [] };
     const branch: GuardPill[][] = [];
     const conditional: GuardPill[][] = [];
     const all: GuardPill[][] = [];
-    for (const [pathIndex, path] of guards.entries()) {
-      const branchClause: GuardPill[] = [];
-      const conditionalClause: GuardPill[] = [];
-      const clause: GuardPill[] = [];
+    for (const [ruleIndex, guardRule] of guards.entries()) {
+      const branchRule: GuardPill[] = [];
+      const conditionalRule: GuardPill[] = [];
+      const rule: GuardPill[] = [];
       const seen = new Set<string>();
-      for (const { controlId, value } of path as DiagramControlCondition[]) {
+      for (const { controlId, value } of guardRule) {
         const key = `${controlId}\0${value}`;
         if (seen.has(key)) continue;
         seen.add(key);
@@ -132,25 +126,25 @@ export function attachGuardLabels({
         const pill =
           control.kind === "branch"
             ? {
-                id: `${pathIndex}:${key}`,
+                id: `${ruleIndex}:${key}`,
                 kind: "branch" as const,
                 label: control.cases.find((branchCase) => branchCase.id === value)?.label ?? value,
                 pressed: selection[controlId] === value,
                 onSelect: () => onSelect(edgeId, controlId, value),
               }
             : {
-                id: `${pathIndex}:${key}`,
+                id: `${ruleIndex}:${key}`,
                 kind: "conditional" as const,
                 label: control.label,
                 pressed: selection[controlId] === value,
                 onSelect: () => onSelect(edgeId, controlId, value),
               };
-        clause.push(pill);
-        (control.kind === "branch" ? branchClause : conditionalClause).push(pill);
+        rule.push(pill);
+        (control.kind === "branch" ? branchRule : conditionalRule).push(pill);
       }
-      if (clause.length > 0) all.push(clause);
-      if (branchClause.length > 0) branch.push(branchClause);
-      if (conditionalClause.length > 0) conditional.push(conditionalClause);
+      if (rule.length > 0) all.push(rule);
+      if (branchRule.length > 0) branch.push(branchRule);
+      if (conditionalRule.length > 0) conditional.push(conditionalRule);
     }
     return { branch, conditional, all };
   };
@@ -162,11 +156,11 @@ export function attachGuardLabels({
     from: "start" | "end",
   ) => (points.length < 2 ? (points.at(0) ?? fallback) : pointAlongPolyline(points, offset, from));
 
-  // First pass: project each edge's guards into anchored clause groups.
+  // First pass: project each edge's guards into anchored rule groups.
   const groupsByEdge = new Map<string, ProjectedGuardGroup[]>();
   for (const edge of edges) {
     if (edge.type !== "route" || !edge.data) continue;
-    const { branch, conditional, all } = clausesOf(edge.id);
+    const { branch, conditional, all } = rulesOf(edge.id);
     if (all.length === 0) continue;
     const points = pointsByEdgeId.get(edge.id) ?? [];
     const arc = polylineArcLength(points);
@@ -177,15 +171,15 @@ export function attachGuardLabels({
       arc >= 2 * GUARD_LABEL_ENDPOINT_OFFSET + GUARD_LABEL_MIN_SEPARATION;
     const entries = separated
       ? [
-          { from: "start" as const, clauses: branch, offset: GUARD_LABEL_ENDPOINT_OFFSET },
-          { from: "end" as const, clauses: conditional, offset: GUARD_LABEL_ENDPOINT_OFFSET },
+          { from: "start" as const, rules: branch, offset: GUARD_LABEL_ENDPOINT_OFFSET },
+          { from: "end" as const, rules: conditional, offset: GUARD_LABEL_ENDPOINT_OFFSET },
         ]
       : [
           {
             // Never anchor past the midpoint, so pills on short edges stay on
             // the edge instead of clamping onto the node at the far end.
             from: (branch.length > 0 ? "start" : "end") as "start" | "end",
-            clauses: all,
+            rules: all,
             offset: Math.min(GUARD_LABEL_ENDPOINT_OFFSET, arc / 2),
           },
         ];
@@ -194,11 +188,11 @@ export function attachGuardLabels({
       entries.map((entry) => ({
         edgeId: edge.id,
         from: entry.from,
-        clauses: entry.clauses,
+        rules: entry.rules,
         offset: entry.offset,
         points,
         fallback,
-        size: estimateGuardLabelSize(entry.clauses),
+        size: estimateGuardLabelSize(entry.rules),
       })),
     );
   }
@@ -217,7 +211,7 @@ export function attachGuardLabels({
     const groups = groupsByEdge.get(edge.id);
     if (!groups) return edge;
     const labelControls = groups.map((group) => ({
-      control: <GuardEdgeLabel clauses={group.clauses} />,
+      control: <GuardEdgeLabel rules={group.rules} />,
       position: anchorAlong(
         group.points,
         group.fallback,

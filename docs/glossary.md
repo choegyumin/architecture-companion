@@ -135,6 +135,15 @@ A conjunction of control choices under which a component renders. An edge applie
 **Control**:
 A branching or conditional decision in component source that gates rendering paths. Branch controls choose exactly one of their cases; conditional controls toggle on or off. Represented in code as `DiagramControl`.
 
+**Route Requirement**:
+A value one control must hold for a path to apply: one `control=value` pair. The atomic unit of edge activation conditions (`activeWhen`, `guards`) and control prerequisites (`dependsOn`). Represented in code as `DiagramRouteRequirement`.
+
+**Route Requirement Rule**:
+Route requirements joined by AND: the rule holds only when every requirement in it holds. Rendered as one unit on the edge label. Represented in code as `DiagramRouteRequirementRule`.
+
+**Route Requirement Ruleset**:
+Route Requirement Rules joined by OR, in no particular order: the ruleset holds when any one rule holds. The type of `activeWhen`, `guards`, and `dependsOn`. Represented in code as `DiagramRouteRequirementRuleset`.
+
 **Root**:
 A node of the authored graph that renders without any incoming rendering path.
 
@@ -142,7 +151,7 @@ A node of the authored graph that renders without any incoming rendering path.
 The projection of a branch control as a decision diamond. Its id reuses the control's id, its ports are the control's cases, and one arm leaves through each port.
 
 **Guard**:
-In a component structure diagram, the condition under which an edge's rendering path applies, rendered as a label on the edge. Not the sequence-diagram guard, which describes a fragment's branch.
+In a component structure diagram, the condition under which an edge's rendering path applies: a Route Requirement Ruleset, rendered as a label on the edge. Not the sequence-diagram guard, which describes a fragment's branch.
 
 **Dead Arm**:
 A branch case no rendering path requires. Its arm routes to its own Non-component node instead of disappearing, so rendering nothing stays a selectable rendering path.

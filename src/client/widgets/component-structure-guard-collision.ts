@@ -3,7 +3,7 @@ import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-plac
 type Point = Readonly<{ x: number; y: number }>;
 
 // Guard pills render at text-xs in a single row with a leading state icon,
-// and one AND clause of several pills shares a tinted box. Sizes are
+// and one AND rule of several pills shares a tinted box. Sizes are
 // estimated from label lengths instead of measured so placement stays a pure
 // layout-time decision; the margin absorbs the estimation error.
 const PILL_CHAR_WIDTH = 6;
@@ -11,26 +11,26 @@ const PILL_CHAR_WIDTH = 6;
 const PILL_BOX_PADDING = 34;
 const PILL_HEIGHT = 26;
 const PILL_GAP = 4;
-// The clause box (px-1 py-0.5 plus its 1px border) and the gap between
-// clauses (gap-1.5).
-const CLAUSE_BOX_PADDING = 10;
-const CLAUSE_BOX_VERTICAL = 6;
-const CLAUSE_GAP = 6;
+// The rule box (px-1 py-0.5 plus its 1px border) and the gap between
+// rules (gap-1.5).
+const RULE_BOX_PADDING = 10;
+const RULE_BOX_VERTICAL = 6;
+const RULE_GAP = 6;
 const COLLISION_MARGIN = 4;
 const PUSH_STEP = 48;
 const RESOLVE_ROUNDS = 4;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
-export function estimateGuardLabelSize(clauses: readonly (readonly { label: string }[])[]): GuardLabelSize {
+export function estimateGuardLabelSize(rules: readonly (readonly { label: string }[])[]): GuardLabelSize {
   let width = 0;
   let height = PILL_HEIGHT;
-  for (const [index, clause] of clauses.entries()) {
+  for (const [index, rule] of rules.entries()) {
     const pills =
-      clause.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
-      PILL_GAP * Math.max(clause.length - 1, 0);
-    width += (clause.length > 1 ? CLAUSE_BOX_PADDING : 0) + pills + (index > 0 ? CLAUSE_GAP : 0);
-    if (clause.length > 1) height = PILL_HEIGHT + CLAUSE_BOX_VERTICAL;
+      rule.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
+      PILL_GAP * Math.max(rule.length - 1, 0);
+    width += (rule.length > 1 ? RULE_BOX_PADDING : 0) + pills + (index > 0 ? RULE_GAP : 0);
+    if (rule.length > 1) height = PILL_HEIGHT + RULE_BOX_VERTICAL;
   }
   return { width, height };
 }

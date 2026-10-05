@@ -10,27 +10,27 @@ const pill = (overrides: Partial<GuardPill> & Pick<GuardPill, "kind" | "label">)
 });
 
 describe("guard edge label", () => {
-  it("wraps an AND clause of several pills in one shared box", () => {
+  it("wraps an AND rule of several pills in one shared box", () => {
     render(
       <GuardEdgeLabel
-        clauses={[
+        rules={[
           [pill({ kind: "conditional", label: "flag" }), pill({ kind: "conditional", label: "busy", pressed: true })],
         ]}
       />,
     );
 
     const box = screen.getAllByRole("button").at(0)!.parentElement!;
-    // Only some conditions hold, so the box reads as indeterminate.
+    // Only some requirements hold, so the box reads as indeterminate.
     expect(box).toHaveClass("border-dashed", "bg-muted/60");
     const [flag, busy] = within(box).getAllByRole("button");
     expect(flag?.firstElementChild).toHaveClass("lucide-check", "opacity-25");
     expect(busy?.firstElementChild).toHaveClass("lucide-check");
   });
 
-  it("tints the clause box when every condition holds", () => {
+  it("tints the rule box when every requirement holds", () => {
     render(
       <GuardEdgeLabel
-        clauses={[
+        rules={[
           [
             pill({ kind: "conditional", label: "flag", pressed: true }),
             pill({ kind: "branch", label: "On", pressed: true }),
@@ -42,20 +42,20 @@ describe("guard edge label", () => {
     expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("border-primary/40", "bg-primary/10");
   });
 
-  it("keeps the clause box plain when no condition holds", () => {
+  it("keeps the rule box plain when no requirement holds", () => {
     render(
       <GuardEdgeLabel
-        clauses={[[pill({ kind: "conditional", label: "flag" }), pill({ kind: "branch", label: "On" })]]}
+        rules={[[pill({ kind: "conditional", label: "flag" }), pill({ kind: "branch", label: "On" })]]}
       />,
     );
 
     expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("border-transparent", "bg-muted/60");
   });
 
-  it("renders lone clauses bare and keeps OR clauses side by side", () => {
+  it("renders lone rules bare and keeps OR rules side by side", () => {
     const { container } = render(
       <GuardEdgeLabel
-        clauses={[[pill({ kind: "branch", label: "On" })], [pill({ kind: "branch", label: "Off", pressed: true })]]}
+        rules={[[pill({ kind: "branch", label: "On" })], [pill({ kind: "branch", label: "Off", pressed: true })]]}
       />,
     );
 
@@ -67,7 +67,7 @@ describe("guard edge label", () => {
   });
 
   it("keeps the pill itself as the pressed button and hides the icons from assistive tech", () => {
-    render(<GuardEdgeLabel clauses={[[pill({ kind: "branch", label: "On", pressed: true })]]} />);
+    render(<GuardEdgeLabel rules={[[pill({ kind: "branch", label: "On", pressed: true })]]} />);
 
     const button = screen.getByRole("button", { name: "On", pressed: true });
     expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");

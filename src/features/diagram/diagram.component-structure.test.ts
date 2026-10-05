@@ -208,7 +208,7 @@ describe("component structure diagram contract", () => {
           ],
         },
       }),
-    ).toThrow("Contradictory component path: show");
+    ).toThrow("Contradictory rule for control: show");
   });
 
   it("rejects controls without declared roots", () => {
