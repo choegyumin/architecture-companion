@@ -1,7 +1,7 @@
 {
   "id": "react-admin-demo-component-structure",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-03T18:28:11.762Z",
+  "updatedAt": "2026-10-05T07:40:50.468Z",
   "generator": "built-in:react-component-structure",
   "layout": {
     "id": "elk-layered",
@@ -19,235 +19,592 @@
         "type": "default",
         "id": "component:src/products/Aside.tsx#Aside",
         "title": "Aside",
-        "description": "src/products/Aside.tsx"
+        "description": "src/products/Aside.tsx",
+        "component": {
+          "definitionId": "component:src/products/Aside.tsx#Aside",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/GridList.tsx#GridList",
         "title": "GridList",
-        "description": "src/products/GridList.tsx"
+        "description": "src/products/GridList.tsx",
+        "component": {
+          "definitionId": "component:src/products/GridList.tsx#GridList",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
+      },
+      {
+        "type": "decision",
+        "id": "component:src/products/GridList.tsx#GridList:control:0",
+        "title": "isPending"
       },
       {
         "type": "default",
         "id": "component:src/products/GridList.tsx#LoadedGridList",
         "title": "LoadedGridList",
-        "description": "src/products/GridList.tsx"
+        "description": "src/products/GridList.tsx",
+        "component": {
+          "definitionId": "component:src/products/GridList.tsx#LoadedGridList",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/GridList.tsx#LoadingGridList",
         "title": "LoadingGridList",
-        "description": "src/products/GridList.tsx"
+        "description": "src/products/GridList.tsx",
+        "component": {
+          "definitionId": "component:src/products/GridList.tsx#LoadingGridList",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/ProductList.tsx#ListActions",
         "title": "ListActions",
-        "description": "src/products/ProductList.tsx"
+        "description": "src/products/ProductList.tsx",
+        "component": {
+          "definitionId": "component:src/products/ProductList.tsx#ListActions",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/ProductList.tsx#ProductList",
         "title": "ProductList",
-        "description": "src/products/ProductList.tsx"
+        "description": "src/products/ProductList.tsx",
+        "component": {
+          "definitionId": "component:src/products/ProductList.tsx#ProductList",
+          "origins": [
+            {
+              "supplierId": "component:src/App.tsx#App",
+              "supplierTitle": "App",
+              "prop": "list"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/ProductList.tsx#ProductTitle",
         "title": "ProductTitle",
-        "description": "src/products/ProductList.tsx"
+        "description": "src/products/ProductList.tsx",
+        "component": {
+          "definitionId": "component:src/products/ProductList.tsx#ProductTitle",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/products/ProductList.tsx#QuickFilter",
         "title": "QuickFilter",
-        "description": "src/products/ProductList.tsx"
+        "description": "src/products/ProductList.tsx",
+        "component": {
+          "definitionId": "component:src/products/ProductList.tsx#QuickFilter",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "value"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/icons-material#SvgIcon",
         "title": "SvgIcon",
-        "description": "@mui/icons-material boundary"
+        "description": "@mui/icons-material boundary",
+        "component": {
+          "definitionId": "external:@mui/icons-material#SvgIcon",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "icon"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#Box@279a7f8e5f737c85",
         "title": "Box",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#Box",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#Box@7b7af872956b3a73",
         "title": "Box",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#Box",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#Box@bcde6a36b212f16c",
         "title": "Box",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#Box",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#Card",
         "title": "Card",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#Card",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#CardContent",
         "title": "CardContent",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#CardContent",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#Chip",
         "title": "Chip",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#Chip",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#ImageList@839bb7c57256ad1f",
         "title": "ImageList",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#ImageList",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#ImageList@f64470edd6394224",
         "title": "ImageList",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#ImageList",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#ImageListItem",
         "title": "ImageListItem",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#ImageListItem",
+          "origins": [
+            {
+              "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+              "supplierTitle": "LoadedGridList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:@mui/material#ImageListItemBar",
         "title": "ImageListItemBar",
-        "description": "@mui/material boundary"
+        "description": "@mui/material boundary",
+        "component": {
+          "definitionId": "external:@mui/material#ImageListItemBar",
+          "origins": [
+            {
+              "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+              "supplierTitle": "LoadedGridList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#CreateButton",
         "title": "CreateButton",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#CreateButton",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ListActions",
+              "supplierTitle": "ListActions",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#ExportButton",
         "title": "ExportButton",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#ExportButton",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ListActions",
+              "supplierTitle": "ListActions",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#FilterButton",
         "title": "FilterButton",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterButton",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ListActions",
+              "supplierTitle": "ListActions",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#FilterContext.Provider",
         "title": "FilterContext.Provider",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterContext.Provider",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#FilterForm",
         "title": "FilterForm",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterForm",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
-        "id": "external:react-admin#FilterList",
+        "id": "external:react-admin#FilterList@48e14f7cbe5ab410",
         "title": "FilterList",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterList",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
+      },
+      {
+        "type": "default",
+        "id": "external:react-admin#FilterList@8ea379382de41c15",
+        "title": "FilterList",
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterList",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#FilterListItem",
         "title": "FilterListItem",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterListItem",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#FilterLiveSearch",
         "title": "FilterLiveSearch",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#FilterLiveSearch",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#ListBase",
         "title": "ListBase",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#ListBase",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#NumberField",
         "title": "NumberField",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#NumberField",
+          "origins": [
+            {
+              "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+              "supplierTitle": "LoadedGridList",
+              "prop": "subtitle"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#NumberInput",
         "title": "NumberInput",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#NumberInput",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "value"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#Pagination",
         "title": "Pagination",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#Pagination",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#ReferenceInput",
         "title": "ReferenceInput",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#ReferenceInput",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "value"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#SavedQueriesList",
         "title": "SavedQueriesList",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#SavedQueriesList",
+          "origins": [
+            {
+              "supplierId": "component:src/products/Aside.tsx#Aside",
+              "supplierTitle": "Aside",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#SearchInput",
         "title": "SearchInput",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#SearchInput",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "value"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#SelectInput",
         "title": "SelectInput",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#SelectInput",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ProductList",
+              "supplierTitle": "ProductList",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#SortButton",
         "title": "SortButton",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#SortButton",
+          "origins": [
+            {
+              "supplierId": "component:src/products/ProductList.tsx#ListActions",
+              "supplierTitle": "ListActions",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#Title",
         "title": "Title",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#Title",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:react-admin#TopToolbar",
         "title": "TopToolbar",
-        "description": "react-admin boundary"
+        "description": "react-admin boundary",
+        "component": {
+          "definitionId": "external:react-admin#TopToolbar",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "external:react-router-dom#Link",
         "title": "Link",
-        "description": "react-router-dom boundary"
+        "description": "react-router-dom boundary",
+        "component": {
+          "definitionId": "external:react-router-dom#Link",
+          "origins": [
+            {
+              "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+              "supplierTitle": "LoadedGridList",
+              "prop": "component"
+            }
+          ]
+        }
       }
     ],
     "edges": [
@@ -256,295 +613,469 @@
         "id": "edge:000dc9300abcf95b",
         "source": "external:react-admin#TopToolbar",
         "target": "external:react-admin#SortButton",
-        "kind": "NODE (children)",
-        "label": "from ListActions"
-      },
-      {
-        "type": "default",
-        "id": "edge:04edc83de76c5098",
-        "source": "component:src/products/GridList.tsx#GridList",
-        "target": "component:src/products/GridList.tsx#LoadedGridList",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:05219f5310276b05",
         "source": "external:@mui/material#Box@7b7af872956b3a73",
         "target": "external:react-admin#Pagination",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:0c46ad0698adacf6",
+        "source": "external:react-admin#FilterList@8ea379382de41c15",
+        "target": "external:@mui/icons-material#SvgIcon",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:117152ea527be8c9",
         "source": "external:react-admin#TopToolbar",
         "target": "external:react-admin#ExportButton",
-        "kind": "NODE (children)",
-        "label": "from ListActions"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:16a15dd91edb645f",
+        "source": "component:src/products/GridList.tsx#GridList:control:0",
+        "target": "component:src/products/GridList.tsx#LoadedGridList",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#GridList:control:0",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#GridList:control:0",
+              "value": "false"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:191b3f9e1d97b292",
         "source": "external:react-admin#ListBase",
         "target": "external:@mui/material#Box@279a7f8e5f737c85",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:244ec9938fc6ff8e",
         "source": "component:src/products/Aside.tsx#Aside",
         "target": "external:@mui/material#Card",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:27926dbb952e4f15",
         "source": "external:react-admin#ListBase",
         "target": "component:src/products/ProductList.tsx#ProductTitle",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
-        "id": "edge:3d59f7bf2bffe5b4",
-        "source": "component:src/products/GridList.tsx#GridList",
-        "target": "component:src/products/GridList.tsx#LoadingGridList",
-        "kind": "direct-render"
+        "id": "edge:2ba693b3ceb0760c",
+        "source": "external:@mui/material#CardContent",
+        "target": "external:react-admin#FilterList@8ea379382de41c15",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:4056ed2ad5105ebb",
         "source": "component:src/products/ProductList.tsx#ListActions",
         "target": "external:react-admin#TopToolbar",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:4359d12aad15c477",
         "source": "external:react-admin#ReferenceInput",
         "target": "external:react-admin#SelectInput",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:43915c81d7ed2742",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "component:src/products/ProductList.tsx#QuickFilter",
-        "kind": "NODE (value)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:4cf3828652e4737c",
         "source": "component:src/products/ProductList.tsx#QuickFilter",
         "target": "external:@mui/material#Chip",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:599beb8a414fcdac",
         "source": "external:@mui/material#CardContent",
         "target": "external:react-admin#SavedQueriesList",
-        "kind": "NODE (children)",
-        "label": "from Aside"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:60581617f113b3dd",
         "source": "external:@mui/material#Card",
         "target": "external:@mui/material#CardContent",
-        "kind": "NODE (children)",
-        "label": "from Aside"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:6739994b4962f928",
         "source": "external:@mui/material#CardContent",
         "target": "external:react-admin#FilterLiveSearch",
-        "kind": "NODE (children)",
-        "label": "from Aside"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:67d3646321417b88",
         "source": "component:src/products/ProductList.tsx#ProductList",
         "target": "external:react-admin#ListBase",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:6e7a8a8e0d829d7c",
         "source": "external:@mui/material#ImageListItem",
         "target": "external:@mui/material#ImageListItemBar",
-        "kind": "NODE (children)",
-        "label": "from LoadedGridList"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:9281e7d096eb9cff",
+        "source": "external:react-admin#FilterList@48e14f7cbe5ab410",
+        "target": "external:react-admin#FilterListItem",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:95bd97c51b1108a3",
         "source": "external:@mui/material#Box@279a7f8e5f737c85",
         "target": "external:@mui/material#Box@7b7af872956b3a73",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
-        "id": "edge:9b3feca90753327e",
-        "source": "external:@mui/material#CardContent",
-        "target": "external:react-admin#FilterList",
-        "kind": "NODE (children)",
-        "label": "from Aside"
+        "id": "edge:96702746c8b649cf",
+        "source": "component:src/products/GridList.tsx#GridList:control:0",
+        "target": "component:src/products/GridList.tsx#LoadingGridList",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#GridList:control:0",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#GridList:control:0",
+              "value": "true"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:a0d42fd8c6449368",
         "source": "component:src/products/GridList.tsx#LoadingGridList",
         "target": "external:@mui/material#ImageList@839bb7c57256ad1f",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:a216513bf259877a",
+        "source": "external:@mui/material#CardContent",
+        "target": "external:react-admin#FilterList@48e14f7cbe5ab410",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:a29ff8ecbdc4f9bf",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "external:@mui/material#Box@bcde6a36b212f16c",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:a3ec8367d3ad8656",
         "source": "external:@mui/material#Box@7b7af872956b3a73",
         "target": "component:src/products/GridList.tsx#GridList",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
-      },
-      {
-        "type": "default",
-        "id": "edge:a5503d3a5a994a83",
-        "source": "external:react-admin#FilterList",
-        "target": "external:react-admin#FilterListItem",
-        "kind": "NODE (children)",
-        "label": "from Aside"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:a5cf8ab13e7ae6bf",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "external:react-admin#ReferenceInput",
-        "kind": "NODE (value)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:aa6d3de4b4319366",
+        "source": "external:react-admin#FilterList@8ea379382de41c15",
+        "target": "external:react-admin#FilterListItem",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/Aside.tsx#Aside:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/Aside.tsx#Aside:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:c0137afca62f1b81",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "external:react-admin#NumberInput",
-        "kind": "NODE (value)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:c7a666955e2ffbe2",
         "source": "external:@mui/material#Box@279a7f8e5f737c85",
         "target": "component:src/products/Aside.tsx#Aside",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c9b3ea63b5336848",
+        "source": "component:src/products/GridList.tsx#GridList",
+        "target": "component:src/products/GridList.tsx#GridList:control:0",
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:c9fd653a57f51fc1",
         "source": "external:react-admin#TopToolbar",
         "target": "external:react-admin#CreateButton",
-        "kind": "NODE (children)",
-        "label": "from ListActions"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:cebf5daead085206",
         "source": "external:@mui/material#ImageListItemBar",
         "target": "external:react-admin#NumberField",
-        "kind": "NODE (subtitle)",
-        "label": "from LoadedGridList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:cee7715fdcd8c942",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "external:react-admin#SearchInput",
-        "kind": "NODE (value)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:d5701405ff63d794",
         "source": "external:@mui/material#ImageList@f64470edd6394224",
         "target": "external:@mui/material#ImageListItem",
-        "kind": "NODE (children)",
-        "label": "from LoadedGridList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:da89c077f9c97c05",
         "source": "external:react-admin#ListBase",
         "target": "external:react-admin#FilterContext.Provider",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:e24796e92b2d6981",
+        "source": "external:react-admin#FilterList@48e14f7cbe5ab410",
+        "target": "external:@mui/icons-material#SvgIcon",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:e3ba3780f78e2145",
         "source": "external:@mui/material#Box@bcde6a36b212f16c",
         "target": "external:react-admin#FilterForm",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:e92c3e70486ebcc9",
         "source": "external:react-admin#FilterContext.Provider",
         "target": "component:src/products/ProductList.tsx#ListActions",
-        "kind": "NODE (children)",
-        "label": "from ProductList"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:ef54d98da51f4809",
         "source": "external:react-admin#TopToolbar",
         "target": "external:react-admin#FilterButton",
-        "kind": "NODE (children)",
-        "label": "from ListActions"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ListActions:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ListActions:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:f0e6d4ed9460df9e",
         "source": "component:src/products/ProductList.tsx#ProductTitle",
         "target": "external:react-admin#Title",
-        "kind": "direct-render"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:fc1430c62afd34ee",
         "source": "external:@mui/material#ImageListItem",
         "target": "external:react-router-dom#Link",
-        "kind": "COMPONENT (component)",
-        "label": "from LoadedGridList"
-      },
-      {
-        "type": "default",
-        "id": "edge:fe68c03c53645dc0",
-        "source": "external:react-admin#FilterList",
-        "target": "external:@mui/icons-material#SvgIcon",
-        "kind": "NODE (icon)",
-        "label": "from Aside"
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
         "id": "edge:fecf92cf6bb59779",
         "source": "component:src/products/GridList.tsx#LoadedGridList",
         "target": "external:@mui/material#ImageList@f64470edd6394224",
-        "kind": "direct-render"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#LoadedGridList:control:0",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/GridList.tsx#LoadedGridList:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      }
+    ],
+    "roots": ["component:src/products/ProductList.tsx#ProductList"],
+    "controls": [
+      {
+        "id": "component:src/products/ProductList.tsx#ListActions:control:0",
+        "owner": "component:src/products/ProductList.tsx#ListActions",
+        "label": "isSmall",
+        "dependsOn": [[]],
+        "kind": "conditional"
+      },
+      {
+        "id": "component:src/products/ProductList.tsx#ProductList:control:0",
+        "owner": "component:src/products/ProductList.tsx#ProductList",
+        "label": "isSmall",
+        "dependsOn": [[]],
+        "kind": "conditional"
+      },
+      {
+        "id": "component:src/products/Aside.tsx#Aside:control:0",
+        "owner": "component:src/products/Aside.tsx#Aside",
+        "label": "data",
+        "dependsOn": [[]],
+        "kind": "conditional"
+      },
+      {
+        "id": "component:src/products/GridList.tsx#GridList:control:0",
+        "owner": "component:src/products/GridList.tsx#GridList",
+        "label": "isPending",
+        "dependsOn": [[]],
+        "kind": "branch",
+        "cases": [
+          {
+            "id": "true",
+            "label": "isPending"
+          },
+          {
+            "id": "false",
+            "label": "!(isPending)"
+          }
+        ]
+      },
+      {
+        "id": "component:src/products/GridList.tsx#LoadedGridList:control:0",
+        "owner": "component:src/products/GridList.tsx#LoadedGridList",
+        "label": "!(!data)",
+        "dependsOn": [[]],
+        "kind": "conditional"
       }
     ]
   },
