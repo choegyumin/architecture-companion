@@ -79,7 +79,7 @@ function externalPackageFiles(declarations: string): Readonly<Record<string, str
 }
 
 describe("React component structure generator", () => {
-  it("shares identical compositions without mixing different forwarded children", async () => {
+  it("keeps every forwarded-children usage its own node while sharing untouched components", async () => {
     await withFixture(
       {
         "src/app.tsx": `
@@ -101,12 +101,16 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns: ["App"] });
         const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
         const wrappers = graph.nodes.filter((node) => node.title === "Wrapper");
-        expect(wrappers).toHaveLength(2);
-        expect(graph.nodes.filter((node) => node.title === "Renderer")).toHaveLength(2);
+        // Wrapper and Renderer render parent-supplied children, so every usage
+        // is its own node — even the two identical First usages.
+        expect(wrappers).toHaveLength(3);
+        expect(graph.nodes.filter((node) => node.title === "Renderer")).toHaveLength(3);
         expect(graph.nodes.filter((node) => node.title === "Shared")).toHaveLength(1);
-        expect(graph.nodes).toHaveLength(8);
-        expect(graph.edges).toHaveLength(8);
-        expect(graph.edges.filter((edge) => nodesById.get(edge.source)?.title === "App")).toHaveLength(2);
+        expect(graph.nodes.filter((node) => node.title === "First")).toHaveLength(1);
+        expect(graph.nodes.filter((node) => node.title === "Second")).toHaveLength(1);
+        expect(graph.nodes).toHaveLength(10);
+        expect(graph.edges).toHaveLength(11);
+        expect(graph.edges.filter((edge) => nodesById.get(edge.source)?.title === "App")).toHaveLength(3);
         const compositions = wrappers.map((wrapper) => {
           const rendererEdges = graph.edges.filter((edge) => edge.source === wrapper.id);
           expect(rendererEdges).toHaveLength(1);
@@ -117,7 +121,7 @@ describe("React component structure generator", () => {
           expect(originProps(graph, children.at(0)!.target)).toEqual(["App:children"]);
           return nodesById.get(children.at(0)!.target)?.title;
         });
-        expect(compositions.toSorted()).toEqual(["First", "Second"]);
+        expect(compositions.toSorted()).toEqual(["First", "First", "Second"]);
       },
     );
   });
@@ -146,11 +150,14 @@ describe("React component structure generator", () => {
           const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"], ...filters });
           const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
           const wrappers = graph.nodes.filter(({ title }) => title === "Wrapper");
-          expect(wrappers).toHaveLength(2);
+          // Every Wrapper forwards parent-supplied children, so every usage is
+          // its own node — including the two identical First usages.
+          expect(wrappers).toHaveLength(3);
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual([
             "App",
             "First",
             "Second",
+            "Wrapper",
             "Wrapper",
             "Wrapper",
           ]);
@@ -160,8 +167,8 @@ describe("React component structure generator", () => {
             expect(originProps(graph, outgoing.at(0)!.target)).toEqual(["App:children"]);
             return titlesById.get(outgoing.at(0)!.target);
           });
-          expect(compositions.toSorted()).toEqual(["First", "Second"]);
-          expect(graph.edges.filter(({ source }) => titlesById.get(source) === "App")).toHaveLength(2);
+          expect(compositions.toSorted()).toEqual(["First", "First", "Second"]);
+          expect(graph.edges.filter(({ source }) => titlesById.get(source) === "App")).toHaveLength(3);
         },
       );
     },
