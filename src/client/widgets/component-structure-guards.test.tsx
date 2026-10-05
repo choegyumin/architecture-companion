@@ -136,4 +136,31 @@ describe("attachGuardLabels", () => {
     render(only?.control as ReactElement);
     expect(screen.getByRole("button", { name: "flag" })).toBeInTheDocument();
   });
+
+  it("pushes a pill group off a node card from the layout", () => {
+    const [only] = attachGuardLabels({
+      graph: { nodes: [], edges: [graphEdge("arm", [["mode", "on"]])] },
+      controls,
+      layout: {
+        nodes: [{ id: "card", position: { x: 70, y: -20 }, size: { width: 40, height: 40 } }],
+        groups: [],
+        edges: [
+          {
+            id: "arm",
+            points: [
+              { x: 0, y: 0 },
+              { x: 300, y: 0 },
+            ],
+          },
+        ],
+        initialView: { mode: "fit" },
+      },
+      edges: [routeEdge("arm")],
+      selection: {},
+      emphasis: noEmphasis,
+      onSelect: () => {},
+    }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
+
+    expect(only?.position).toEqual({ x: 160, y: 0 });
+  });
 });

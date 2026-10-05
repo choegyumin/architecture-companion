@@ -1,4 +1,9 @@
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
+import {
+  estimateGuardLabelSize,
+  type GuardLabelGroup,
+  resolveGuardLabelOffsets,
+} from "@/client/widgets/component-structure-guard-collision";
 import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
 import type {
   DefaultDiagramEdge,
@@ -95,6 +100,8 @@ type ComponentGuardLabelsProps = Readonly<{
 const GUARD_LABEL_ENDPOINT_OFFSET = 64;
 const GUARD_LABEL_MIN_SEPARATION = 96;
 
+type ProjectedGuardGroup = GuardLabelGroup & Readonly<{ pills: GuardPill[] }>;
+
 // Projects one guard pill per condition an edge's guards name. All pills of a
 // control stay in sync because selection is keyed by control: clicking any
 // projection of the same guard applies the same choice everywhere.
@@ -150,43 +157,76 @@ export function attachGuardLabels({
     return { branch, conditional };
   };
   const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
-  // Never anchor past the edge's midpoint, so pills on short edges stay on the
-  // edge instead of clamping onto the node at the far end.
   const anchorAlong = (
     points: readonly { x: number; y: number }[],
     fallback: { x: number; y: number },
+    offset: number,
     from: "start" | "end",
-  ) =>
-    points.length < 2
-      ? (points.at(0) ?? fallback)
-      : pointAlongPolyline(points, Math.min(GUARD_LABEL_ENDPOINT_OFFSET, polylineArcLength(points) / 2), from);
+  ) => (points.length < 2 ? (points.at(0) ?? fallback) : pointAlongPolyline(points, offset, from));
 
-  return edges.map((edge) => {
-    if (edge.type !== "route" || !edge.data) return edge;
+  // First pass: project each edge's guards into anchored pill groups.
+  const groupsByEdge = new Map<string, ProjectedGuardGroup[]>();
+  for (const edge of edges) {
+    if (edge.type !== "route" || !edge.data) continue;
     const { branch, conditional } = pillsOf(edge.id);
-    if (branch.length === 0 && conditional.length === 0) return edge;
+    if (branch.length === 0 && conditional.length === 0) continue;
     const points = pointsByEdgeId.get(edge.id) ?? [];
+    const arc = polylineArcLength(points);
+    const fallback = edge.data.labelPosition;
     const separated =
       branch.length > 0 &&
       conditional.length > 0 &&
-      polylineArcLength(points) >= 2 * GUARD_LABEL_ENDPOINT_OFFSET + GUARD_LABEL_MIN_SEPARATION;
-    const labelControls = separated
+      arc >= 2 * GUARD_LABEL_ENDPOINT_OFFSET + GUARD_LABEL_MIN_SEPARATION;
+    const entries = separated
       ? [
-          {
-            control: <GuardEdgeLabel pills={branch} />,
-            position: anchorAlong(points, edge.data.labelPosition, "start"),
-          },
-          {
-            control: <GuardEdgeLabel pills={conditional} />,
-            position: anchorAlong(points, edge.data.labelPosition, "end"),
-          },
+          { from: "start" as const, pills: branch, offset: GUARD_LABEL_ENDPOINT_OFFSET },
+          { from: "end" as const, pills: conditional, offset: GUARD_LABEL_ENDPOINT_OFFSET },
         ]
       : [
           {
-            control: <GuardEdgeLabel pills={[...branch, ...conditional]} />,
-            position: anchorAlong(points, edge.data.labelPosition, branch.length > 0 ? "start" : "end"),
+            // Never anchor past the midpoint, so pills on short edges stay on
+            // the edge instead of clamping onto the node at the far end.
+            from: (branch.length > 0 ? "start" : "end") as "start" | "end",
+            pills: [...branch, ...conditional],
+            offset: Math.min(GUARD_LABEL_ENDPOINT_OFFSET, arc / 2),
           },
         ];
+    groupsByEdge.set(
+      edge.id,
+      entries.map((entry) => ({
+        edgeId: edge.id,
+        from: entry.from,
+        pills: entry.pills,
+        offset: entry.offset,
+        points,
+        fallback,
+        size: estimateGuardLabelSize(entry.pills),
+      })),
+    );
+  }
+
+  // Second pass: push colliding labels away from node cards and each other.
+  const obstacles = layout.nodes.map((node) => ({
+    x: node.position.x,
+    y: node.position.y,
+    width: node.size.width,
+    height: node.size.height,
+  }));
+  const offsets = resolveGuardLabelOffsets([...groupsByEdge.values()].flat(), obstacles);
+
+  return edges.map((edge) => {
+    if (edge.type !== "route" || !edge.data) return edge;
+    const groups = groupsByEdge.get(edge.id);
+    if (!groups) return edge;
+    const labelControls = groups.map((group) => ({
+      control: <GuardEdgeLabel pills={group.pills} />,
+      position: anchorAlong(
+        group.points,
+        group.fallback,
+        offsets.get(`${group.edgeId}\0${group.from}`) ?? group.offset,
+        group.from,
+      ),
+    }));
     return {
       ...edge,
       data: {

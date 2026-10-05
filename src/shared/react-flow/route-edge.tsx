@@ -38,7 +38,7 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
   const labelControls = data.labelControls ?? [];
   const anchoredControls = labelControls.map(({ control, position }) => (
     <div
-      className="nodrag nopan absolute flex flex-col gap-2"
+      className="nodrag nopan absolute flex w-max flex-col gap-2"
       key={`${position.x},${position.y}`}
       style={{ ...labelStyle, left: position.x, opacity: 1, top: position.y }}
     >
