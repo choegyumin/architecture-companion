@@ -154,10 +154,51 @@ function diamondVertices(rect: Rect): [DiagramLayoutPoint, DiagramLayoutPoint, D
   ];
 }
 
-// Decision nodes anchor every edge at a diamond vertex, UML-style: all arms
-// leave the downstream tip and fan out — each case is identified by its guard
-// pill on the edge — while entries arrive at the upstream tip.
+function lerp(a: DiagramLayoutPoint, b: DiagramLayoutPoint, t: number): DiagramLayoutPoint {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+// Decision nodes anchor every edge on the diamond, UML-style: forward arms
+// leave through dedicated vertices — the two sides and the downstream tip, in
+// case order — so arms to the same target never share one route, while
+// forward entries arrive at the upstream tip. Reverse edges re-anchor onto
+// the diamond's slopes after layout (see reverseDecisionAnchors).
 const DECISION_ENTRY_PORT = "\u0000entry";
+
+// The diamond's corners in direction-relative terms: which sides flank the
+// flow, and which tips point downstream and upstream.
+type DecisionCorners = Readonly<{
+  sideA: DiagramLayoutPoint;
+  sideB: DiagramLayoutPoint;
+  downstream: DiagramLayoutPoint;
+  upstream: DiagramLayoutPoint;
+}>;
+
+function decisionCorners(rect: Rect, direction: ElkLayeredDiagramLayoutDirection): DecisionCorners {
+  const [north, east, south, west] = diamondVertices(rect);
+  return direction === "DOWN"
+    ? { sideA: west, sideB: east, downstream: south, upstream: north }
+    : direction === "UP"
+      ? { sideA: west, sideB: east, downstream: north, upstream: south }
+      : direction === "RIGHT"
+        ? { sideA: north, sideB: south, downstream: east, upstream: west }
+        : { sideA: north, sideB: south, downstream: west, upstream: east };
+}
+
+// A point on one of the diamond's slopes: an upstream slope (beside the entry
+// tip) hosts reverse departures, a downstream slope hosts reverse arrivals.
+function slopePoint(
+  corners: DecisionCorners,
+  boundary: "upstream" | "downstream",
+  side: "A" | "B",
+  t: number,
+): DiagramLayoutPoint {
+  return boundary === "upstream"
+    ? lerp(corners.upstream, side === "A" ? corners.sideA : corners.sideB, t)
+    : side === "A"
+      ? lerp(corners.sideA, corners.downstream, t)
+      : lerp(corners.downstream, corners.sideB, t);
+}
 
 function toElkNode(
   node: DiagramNode,
@@ -168,26 +209,29 @@ function toElkNode(
   const size = getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`);
   const control = diagram.controls?.find(({ id }) => id === node.id);
   if (node.type !== "decision" || control?.kind !== "branch") return { id: node.id, ...size };
-  const [north, east, south, west] = diamondVertices({
-    id: node.id,
-    min: { x: 0, y: 0 },
-    max: { x: size.width, y: size.height },
+  const corners = decisionCorners(
+    { id: node.id, min: { x: 0, y: 0 }, max: { x: size.width, y: size.height } },
+    direction,
+  );
+  // The first three cases leave through the side and downstream vertices in
+  // case order; further cases spread along the two downstream slopes by arc
+  // length so every case keeps its own anchor.
+  const anchorOf = (index: number): DiagramLayoutPoint => {
+    if (index < 3) return [corners.sideA, corners.sideB, corners.downstream][index]!;
+    const spread = control.cases.length - 3;
+    const t = ((index - 3 + 1) / (spread + 1)) * 2;
+    return t <= 1 ? lerp(corners.sideA, corners.downstream, t) : lerp(corners.downstream, corners.sideB, t - 1);
+  };
+  const ports = control.cases.map((branchCase, index) => {
+    const anchor = anchorOf(index);
+    return { id: elkPortId(node.id, branchCase.id), width: 4, height: 4, x: anchor.x - 2, y: anchor.y - 2 };
   });
-  const tip = direction === "DOWN" ? south : direction === "UP" ? north : direction === "RIGHT" ? east : west;
-  const entryTip = direction === "DOWN" ? north : direction === "UP" ? south : direction === "RIGHT" ? west : east;
-  const ports = control.cases.map((branchCase) => ({
-    id: elkPortId(node.id, branchCase.id),
-    width: 4,
-    height: 4,
-    x: tip.x - 2,
-    y: tip.y - 2,
-  }));
   ports.push({
     id: elkPortId(node.id, DECISION_ENTRY_PORT),
     width: 4,
     height: 4,
-    x: entryTip.x - 2,
-    y: entryTip.y - 2,
+    x: corners.upstream.x - 2,
+    y: corners.upstream.y - 2,
   });
   return {
     id: node.id,
@@ -383,10 +427,6 @@ function expanded(rect: Rect, margin: number): Rect {
   };
 }
 
-function lerp(a: DiagramLayoutPoint, b: DiagramLayoutPoint, t: number): DiagramLayoutPoint {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-}
-
 function clipSegment(a: DiagramLayoutPoint, b: DiagramLayoutPoint, rect: Rect): [number, number] | null {
   let t0 = 0;
   let t1 = 1;
@@ -494,6 +534,86 @@ function upstreamVertex(rect: Rect, direction: ElkLayeredDiagramLayoutDirection)
   return direction === "DOWN" ? north : direction === "UP" ? south : direction === "RIGHT" ? west : east;
 }
 
+// Reverse edges — their target sits upstream of their source — leave and
+// enter decision diamonds through the slopes instead of the flow vertices, so
+// the anchor itself tells a reverse edge apart from forward arms and it never
+// slides along the diamond's face. Departures take the upstream slopes of the
+// source, arrivals the downstream slopes of the target; each slope spreads
+// its edges evenly, on the side that faces the other endpoint.
+function reverseDecisionAnchors(
+  graph: DiagramGraph,
+  rects: ReadonlyMap<string, Rect>,
+  direction: ElkLayeredDiagramLayoutDirection,
+): Readonly<{ departures: Map<string, DiagramLayoutPoint>; arrivals: Map<string, DiagramLayoutPoint> }> {
+  const plane = planeFor(direction);
+  const flowSign = direction === "UP" || direction === "LEFT" ? -1 : 1;
+  const decisionIds = new Set(graph.nodes.filter((node) => node.type === "decision").map(({ id }) => id));
+  const facingSide = (rect: Rect, other: Rect): "A" | "B" =>
+    plane.secondary(centerOf(other)) >= plane.secondary(centerOf(rect)) ? "B" : "A";
+  const isReverse = (edge: DiagramEdge): boolean => {
+    if (edge.type !== "default") return false;
+    const source = rects.get(edge.source);
+    const target = rects.get(edge.target);
+    if (!source || !target) return false;
+    return (plane.primary(centerOf(target)) - plane.primary(centerOf(source))) * flowSign < -1;
+  };
+
+  const departuresBySlope = new Map<string, DiagramEdge[]>();
+  const arrivalsBySlope = new Map<string, DiagramEdge[]>();
+  for (const edge of graph.edges) {
+    if (!isReverse(edge)) continue;
+    if (decisionIds.has(edge.source)) {
+      const slope = `${edge.source}\0${facingSide(rects.get(edge.source)!, rects.get(edge.target)!)}`;
+      departuresBySlope.set(slope, [...(departuresBySlope.get(slope) ?? []), edge]);
+    }
+    if (decisionIds.has(edge.target)) {
+      const slope = `${edge.target}\0${facingSide(rects.get(edge.target)!, rects.get(edge.source)!)}`;
+      arrivalsBySlope.set(slope, [...(arrivalsBySlope.get(slope) ?? []), edge]);
+    }
+  }
+
+  const departures = new Map<string, DiagramLayoutPoint>();
+  for (const [slope, edges] of departuresBySlope) {
+    const [nodeId, side] = slope.split("\u0000") as [string, "A" | "B"];
+    const corners = decisionCorners(rects.get(nodeId)!, direction);
+    edges.forEach((edge, index) =>
+      departures.set(edge.id, slopePoint(corners, "upstream", side, (index + 1) / (edges.length + 1))),
+    );
+  }
+  const arrivals = new Map<string, DiagramLayoutPoint>();
+  for (const [slope, edges] of arrivalsBySlope) {
+    const [nodeId, side] = slope.split("\u0000") as [string, "A" | "B"];
+    const corners = decisionCorners(rects.get(nodeId)!, direction);
+    edges.forEach((edge, index) =>
+      arrivals.set(edge.id, slopePoint(corners, "downstream", side, (index + 1) / (edges.length + 1))),
+    );
+  }
+  return { departures, arrivals };
+}
+
+// Re-anchors reverse decision edges in a plain ELK layout: only the first and
+// last path points move onto the diamond slopes, the routed middle stays.
+function reAnchorReverseDecisionEdges(
+  graph: DiagramGraph,
+  layout: DiagramLayout,
+  direction: ElkLayeredDiagramLayoutDirection,
+): DiagramLayout {
+  const anchors = reverseDecisionAnchors(graph, toNodeRects(layout), direction);
+  if (anchors.departures.size === 0 && anchors.arrivals.size === 0) return layout;
+  return {
+    ...layout,
+    edges: layout.edges.map((placement) => {
+      const departure = anchors.departures.get(placement.id);
+      const arrival = anchors.arrivals.get(placement.id);
+      if (!departure && !arrival) return placement;
+      const points = [...placement.points];
+      if (departure) points[0] = departure;
+      if (arrival) points[points.length - 1] = arrival;
+      return { ...placement, points };
+    }),
+  };
+}
+
 function toStraightEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
@@ -506,6 +626,7 @@ function toStraightEdges(
       .filter((node) => node.type === "decision")
       .map((node) => [node.id, upstreamVertex(rects.get(node.id)!, direction)] as const),
   );
+  const reverse = reverseDecisionAnchors(graph, rects, direction);
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
     const edge = graph.edges.find(({ id }) => id === placement.id);
     if (!edge || edge.type === "message") return placement;
@@ -513,15 +634,16 @@ function toStraightEdges(
     const target = rects.get(edge.target);
     if (!source || !target) return placement;
 
-    // Arms leave from their port anchor; other edges cut the sightline at the
-    // source border as before.
+    // Arms leave from their port anchor — or, when reverse, from the upstream
+    // slope the reverse anchors picked; other edges cut the sightline at the
+    // source border as before. Reverse arrivals enter through the downstream
+    // slope, everything else at the upstream vertex.
     const portAnchor = portAnchorOf(edge, placement, rects, originalRects);
     const targetCenter = centerOf(target);
+    const entry = reverse.arrivals.get(edge.id) ?? decisionVertices.get(edge.target);
     if (portAnchor) {
-      return {
-        id: placement.id,
-        points: [portAnchor, targetEntryOf(portAnchor, target, targetCenter, decisionVertices.get(edge.target))],
-      };
+      const start = reverse.departures.get(edge.id) ?? portAnchor;
+      return { id: placement.id, points: [start, targetEntryOf(start, target, targetCenter, entry)] };
     }
     const sourceCenter = centerOf(source);
     const [, sourceExit] = clipSegment(sourceCenter, targetCenter, source) ?? [0, 1];
@@ -529,7 +651,7 @@ function toStraightEdges(
       id: placement.id,
       points: [
         lerp(sourceCenter, targetCenter, sourceExit ?? 1),
-        targetEntryOf(sourceCenter, target, targetCenter, decisionVertices.get(edge.target)),
+        targetEntryOf(sourceCenter, target, targetCenter, entry),
       ],
     };
   });
@@ -657,5 +779,5 @@ export async function layoutElkLayeredDiagram(
       edges: toStraightEdges(diagram, layout, toNodeRects(layout), resolved.direction),
     });
   }
-  return layout;
+  return reAnchorReverseDecisionEdges(diagram, layout, resolved.direction);
 }

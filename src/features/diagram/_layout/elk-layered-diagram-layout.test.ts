@@ -314,12 +314,13 @@ describe("ELK layered diagram layout", () => {
     const entryEnd = result.edges.find(({ id }) => id === "entry")?.points.at(-1);
     if (!decision || !firstStart || !secondStart || !entryEnd) throw new Error("Layout lost the decision edges.");
 
-    // Rightward flow: every arm leaves the east vertex, and the entry arrives
-    // at the west vertex — UML-style vertex anchoring, not face clipping.
-    for (const start of [firstStart, secondStart]) {
-      expect(Math.abs(start.x - (decision.position.x + decision.size.width - 2))).toBeLessThanOrEqual(4);
-      expect(Math.abs(start.y - (decision.position.y + decision.size.height / 2))).toBeLessThanOrEqual(4);
-    }
+    // Rightward flow: cases leave through the north and south side vertices in
+    // case order, and the entry arrives at the west vertex — UML-style vertex
+    // anchoring, not face clipping.
+    expect(Math.abs(firstStart.x - (decision.position.x + decision.size.width / 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(firstStart.y - (decision.position.y + 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(secondStart.x - (decision.position.x + decision.size.width / 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(secondStart.y - (decision.position.y + decision.size.height - 2))).toBeLessThanOrEqual(4);
     expect(Math.abs(entryEnd.x - (decision.position.x + 2))).toBeLessThanOrEqual(4);
     expect(Math.abs(entryEnd.y - (decision.position.y + decision.size.height / 2))).toBeLessThanOrEqual(4);
   });
@@ -371,21 +372,102 @@ describe("ELK layered diagram layout", () => {
     for (const decisionId of ["first-mode", "second-mode"]) {
       const decision = result.nodes.find(({ id }) => id === decisionId);
       if (!decision) throw new Error(`Layout lost ${decisionId}.`);
-      const starts = diagram.edges
-        .filter((edge) => edge.type === "default" && edge.source === decisionId && edge.sourcePort)
-        .map((edge) => {
-          const start = result.edges.find(({ id }) => id === edge.id)?.points.at(0);
-          if (!start) throw new Error(`Layout lost ${edge.id}.`);
-          return start;
-        });
+      const startsById = new Map(
+        diagram.edges
+          .filter((edge) => edge.type === "default" && edge.source === decisionId && edge.sourcePort)
+          .map((edge) => {
+            const start = result.edges.find(({ id }) => id === edge.id)?.points.at(0);
+            if (!start) throw new Error(`Layout lost ${edge.id}.`);
+            return [edge.sourcePort, start] as const;
+          }),
+      );
 
-      // Downward flow: every arm leaves its own diamond's south vertex, all
-      // cases fanning out from the one tip.
-      for (const start of starts) {
-        expect(Math.abs(start.x - (decision.position.x + decision.size.width / 2))).toBeLessThanOrEqual(4);
-        expect(Math.abs(start.y - (decision.position.y + decision.size.height - 2))).toBeLessThanOrEqual(4);
-      }
+      // Downward flow: the first case leaves through the west vertex and the
+      // second through the east one, so same-target arms never share a route.
+      expect(Math.abs((startsById.get("true") ?? { x: 0 }).x - (decision.position.x + 2))).toBeLessThanOrEqual(4);
+      expect(
+        Math.abs((startsById.get("true") ?? { y: 0 }).y - (decision.position.y + decision.size.height / 2)),
+      ).toBeLessThanOrEqual(4);
+      expect(
+        Math.abs((startsById.get("false") ?? { x: 0 }).x - (decision.position.x + decision.size.width - 2)),
+      ).toBeLessThanOrEqual(4);
+      expect(
+        Math.abs((startsById.get("false") ?? { y: 0 }).y - (decision.position.y + decision.size.height / 2)),
+      ).toBeLessThanOrEqual(4);
     }
+  });
+
+  it("anchors reverse decision edges on the diamond slopes, not the flow vertices", async () => {
+    const branch = (id: string) => ({
+      id,
+      owner: "app",
+      kind: "branch" as const,
+      label: id,
+      dependsOn: [[]],
+      cases: [
+        { id: "loop", label: "Loop" },
+        { id: "exit", label: "Exit" },
+      ],
+    });
+    const diagram = {
+      ...diagramBase,
+      nodes: [
+        { id: "app", type: "default", kind: "component", title: "App" },
+        { id: "top", type: "decision", title: "Top" },
+        { id: "middle", type: "default", kind: "component", title: "Middle" },
+        { id: "bottom", type: "decision", title: "Bottom" },
+        { id: "leaf", type: "default", kind: "component", title: "Leaf" },
+      ],
+      edges: [
+        { id: "entry", type: "default", source: "app", target: "top" },
+        { id: "forward-arm", type: "default", source: "top", target: "middle", sourcePort: "loop" },
+        { id: "forward-entry", type: "default", source: "middle", target: "bottom" },
+        { id: "reverse-loop", type: "default", source: "bottom", target: "top", sourcePort: "loop" },
+        { id: "bottom-exit", type: "default", source: "bottom", target: "leaf", sourcePort: "exit" },
+      ],
+      controls: [branch("top"), branch("bottom")],
+    } satisfies DiagramGraph;
+    const nodeSizes = Object.fromEntries(
+      diagram.nodes.map(({ id, type }) => [
+        id,
+        type === "decision" ? { width: 48, height: 48 } : { width: 288, height: 144 },
+      ]),
+    );
+
+    const result = await layoutElkLayeredDiagram(diagram, nodeSizes, {
+      nudgeObstacleNodes: true,
+      elk: { direction: "DOWN" },
+    });
+    const nodeOf = (id: string) => {
+      const node = result.nodes.find((candidate) => candidate.id === id);
+      if (!node) throw new Error(`Layout lost ${id}.`);
+      return node;
+    };
+    const pointsOf = (id: string) => {
+      const edge = result.edges.find((candidate) => candidate.id === id);
+      if (!edge) throw new Error(`Layout lost ${id}.`);
+      return edge.points;
+    };
+
+    // The feedback edge bottom→top runs against the flow: it leaves bottom's
+    // upstream slope (above the diamond's waist) and enters top's downstream
+    // slope (below the waist) instead of the flow vertices.
+    const reverse = pointsOf("reverse-loop");
+    const bottom = nodeOf("bottom");
+    const top = nodeOf("top");
+    expect(reverse.at(0)!.y).toBeGreaterThan(bottom.position.y + 2);
+    expect(reverse.at(0)!.y).toBeLessThan(bottom.position.y + bottom.size.height / 2);
+    expect(reverse.at(-1)!.y).toBeGreaterThan(top.position.y + top.size.height / 2);
+    expect(reverse.at(-1)!.y).toBeLessThan(top.position.y + top.size.height - 2);
+
+    // Forward arms keep their vertex anchors: the first case leaves through
+    // the west vertex, and a forward entry arrives at the north tip.
+    const arm = pointsOf("forward-arm").at(0)!;
+    expect(Math.abs(arm.x - (top.position.x + 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(arm.y - (top.position.y + top.size.height / 2))).toBeLessThanOrEqual(4);
+    const entry = pointsOf("forward-entry").at(-1)!;
+    expect(Math.abs(entry.x - (bottom.position.x + bottom.size.width / 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(entry.y - (bottom.position.y + 2))).toBeLessThanOrEqual(4);
   });
 
   it("returns provider-agnostic placement and directed edge routes", async () => {
