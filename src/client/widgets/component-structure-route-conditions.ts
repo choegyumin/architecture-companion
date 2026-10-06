@@ -44,41 +44,6 @@ export function routeConditionIncludesBranch(
   );
 }
 
-// A branch whose two cases are exactly an expression and its negation
-// behaves, from the owner's seat, like one on/off gate: the first case is on
-// and its complement is off. The data stays a branch (its arms still split
-// by case) — only the owning card's field renders a switch for it.
-function unwrapPolarity(label: string): { text: string; negated: boolean } {
-  let text = label.trim();
-  let negated = false;
-  for (;;) {
-    if (text.startsWith("!(") && text.endsWith(")")) {
-      text = text.slice(2, -1).trim();
-      negated = !negated;
-      continue;
-    }
-    if (text.startsWith("!") && !text.startsWith("!=")) {
-      text = text.slice(1).trim();
-      negated = !negated;
-      continue;
-    }
-    break;
-  }
-  return { text, negated };
-}
-
-export function isPolarityPairBranch(control: DiagramControl): boolean {
-  if (control.kind !== "branch" || control.cases.length !== 2) return false;
-  const first = unwrapPolarity(control.cases.at(0)?.label ?? "");
-  const second = unwrapPolarity(control.cases.at(1)?.label ?? "");
-  return first.text.length > 0 && first.text === second.text && first.negated !== second.negated;
-}
-
-export function polarityPairLabel(control: DiagramControl): string {
-  if (control.kind !== "branch") return control.label;
-  return unwrapPolarity(control.cases.at(0)?.label ?? control.label).text;
-}
-
 export type RouteConditionChange = Readonly<{
   controlId: string;
   kind: DiagramControl["kind"];

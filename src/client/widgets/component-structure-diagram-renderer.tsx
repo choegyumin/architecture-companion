@@ -10,13 +10,13 @@ import {
   componentPathEmphasis,
   type ComponentSelection,
   initialComponentSelection,
+  isPolarityPairBranch,
+  polarityPairLabel,
   selectComponentPath,
   selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
 import {
   describeRouteSelectionChange,
-  isPolarityPairBranch,
-  polarityPairLabel,
   representativeIncomingEdgeId,
 } from "@/client/widgets/component-structure-route-conditions";
 import { RouteDiffCard } from "@/client/widgets/component-structure-route-diff-card";

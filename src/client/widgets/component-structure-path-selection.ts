@@ -104,6 +104,41 @@ function compareMetrics(left: ReturnType<typeof routeMetrics>, right: ReturnType
   );
 }
 
+// A branch whose two cases are exactly an expression and its negation
+// behaves, from the owner's seat, like one on/off gate: the first case is on
+// and its complement is off. The data stays a branch (its arms still split
+// by case) — only the owning card's field renders a switch for it.
+function unwrapPolarity(label: string): { text: string; negated: boolean } {
+  let text = label.trim();
+  let negated = false;
+  for (;;) {
+    if (text.startsWith("!(") && text.endsWith(")")) {
+      text = text.slice(2, -1).trim();
+      negated = !negated;
+      continue;
+    }
+    if (text.startsWith("!") && !text.startsWith("!=")) {
+      text = text.slice(1).trim();
+      negated = !negated;
+      continue;
+    }
+    break;
+  }
+  return { text, negated };
+}
+
+export function isPolarityPairBranch(control: DiagramControl): boolean {
+  if (control.kind !== "branch" || control.cases.length !== 2) return false;
+  const first = unwrapPolarity(control.cases.at(0)?.label ?? "");
+  const second = unwrapPolarity(control.cases.at(1)?.label ?? "");
+  return first.text.length > 0 && first.text === second.text && first.negated !== second.negated;
+}
+
+export function polarityPairLabel(control: DiagramControl): string {
+  if (control.kind !== "branch") return control.label;
+  return unwrapPolarity(control.cases.at(0)?.label ?? control.label).text;
+}
+
 function componentRulesetHolds(
   ruleset: DiagramRouteRequirementRuleset,
   selection: ComponentSelection,
@@ -275,6 +310,33 @@ function withReachableOwners(
   });
 }
 
+// Two exclusive branch switches must not read on at once: when a click kills
+// the route that carried another polarity-pair branch's on case — its decision
+// node just became unreachable — that switch settles to its off case, because
+// no route can hold both values. The clicked control keeps its own value even
+// on a dead path (pending intent), values dead before the click stay as they
+// are, and plain conditionals never settle: each is an independent control,
+// not one case among exclusive sisters.
+function settleFallenBranchSwitches(
+  graph: DiagramGraph,
+  before: ComponentSelection,
+  after: ComponentSelection,
+  clickedId: string,
+): ComponentSelection {
+  const beforeEmphasis = componentPathEmphasis(graph, before);
+  const afterEmphasis = componentPathEmphasis(graph, after);
+  let next = after;
+  for (const control of graph.controls!) {
+    if (control.id === clickedId || control.kind !== "branch" || !isPolarityPairBranch(control)) continue;
+    const offCase = control.cases.at(1)!.id;
+    if (next[control.id] === offCase) continue;
+    if (beforeEmphasis.nodes.has(control.id) && !afterEmphasis.nodes.has(control.id)) {
+      next = { ...next, [control.id]: offCase };
+    }
+  }
+  return next;
+}
+
 export function selectComponentPath(
   graph: DiagramGraph,
   selection: ComponentSelection,
@@ -285,7 +347,8 @@ export function selectComponentPath(
   const control = graph.controls!.find((item) => item.id === controlId)!;
   const emphasis = componentPathEmphasis(graph, selected);
   if (control.kind === "conditional") {
-    if (value === "off" || emphasis.controls.has(control.id)) return selected;
+    if (value === "off" || emphasis.controls.has(control.id))
+      return settleFallenBranchSwitches(graph, selection, selected, controlId);
   } else {
     // A branch needs rerouting only when its arm is unreachable: the control
     // being active just means its owner renders, while the arm leaves the
@@ -297,7 +360,7 @@ export function selectComponentPath(
         edge.sourcePort === value &&
         emphasis.edges.has(edge.id),
     );
-    if (armActive) return selected;
+    if (armActive) return settleFallenBranchSwitches(graph, selection, selected, controlId);
   }
   // Branch arms reroute to the decision node itself — its incoming chain names
   // the choices that must hold before the arm exists. Conditional controls own
@@ -325,7 +388,8 @@ export function selectComponentPath(
     return compareMetrics(leftMetrics, rightMetrics);
   });
   const chosen = candidates.at(0);
-  return chosen ? { ...selected, ...Object.fromEntries(chosen.requirements) } : selected;
+  const routed = chosen ? { ...selected, ...Object.fromEntries(chosen.requirements) } : selected;
+  return settleFallenBranchSwitches(graph, selection, routed, controlId);
 }
 
 // Turning a satisfied rule off keeps the requirements that other active
