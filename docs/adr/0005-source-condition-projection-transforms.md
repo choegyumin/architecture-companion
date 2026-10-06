@@ -17,6 +17,8 @@
 
 - 변환은 생성기에서 1회. 클라이언트는 받은 컨트롤을 그대로 쓴다. 라벨 파싱·극성 추론의 클라이언트 이관 금지.
 - 1+2+3(병합·합성·양형 정규화)이 한 세트로 함께 간다.
+- 결정 체인은 소스 순서를 따른다 — 외부 게이트가 먼저 온다. 규칙 배열의 요구 순서가 그 순서를 암묵적으로 실으므로, 재작성(판별식 병합·나머지 합성)은 각 판별식 그룹을 첫 요구의 슬롯에서 해소해야 한다. 해석 결과를 규칙 끝에 붙이면 체인이 뒤집히고, 후행 게이트의 dependsOn(선행 게이트의 통과 조건)이 역방향 체인에서 도달 불능이 되어 그 아래 그래프 전체가 소등한다. 실측: workspace-page의 `if(state.status…)` 이후 `if(!state.review.catalog)` — catalog가 바깥 분기로 투영돼 loading/error 선택 시 경로가 죽었다.
+- 극성쌍의 케이스 순서는 양형 우선 — 스위치의 켜짐 슬롯(cases[0])은 필드 라벨이 밝히는 조건과 일치해야 한다. `if(!x)`로 작성된 게이트도 양형 케이스가 앞선다. 케이스 id는 의미 그대로 유지한다(true = 게이트 표기대로 참).
 
 ## ADR 0001 대비 변경
 
@@ -29,7 +31,7 @@
 
 ## 검증
 
-1~5류는 개밥먹기 실측 사례 전부를 흡수한다 — 1: `state.status`·`conflict?.kind` 판별식 쌍, 2: 암묵 else 유래 `!(X)` 케이스, 3: `!(!data)`·`!(!first || !last)`·`!(links.length === 0)`, 4: `A && B` 통짜 게이트, 호출식 원자, 그리고 렌더 팔이 하나뿐인 4항 분리(`data.eyebrow != null || …`), 5: `data.links?.length` 진위형과 rdtc `selectAll?.hideSelectAll` 삼항 2벌 접기. 쇼케이스(react-data-table-component, react-admin demo)도 같은 생성기로 재생성해 검증한다. 6류와 가변 로컬 한계는 실측에 없다 — 논리적 추가다.
+1~5류는 개밥먹기 실측 사례 전부를 흡수한다 — 1: `state.status`·`conflict?.kind` 판별식 쌍, 2: 암묵 else 유래 `!(X)` 케이스, 3: `!(!data)`·`!(!first || !last)`·`!(links.length === 0)`, 4: `A && B` 통짜 게이트, 호출식 원자, 그리고 렌더 팔이 하나뿐인 4항 분리(`data.eyebrow != null || …`), 5: `data.links?.length` 진위형과 rdtc `selectAll?.hideSelectAll` 삼항 2벌 접기. 쇼케이스(react-data-table-component, react-admin demo)도 같은 생성기로 재생성해 검증한다. 결정 체인 소스 순서도 실측으로 고정한다 — status→catalog 체인에서 loading/error 클릭 시 반환 경로가 점등하고 나머지 팔은 1개로 병합된다. 6류와 가변 로컬 한계는 실측에 없다 — 논리적 추가다.
 
 ## Consequences
 
