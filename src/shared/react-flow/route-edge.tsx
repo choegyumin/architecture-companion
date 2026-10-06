@@ -5,7 +5,20 @@ import { BaseEdgeLabel, EDGE_LABEL_Z_INDEX } from "@/shared/react-flow/base-edge
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
-type RouteEdgeLabelAnchor = Readonly<{ control: ReactNode; position: XYPosition }>;
+type RouteEdgeLabelAnchor = Readonly<{
+  /** Which edge of the label meets the anchor; labels grow away from it. */
+  anchorSide?: "top" | "bottom";
+  control: ReactNode;
+  position: XYPosition;
+}>;
+
+// The anchor pins the label's top edge (growing downstream), its bottom edge
+// (growing back toward the start), or its center.
+const ANCHOR_TRANSFORM = {
+  bottom: "translate(-50%, -100%)",
+  center: "translate(-50%, -50%)",
+  top: "translate(-50%, 0)",
+} as const;
 
 type RouteEdgeData = Readonly<{
   path: string;
@@ -36,11 +49,17 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
     ) : null;
 
   const labelControls = data.labelControls ?? [];
-  const anchoredControls = labelControls.map(({ control, position }) => (
+  const anchoredControls = labelControls.map(({ anchorSide, control, position }) => (
     <div
       className="nodrag nopan absolute flex w-max flex-col gap-2"
       key={`${position.x},${position.y}`}
-      style={{ ...labelStyle, left: position.x, opacity: 1, top: position.y }}
+      style={{
+        ...labelStyle,
+        left: position.x,
+        opacity: 1,
+        top: position.y,
+        transform: ANCHOR_TRANSFORM[anchorSide ?? "center"],
+      }}
     >
       {control}
     </div>

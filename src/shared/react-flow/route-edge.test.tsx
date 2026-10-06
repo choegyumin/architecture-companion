@@ -140,6 +140,38 @@ describe("route edge", () => {
     });
   });
 
+  it("grows a label away from the anchor when an anchor side is given", () => {
+    render(
+      <RouteEdge
+        data={{
+          path: "M 0 0 L 100 100",
+          labelPosition: { x: 50, y: 50 },
+          labelControls: [
+            { anchorSide: "top", control: <button type="button">Branch</button>, position: { x: 10, y: 0 } },
+            { anchorSide: "bottom", control: <button type="button">Conditional</button>, position: { x: 90, y: 100 } },
+          ],
+        }}
+        id="guards"
+        source="source"
+        sourcePosition={Position.Right}
+        sourceX={0}
+        sourceY={0}
+        target="target"
+        targetPosition={Position.Left}
+        targetX={100}
+        targetY={100}
+        type="route"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Branch" }).parentElement).toHaveStyle({
+      transform: "translate(-50%, 0)",
+    });
+    expect(screen.getByRole("button", { name: "Conditional" }).parentElement).toHaveStyle({
+      transform: "translate(-50%, -100%)",
+    });
+  });
+
   it("does not render an empty path", () => {
     const { container } = render(
       <RouteEdge

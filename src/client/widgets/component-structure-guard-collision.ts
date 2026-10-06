@@ -58,12 +58,15 @@ const anchorOf = (group: GuardLabelGroup, offset: number): Point =>
 const boxOf = (group: GuardLabelGroup, offset: number): Box => {
   const anchor = anchorOf(group, offset);
   const halfWidth = group.size.width / 2 + COLLISION_MARGIN;
-  const halfHeight = group.size.height / 2 + COLLISION_MARGIN;
+  const height = group.size.height + COLLISION_MARGIN;
   return {
     left: anchor.x - halfWidth,
-    top: anchor.y - halfHeight,
     right: anchor.x + halfWidth,
-    bottom: anchor.y + halfHeight,
+    // Start-anchored labels grow downstream from their anchor while
+    // end-anchored labels climb back up the edge, so each box extends one
+    // way only.
+    top: group.from === "start" ? anchor.y - COLLISION_MARGIN : anchor.y - height,
+    bottom: group.from === "start" ? anchor.y + height : anchor.y + COLLISION_MARGIN,
   };
 };
 

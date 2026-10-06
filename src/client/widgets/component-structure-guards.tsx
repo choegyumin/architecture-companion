@@ -211,6 +211,10 @@ export function attachGuardLabels({
     const groups = groupsByEdge.get(edge.id);
     if (!groups) return edge;
     const labelControls = groups.map((group) => ({
+      // Labels grow away from the node that decides them: branch pills hang
+      // downstream of the start anchor, conditional pills climb back up from
+      // the end anchor.
+      anchorSide: group.from === "start" ? ("top" as const) : ("bottom" as const),
       control: <GuardEdgeLabel rules={group.rules} />,
       position: anchorAlong(
         group.points,
