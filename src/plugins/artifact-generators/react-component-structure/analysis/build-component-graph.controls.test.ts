@@ -280,7 +280,10 @@ describe("component rendering controls", () => {
       ); }
     `);
     expect(graph.controls).toHaveLength(2);
-    const [ready, hide] = graph.controls!;
+    // Numbering follows first appearance in route rulesets, so the test reads
+    // the controls by label instead of position.
+    const ready = graph.controls!.find((control) => control.label === "ready")!;
+    const hide = graph.controls!.find((control) => control.label === "hide")!;
     expect(ready).toMatchObject({ kind: "conditional", label: "ready" });
     expect(hide).toMatchObject({
       kind: "branch",
