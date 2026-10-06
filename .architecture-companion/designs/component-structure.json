@@ -1,9 +1,9 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-06T17:53:53.944Z",
+  "updatedAt": "2026-10-06T18:27:33.061Z",
   "vcs": {
-    "revision": "1774ad84e2b82073b9502aa7bcdf9152179e1e8f",
+    "revision": "d393f205ff6d7cd3334dfa3df156be0146d2ce5f",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
@@ -1374,29 +1374,6 @@
       },
       {
         "type": "default",
-        "id": "edge:11b98535b4e9ddeb",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "sourcePort": "false",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "false"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "false"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:1239baecf30dd9f5",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
@@ -1429,6 +1406,13 @@
             }
           ]
         ]
+      },
+      {
+        "type": "default",
+        "id": "edge:198d97fe2837f6bd",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "guards": [[]]
       },
       {
         "type": "default",
@@ -1522,60 +1506,10 @@
       },
       {
         "type": "default",
-        "id": "edge:2d8fae6f64e33d26",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "sourcePort": "true",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "true"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "true"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:2fcb10e85d8bf253",
         "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
         "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:305ae20f2daf31cf",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
-        "sourcePort": "otherwise",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "true"
-            },
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "otherwise"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "otherwise"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -1757,16 +1691,19 @@
       },
       {
         "type": "default",
-        "id": "edge:507ea646601a0a65",
+        "id": "edge:51892a9e45564814",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:51f8c7d5e0200633",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
         "sourcePort": "otherwise",
         "activeWhen": [
           [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-              "value": "false"
-            },
             {
               "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
               "value": "otherwise"
@@ -1781,13 +1718,6 @@
             }
           ]
         ]
-      },
-      {
-        "type": "default",
-        "id": "edge:51892a9e45564814",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-        "guards": [[]]
       },
       {
         "type": "default",
@@ -2446,13 +2376,6 @@
       },
       {
         "type": "default",
-        "id": "edge:c251579375334b9b",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
-        "guards": [[]]
-      },
-      {
-        "type": "default",
         "id": "edge:c2aaf2dd552ac8d3",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
@@ -2489,6 +2412,33 @@
         "target": "external:@xyflow/react#Background",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c60abfe1fe0a7c9c",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
+        "sourcePort": "true",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "otherwise"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "true"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2552,6 +2502,33 @@
             {
               "controlId": "component:src/shared/react-flow/card-node.tsx#CardNode:control:0",
               "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:d4cc062461981f95",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+        "target": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
+        "sourcePort": "false",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "otherwise"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "false"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
+              "value": "false"
             }
           ]
         ]
@@ -2845,12 +2822,12 @@
         "kind": "branch",
         "cases": [
           {
-            "id": "true",
-            "label": "!state.review.catalog"
-          },
-          {
             "id": "false",
             "label": "state.review.catalog"
+          },
+          {
+            "id": "true",
+            "label": "!state.review.catalog"
           }
         ],
         "polarityPair": true

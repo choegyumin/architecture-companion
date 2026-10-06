@@ -1,7 +1,7 @@
 {
   "id": "react-data-table-component-structure",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-06T17:53:58.452Z",
+  "updatedAt": "2026-10-06T18:27:35.175Z",
   "generator": "built-in:react-component-structure",
   "layout": {
     "id": "elk-layered",
@@ -2656,12 +2656,12 @@
         "kind": "branch",
         "cases": [
           {
-            "id": "true",
-            "label": "!condition"
-          },
-          {
             "id": "false",
             "label": "condition"
+          },
+          {
+            "id": "true",
+            "label": "!condition"
           }
         ],
         "polarityPair": true
@@ -2680,12 +2680,12 @@
         "label": "hasData",
         "cases": [
           {
-            "id": "!hasData",
-            "label": "!hasData"
-          },
-          {
             "id": "hasData",
             "label": "hasData"
+          },
+          {
+            "id": "!hasData",
+            "label": "!hasData"
           }
         ],
         "polarityPair": true,
@@ -2698,12 +2698,12 @@
         "label": "isBusy",
         "cases": [
           {
-            "id": "!isBusy",
-            "label": "!isBusy"
-          },
-          {
             "id": "isBusy",
             "label": "isBusy"
+          },
+          {
+            "id": "!isBusy",
+            "label": "!isBusy"
           }
         ],
         "polarityPair": true,
