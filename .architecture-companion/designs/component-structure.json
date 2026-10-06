@@ -1,9 +1,9 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-06T17:04:53.080Z",
+  "updatedAt": "2026-10-06T17:21:56.535Z",
   "vcs": {
-    "revision": "bd33e269086f04eba295e028844d13ca15b69291",
+    "revision": "49dbb81045386cb881070ca2fd3fb761dc47e4f1",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
@@ -42,12 +42,12 @@
       },
       {
         "type": "default",
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:error:non-component",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:\"error\":non-component",
         "title": "Non-component"
       },
       {
         "type": "default",
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:loading:non-component",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:\"loading\":non-component",
         "title": "Non-component"
       },
       {
@@ -1555,29 +1555,6 @@
       },
       {
         "type": "default",
-        "id": "edge:267dc80d4e062ea3",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "sourcePort": "changed",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-              "value": "changed"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-              "value": "changed"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:2a00fe69cf97484d",
         "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
         "target": "external:@xyflow/react#Handle",
@@ -2028,29 +2005,6 @@
       },
       {
         "type": "default",
-        "id": "edge:5bc1d75ed4f0ae3d",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:loading:non-component",
-        "sourcePort": "loading",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "loading"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "loading"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:5c04ef47cee6e237",
         "source": "component:src/shared/react-ui/card.tsx#Card@57f461c43561acd7",
         "target": "component:src/shared/react-ui/card.tsx#CardHeader@fcf687b5c4ec07a8",
@@ -2072,6 +2026,29 @@
         "target": "component:src/shared/react-ui/button.tsx#Button",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:642eed46a80ea051",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "\"deleted\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "\"deleted\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "\"deleted\""
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2193,6 +2170,29 @@
         "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:7fe2486a0c079e5a",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:\"error\":non-component",
+        "sourcePort": "\"error\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "\"error\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "\"error\""
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2370,6 +2370,29 @@
       },
       {
         "type": "default",
+        "id": "edge:b127eb3a940ad9c7",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:\"loading\":non-component",
+        "sourcePort": "\"loading\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "\"loading\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+              "value": "\"loading\""
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:b1b66ed45e6e35ef",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
@@ -2476,6 +2499,29 @@
         "target": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c530975c43c86dae",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "\"changed\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "\"changed\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "\"changed\""
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2612,29 +2658,6 @@
       },
       {
         "type": "default",
-        "id": "edge:e97c84b92b5398d9",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "sourcePort": "deleted",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-              "value": "deleted"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
-              "value": "deleted"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:ec050f35a5fdc42c",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
@@ -2675,29 +2698,6 @@
             {
               "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:5",
               "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:f018a4a2d6aff93b",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:error:non-component",
-        "sourcePort": "error",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "error"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-              "value": "error"
             }
           ]
         ]
@@ -3044,12 +3044,12 @@
         "label": "state.status",
         "cases": [
           {
-            "id": "loading",
-            "label": "loading"
+            "id": "\"loading\"",
+            "label": "\"loading\""
           },
           {
-            "id": "error",
-            "label": "error"
+            "id": "\"error\"",
+            "label": "\"error\""
           },
           {
             "id": "otherwise",
@@ -3554,12 +3554,12 @@
         "label": "controller.edit.conflict?.kind",
         "cases": [
           {
-            "id": "changed",
-            "label": "changed"
+            "id": "\"changed\"",
+            "label": "\"changed\""
           },
           {
-            "id": "deleted",
-            "label": "deleted"
+            "id": "\"deleted\"",
+            "label": "\"deleted\""
           },
           {
             "id": "otherwise",

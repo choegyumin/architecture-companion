@@ -1,7 +1,7 @@
 {
   "id": "react-data-table-component-structure",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-06T17:04:54.670Z",
+  "updatedAt": "2026-10-06T17:21:58.398Z",
   "generator": "built-in:react-component-structure",
   "layout": {
     "id": "elk-layered",
@@ -1298,6 +1298,33 @@
       },
       {
         "type": "default",
+        "id": "edge:51b53dee9e3c49b9",
+        "source": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
+        "sourcePort": "\"both\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"both\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"both\""
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:5860ac38a6bd6366",
         "source": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
         "target": "component:src/components/TableWrapper.tsx#Wrapper",
@@ -1753,60 +1780,6 @@
       },
       {
         "type": "default",
-        "id": "edge:ab40ac1f84247bac",
-        "source": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
-        "sourcePort": "bottom",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "bottom"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "bottom"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:ab70683425004122",
-        "source": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
-        "sourcePort": "both",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "both"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "both"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:ad190dd385e1de08",
         "source": "component:src/components/DataTable.tsx#DataTableInner:control:4",
         "target": "component:src/components/DataTable.tsx#DataTableInner:control:4:left:non-component",
@@ -2124,6 +2097,33 @@
       },
       {
         "type": "default",
+        "id": "edge:d9630ea7017c1edf",
+        "source": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
+        "sourcePort": "\"top\"",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"top\""
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"top\""
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:da9b40d2021fb84a",
         "source": "component:src/components/DataTable.tsx#DataTableInner",
         "target": "component:src/components/TableHeader.tsx#Header",
@@ -2161,10 +2161,18 @@
       },
       {
         "type": "default",
-        "id": "edge:eb10c09e75b3f629",
+        "id": "edge:ef97d0bdce6a0fc4",
+        "source": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
+        "target": "component:src/components/DataTableBody.tsx#SkeletonRow",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:f308e13dc21fdd04",
         "source": "component:src/components/DataTable.tsx#DataTableInner:control:3",
         "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
-        "sourcePort": "top",
+        "sourcePort": "\"bottom\"",
         "activeWhen": [
           [
             {
@@ -2173,7 +2181,7 @@
             },
             {
               "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "top"
+              "value": "\"bottom\""
             }
           ]
         ],
@@ -2181,18 +2189,10 @@
           [
             {
               "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
-              "value": "top"
+              "value": "\"bottom\""
             }
           ]
         ]
-      },
-      {
-        "type": "default",
-        "id": "edge:ef97d0bdce6a0fc4",
-        "source": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
-        "target": "component:src/components/DataTableBody.tsx#SkeletonRow",
-        "activeWhen": [[]],
-        "guards": [[]]
       },
       {
         "type": "default",
@@ -2435,16 +2435,16 @@
         "label": "paginationPosition",
         "cases": [
           {
-            "id": "top",
-            "label": "top"
+            "id": "\"top\"",
+            "label": "\"top\""
           },
           {
-            "id": "both",
-            "label": "both"
+            "id": "\"both\"",
+            "label": "\"both\""
           },
           {
-            "id": "bottom",
-            "label": "bottom"
+            "id": "\"bottom\"",
+            "label": "\"bottom\""
           }
         ],
         "dependsOn": [
