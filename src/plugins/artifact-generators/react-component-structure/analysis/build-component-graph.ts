@@ -12,6 +12,7 @@ import type {
   DefaultDiagramNode,
   DiagramControl,
   DiagramGraph,
+  DiagramRouteRequirement,
   DiagramRouteRequirementRule,
   DiagramRouteRequirementRuleset,
 } from "@/features/diagram/diagram-graph";
@@ -2166,6 +2167,16 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
   };
 
+  // A polarity pair's on slot (cases.at(0)) must be the case its label names
+  // — the positive form — so a gate written negated (`if (!x)`) still leads
+  // with the positive case. Ids stay semantic: "true" is the gate as written
+  // regardless of slot.
+  const polarityPairCases = (label: string): { id: string; label: string }[] => {
+    const trueCase = { id: "true", label };
+    const falseCase = { id: "false", label: negateLabel(label) };
+    return normalizedLabel(label) === positiveLabel(label) ? [trueCase, falseCase] : [falseCase, trueCase];
+  };
+
   type ConditionLiteral = Readonly<{ expression: ts.Expression; positive: boolean }>;
   const MAX_DECOMPOSED_CLAUSES = 8;
   const MAX_DECOMPOSED_LITERALS = 8;
@@ -2331,10 +2342,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         emptyTrue || emptyFalse
           ? undefined
           : {
-              cases: [
-                { id: "true", label },
-                { id: "false", label: negateLabel(label) },
-              ],
+              cases: polarityPairCases(label),
               polarityPair: true,
             },
       );
@@ -2545,10 +2553,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             context,
             trueOutput && falseOutput
               ? {
-                  cases: [
-                    { id: "true", label },
-                    { id: "false", label: negateLabel(label) },
-                  ],
+                  cases: polarityPairCases(label),
                   polarityPair: true,
                 }
               : undefined,
@@ -3547,7 +3552,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const rewrite = (ruleset: DiagramRouteRequirementRuleset): DiagramRouteRequirementRuleset => {
       const rewritten: DiagramRouteRequirementRule[] = [];
       for (const rule of ruleset) {
-        const passthrough: DiagramRouteRequirementRule = [];
+        // Requirements keep their slots: a discriminant group resolves at the
+        // position of its first requirement, so a rule built outer-gate-first
+        // (source order) still names the outer decision first after the
+        // remainder synthesis. Appending resolutions instead would invert the
+        // decision chain the hop split draws.
+        const slots: (
+          | Readonly<{ groupKey: string; state: { positives: Set<string>; negatives: Set<string> } }>
+          | Readonly<{ requirement: DiagramRouteRequirement }>
+        )[] = [];
         const states = new Map<string, { positives: Set<string>; negatives: Set<string> }>();
         let dead = false;
         for (const requirement of rule) {
@@ -3560,32 +3573,35 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             }
             const state = states.get(member.groupKey) ?? { positives: new Set<string>(), negatives: new Set<string>() };
             (semantic.positive ? state.positives : state.negatives).add(semantic.literal);
-            states.set(member.groupKey, state);
+            if (!states.has(member.groupKey)) {
+              states.set(member.groupKey, state);
+              slots.push({ groupKey: member.groupKey, state });
+            }
             continue;
           }
           const replacement = replacements.get(requirement.controlId);
           if (!replacement) {
-            passthrough.push(requirement);
+            slots.push({ requirement });
             continue;
           }
           const value = replacement.values[requirement.value];
-          passthrough.push(value === undefined ? requirement : { controlId: replacement.controlId, value });
+          slots.push({ requirement: value === undefined ? requirement : { controlId: replacement.controlId, value } });
         }
         if (dead) continue;
-        const resolutions = [...states];
         const buildRules = (
           index: number,
           base: DiagramRouteRequirementRule,
         ): readonly DiagramRouteRequirementRule[] => {
-          if (index >= resolutions.length) return [base];
-          const [groupKey, state] = resolutions[index]!;
-          const group = discriminantGroups.get(groupKey)!;
-          const values = resolveDiscriminant(group, state.positives, state.negatives);
+          if (index >= slots.length) return [base];
+          const slot = slots[index]!;
+          if ("requirement" in slot) return buildRules(index + 1, [...base, slot.requirement]);
+          const group = discriminantGroups.get(slot.groupKey)!;
+          const values = resolveDiscriminant(group, slot.state.positives, slot.state.negatives);
           return values.flatMap((value) =>
             buildRules(index + 1, [...base, { controlId: group.representative.id, value }]),
           );
         };
-        rewritten.push(...buildRules(0, passthrough));
+        rewritten.push(...buildRules(0, []));
       }
       return rewritten;
     };
@@ -3609,8 +3625,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               positive: !polarity.positive,
             });
         }
-        const cases = [...casesByKey.values()].map(({ id, label }) => ({ id, label }));
-        const positiveText = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;
+        // The switch's on position (cases.at(0)) must be the case its label
+        // names — the positive form — so a group whose first member is a
+        // negated gate still leads with the positive case. Non-polarity groups
+        // (discriminant enumerations) keep member order.
+        const ordered = [...casesByKey.values()];
+        const positiveCase = ordered.find(({ positive }) => positive);
+        if (ordered.length === 2 && positiveCase && ordered.at(0) !== positiveCase) ordered.reverse();
+        const cases = ordered.map(({ id, label }) => ({ id, label }));
+        const positiveText = positiveCase?.label ?? ordered.at(0)!.label;
         controls.set(control.id, {
           id: control.id,
           owner: control.owner,

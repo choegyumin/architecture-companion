@@ -636,6 +636,78 @@ describe("component rendering controls", () => {
     });
   });
 
+  it("keeps the decision chain in source order when the remainder feeds another gate", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      export function App({ status, catalog }) {
+        if (status === "loading") return <main>Loading</main>;
+        if (status === "error") return <main>Error</main>;
+        if (!catalog) return <First />;
+        return <Second />;
+      }
+    `);
+    const status = graph.controls!.find((control) => control.label === "status")!;
+    const catalog = graph.controls!.find((control) => control.label === "catalog")!;
+
+    // The catalog gate sits after the status gates in source, so its decision
+    // node hangs off the status remainder arm — never the other way around,
+    // which stranded the graph whenever status left the remainder case.
+    const intoCatalog = graph.edges.find(
+      (edge): edge is (typeof graph.edges)[number] & { type: "default" } =>
+        edge.type === "default" && edge.target === catalog.id && edge.source !== catalog.id,
+    )!;
+    expect(intoCatalog.source).toBe(status.id);
+    expect(intoCatalog.sourcePort).toBe("otherwise");
+    expect(intoCatalog.activeWhen).toEqual([[{ controlId: status.id, value: "otherwise" }]]);
+
+    // One remainder arm reaches the catalog decision; the instance split rides
+    // the catalog's own arms instead of duplicating the remainder label.
+    const remainderArms = graph.edges.filter(
+      (edge) => edge.type === "default" && edge.source === status.id && edge.sourcePort === "otherwise",
+    );
+    expect(remainderArms).toHaveLength(1);
+    const firstEdge = graph.edges.find(
+      (edge): edge is (typeof graph.edges)[number] & { type: "default" } =>
+        edge.type === "default" && edge.source === catalog.id && edge.target === edgeTo(graph, "First").target,
+    )!;
+    expect(firstEdge).toMatchObject({
+      sourcePort: "true",
+      activeWhen: [
+        [
+          { controlId: status.id, value: "otherwise" },
+          { controlId: catalog.id, value: "true" },
+        ],
+      ],
+    });
+    expect(edgeTo(graph, "Second")).toMatchObject({
+      source: catalog.id,
+    });
+  });
+
+  it("leads a gate written negated with its positive case", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      export function App({ catalog }) {
+        if (!catalog) return <First />;
+        return <Second />;
+      }
+    `);
+    const catalog = graph.controls!.find((control) => control.label === "catalog")!;
+    // The switch's on slot is the case the field label names, even though the
+    // gate is written negated; ids stay semantic ("true" = the gate as written).
+    expect(catalog).toMatchObject({
+      kind: "branch",
+      label: "catalog",
+      polarityPair: true,
+      cases: [
+        { id: "false", label: "catalog" },
+        { id: "true", label: "!catalog" },
+      ],
+    });
+  });
+
   it("expands a negated discriminant gate over the values it still allows", async () => {
     const graph = await graphFor(`
       function Dark() { return <span />; }
