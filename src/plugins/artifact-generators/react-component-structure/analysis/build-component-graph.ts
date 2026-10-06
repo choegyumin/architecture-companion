@@ -2190,15 +2190,21 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   const negateClauses = (
     clauses: readonly (readonly ConditionLiteral[])[],
   ): readonly (readonly ConditionLiteral[])[] | undefined => {
-    if (clauses.length > 2) return undefined;
     const flip = (literal: ConditionLiteral): ConditionLiteral => ({
       expression: literal.expression,
       positive: !literal.positive,
     });
-    // ¬(a ∧ b) = ¬a ∨ ¬b — one clause per negated literal; ¬(C1 ∨ C2) =
-    // ¬C1 ∧ ¬C2 — one clause concatenating both negated clauses.
-    if (clauses.length === 1) return clauses.at(0)!.map((literal) => [flip(literal)]);
-    return [[...clauses.at(0)!.map(flip), ...clauses.at(1)!.map(flip)]];
+    // ¬(C1 ∨ … ∨ Cn) = ¬C1 ∧ … ∧ ¬Cn, and ¬(l1 ∧ … ∧ lm) = ¬l1 ∨ … ∨ ¬lm,
+    // so the negation picks one flipped literal per clause — the cross
+    // product. A pure disjunction (singleton clauses) is a single AND rule at
+    // any width; multi-literal clauses multiply and the product is capped.
+    let expanded: ConditionLiteral[][] = [[]];
+    for (const clause of clauses) {
+      const next: ConditionLiteral[][] = [];
+      for (const base of expanded) for (const literal of clause) next.push([...base, flip(literal)]);
+      expanded = next;
+    }
+    return expanded.length > MAX_DECOMPOSED_CLAUSES ? undefined : expanded;
   };
 
   const conditionClauses = (expression: ts.Expression): readonly (readonly ConditionLiteral[])[] | undefined => {
@@ -2283,18 +2289,23 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const emptyFalse = isEmptyOutput(unwrapped.whenFalse, context);
       if (emptyTrue && emptyFalse) return true;
       if (isGateCombination(unwrapped.condition)) {
+        // Only arms that render need their clauses: a null arm carries no
+        // route, so demanding its expansion would fail decompositions the
+        // rendered side handles fine on its own.
         const trueClauses = conditionClauses(unwrapped.condition);
         const falseClauses = trueClauses && negateClauses(trueClauses);
-        if (trueClauses && falseClauses) {
+        const trueReady = emptyTrue || trueClauses !== undefined;
+        const falseReady = emptyFalse || falseClauses !== undefined;
+        if (trueReady && falseReady) {
           if (!emptyTrue)
             visit(
               unwrapped.whenTrue,
-              combineRulesets(ruleset, conditionRequirements(trueClauses, ownerId, ruleset, context)),
+              combineRulesets(ruleset, conditionRequirements(trueClauses!, ownerId, ruleset, context)),
             );
           if (!emptyFalse)
             visit(
               unwrapped.whenFalse,
-              combineRulesets(ruleset, conditionRequirements(falseClauses, ownerId, ruleset, context)),
+              combineRulesets(ruleset, conditionRequirements(falseClauses!, ownerId, ruleset, context)),
             );
           return true;
         }
@@ -2494,16 +2505,18 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           if (isGateCombination(statement.expression)) {
             const trueClauses = conditionClauses(statement.expression);
             const falseClauses = trueClauses && negateClauses(trueClauses);
-            if (trueClauses && falseClauses) {
+            const trueReady = !trueOutput || trueClauses !== undefined;
+            const falseReady = !falseOutput || falseClauses !== undefined;
+            if (trueReady && falseReady) {
               const thenFlow = walk(
                 statementsOf(statement.thenStatement),
-                combineRulesets(next, conditionRequirements(trueClauses, ownerId, next, context)),
+                combineRulesets(next, trueOutput ? conditionRequirements(trueClauses!, ownerId, next, context) : []),
                 breakContinuation,
                 tail,
               );
               const elseFlow = walk(
                 statementsOf(statement.elseStatement),
-                combineRulesets(next, conditionRequirements(falseClauses, ownerId, next, context)),
+                combineRulesets(next, falseOutput ? conditionRequirements(falseClauses!, ownerId, next, context) : []),
                 breakContinuation,
                 tail,
               );
@@ -3264,8 +3277,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ts.isNoSubstitutionTemplateLiteral(node) ||
       node.kind === ts.SyntaxKind.TrueKeyword ||
       node.kind === ts.SyntaxKind.FalseKeyword;
-    const polarityOf = (control: DiagramControl): Polarity | undefined => {
-      const expression = parseLabel(control.label);
+    const polarityOfLabel = (text: string): Polarity | undefined => {
+      const expression = parseLabel(text);
       if (!expression) return undefined;
       const { core, parity } = unwrapPolarity(expression);
       if (!ts.isBinaryExpression(core) || !COMPLEMENTARY_OPERATORS[core.operatorToken.kind])
@@ -3285,8 +3298,23 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           : {}),
       };
     };
+    const polarityOf = (control: DiagramControl): Polarity | undefined => polarityOfLabel(control.label);
 
-    type Member = Readonly<{ control: DiagramControl; polarity: Polarity }>;
+    // A native boolean gate branch (`hide ? A : B` with both arms rendering):
+    // its two cases spell one subject and its negation, so it folds with the
+    // conditionals over that subject instead of living as its own switch.
+    const branchCasesOf = (control: DiagramControl): { trueText: string; falseText: string } | undefined => {
+      if (control.kind !== "branch" || control.cases.length !== 2) return undefined;
+      const [trueCase, falseCase] = control.cases;
+      if (!trueCase || !falseCase || trueCase.id !== "true" || falseCase.id !== "false") return undefined;
+      return { trueText: trueCase.label, falseText: falseCase.label };
+    };
+
+    type Member = Readonly<{
+      control: DiagramControl;
+      polarity: Polarity;
+      branchCases?: { trueText: string; falseText: string };
+    }>;
     const groups = new Map<string, Member[]>();
 
     // One discriminant: an equality comparing a subject expression to a
@@ -3379,12 +3407,16 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
 
     for (const control of context.controls.values()) {
-      if (control.kind !== "conditional" || discriminantMembers.has(control.id)) continue;
-      const polarity = polarityOf(control);
+      if (discriminantMembers.has(control.id)) continue;
+      const branchCases = branchCasesOf(control);
+      if (!branchCases && control.kind !== "conditional") continue;
+      // A branch's own label is the positive subject, but its true case names
+      // the gate as written — that text carries the polarity.
+      const polarity = branchCases ? polarityOfLabel(branchCases.trueText) : polarityOf(control);
       if (!polarity) continue;
       const key = `${control.owner}\0${polarity.group}`;
       const members = groups.get(key) ?? [];
-      members.push({ control, polarity });
+      members.push({ control, polarity, ...(branchCases ? { branchCases } : {}) });
       groups.set(key, members);
     }
 
@@ -3429,30 +3461,44 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const finalGroups: Member[][] = [...groups.values()];
 
-    type Replacement = Readonly<{ controlId: string; on: string; off?: string }>;
+    type Replacement = Readonly<{ controlId: string; values: Readonly<Record<string, string>> }>;
     const replacements = new Map<string, Replacement>();
     const memberIds = new Set<string>();
     const mergedGroups = new Map<string, Member[]>();
+    const complementKeyOf = (caseKey: string): string =>
+      caseKey.startsWith("polarity:") ? `polarity:${caseKey === "polarity:0" ? 1 : 0}` : caseKey;
     for (const members of finalGroups) {
+      // A lone branch keeps its native true/false value space: folding it
+      // with itself only renames its cases. It joins when a conditional or
+      // another branch over the same subject shares the group.
+      if (members.length === 1 && members.at(0)!.branchCases) continue;
       const representative = members.at(0)!.control;
       const caseTextByKey = new Map<string, string>();
-      for (const { control, polarity } of members) {
-        if (!caseTextByKey.has(polarity.caseKey)) caseTextByKey.set(polarity.caseKey, control.label);
+      for (const { control, polarity, branchCases } of members) {
+        if (!caseTextByKey.has(polarity.caseKey))
+          caseTextByKey.set(polarity.caseKey, branchCases ? branchCases.trueText : control.label);
+        // A branch member's false arm already names the complement case.
+        if (branchCases && !caseTextByKey.has(complementKeyOf(polarity.caseKey)))
+          caseTextByKey.set(complementKeyOf(polarity.caseKey), branchCases.falseText);
         memberIds.add(control.id);
       }
-      const complementText = (caseKey: string): string | undefined =>
-        caseKey.startsWith("polarity:") ? caseTextByKey.get(`polarity:${caseKey === "polarity:0" ? 1 : 0}`) : undefined;
+      const complementText = (caseKey: string): string | undefined => caseTextByKey.get(complementKeyOf(caseKey));
       // A group that never sees a second case stays conditional, so its value
       // space is still "on"/"off"; only the duplicate control ids fold together.
       const staysConditional = caseTextByKey.size < 2;
-      for (const { control, polarity } of members) {
-        const off = complementText(polarity.caseKey);
-        replacements.set(control.id, {
-          controlId: representative.id,
-          ...(staysConditional
+      for (const { control, polarity, branchCases } of members) {
+        const values: Record<string, string> = branchCases
+          ? {
+              true: caseTextByKey.get(polarity.caseKey)!,
+              false: caseTextByKey.get(complementKeyOf(polarity.caseKey))!,
+            }
+          : staysConditional
             ? { on: "on", off: "off" }
-            : { on: caseTextByKey.get(polarity.caseKey)!, ...(off ? { off } : {}) }),
-        });
+            : {
+                on: caseTextByKey.get(polarity.caseKey)!,
+                ...(complementText(polarity.caseKey) ? { off: complementText(polarity.caseKey)! } : {}),
+              };
+        replacements.set(control.id, { controlId: representative.id, values });
       }
       mergedGroups.set(representative.id, members);
     }
@@ -3515,7 +3561,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             passthrough.push(requirement);
             continue;
           }
-          const value = requirement.value === "off" ? replacement.off : replacement.on;
+          const value = replacement.values[requirement.value];
           passthrough.push(value === undefined ? requirement : { controlId: replacement.controlId, value });
         }
         if (dead) continue;
@@ -3542,9 +3588,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const members = mergedGroups.get(control.id);
       if (members) {
         const casesByKey = new Map<string, { id: string; label: string; positive: boolean }>();
-        for (const { control: member, polarity } of members) {
+        for (const { control: member, polarity, branchCases } of members) {
           if (!casesByKey.has(polarity.caseKey))
-            casesByKey.set(polarity.caseKey, { id: member.label, label: member.label, positive: polarity.positive });
+            casesByKey.set(polarity.caseKey, {
+              id: branchCases ? branchCases.trueText : member.label,
+              label: branchCases ? branchCases.trueText : member.label,
+              positive: polarity.positive,
+            });
+          if (branchCases && !casesByKey.has(complementKeyOf(polarity.caseKey)))
+            casesByKey.set(complementKeyOf(polarity.caseKey), {
+              id: branchCases.falseText,
+              label: branchCases.falseText,
+              positive: !polarity.positive,
+            });
         }
         const cases = [...casesByKey.values()].map(({ id, label }) => ({ id, label }));
         const positiveText = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;

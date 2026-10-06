@@ -33,6 +33,11 @@ function edgeTo(graph: DiagramGraph, title: string) {
   return graph.edges.find((edge) => edge.target === target.id)!;
 }
 
+function edgeActiveWhen(graph: DiagramGraph, title: string) {
+  const edge = edgeTo(graph, title);
+  return edge.type === "default" ? edge.activeWhen : undefined;
+}
+
 describe("component rendering controls", () => {
   it.each([
     {
@@ -196,6 +201,102 @@ describe("component rendering controls", () => {
         { id: "false", label: "!flag" },
       ],
     });
+  });
+
+  it("decomposes a wide disjunction whose only rendered arm is positive", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      export function App({ eyebrow, label, href, anchored }) { return (
+        <>{eyebrow != null || label != null || href || anchored > 0 ? <Leaf /> : null}</>
+      ); }
+    `);
+    const labels = graph.controls!.map(({ label }) => label);
+    expect(labels).toEqual(["eyebrow != null", "label != null", "href", "anchored > 0"]);
+    expect(graph.controls!.every(({ kind }) => kind === "conditional")).toBe(true);
+    const leafEdge = edgeTo(graph, "Leaf");
+    expect(leafEdge.type === "default" ? leafEdge.activeWhen : undefined).toEqual([
+      [{ controlId: graph.controls!.at(0)!.id, value: "on" }],
+      [{ controlId: graph.controls!.at(1)!.id, value: "on" }],
+      [{ controlId: graph.controls!.at(2)!.id, value: "on" }],
+      [{ controlId: graph.controls!.at(3)!.id, value: "on" }],
+    ]);
+  });
+
+  it("expands the negated arm of a mixed-literal disjunction as a cross product", async () => {
+    const graph = await graphFor(`
+      function Left() { return <span />; }
+      function Right() { return <aside />; }
+      export function App({ a, b, c }) { return <>{(a && b) || c ? <Left /> : <Right />}</>; }
+    `);
+    const controls = new Map(graph.controls!.map((control) => [control.label, control]));
+    const rightEdge = edgeTo(graph, "Right");
+    // ¬((a ∧ b) ∨ c) = (¬a ∨ ¬b) ∧ ¬c — two rules, not one conjunction of all.
+    expect(rightEdge.type === "default" ? rightEdge.activeWhen : undefined).toEqual([
+      [
+        { controlId: controls.get("a")!.id, value: "off" },
+        { controlId: controls.get("c")!.id, value: "off" },
+      ],
+      [
+        { controlId: controls.get("b")!.id, value: "off" },
+        { controlId: controls.get("c")!.id, value: "off" },
+      ],
+    ]);
+  });
+
+  it("merges boolean ternary branches over one subject into a single switch", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      function Third() { return <footer />; }
+      function Fourth() { return <main />; }
+      export function App({ hide }) { return (
+        <>{hide ? <First /> : <Second />}{hide ? <Third /> : <Fourth />}</>
+      ); }
+    `);
+    expect(graph.controls).toHaveLength(1);
+    const [hide] = graph.controls!;
+    expect(hide).toMatchObject({
+      kind: "branch",
+      label: "hide",
+      polarityPair: true,
+      cases: [
+        { id: "hide", label: "hide" },
+        { id: "!hide", label: "!hide" },
+      ],
+    });
+    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: hide.id, value: "hide" }]]);
+    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: hide.id, value: "!hide" }]]);
+    expect(edgeActiveWhen(graph, "Third")).toEqual([[{ controlId: hide.id, value: "hide" }]]);
+    expect(edgeActiveWhen(graph, "Fourth")).toEqual([[{ controlId: hide.id, value: "!hide" }]]);
+  });
+
+  it("folds a boolean ternary branch with conditionals over the same subject", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      function Third() { return <footer />; }
+      export function App({ ready, hide }) { return (
+        <>{hide ? <First /> : <Second />}{ready && hide && <Third />}</>
+      ); }
+    `);
+    expect(graph.controls).toHaveLength(2);
+    const [ready, hide] = graph.controls!;
+    expect(ready).toMatchObject({ kind: "conditional", label: "ready" });
+    expect(hide).toMatchObject({
+      kind: "branch",
+      label: "hide",
+      polarityPair: true,
+      cases: [
+        { id: "hide", label: "hide" },
+        { id: "!hide", label: "!hide" },
+      ],
+    });
+    expect(edgeActiveWhen(graph, "Third")).toEqual([
+      [
+        { controlId: ready.id, value: "on" },
+        { controlId: hide.id, value: "hide" },
+      ],
+    ]);
   });
 
   it("keeps each chained condition with its preceding prerequisites", async () => {
