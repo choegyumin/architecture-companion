@@ -13,7 +13,7 @@ export type GuardPill = Readonly<{
 
 // UML edge guard: the pills naming the route requirements under which an edge applies.
 // One AND rule renders as one unit — several requirements share a tinted box,
-// a lone requirement stays bare — and OR rules sit side by side. Inside each
+// a lone requirement stays bare — and OR rules stack top to bottom. Inside each
 // pill the leading state icon separates the control kinds: a splitting arrow
 // names a branch case choice, a check mark names a conditional toggle, and
 // both dim until their state holds. Icons are decorative — the pill itself
@@ -56,7 +56,7 @@ const ruleState = (pills: readonly GuardPill[]): keyof typeof RULE_BOX_STATE_CLA
 
 export function GuardEdgeLabel({ rules }: Readonly<{ rules: readonly (readonly GuardPill[])[] }>) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col items-start gap-1.5">
       {rules.map((rule, ruleIndex) =>
         rule.length > 1 ? (
           <div

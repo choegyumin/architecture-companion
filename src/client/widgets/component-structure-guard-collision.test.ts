@@ -21,8 +21,8 @@ describe("estimateGuardLabelSize", () => {
   it("sizes a lone clause as one bare row of pills", () => {
     expect(estimateGuardLabelSize([[{ label: "draft" }]])).toEqual({ width: 34 + 6 * 5, height: 26 });
     expect(estimateGuardLabelSize([[{ label: "draft" }], [{ label: "On" }]])).toEqual({
-      width: 34 + 6 * 5 + 6 + 34 + 6 * 2,
-      height: 26,
+      width: 34 + 6 * 5,
+      height: 26 + 6 + 26,
     });
   });
 

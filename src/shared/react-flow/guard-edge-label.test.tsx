@@ -52,7 +52,7 @@ describe("guard edge label", () => {
     expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("border-transparent", "bg-muted/60");
   });
 
-  it("renders lone rules bare and keeps OR rules side by side", () => {
+  it("renders lone rules bare and stacks OR rules top to bottom", () => {
     const { container } = render(
       <GuardEdgeLabel
         rules={[[pill({ kind: "branch", label: "On" })], [pill({ kind: "branch", label: "Off", pressed: true })]]}
@@ -61,6 +61,8 @@ describe("guard edge label", () => {
 
     const boxes = [...container.querySelectorAll(".bg-muted\\/60")];
     expect(boxes).toHaveLength(0);
+    // OR rules stack top to bottom while pills inside a rule stay in a row.
+    expect(screen.getAllByRole("button").at(0)!.parentElement).toHaveClass("flex-col");
     const [on, off] = screen.getAllByRole("button");
     expect(on?.firstElementChild).toHaveClass("lucide-split", "opacity-25");
     expect(off?.firstElementChild).toHaveClass("lucide-split");

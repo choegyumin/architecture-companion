@@ -3,9 +3,10 @@ import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-plac
 type Point = Readonly<{ x: number; y: number }>;
 
 // Guard pills render at text-xs in a single row with a leading state icon,
-// and one AND rule of several pills shares a tinted box. Sizes are
-// estimated from label lengths instead of measured so placement stays a pure
-// layout-time decision; the margin absorbs the estimation error.
+// one AND rule of several pills shares a tinted box, and rules stack top to
+// bottom. Sizes are estimated from label lengths instead of measured so
+// placement stays a pure layout-time decision; the margin absorbs the
+// estimation error.
 const PILL_CHAR_WIDTH = 6;
 // Horizontal padding and border, plus the state icon and its gap.
 const PILL_BOX_PADDING = 34;
@@ -24,13 +25,13 @@ export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
 export function estimateGuardLabelSize(rules: readonly (readonly { label: string }[])[]): GuardLabelSize {
   let width = 0;
-  let height = PILL_HEIGHT;
+  let height = 0;
   for (const [index, rule] of rules.entries()) {
     const pills =
       rule.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
       PILL_GAP * Math.max(rule.length - 1, 0);
-    width += (rule.length > 1 ? RULE_BOX_PADDING : 0) + pills + (index > 0 ? RULE_GAP : 0);
-    if (rule.length > 1) height = PILL_HEIGHT + RULE_BOX_VERTICAL;
+    width = Math.max(width, pills + (rule.length > 1 ? RULE_BOX_PADDING : 0));
+    height += PILL_HEIGHT + (rule.length > 1 ? RULE_BOX_VERTICAL : 0) + (index > 0 ? RULE_GAP : 0);
   }
   return { width, height };
 }
