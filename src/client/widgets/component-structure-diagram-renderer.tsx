@@ -30,8 +30,19 @@ import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
+import {
+  Select,
+  SelectIcon,
+  SelectItem,
+  SelectItemIndicator,
+  SelectItemText,
+  SelectPopup,
+  SelectPortal,
+  SelectPositioner,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/react-ui/select";
 import { Switch } from "@/shared/react-ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "@/shared/react-ui/toggle-group";
 
 function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
   if (diagram.layout.id !== "elk-layered") throw new Error("Expected an ELK layered diagram layout.");
@@ -92,7 +103,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         if (node.type !== "card") return node;
         const nodeOrigins = origins.get(node.id) ?? [];
         // Every owned control renders its field on the owning card — branch
-        // cases as a single-choice toggle group, conditionals as switches — so
+        // cases as a single-choice select, conditionals as switches — so
         // owned values live in one place.
         const ownedControls = controlsByOwner.get(toDefinitionId(node.id)) ?? [];
         return {
@@ -116,23 +127,35 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                 >
                   {ownedControls.map((control) =>
                     control.kind === "branch" && !isPolarityPairBranch(control) ? (
-                      <div className="flex max-w-full flex-col gap-1" key={control.id}>
-                        <span className="truncate text-xs text-muted-foreground">{control.label}</span>
-                        <ToggleGroup
-                          className="max-w-full"
+                      <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
+                        <span className="truncate">{control.label}</span>
+                        <Select
+                          items={Object.fromEntries(
+                            control.cases.map((branchCase) => [branchCase.id, branchCase.label]),
+                          )}
                           onValueChange={(next) => {
-                            const caseId = next.at(0);
-                            if (caseId != null) onControlSelect(control.id, caseId);
+                            if (next != null) onControlSelect(control.id, next);
                           }}
-                          value={selected[control.id] != null ? [selected[control.id]] : []}
+                          value={selected[control.id] ?? null}
                         >
-                          {control.cases.map((branchCase) => (
-                            <ToggleGroupItem key={branchCase.id} size="sm" value={branchCase.id}>
-                              {branchCase.label}
-                            </ToggleGroupItem>
-                          ))}
-                        </ToggleGroup>
-                      </div>
+                          <SelectTrigger aria-label={control.label}>
+                            <SelectValue />
+                            <SelectIcon />
+                          </SelectTrigger>
+                          <SelectPortal>
+                            <SelectPositioner>
+                              <SelectPopup>
+                                {control.cases.map((branchCase) => (
+                                  <SelectItem key={branchCase.id} value={branchCase.id}>
+                                    <SelectItemIndicator />
+                                    <SelectItemText>{branchCase.label}</SelectItemText>
+                                  </SelectItem>
+                                ))}
+                              </SelectPopup>
+                            </SelectPositioner>
+                          </SelectPortal>
+                        </Select>
+                      </label>
                     ) : (
                       <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
                         <span className="truncate">{control.label}</span>

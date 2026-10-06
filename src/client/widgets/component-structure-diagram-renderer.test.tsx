@@ -89,6 +89,18 @@ function connection(id: string, source: string, target: string, alternative?: st
   };
 }
 
+// Branch fields are single-choice selects: open the owner card's field, then
+// pick the case from the popup (which portals to the body, outside any
+// `within` scope).
+async function pickCase(
+  getByCombobox: (options: { name: string }) => HTMLElement,
+  fieldLabel: string,
+  caseLabel: string,
+) {
+  await userEvent.click(getByCombobox({ name: fieldLabel }));
+  await userEvent.click(screen.getByRole("option", { name: caseLabel }));
+}
+
 function sharedGraph(): DiagramGraph {
   return {
     groups: [],
@@ -140,8 +152,7 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Small" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
   });
   it("ranks branch content reached through another visible source and a when-only prerequisite", async () => {
     const base = branchGraph([
@@ -177,11 +188,8 @@ describe("component structure paths", () => {
     await waitForDiagramReady();
 
     // The chosen case guards project onto every edge naming it.
-    expect(
-      screen
-        .getAllByRole("button", { name: "Large" })
-        .every((button) => button.getAttribute("aria-pressed") === "true"),
-    ).toBe(true);
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
+    expect(screen.getAllByRole("button", { name: "Route condition: Large" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("switch", { name: "details" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Inactive path");
   });
@@ -204,12 +212,7 @@ describe("component structure paths", () => {
     // Ranking the small arm counts shared and tail; the large arm counts only
     // large, so Small wins and its descendants light up. The chosen case
     // projects onto every edge naming it.
-    expect(
-      screen
-        .getAllByRole("button", { name: "Small" })
-        .every((button) => button.getAttribute("aria-pressed") === "true"),
-    ).toBe(true);
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Small");
     expect(screen.getByRole("article", { name: "component: tail" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -232,7 +235,7 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
   });
 
   it("breaks equal descendant and depth ties by edge ID code-point order", async () => {
@@ -249,7 +252,7 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
   });
 
   it("activates only the richer diverging ancestor route for an unreachable shared node", async () => {
@@ -413,7 +416,7 @@ describe("component structure paths", () => {
       />,
     );
     await waitForDiagramReady();
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
 
     // Re-picking the already selected case is a no-op in the owner field, so
     // the prerequisite turns on through its own switch (label clicks apply a
@@ -536,12 +539,13 @@ describe("component structure paths", () => {
       />,
     );
     await waitForDiagramReady();
-    await userEvent.click(screen.getByRole("button", { name: "Small" }));
+    await pickCase((options) => screen.getByRole("combobox", options), "mode", "Small");
 
-    await userEvent.click(screen.getByRole("button", { name: "Yes" }));
+    await pickCase((options) => screen.getByRole("combobox", options), "fallback", "Yes");
 
-    const largePills = screen.getAllByRole("button", { name: "Large" });
-    expect(largePills.every((pill) => pill.getAttribute("aria-pressed") === "true")).toBe(true);
+    const largePills = screen.getAllByRole("button", { name: "Route condition: Large" });
+    expect(largePills.every((pill) => pill.textContent === "Large")).toBe(true);
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
     expect(screen.getByRole("img", { name: "fallback" })).toHaveAccessibleDescription("Active path");
     expect(screen.getByRole("article", { name: "Non-component" })).toHaveAccessibleDescription("Active path");
   });
@@ -639,10 +643,10 @@ describe("component structure paths", () => {
     await waitForDiagramReady();
 
     await userEvent.click(screen.getByRole("switch", { name: "showLeaf" }));
-    await userEvent.click(screen.getByRole("button", { name: "Large" }));
+    await pickCase((options) => screen.getByRole("combobox", options), "mode", "Large");
     await userEvent.click(screen.getByRole("switch", { name: "showLeaf" }));
 
-    expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
     expect(screen.getByRole("switch", { name: "showLeaf" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: small" })).toHaveAccessibleDescription("Inactive path");
   });
@@ -672,10 +676,10 @@ describe("component structure paths", () => {
     const first = within(screen.getByRole("region", { name: "First composition" }));
     const second = within(screen.getByRole("region", { name: "Second composition" }));
 
-    await userEvent.click(first.getByRole("button", { name: "Small" }));
+    await pickCase((options) => first.getByRole("combobox", options), "mode", "Small");
 
-    expect(first.getByRole("button", { name: "Small" })).toHaveAttribute("aria-pressed", "true");
-    expect(second.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
+    expect(first.getByRole("combobox", { name: "mode" })).toHaveTextContent("Small");
+    expect(second.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
     expect(second.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -900,18 +904,21 @@ describe("component structure paths", () => {
     await waitForDiagramReady();
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
 
-    await userEvent.click(screen.getByRole("button", { name: "Plain" }));
-    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
-
-    // Releasing the prerequisite clause turns its conditions off as one unit.
-    expect(screen.getByRole("switch", { name: "parent" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("button", { name: "Plain" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
-    // Re-picking the held case is a no-op in the owner field, so the
-    // transitive prerequisites turn back on through their own switches.
-    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
-    await userEvent.click(screen.getByRole("switch", { name: "parent" }));
+    await pickCase((options) => screen.getByRole("combobox", options), "view", "Plain");
+    // Picking the held case re-applies it, which turns the whole transitive
+    // prerequisite chain on.
     expect(screen.getByRole("switch", { name: "grandparent" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "parent" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("combobox", { name: "view" })).toHaveTextContent("Plain");
+    expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");
+
+    // Turning the outermost prerequisite off keeps the explicitly chosen
+    // inner switch and the held case; the path goes inactive until the
+    // prerequisites turn back on.
+    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
+    expect(screen.getByRole("switch", { name: "parent" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
+    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");
   });
 
