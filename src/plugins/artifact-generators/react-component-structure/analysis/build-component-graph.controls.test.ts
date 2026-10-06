@@ -980,8 +980,9 @@ describe("component rendering controls", () => {
         { id: "right", label: "!preferred" },
       ],
     });
-    // Value alternatives, not a subject and its negation.
-    expect(branch.polarityPair).toBeUndefined();
+    // The decision is the left operand's truthiness, so it is a switch even
+    // though the arms render value alternatives.
+    expect(branch.polarityPair).toBe(true);
     expect(edgeTo(graph, "Preferred")).toMatchObject({
       activeWhen: [[{ controlId: branch.id, value: "left" }]],
     });

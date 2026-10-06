@@ -2395,10 +2395,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         context,
         hasLeftOutput
           ? {
+              // The decision is the left operand's truthiness (`??`: null or
+              // not) — a two-value subject, so it renders as a switch over it,
+              // same as any other boolean gate. What each arm renders is the
+              // graph's business: the arm edges already point at their nodes.
               cases: [
                 { id: "left", label },
                 { id: "right", label: nullish ? `${label} == null` : negateLabel(label) },
               ],
+              polarityPair: true,
             }
           : undefined,
       );
