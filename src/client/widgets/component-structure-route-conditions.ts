@@ -90,14 +90,3 @@ export function describeRouteSelectionChange(
       after: requirementValueLabel(control, next[control.id] ?? ""),
     }));
 }
-
-// Nodes hover by their decisive incoming edge: the active one when a path
-// already reaches the node, otherwise the first incoming edge in graph order.
-export function representativeIncomingEdgeId(
-  graph: DiagramGraph,
-  activeEdges: ReadonlySet<string>,
-  nodeId: string,
-): string | undefined {
-  const incoming = graph.edges.filter((edge) => edge.target === nodeId && edge.type === "default");
-  return incoming.find((edge) => activeEdges.has(edge.id))?.id ?? incoming.at(0)?.id;
-}

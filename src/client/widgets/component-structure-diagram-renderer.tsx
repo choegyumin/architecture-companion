@@ -11,11 +11,7 @@ import {
   selectComponentPath,
   selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
-import {
-  describeRouteSelectionChange,
-  representativeIncomingEdgeId,
-  toDefinitionId,
-} from "@/client/widgets/component-structure-route-conditions";
+import { describeRouteSelectionChange, toDefinitionId } from "@/client/widgets/component-structure-route-conditions";
 import { RouteDiffCard } from "@/client/widgets/component-structure-route-diff-card";
 import {
   buildDiagramMeasurementNodes,
@@ -107,12 +103,8 @@ function ComponentStructureContent(props: DiagramRendererProps) {
             accessibleDescription: active ? "Active path" : "Inactive path",
             className: active ? "border-primary/50 bg-primary/5" : "border-dashed bg-muted/50 opacity-60",
             details: [...(node.data.details ?? []), ...nodeOrigins],
-            onHoverChange: (hovered: boolean) => {
-              // Hovering a card previews its decisive incoming route.
-              setHoveredEdgeId(
-                hovered ? (representativeIncomingEdgeId(diagram.graph, emphasis.edges, node.id) ?? null) : null,
-              );
-            },
+            // Hovering nodes stays quiet: the changes preview belongs to
+            // route condition labels, which name the exact rule they show.
             children:
               ownedControls.length > 0 ? (
                 <div
