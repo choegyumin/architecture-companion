@@ -2170,6 +2170,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   const MAX_DECOMPOSED_CLAUSES = 8;
   const MAX_DECOMPOSED_LITERALS = 8;
 
+  // Case labels keep the literal notation: string quotes distinguish types
+  // (`"1"` ↔ `1`) and keep case ids collision-free (ADR 0005 category 1).
+  // Quote style normalizes to double quotes so `'dark'` and `"dark"` share
+  // one case — the fold itself runs on structure keys either way.
+  const literalCaseText = (node: ts.Expression): string =>
+    ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
+      ? `"${node.text}"`
+      : ts.isNumericLiteral(node)
+        ? node.text
+        : node.getText();
+
   // A gate condition that is a pure boolean combination splits into DNF
   // clauses over atomic operands (ADR 0005 category 4): `a && (b || c)`
   // becomes [a b] ∨ [a c] and negation expands by De Morgan. An operand that
@@ -2561,7 +2572,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           if (clauses.length === 0) continue;
           const alternatives = clauses.map((clause, clauseIndex) => ({
             id: `case:${clauseIndex}`,
-            label: ts.isCaseClause(clause) ? clause.expression.getText() : "default",
+            label: ts.isCaseClause(clause) ? literalCaseText(clause.expression) : "default",
           }));
           const noDefault = !clauses.some(ts.isDefaultClause);
           if (noDefault) alternatives.push({ id: `case:${clauses.length}`, label: "default" });
@@ -3340,10 +3351,6 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       staysConditional: boolean;
     };
     const EQUALITY_FAMILIES = new Set(["equal", "loosely-equal"]);
-    const literalCaseText = (node: ts.Expression): string =>
-      ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isNumericLiteral(node)
-        ? node.text
-        : node.getText();
     const discriminantOf = (control: DiagramControl): DiscriminantMember | undefined => {
       let label: string | undefined;
       let values: readonly string[];

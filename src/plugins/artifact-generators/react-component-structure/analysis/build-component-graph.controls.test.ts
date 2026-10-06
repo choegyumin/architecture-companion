@@ -491,15 +491,15 @@ describe("component rendering controls", () => {
       kind: "branch",
       label: "tone",
       cases: [
-        { id: "dark", label: "dark" },
-        { id: "light", label: "light" },
+        { id: '"dark"', label: '"dark"' },
+        { id: '"light"', label: '"light"' },
       ],
     });
     expect(edgeTo(graph, "Dark")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: "dark" }]],
+      activeWhen: [[{ controlId: tone.id, value: '"dark"' }]],
     });
     expect(edgeTo(graph, "Light")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: "light" }]],
+      activeWhen: [[{ controlId: tone.id, value: '"light"' }]],
     });
   });
 
@@ -591,7 +591,8 @@ describe("component rendering controls", () => {
     expect(tone).toMatchObject({
       kind: "branch",
       cases: [
-        { id: "dark", label: "dark" },
+        // Quote style normalizes, so `'dark'` and `"dark"` still share a case.
+        { id: '"dark"', label: '"dark"' },
         { id: "otherwise", label: "otherwise" },
       ],
     });
@@ -614,18 +615,18 @@ describe("component rendering controls", () => {
       kind: "branch",
       label: "state.status",
       cases: [
-        { id: "loading", label: "loading" },
-        { id: "error", label: "error" },
+        { id: '"loading"', label: '"loading"' },
+        { id: '"error"', label: '"error"' },
         { id: "otherwise", label: "otherwise" },
       ],
     });
     // The failure route's inherited "not loading" drops as implied by "error",
     // and the fall-through route converges on the remainder case.
     expect(edgeTo(graph, "Loading")).toMatchObject({
-      activeWhen: [[{ controlId: status.id, value: "loading" }]],
+      activeWhen: [[{ controlId: status.id, value: '"loading"' }]],
     });
     expect(edgeTo(graph, "Failure")).toMatchObject({
-      activeWhen: [[{ controlId: status.id, value: "error" }]],
+      activeWhen: [[{ controlId: status.id, value: '"error"' }]],
     });
     expect(edgeTo(graph, "Content")).toMatchObject({
       activeWhen: [[{ controlId: status.id, value: "otherwise" }]],
@@ -647,8 +648,8 @@ describe("component rendering controls", () => {
       kind: "branch",
       label: "tone",
       cases: [
-        { id: "dark", label: "dark" },
-        { id: "light", label: "light" },
+        { id: '"dark"', label: '"dark"' },
+        { id: '"light"', label: '"light"' },
         { id: "otherwise", label: "otherwise" },
       ],
     });
@@ -661,13 +662,13 @@ describe("component rendering controls", () => {
       ),
     );
     expect(neutralPaths).toEqual(
-      new Set([[{ controlId: tone.id, value: "light" }], [{ controlId: tone.id, value: "otherwise" }]]),
+      new Set([[{ controlId: tone.id, value: '"light"' }], [{ controlId: tone.id, value: "otherwise" }]]),
     );
     expect(edgeTo(graph, "Dark")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: "dark" }]],
+      activeWhen: [[{ controlId: tone.id, value: '"dark"' }]],
     });
     expect(edgeTo(graph, "Light")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: "light" }]],
+      activeWhen: [[{ controlId: tone.id, value: '"light"' }]],
     });
   });
 
