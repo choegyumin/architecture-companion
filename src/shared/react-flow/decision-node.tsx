@@ -12,8 +12,9 @@ type DecisionNodeData = Readonly<{
 export type DecisionReactFlowNode = Node<DecisionNodeData, "decision">;
 
 // UML decision node: an empty diamond routing one branch control. The control
-// itself is never written on the diamond — its guards ride the outgoing edge
-// labels — so the label stays screen-reader and tooltip only. Port handles
+// itself is never written on the diamond — its cases and current value live on
+// the owning card's fields, and each arm states its combined condition on the
+// edge — so the label stays screen-reader and tooltip only. Port handles
 // share the diamond's tip because the drawn paths come from the layout, not
 // from the handles; the ids alone bind edges to their branch case.
 export function DecisionNode({ data, isConnectable }: NodeProps<DecisionReactFlowNode>) {

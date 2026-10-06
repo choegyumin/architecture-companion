@@ -117,9 +117,9 @@ it("reviewer reaches supplied content from an inactive path and opens its source
   await waitForDiagramReady();
 
   expect(screen.getByRole("article", { name: "component: Preview" })).toHaveAccessibleDescription("Inactive path");
-  await user.click(screen.getByRole("button", { name: "showFooter" }));
+  await user.click(screen.getByRole("switch", { name: "showFooter" }));
 
-  expect(screen.getByRole("button", { name: "showPage" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("switch", { name: "showPage" })).toHaveAttribute("aria-checked", "true");
   expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("article", { name: "component: Footer" })).toHaveAccessibleDescription("Active path");
   expect(screen.getByText("from App (footer)")).toBeVisible();

@@ -182,7 +182,7 @@ describe("component structure paths", () => {
         .getAllByRole("button", { name: "Large" })
         .every((button) => button.getAttribute("aria-pressed") === "true"),
     ).toBe(true);
-    expect(screen.getByRole("button", { name: "details" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "details" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Inactive path");
   });
 
@@ -263,10 +263,10 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "leaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "leaf" }));
 
-    expect(screen.getByRole("button", { name: "right" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "left" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "right" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "left" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: shared" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -290,10 +290,10 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "leaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "leaf" }));
 
-    expect(screen.getByRole("button", { name: "right" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "left" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "right" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "left" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("breaks equal shared ancestor-route sizes and depths by divergent edge ID code-point order", async () => {
@@ -313,10 +313,10 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "leaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "leaf" }));
 
-    expect(screen.getByRole("button", { name: "right" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "left" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "right" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "left" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("keeps an already active ancestor route instead of enabling a richer route", async () => {
@@ -329,12 +329,12 @@ describe("component structure paths", () => {
       />,
     );
     await waitForDiagramReady();
-    await userEvent.click(screen.getByRole("button", { name: "left" }));
+    await userEvent.click(screen.getByRole("switch", { name: "left" }));
 
-    await userEvent.click(screen.getByRole("button", { name: "leaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "leaf" }));
 
-    expect(screen.getByRole("button", { name: "left" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "right" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "left" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "right" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: leaf" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -376,11 +376,11 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "leaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "leaf" }));
 
-    expect(screen.getByRole("button", { name: "left" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "right" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "extraGate" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "left" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "right" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("switch", { name: "extraGate" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("activates same-card prerequisites when the user chooses an already selected inactive branch", async () => {
@@ -415,9 +415,12 @@ describe("component structure paths", () => {
     await waitForDiagramReady();
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
 
-    await userEvent.click(screen.getByRole("button", { name: "Large" }));
+    // Re-picking the already selected case is a no-op in the owner field, so
+    // the prerequisite turns on through its own switch (label clicks apply a
+    // route's whole rule; those live in the guards unit tests).
+    await userEvent.click(screen.getByRole("switch", { name: "showMode" }));
 
-    expect(screen.getByRole("button", { name: "showMode" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "showMode" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("article", { name: "component: large" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -470,9 +473,12 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "No preview" }));
+    // The gating prerequisite turns on through its own switch; the already
+    // selected "off" case keeps meaning the branch choice (label clicks are
+    // covered by the guards unit tests).
+    await userEvent.click(screen.getByRole("switch", { name: "showPage" }));
 
-    expect(screen.getByRole("button", { name: "showPage" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "showPage" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -590,12 +596,12 @@ describe("component structure paths", () => {
       .querySelector("path")!
       .getAttribute("d");
 
-    await userEvent.click(screen.getByRole("button", { name: "showDetails" }));
-    await userEvent.click(screen.getByRole("button", { name: "showPanel" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showDetails" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showPanel" }));
 
-    expect(screen.getByRole("button", { name: "showDetails" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "showDetails" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("article", { name: "component: details" })).toHaveAccessibleDescription("Inactive path");
-    await userEvent.click(screen.getByRole("button", { name: "showPanel" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showPanel" }));
     expect(screen.getByRole("article", { name: "component: details" })).toHaveAccessibleDescription("Active path");
     expect(screen.getByRole("img", { name: "panel to details: Active path" }).querySelector("path")).toHaveAttribute(
       "d",
@@ -632,12 +638,12 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "showLeaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showLeaf" }));
     await userEvent.click(screen.getByRole("button", { name: "Large" }));
-    await userEvent.click(screen.getByRole("button", { name: "showLeaf" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showLeaf" }));
 
     expect(screen.getByRole("button", { name: "Large" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "showLeaf" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "showLeaf" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: small" })).toHaveAccessibleDescription("Inactive path");
   });
 
@@ -748,7 +754,7 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "showDetails" }));
+    await userEvent.click(screen.getByRole("switch", { name: "showDetails" }));
     expect(begin).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("heading", { name: "App" }), { view: window });
 
@@ -795,10 +801,10 @@ describe("component structure paths", () => {
     );
     await waitForDiagramReady();
 
-    await userEvent.click(screen.getByRole("button", { name: "child" }));
+    await userEvent.click(screen.getByRole("switch", { name: "child" }));
 
-    expect(screen.getByRole("button", { name: "supplier visible" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "parent" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "supplier visible" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "parent" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("article", { name: "component: leaf" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -835,16 +841,17 @@ describe("component structure paths", () => {
       />,
     );
     await waitForDiagramReady();
-    await userEvent.click(screen.getByRole("button", { name: "supplied" }));
-    await userEvent.click(screen.getByRole("button", { name: "supplier visible" }));
+    await userEvent.click(screen.getByRole("switch", { name: "supplied" }));
+    await userEvent.click(screen.getByRole("switch", { name: "supplier visible" }));
 
-    // "child" projects once per OR clause; either pill requests the same path.
-    await userEvent.click(screen.getAllByRole("button", { name: "child" }).at(0)!);
+    // Turning the child on reroutes through whichever OR prerequisite is
+    // already cheapest: supplied holds, so direct stays off.
+    await userEvent.click(screen.getByRole("switch", { name: "child" }));
 
-    const direct = screen.getByRole("button", { name: "direct" });
-    const supplier = screen.getByRole("button", { name: "supplier visible" });
+    const direct = screen.getByRole("switch", { name: "direct" });
+    const supplier = screen.getByRole("switch", { name: "supplier visible" });
     expect(
-      Number(direct.getAttribute("aria-pressed") === "true") + Number(supplier.getAttribute("aria-pressed") === "true"),
+      Number(direct.getAttribute("aria-checked") === "true") + Number(supplier.getAttribute("aria-checked") === "true"),
     ).toBe(1);
     expect(screen.getByRole("article", { name: "component: leaf" })).toHaveAccessibleDescription("Active path");
   });
@@ -894,14 +901,17 @@ describe("component structure paths", () => {
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
 
     await userEvent.click(screen.getByRole("button", { name: "Plain" }));
-    await userEvent.click(screen.getByRole("button", { name: "grandparent" }));
+    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
 
     // Releasing the prerequisite clause turns its conditions off as one unit.
-    expect(screen.getByRole("button", { name: "parent" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "parent" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("button", { name: "Plain" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Inactive path");
-    await userEvent.click(screen.getByRole("button", { name: "Plain" }));
-    expect(screen.getByRole("button", { name: "grandparent" })).toHaveAttribute("aria-pressed", "true");
+    // Re-picking the held case is a no-op in the owner field, so the
+    // transitive prerequisites turn back on through their own switches.
+    await userEvent.click(screen.getByRole("switch", { name: "grandparent" }));
+    await userEvent.click(screen.getByRole("switch", { name: "parent" }));
+    expect(screen.getByRole("switch", { name: "grandparent" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("article", { name: "component: plain" })).toHaveAccessibleDescription("Active path");
   });
 
@@ -909,7 +919,7 @@ describe("component structure paths", () => {
     render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
     await waitForDiagramReady();
 
-    expect(screen.getByRole("button", { name: "showDetails" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "showDetails" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByRole("article", { name: "component: Details" })).toHaveAccessibleDescription("Inactive path");
     expect(screen.getByRole("article", { name: "component: App" })).toHaveAccessibleDescription("Active path");
   });

@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
@@ -21,12 +22,12 @@ const controls: DiagramControl[] = [
   { id: "flag", owner: "decision", kind: "conditional", label: "flag", dependsOn: [[]] },
 ];
 
-const graphEdge = (id: string, guards: [string, string][]): DiagramEdge => ({
+const graphEdge = (id: string, source: string, rules: readonly (readonly [string, string][])[]): DiagramEdge => ({
   id,
   type: "default",
-  source: "decision",
+  source,
   target: "leaf",
-  guards: [guards.map(([controlId, value]) => ({ controlId, value }))],
+  guards: rules.map((rule) => rule.map(([controlId, value]) => ({ controlId, value }))),
 });
 
 const layoutOf = (pointsByEdge: Record<string, { x: number; y: number }[]>): DiagramLayout => ({
@@ -44,118 +45,72 @@ const routeEdge = (id: string): DiagramReactFlowEdge => ({
   data: { path: "M 0 0 L 300 0", labelPosition: { x: 150, y: 0 } },
 });
 
-function labelControlsOf(...graphEdges: DiagramEdge[]) {
-  const edges = attachGuardLabels({
-    graph: { nodes: [], edges: graphEdges },
+const horizontal = [
+  { x: 0, y: 0 },
+  { x: 300, y: 0 },
+];
+
+function renderLabel(edges: readonly DiagramEdge[], overrides: Partial<Parameters<typeof attachGuardLabels>[0]> = {}) {
+  const decorated = attachGuardLabels({
+    graph: { nodes: [], edges },
     controls,
-    layout: layoutOf(
-      Object.fromEntries(
-        graphEdges.map((edge) => [
-          edge.id,
-          [
-            { x: 0, y: 0 },
-            { x: 300, y: 0 },
-          ],
-        ]),
-      ),
-    ),
-    edges: graphEdges.map((edge) => routeEdge(edge.id)),
+    layout: layoutOf(Object.fromEntries(edges.map((edge) => [edge.id, horizontal]))),
+    edges: edges.map((edge) => routeEdge(edge.id)),
     selection: {},
     onSelect: () => {},
-  }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
-  return edges;
+    ...overrides,
+  });
+  const anchors = decorated.flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
+  for (const anchor of anchors) render(anchor.control as ReactElement);
+  return anchors;
 }
 
 describe("attachGuardLabels", () => {
   beforeEach(cleanup);
 
-  it("anchors branch pills at the start and conditional pills at the end of a long edge", () => {
-    const anchors = labelControlsOf(
-      graphEdge("both", [
-        ["mode", "on"],
-        ["flag", "on"],
-      ]),
-    );
-
-    expect(anchors.map(({ position }) => position)).toEqual([
-      { x: 64, y: 0 },
-      { x: 236, y: 0 },
+  it("labels a branch arm near its start and other routes near their arrival", () => {
+    const [arm, arrival] = renderLabel([
+      graphEdge("arm", "mode", [[["mode", "on"]]]),
+      graphEdge("arrival", "decision", [[["flag", "on"]]]),
     ]);
-    for (const { control } of anchors) render(control as ReactElement);
-    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "flag" })).toBeInTheDocument();
+
+    // The arm leaves a decision node, so its label hangs downstream of the
+    // start anchor; the plain conditional route climbs back up from the end.
+    expect(arm?.position).toEqual({ x: 64, y: 0 });
+    expect(arm).toHaveProperty("anchorSide", "top");
+    expect(arrival?.position).toEqual({ x: 236, y: 0 });
+    expect(arrival).toHaveProperty("anchorSide", "bottom");
   });
 
-  it("merges both groups in start-to-end order when the edge is too short to separate them", () => {
-    const [merged] = attachGuardLabels({
-      graph: {
-        nodes: [],
-        edges: [
-          graphEdge("short", [
-            ["mode", "on"],
-            ["flag", "on"],
-          ]),
+  it("combines a whole ruleset into one label with branch and conditional text", () => {
+    renderLabel([
+      graphEdge("combined", "mode", [
+        [
+          ["mode", "on"],
+          ["flag", "on"],
         ],
-      },
-      controls,
-      layout: layoutOf({
-        short: [
-          { x: 0, y: 0 },
-          { x: 80, y: 0 },
-        ],
-      }),
-      edges: [routeEdge("short")],
-      selection: {},
-      onSelect: () => {},
-    }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
+        [["mode", "off"]],
+      ]),
+    ]);
 
-    expect(merged?.position).toEqual({ x: 40, y: 0 });
-    render(merged?.control as ReactElement);
-    // The branch pill leads the merged row; the conditional pill follows.
-    expect(
-      screen.getByRole("button", { name: "On" }).compareDocumentPosition(screen.getByRole("button", { name: "flag" })),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const label = screen.getByRole("button");
+    expect(label).toHaveTextContent("(On && flag) || Off");
+    // A rule naming a branch case marks the label with the split icon.
+    expect(label.querySelector("svg")).not.toBeNull();
   });
 
-  it("keeps a lone branch group at the start anchor", () => {
-    const [only] = labelControlsOf(graphEdge("arm", [["mode", "on"]]));
-
-    expect(only?.position).toEqual({ x: 64, y: 0 });
-    render(only?.control as ReactElement);
-    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
+  it("keeps unconditional edges bare", () => {
+    const anchors = renderLabel([graphEdge("bare", "decision", [[]])]);
+    expect(anchors).toHaveLength(0);
   });
 
-  it("keeps a lone conditional group at the end anchor", () => {
-    const [only] = labelControlsOf(graphEdge("conditional", [["flag", "on"]]));
+  it("binds the label click to the route's representative requirement", async () => {
+    const clicks: [string, string, string][] = [];
+    renderLabel([graphEdge("arm", "mode", [[["flag", "on"]]])], {
+      onSelect: (edgeId, controlId, value) => clicks.push([edgeId, controlId, value]),
+    });
 
-    expect(only?.position).toEqual({ x: 236, y: 0 });
-    render(only?.control as ReactElement);
-    expect(screen.getByRole("button", { name: "flag" })).toBeInTheDocument();
-  });
-
-  it("pushes a pill group off a node card from the layout", () => {
-    const [only] = attachGuardLabels({
-      graph: { nodes: [], edges: [graphEdge("arm", [["mode", "on"]])] },
-      controls,
-      layout: {
-        nodes: [{ id: "card", position: { x: 70, y: -20 }, size: { width: 40, height: 40 } }],
-        groups: [],
-        edges: [
-          {
-            id: "arm",
-            points: [
-              { x: 0, y: 0 },
-              { x: 300, y: 0 },
-            ],
-          },
-        ],
-        initialView: { mode: "fit" },
-      },
-      edges: [routeEdge("arm")],
-      selection: {},
-      onSelect: () => {},
-    }).flatMap((edge) => (edge.type === "route" ? (edge.data?.labelControls ?? []) : []));
-
-    expect(only?.position).toEqual({ x: 160, y: 0 });
+    await userEvent.setup().click(screen.getByRole("button"));
+    expect(clicks).toEqual([["arm", "flag", "on"]]);
   });
 });

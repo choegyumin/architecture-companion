@@ -21,6 +21,7 @@ type CardNodeData = Readonly<{
   onLinkActivate?: LinkActivationHandler;
   activatable?: boolean;
   accessibleDescription?: string;
+  onHoverChange?: (hovered: boolean) => void;
   children?: ReactNode;
   className?: string;
 }>;
@@ -46,6 +47,8 @@ export function CardNode({
         data.activatable && "cursor-pointer hover:border-primary/60",
         data.className,
       )}
+      onMouseEnter={() => data.onHoverChange?.(true)}
+      onMouseLeave={() => data.onHoverChange?.(false)}
     >
       <Handle isConnectable={isConnectable} position={targetPosition} style={{ opacity: 0 }} type="target" />
       {data.eyebrow != null ? (

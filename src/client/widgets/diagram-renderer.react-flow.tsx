@@ -165,8 +165,6 @@ export function buildDiagramMeasurementNodes(
         style: {
           opacity: 0,
           pointerEvents: "none",
-          width: DECISION_NODE_SIZE.width,
-          height: DECISION_NODE_SIZE.height,
         },
       };
     }
