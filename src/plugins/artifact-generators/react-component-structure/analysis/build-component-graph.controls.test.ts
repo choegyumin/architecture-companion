@@ -351,16 +351,91 @@ describe("component rendering controls", () => {
     expect(graph.controls).toHaveLength(1);
     expect(tone).toMatchObject({
       kind: "branch",
+      label: "tone",
       cases: [
-        { id: 'tone === "dark"', label: 'tone === "dark"' },
-        { id: 'tone === "light"', label: 'tone === "light"' },
+        { id: "dark", label: "dark" },
+        { id: "light", label: "light" },
       ],
     });
     expect(edgeTo(graph, "Dark")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: 'tone === "dark"' }]],
+      activeWhen: [[{ controlId: tone.id, value: "dark" }]],
     });
     expect(edgeTo(graph, "Light")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: 'tone === "light"' }]],
+      activeWhen: [[{ controlId: tone.id, value: "light" }]],
+    });
+  });
+
+  it("merges an else-if chain over one subject with a synthesized remainder case", async () => {
+    const graph = await graphFor(`
+      function Loading() { return <span />; }
+      function Failure() { return <aside />; }
+      function Content() { return <main />; }
+      export function App({ state }) {
+        if (state.status === "loading") return <Loading />;
+        if (state.status === "error") return <Failure />;
+        return <Content />;
+      }
+    `);
+    const [status] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(status).toMatchObject({
+      kind: "branch",
+      label: "state.status",
+      cases: [
+        { id: "loading", label: "loading" },
+        { id: "error", label: "error" },
+        { id: "otherwise", label: "otherwise" },
+      ],
+    });
+    // The failure route's inherited "not loading" drops as implied by "error",
+    // and the fall-through route converges on the remainder case.
+    expect(edgeTo(graph, "Loading")).toMatchObject({
+      activeWhen: [[{ controlId: status.id, value: "loading" }]],
+    });
+    expect(edgeTo(graph, "Failure")).toMatchObject({
+      activeWhen: [[{ controlId: status.id, value: "error" }]],
+    });
+    expect(edgeTo(graph, "Content")).toMatchObject({
+      activeWhen: [[{ controlId: status.id, value: "otherwise" }]],
+    });
+  });
+
+  it("expands a negated discriminant gate over the values it still allows", async () => {
+    const graph = await graphFor(`
+      function Dark() { return <span />; }
+      function Light() { return <aside />; }
+      function Neutral() { return <main />; }
+      export function App({ tone }) {
+        return <>{tone !== "dark" && <Neutral />}{tone === "dark" && <Dark />}{tone === "light" && <Light />}</>;
+      }
+    `);
+    const [tone] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(tone).toMatchObject({
+      kind: "branch",
+      label: "tone",
+      cases: [
+        { id: "dark", label: "dark" },
+        { id: "light", label: "light" },
+        { id: "otherwise", label: "otherwise" },
+      ],
+    });
+    // Decision projection splits the expanded rule into per-case arms, so the
+    // contract reads every edge entering Neutral and unions their paths.
+    const neutral = graph.nodes.find((node) => node.type === "default" && node.title === "Neutral")!;
+    const neutralPaths = new Set(
+      graph.edges.flatMap((edge) =>
+        edge.target === neutral.id && edge.type === "default" ? (edge.activeWhen ?? [[]]) : [],
+      ),
+    );
+    expect(neutralPaths).toEqual(
+      new Set([[{ controlId: tone.id, value: "light" }], [{ controlId: tone.id, value: "otherwise" }]]),
+    );
+    expect(edgeTo(graph, "Dark")).toMatchObject({
+      activeWhen: [[{ controlId: tone.id, value: "dark" }]],
+    });
+    expect(edgeTo(graph, "Light")).toMatchObject({
+      activeWhen: [[{ controlId: tone.id, value: "light" }]],
     });
   });
 

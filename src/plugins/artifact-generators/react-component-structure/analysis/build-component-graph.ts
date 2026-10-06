@@ -3052,8 +3052,98 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     type Member = Readonly<{ control: DiagramControl; polarity: Polarity }>;
     const groups = new Map<string, Member[]>();
+
+    // One discriminant: an equality comparing a subject expression to a
+    // literal value. Every gate over the same subject — a conditional or a
+    // true/false branch — enumerates one case per value instead of separate
+    // polarity pairs, with a synthesized remainder case for routes that need
+    // "any other value" (ADR 0005). Case labels are the comparands and the
+    // branch label is the subject, not the source expressions.
+    type DiscriminantSemantics = Readonly<{ literal: string; positive: boolean }>;
+    type DiscriminantMember = Readonly<{
+      control: DiagramControl;
+      groupKey: string;
+      subject: string;
+      semantics: ReadonlyMap<string, DiscriminantSemantics>;
+    }>;
+    type DiscriminantGroup = {
+      owner: string;
+      subject: string;
+      members: DiscriminantMember[];
+      positiveLiterals: string[];
+      needsRemainder: boolean;
+      representative: DiagramControl;
+      staysConditional: boolean;
+    };
+    const EQUALITY_FAMILIES = new Set(["equal", "loosely-equal"]);
+    const literalCaseText = (node: ts.Expression): string =>
+      ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isNumericLiteral(node)
+        ? node.text
+        : node.getText();
+    const discriminantOf = (control: DiagramControl): DiscriminantMember | undefined => {
+      let label: string | undefined;
+      let values: readonly string[];
+      if (control.kind === "branch") {
+        const [onCase, offCase] = control.cases;
+        if (
+          control.cases.length !== 2 ||
+          onCase?.id !== "true" ||
+          offCase?.id !== "false" ||
+          offCase.label !== `!(${onCase.label})`
+        )
+          return undefined;
+        label = onCase.label;
+        values = ["true", "false"];
+      } else {
+        label = control.label;
+        values = ["on", "off"];
+      }
+      const expression = parseLabel(label);
+      if (!expression) return undefined;
+      const { core, parity } = unwrapPolarity(expression);
+      if (!ts.isBinaryExpression(core)) return undefined;
+      const operator = COMPLEMENTARY_OPERATORS[core.operatorToken.kind];
+      if (!operator || !EQUALITY_FAMILIES.has(operator.family)) return undefined;
+      const left = unwrapPolarity(core.left).core;
+      const right = unwrapPolarity(core.right).core;
+      if (!isEnumSubject(left) || !isEnumLiteral(right)) return undefined;
+      const literal = literalCaseText(right);
+      if (literal.length === 0) return undefined;
+      const positive = operator.inverted ? parity === 1 : parity === 0;
+      const semantics = new Map<string, DiscriminantSemantics>(
+        values.map((value, index) => [value, { literal, positive: index === 0 ? positive : !positive }]),
+      );
+      return {
+        control,
+        groupKey: `${control.owner}\0discriminant\0${operator.family}\0${left.getText()}`,
+        subject: left.getText(),
+        semantics,
+      };
+    };
+    const discriminantMembers = new Map<string, DiscriminantMember>();
+    const discriminantGroups = new Map<string, DiscriminantGroup>();
     for (const control of context.controls.values()) {
-      if (control.kind !== "conditional") continue;
+      const member = discriminantOf(control);
+      if (!member) continue;
+      discriminantMembers.set(control.id, member);
+      const group = discriminantGroups.get(member.groupKey) ?? {
+        owner: member.control.owner,
+        subject: member.subject,
+        members: [],
+        positiveLiterals: [],
+        needsRemainder: false,
+        representative: member.control,
+        staysConditional: false,
+      };
+      group.members.push(member);
+      for (const { literal, positive } of member.semantics.values()) {
+        if (positive && !group.positiveLiterals.includes(literal)) group.positiveLiterals.push(literal);
+      }
+      discriminantGroups.set(member.groupKey, group);
+    }
+
+    for (const control of context.controls.values()) {
+      if (control.kind !== "conditional" || discriminantMembers.has(control.id)) continue;
       const polarity = polarityOf(control);
       if (!polarity) continue;
       const key = `${control.owner}\0${polarity.group}`;
@@ -3062,37 +3152,52 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       groups.set(key, members);
     }
 
-    // Equality comparisons with no observed complement enumerate one subject's
-    // values instead, so single-polarity `===` groups regroup by their subject
-    // and take each literal as its own case.
-    const finalGroups: Member[][] = [];
-    const enumBuckets = new Map<string, Member[]>();
-    for (const members of groups.values()) {
-      const caseKeys = new Set(members.map(({ polarity }) => polarity.caseKey));
-      const enumerable = members.filter(({ polarity }) => polarity.enumCase !== undefined);
-      const subjects = new Set(
-        members.map(({ polarity }) => polarity.enumSubject).filter((subject) => subject !== undefined),
-      );
-      if (caseKeys.size === 1 && enumerable.length === members.length && subjects.size === 1) {
-        const subject = subjects.values().next().value!;
-        const key = `${members.at(0)!.control.owner}\0enum\0${subject}`;
-        enumBuckets.set(key, [
-          ...(enumBuckets.get(key) ?? []),
-          ...members.map(({ control, polarity }) => ({
-            control,
-            polarity: { ...polarity, caseKey: `value\0${polarity.enumCase!}` },
-          })),
-        ]);
-        continue;
+    // A route that leaves a discriminant group with only negated values —
+    // "not loading, not error" — names the remainder, which no source
+    // expression ever spells. Scanning every ruleset first tells each group
+    // whether it must synthesize that case before any rewriting starts.
+    const scanDiscriminantUsage = (ruleset: DiagramRouteRequirementRuleset): void => {
+      for (const rule of ruleset) {
+        const states = new Map<string, { positives: Set<string>; negatives: Set<string> }>();
+        for (const { controlId, value } of rule) {
+          const member = discriminantMembers.get(controlId);
+          const semantic = member?.semantics.get(value);
+          if (!member || !semantic) continue;
+          const state = states.get(member.groupKey) ?? { positives: new Set<string>(), negatives: new Set<string>() };
+          (semantic.positive ? state.positives : state.negatives).add(semantic.literal);
+          states.set(member.groupKey, state);
+        }
+        for (const [groupKey, { positives, negatives }] of states) {
+          if (positives.size > 0 || negatives.size === 0) continue;
+          const group = discriminantGroups.get(groupKey)!;
+          if (group.positiveLiterals.length > 0) group.needsRemainder = true;
+        }
       }
-      finalGroups.push(members);
+    };
+    for (const control of context.controls.values()) scanDiscriminantUsage(control.dependsOn);
+    for (const ruleset of context.useRulesets.values()) scanDiscriminantUsage(ruleset);
+    for (const use of context.uses.values()) {
+      for (const supplied of use.suppliedValues) {
+        for (const target of supplied.targets) scanDiscriminantUsage(target.ruleset);
+      }
     }
+    for (const rules of rulesByComponentId.values()) {
+      for (const list of rules.exact.values()) for (const rule of list) scanDiscriminantUsage(rule.ruleset);
+      for (const spread of rules.spreads) scanDiscriminantUsage(spread.ruleset);
+    }
+    for (const group of discriminantGroups.values()) {
+      // A lone value nobody negates keeps the conditional's on/off value space;
+      // anything richer enumerates the subject's values as branch cases.
+      group.staysConditional = group.positiveLiterals.length < 2 && !group.needsRemainder;
+    }
+
+    const finalGroups: Member[][] = [...groups.values()];
 
     type Replacement = Readonly<{ controlId: string; on: string; off?: string }>;
     const replacements = new Map<string, Replacement>();
     const memberIds = new Set<string>();
     const mergedGroups = new Map<string, Member[]>();
-    for (const members of [...finalGroups, ...enumBuckets.values()]) {
+    for (const members of finalGroups) {
       const representative = members.at(0)!.control;
       const caseTextByKey = new Map<string, string>();
       for (const { control, polarity } of members) {
@@ -3116,15 +3221,85 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       mergedGroups.set(representative.id, members);
     }
 
-    const rewrite = (ruleset: DiagramRouteRequirementRuleset): DiagramRouteRequirementRuleset =>
-      ruleset.map((rule) =>
-        rule.map((requirement) => {
+    const discriminantByRepresentative = new Map<string, DiscriminantGroup>();
+    for (const group of discriminantGroups.values()) {
+      discriminantByRepresentative.set(group.representative.id, group);
+      for (const { control } of group.members) memberIds.add(control.id);
+    }
+
+    // A discriminant group resolves per rule: one chosen value wins, negations
+    // of a different value are implied, contradicting or empty resolutions
+    // drop the rule, and a bare negation expands over the values it still
+    // allows — the remainder included when the group synthesized one.
+    const conditionalValueOf = (group: DiscriminantGroup, outcomePositive: boolean): string => {
+      const representative = group.members.at(0)!.semantics;
+      const onSemantic = representative.get("on") ?? representative.get("true")!;
+      return onSemantic.positive === outcomePositive ? "on" : "off";
+    };
+    const resolveDiscriminant = (
+      group: DiscriminantGroup,
+      positives: ReadonlySet<string>,
+      negatives: ReadonlySet<string>,
+    ): readonly string[] => {
+      const [chosen] = positives;
+      if (chosen !== undefined) {
+        if (negatives.has(chosen)) return [];
+        return group.staysConditional
+          ? [conditionalValueOf(group, true)]
+          : group.positiveLiterals.includes(chosen)
+            ? [chosen]
+            : [];
+      }
+      if (negatives.size === 0) return [];
+      if (group.staysConditional) return [conditionalValueOf(group, false)];
+      const allowed = group.positiveLiterals.filter((literal) => !negatives.has(literal));
+      return group.needsRemainder ? [...allowed, "otherwise"] : allowed;
+    };
+    const rewrite = (ruleset: DiagramRouteRequirementRuleset): DiagramRouteRequirementRuleset => {
+      const rewritten: DiagramRouteRequirementRule[] = [];
+      for (const rule of ruleset) {
+        const passthrough: DiagramRouteRequirementRule = [];
+        const states = new Map<string, { positives: Set<string>; negatives: Set<string> }>();
+        let dead = false;
+        for (const requirement of rule) {
+          const member = discriminantMembers.get(requirement.controlId);
+          if (member) {
+            const semantic = member.semantics.get(requirement.value);
+            if (!semantic) {
+              dead = true;
+              break;
+            }
+            const state = states.get(member.groupKey) ?? { positives: new Set<string>(), negatives: new Set<string>() };
+            (semantic.positive ? state.positives : state.negatives).add(semantic.literal);
+            states.set(member.groupKey, state);
+            continue;
+          }
           const replacement = replacements.get(requirement.controlId);
-          if (!replacement) return requirement;
+          if (!replacement) {
+            passthrough.push(requirement);
+            continue;
+          }
           const value = requirement.value === "off" ? replacement.off : replacement.on;
-          return value === undefined ? requirement : { controlId: replacement.controlId, value };
-        }),
-      );
+          passthrough.push(value === undefined ? requirement : { controlId: replacement.controlId, value });
+        }
+        if (dead) continue;
+        const resolutions = [...states];
+        const buildRules = (
+          index: number,
+          base: DiagramRouteRequirementRule,
+        ): readonly DiagramRouteRequirementRule[] => {
+          if (index >= resolutions.length) return [base];
+          const [groupKey, state] = resolutions[index]!;
+          const group = discriminantGroups.get(groupKey)!;
+          const values = resolveDiscriminant(group, state.positives, state.negatives);
+          return values.flatMap((value) =>
+            buildRules(index + 1, [...base, { controlId: group.representative.id, value }]),
+          );
+        };
+        rewritten.push(...buildRules(0, passthrough));
+      }
+      return rewritten;
+    };
 
     const controls = new Map<string, DiagramControl>();
     for (const control of context.controls.values()) {
@@ -3144,6 +3319,29 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           ...(cases.length >= 2 ? { kind: "branch", cases } : { kind: "conditional" }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
         });
+        continue;
+      }
+      const discriminant = discriminantByRepresentative.get(control.id);
+      if (discriminant) {
+        const dependsOn = unionRulesets(
+          ...discriminant.members.map(({ control: member }) => rewrite(member.dependsOn)),
+        );
+        controls.set(
+          control.id,
+          discriminant.staysConditional
+            ? { id: control.id, owner: control.owner, label: control.label, kind: "conditional", dependsOn }
+            : {
+                id: control.id,
+                owner: control.owner,
+                kind: "branch",
+                label: discriminant.subject,
+                cases: [
+                  ...discriminant.positiveLiterals.map((literal) => ({ id: literal, label: literal })),
+                  ...(discriminant.needsRemainder ? [{ id: "otherwise", label: "otherwise" }] : []),
+                ],
+                dependsOn,
+              },
+        );
         continue;
       }
       if (memberIds.has(control.id)) continue;
