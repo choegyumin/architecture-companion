@@ -1,7 +1,7 @@
 {
   "id": "react-admin-demo-component-structure",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-05T19:05:36.825Z",
+  "updatedAt": "2026-10-06T15:51:50.823Z",
   "generator": "built-in:react-component-structure",
   "layout": {
     "id": "elk-layered",
@@ -1035,22 +1035,22 @@
       {
         "id": "component:src/products/ProductList.tsx#ListActions:control:0",
         "owner": "component:src/products/ProductList.tsx#ListActions",
-        "label": "isSmall",
         "kind": "conditional",
+        "label": "isSmall",
         "dependsOn": [[]]
       },
       {
         "id": "component:src/products/ProductList.tsx#ProductList:control:0",
         "owner": "component:src/products/ProductList.tsx#ProductList",
-        "label": "isSmall",
         "kind": "conditional",
+        "label": "isSmall",
         "dependsOn": [[]]
       },
       {
         "id": "component:src/products/Aside.tsx#Aside:control:0",
         "owner": "component:src/products/Aside.tsx#Aside",
-        "label": "data",
         "kind": "conditional",
+        "label": "data",
         "dependsOn": [[]]
       },
       {
@@ -1066,15 +1066,16 @@
           },
           {
             "id": "false",
-            "label": "!(isPending)"
+            "label": "!isPending"
           }
-        ]
+        ],
+        "polarityPair": true
       },
       {
         "id": "component:src/products/GridList.tsx#LoadedGridList:control:0",
         "owner": "component:src/products/GridList.tsx#LoadedGridList",
-        "label": "!(!data)",
         "kind": "conditional",
+        "label": "data",
         "dependsOn": [[]]
       }
     ]
