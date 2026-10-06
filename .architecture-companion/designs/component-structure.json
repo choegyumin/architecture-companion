@@ -1,9 +1,9 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-06T17:21:56.535Z",
+  "updatedAt": "2026-10-06T17:53:53.944Z",
   "vcs": {
-    "revision": "49dbb81045386cb881070ca2fd3fb761dc47e4f1",
+    "revision": "1774ad84e2b82073b9502aa7bcdf9152179e1e8f",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
@@ -57,12 +57,12 @@
       },
       {
         "type": "decision",
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
         "title": "reviewErrorMessage"
       },
       {
         "type": "default",
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3:reviewErrorMessage:non-component",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2:reviewErrorMessage:non-component",
         "title": "Non-component"
       },
       {
@@ -361,13 +361,13 @@
           "definitionId": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
           "origins": [
             {
-              "supplierId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-              "supplierTitle": "MessageEdge",
+              "supplierId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+              "supplierTitle": "RouteEdge",
               "prop": "children"
             },
             {
-              "supplierId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-              "supplierTitle": "RouteEdge",
+              "supplierId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+              "supplierTitle": "MessageEdge",
               "prop": "children"
             }
           ]
@@ -600,7 +600,7 @@
       },
       {
         "type": "decision",
-        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
         "title": "anchoredControls.length > 0"
       },
       {
@@ -724,7 +724,7 @@
       },
       {
         "type": "default",
-        "id": "component:src/shared/react-ui/card.tsx#CardFooter@60c66237857ed137",
+        "id": "component:src/shared/react-ui/card.tsx#CardFooter@4241d7bee5799b83",
         "title": "CardFooter",
         "description": "src/shared/react-ui/card.tsx",
         "links": [
@@ -745,7 +745,7 @@
       },
       {
         "type": "default",
-        "id": "component:src/shared/react-ui/card.tsx#CardFooter@664b32da8073546d",
+        "id": "component:src/shared/react-ui/card.tsx#CardFooter@60c66237857ed137",
         "title": "CardFooter",
         "description": "src/shared/react-ui/card.tsx",
         "links": [
@@ -954,7 +954,7 @@
       },
       {
         "type": "default",
-        "id": "component:src/shared/react-ui/form.tsx#Form@162b8ac371ddf568",
+        "id": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
         "title": "Form",
         "description": "src/shared/react-ui/form.tsx",
         "links": [
@@ -1177,7 +1177,7 @@
       },
       {
         "type": "default",
-        "id": "external:@xyflow/react#EdgeLabelRenderer@08bd662307e8ecfb",
+        "id": "external:@xyflow/react#EdgeLabelRenderer@0a7af16d809d046b",
         "title": "EdgeLabelRenderer",
         "description": "@xyflow/react boundary",
         "component": {
@@ -1187,7 +1187,7 @@
       },
       {
         "type": "default",
-        "id": "external:@xyflow/react#EdgeLabelRenderer@0a51dfcdd319a402",
+        "id": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
         "title": "EdgeLabelRenderer",
         "description": "@xyflow/react boundary",
         "component": {
@@ -1217,7 +1217,7 @@
       },
       {
         "type": "default",
-        "id": "external:@xyflow/react#Panel@2b5d48c5d594b484",
+        "id": "external:@xyflow/react#Panel@2e27a067c9000fb4",
         "title": "Panel",
         "description": "@xyflow/react boundary",
         "component": {
@@ -1227,7 +1227,7 @@
       },
       {
         "type": "default",
-        "id": "external:@xyflow/react#Panel@2f7bddb28f9edc59",
+        "id": "external:@xyflow/react#Panel@94500793580ab6b4",
         "title": "Panel",
         "description": "@xyflow/react boundary",
         "component": {
@@ -1273,45 +1273,11 @@
       },
       {
         "type": "default",
-        "id": "edge:0b4446f30930592a",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
-            }
-          ]
-        ]
+        "id": "edge:0d0448c9cc01ea37",
+        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "target": "component:src/shared/react-ui/card.tsx#CardFooter@4241d7bee5799b83",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
@@ -1322,21 +1288,7 @@
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -1351,10 +1303,6 @@
             },
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -1372,7 +1320,25 @@
               "value": "on"
             },
             {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "!(anchoredControls.length > 0)"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
+              "value": "true"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -1505,53 +1471,11 @@
       },
       {
         "type": "default",
-        "id": "edge:1ff38b8824438b66",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-        "guards": [
-          [],
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:23496e67f0e043ad",
         "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
         "target": "component:src/shared/react-ui/empty.tsx#EmptyMedia",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:23c54e9bfcf74175",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "target": "external:@xyflow/react#EdgeLabelRenderer@08bd662307e8ecfb",
-        "sourcePort": "anchoredControls.length > 0",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "anchoredControls.length > 0"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "anchoredControls.length > 0"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -1563,93 +1487,38 @@
       },
       {
         "type": "default",
-        "id": "edge:2b0f69e3e7bc4ae2",
-        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
-        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:2b46a481dcdddadf",
-        "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-        "target": "external:@xyflow/react#EdgeLabelRenderer@0a51dfcdd319a402",
+        "id": "edge:2a887db0e4311038",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+        "target": "external:@xyflow/react#EdgeLabelRenderer@0a7af16d809d046b",
+        "sourcePort": "anchoredControls.length > 0",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
               "value": "on"
             },
             {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
-              "value": "on"
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "anchoredControls.length > 0"
             }
           ]
         ],
         "guards": [
           [
             {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
-              "value": "off"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
-              "value": "on"
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "anchoredControls.length > 0"
             }
           ]
         ]
+      },
+      {
+        "type": "default",
+        "id": "edge:2b0f69e3e7bc4ae2",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@0cf6d4bfd75d1392",
+        "target": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
@@ -1718,60 +1587,21 @@
       },
       {
         "type": "default",
-        "id": "edge:3324c8b78d332e6f",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-        "sourcePort": "!(anchoredControls.length > 0)",
+        "id": "edge:382a25bd10510ba6",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
             }
           ]
         ],
         "guards": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
               "value": "on"
             }
           ]
@@ -1798,6 +1628,14 @@
         "id": "edge:3d8c8b8b6d8f0a39",
         "source": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
         "target": "component:src/shared/react-ui/card.tsx#CardContent",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:3e661c3f5b6d4188",
+        "source": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
+        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
         "activeWhen": [[]],
         "guards": [[]]
       },
@@ -1946,46 +1784,18 @@
       },
       {
         "type": "default",
+        "id": "edge:51892a9e45564814",
+        "source": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
         "id": "edge:55824f6ad9930efc",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/toggle.tsx#Toggle",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:56e33953b58d3e3c",
-        "source": "external:@xyflow/react#EdgeLabelRenderer@08bd662307e8ecfb",
-        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "guards": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ],
-          [],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -2016,6 +1826,14 @@
         "id": "edge:60f68b38854d3292",
         "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
         "target": "component:src/shared/react-ui/empty.tsx#EmptyTitle",
+        "activeWhen": [[]],
+        "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:62cb3f1e802e37bd",
+        "source": "external:@xyflow/react#Panel@94500793580ab6b4",
+        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
         "activeWhen": [[]],
         "guards": [[]]
       },
@@ -2100,52 +1918,11 @@
       },
       {
         "type": "default",
-        "id": "edge:7432439d2d53becd",
-        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
-        "target": "component:src/shared/react-ui/card.tsx#CardFooter@664b32da8073546d",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
         "id": "edge:7437dbde39b1daa5",
         "source": "component:src/shared/react-ui/empty.tsx#EmptyHeader",
         "target": "component:src/shared/react-ui/empty.tsx#EmptyDescription",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:74bd3bc283cbe225",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3:reviewErrorMessage:non-component",
-        "sourcePort": "reviewErrorMessage",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "reviewErrorMessage"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "reviewErrorMessage"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "reviewErrorMessage"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -2196,6 +1973,29 @@
       },
       {
         "type": "default",
+        "id": "edge:80d4e4576d025f0d",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
+        "sourcePort": "!(anchoredControls.length > 0)",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "!(anchoredControls.length > 0)"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "!(anchoredControls.length > 0)"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:89b6703a854144eb",
         "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
         "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
@@ -2203,7 +2003,7 @@
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -2239,11 +2039,163 @@
       },
       {
         "type": "default",
+        "id": "edge:8df49776a684fb67",
+        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "target": "external:@xyflow/react#EdgeLabelRenderer@0a7af16d809d046b",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:8e7146a045e668ec",
         "source": "component:src/shared/react-ui/card.tsx#CardFooter@60c66237857ed137",
         "target": "component:src/shared/react-ui/button.tsx#Button",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:8ebb5477f4e55ec5",
+        "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+        "target": "external:@xyflow/react#EdgeLabelRenderer@210b301715644654",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2291,6 +2243,29 @@
       },
       {
         "type": "default",
+        "id": "edge:99a98ed5e819268b",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "target": "component:src/shared/react-ui/empty.tsx#Empty",
+        "sourcePort": "!reviewErrorMessage",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "!reviewErrorMessage"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "!reviewErrorMessage"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:9c5538e86fdc43c3",
         "source": "component:src/shared/react-ui/tabs.tsx#Tabs@2b0bde8f90ea6954",
         "target": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@ededdf5505216a52",
@@ -2307,17 +2282,17 @@
       },
       {
         "type": "default",
-        "id": "edge:a0bc28d815acbf56",
-        "source": "external:@xyflow/react#EdgeLabelRenderer@0a51dfcdd319a402",
-        "target": "component:src/shared/react-flow/base-edge-label.tsx#BaseEdgeLabel",
+        "id": "edge:a2e17f013a86c049",
+        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
+        "target": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
         "activeWhen": [[]],
         "guards": [[]]
       },
       {
         "type": "default",
-        "id": "edge:a2e17f013a86c049",
-        "source": "component:src/shared/react-ui/card.tsx#Card@0eae775e9a556d5d",
-        "target": "component:src/shared/react-ui/card.tsx#CardHeader@073725b5ff564778",
+        "id": "edge:a473752bf86b26d4",
+        "source": "external:@xyflow/react#Panel@2e27a067c9000fb4",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
         "activeWhen": [[]],
         "guards": [[]]
       },
@@ -2354,22 +2329,6 @@
       },
       {
         "type": "default",
-        "id": "edge:ac1fc2f33200b252",
-        "source": "external:@xyflow/react#Panel@2b5d48c5d594b484",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:ad8c06198dc9cc91",
-        "source": "external:@xyflow/react#Panel@2f7bddb28f9edc59",
-        "target": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
         "id": "edge:b127eb3a940ad9c7",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
         "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0:\"loading\":non-component",
@@ -2401,6 +2360,13 @@
       },
       {
         "type": "default",
+        "id": "edge:b4417c4f86c74276",
+        "source": "component:src/shared/react-ui/card.tsx#CardFooter@4241d7bee5799b83",
+        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
         "id": "edge:b7928ea654727eb6",
         "source": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
         "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
@@ -2425,39 +2391,9 @@
       },
       {
         "type": "default",
-        "id": "edge:bc4b410ad0a82c78",
-        "source": "external:@xyflow/react#ReactFlow",
-        "target": "external:@xyflow/react#Panel@2f7bddb28f9edc59",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
-              "value": "on"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:bd54918589ba6dcf",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:bfb06b728a501eaf",
-        "source": "component:src/shared/react-ui/form.tsx#Form@162b8ac371ddf568",
-        "target": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
         "activeWhen": [[]],
         "guards": [[]]
       },
@@ -2468,6 +2404,29 @@
         "target": "external:@xyflow/react#ControlButton",
         "activeWhen": [[]],
         "guards": [[]]
+      },
+      {
+        "type": "default",
+        "id": "edge:c0834761ca662278",
+        "source": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
+        "target": "external:@xyflow/react#Panel@2e27a067c9000fb4",
+        "sourcePort": "otherwise",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
+              "value": "otherwise"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
+              "value": "otherwise"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
@@ -2540,6 +2499,35 @@
       },
       {
         "type": "default",
+        "id": "edge:c7edaef769d8fb35",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+        "target": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
+              "value": "on"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
+        "id": "edge:cccf579cd0fd97ff",
+        "source": "external:@xyflow/react#EdgeLabelRenderer@0a7af16d809d046b",
+        "target": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
         "id": "edge:cf3b05bb748a012e",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsList",
@@ -2570,29 +2558,6 @@
       },
       {
         "type": "default",
-        "id": "edge:d3c31fea3cc0ad08",
-        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-        "target": "component:src/shared/react-ui/empty.tsx#Empty",
-        "sourcePort": "!reviewErrorMessage",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "!reviewErrorMessage"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-              "value": "!reviewErrorMessage"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:d58341e647fcabaa",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/card-node.tsx#CardNode",
@@ -2601,9 +2566,10 @@
       },
       {
         "type": "default",
-        "id": "edge:d706b1a545c7304c",
-        "source": "component:src/shared/react-ui/card.tsx#CardFooter@664b32da8073546d",
-        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "id": "edge:e058a8f98cc58637",
+        "source": "component:src/shared/react-ui/form.tsx#Form@2b20274ef2d51257",
+        "target": "component:src/shared/react-ui/card.tsx#Card@66d54e369ff122b6",
+        "activeWhen": [[]],
         "guards": [[]]
       },
       {
@@ -2680,11 +2646,11 @@
         "activeWhen": [
           [
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
               "value": "on"
             },
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:5",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
               "value": "on"
             }
           ]
@@ -2692,11 +2658,11 @@
         "guards": [
           [
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
               "value": "on"
             },
             {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:5",
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
               "value": "on"
             }
           ]
@@ -2735,205 +2701,34 @@
       },
       {
         "type": "default",
-        "id": "edge:f3a4b2ac8dce9733",
-        "source": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
-        "target": "external:@xyflow/react#Handle",
-        "activeWhen": [[]],
-        "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:f655473214dea706",
-        "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "target": "external:@xyflow/react#EdgeLabelRenderer@08bd662307e8ecfb",
+        "id": "edge:f2bd4fff3e4f376d",
+        "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+        "target": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2:reviewErrorMessage:non-component",
+        "sourcePort": "reviewErrorMessage",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "reviewErrorMessage"
             }
           ]
         ],
         "guards": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "false"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "false"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "false"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-              "value": "on"
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
+              "value": "reviewErrorMessage"
             }
           ]
         ]
+      },
+      {
+        "type": "default",
+        "id": "edge:f3a4b2ac8dce9733",
+        "source": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
+        "target": "external:@xyflow/react#Handle",
+        "activeWhen": [[]],
+        "guards": [[]]
       },
       {
         "type": "default",
@@ -2991,13 +2786,13 @@
       },
       {
         "type": "default",
-        "id": "edge:fcabe35ce52f0775",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-        "target": "component:src/shared/react-ui/form.tsx#Form@162b8ac371ddf568",
+        "id": "edge:fe70e017c6b68b8d",
+        "source": "external:@xyflow/react#ReactFlow",
+        "target": "external:@xyflow/react#Panel@94500793580ab6b4",
         "activeWhen": [
           [
             {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
+              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
               "value": "on"
             }
           ]
@@ -3005,31 +2800,8 @@
         "guards": [
           [
             {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
+              "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
               "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:fdea2dcaf084242d",
-        "source": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
-        "target": "external:@xyflow/react#Panel@2b5d48c5d594b484",
-        "sourcePort": "otherwise",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
-              "value": "otherwise"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
-              "value": "otherwise"
             }
           ]
         ]
@@ -3086,13 +2858,6 @@
       {
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
         "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "kind": "conditional",
-        "label": "sourceError",
-        "dependsOn": [[]]
-      },
-      {
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
-        "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
         "kind": "branch",
         "label": "reviewErrorMessage",
         "cases": [
@@ -3106,25 +2871,17 @@
           }
         ],
         "polarityPair": true,
-        "dependsOn": [
-          [],
-          [
-            {
-              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
-              "value": "on"
-            }
-          ]
-        ]
+        "dependsOn": [[]]
       },
       {
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
         "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
         "kind": "conditional",
         "label": "activeDiagramCollection",
         "dependsOn": [[]]
       },
       {
-        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:5",
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
         "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
         "kind": "conditional",
         "label": "activeReviewView",
@@ -3244,34 +3001,6 @@
       {
         "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
         "owner": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "kind": "conditional",
-        "label": "label != null",
-        "dependsOn": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
-        "owner": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-        "kind": "conditional",
-        "label": "data.href",
-        "dependsOn": [
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-        "owner": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
         "kind": "branch",
         "label": "anchoredControls.length > 0",
         "cases": [
@@ -3285,31 +3014,31 @@
           }
         ],
         "polarityPair": true,
+        "dependsOn": [[]]
+      },
+      {
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
+        "owner": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "kind": "conditional",
+        "label": "label != null",
         "dependsOn": [
           [
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
               "value": "on"
             }
-          ],
-          [],
+          ]
+        ]
+      },
+      {
+        "id": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+        "owner": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
+        "kind": "conditional",
+        "label": "data.href",
+        "dependsOn": [
           [
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
               "value": "on"
             }
           ]
@@ -3322,17 +3051,7 @@
         "dependsOn": [
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             }
           ],
@@ -3343,10 +3062,6 @@
             },
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "!(anchoredControls.length > 0)"
             }
           ],
@@ -3360,7 +3075,21 @@
               "value": "on"
             },
             {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "!(anchoredControls.length > 0)"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             }
           ]
@@ -3392,7 +3121,7 @@
           ],
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -3402,7 +3131,7 @@
           ],
           [
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -3416,25 +3145,7 @@
               "value": "on"
             },
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
-              "value": "!(anchoredControls.length > 0)"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "true"
-            }
-          ],
-          [
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
-              "value": "on"
-            },
-            {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -3452,7 +3163,7 @@
               "value": "on"
             },
             {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -3467,11 +3178,15 @@
             },
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
-              "value": "false"
+              "value": "true"
             }
           ],
           [
@@ -3481,10 +3196,6 @@
             },
             {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
-              "value": "on"
-            },
-            {
-              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
               "value": "!(anchoredControls.length > 0)"
             },
             {
@@ -3502,7 +3213,25 @@
               "value": "on"
             },
             {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
+              "value": "!(anchoredControls.length > 0)"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
+              "value": "false"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
+              "value": "on"
+            },
+            {
               "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
               "value": "!(anchoredControls.length > 0)"
             },
             {
