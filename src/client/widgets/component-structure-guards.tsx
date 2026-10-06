@@ -3,6 +3,7 @@ import { estimateGuardLabelSize, resolveGuardLabelOffsets } from "@/client/widge
 import {
   routeConditionIncludesBranch,
   routeConditionText,
+  toDefinitionId,
 } from "@/client/widgets/component-structure-route-conditions";
 import type { DefaultDiagramEdge, DiagramControl, DiagramEdge } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
@@ -10,9 +11,6 @@ import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyl
 import { RouteConditionLabel } from "@/shared/react-flow/route-condition-label";
 
 const PROP_KIND_PATTERN = /^(\S+)\s+\((.+)\)$/;
-// Merged cards carry the definition id while edges point at instances.
-const INSTANCE_ID_SUFFIX = /@[0-9a-f]{16}$/;
-export const toDefinitionId = (nodeId: string): string => nodeId.replace(INSTANCE_ID_SUFFIX, "");
 
 // Same wording as the composition prototype: "from X (slot kind)" bullets live in
 // the card details, while the edges themselves stay visually unlabeled.

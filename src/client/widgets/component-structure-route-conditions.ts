@@ -44,10 +44,15 @@ export function routeConditionIncludesBranch(
   );
 }
 
+const INSTANCE_ID_SUFFIX = /@[0-9a-f]{16}$/;
+// Merged cards carry the definition id while edges point at instances.
+export const toDefinitionId = (nodeId: string): string => nodeId.replace(INSTANCE_ID_SUFFIX, "");
+
 export type RouteConditionChange = Readonly<{
   controlId: string;
   kind: DiagramControl["kind"];
   label: string;
+  ownerLabel: string;
   before: string;
   after: string;
 }>;
@@ -59,7 +64,8 @@ const requirementValueLabel = (control: DiagramControl, value: string): string =
 
 // The before/after diff hovering an edge or node asks for: applying that
 // route's rule (the same engine a label click runs) against the current
-// selection, then reporting only the controls whose value would move.
+// selection, then reporting only the controls whose value would move. Each
+// change names the component that owns the control.
 export function describeRouteSelectionChange(
   graph: DiagramGraph,
   selection: ComponentSelection,
@@ -70,12 +76,16 @@ export function describeRouteSelectionChange(
   const representative = guards?.at(0)?.at(0);
   if (!representative) return [];
   const next = selectEdgePath(graph, selection, edgeId, representative.controlId, representative.value);
+  const titleByDefinitionId = new Map(
+    graph.nodes.map((node) => [toDefinitionId(node.id), node.title ?? node.id] as const),
+  );
   return graph
     .controls!.filter((control) => next[control.id] !== selection[control.id])
     .map((control) => ({
       controlId: control.id,
       kind: control.kind,
       label: control.label,
+      ownerLabel: titleByDefinitionId.get(control.owner) ?? control.owner,
       before: requirementValueLabel(control, selection[control.id] ?? ""),
       after: requirementValueLabel(control, next[control.id] ?? ""),
     }));

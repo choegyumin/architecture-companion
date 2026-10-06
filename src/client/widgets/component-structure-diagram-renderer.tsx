@@ -1,11 +1,8 @@
+import { Panel } from "@xyflow/react";
 import { useCallback, useMemo, useState } from "react";
 
 import type { DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
-import {
-  attachGuardLabels,
-  collectComponentOrigins,
-  toDefinitionId,
-} from "@/client/widgets/component-structure-guards";
+import { attachGuardLabels, collectComponentOrigins } from "@/client/widgets/component-structure-guards";
 import {
   componentPathEmphasis,
   type ComponentSelection,
@@ -17,6 +14,7 @@ import {
 import {
   describeRouteSelectionChange,
   representativeIncomingEdgeId,
+  toDefinitionId,
 } from "@/client/widgets/component-structure-route-conditions";
 import { RouteDiffCard } from "@/client/widgets/component-structure-route-diff-card";
 import {
@@ -29,7 +27,6 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-diagram-layout";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
-import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 import {
   Select,
   SelectIcon,
@@ -48,9 +45,6 @@ function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
   if (diagram.layout.id !== "elk-layered") throw new Error("Expected an ELK layered diagram layout.");
   return layoutElkLayeredDiagram(diagram.graph, nodeSizes, diagram.layout.options);
 }
-
-const ROUTE_DIFF_NODE_ID = "__route-diff__";
-const ROUTE_CONDITION_ENDPOINT_OFFSET = 64;
 
 function ComponentStructureContent(props: DiagramRendererProps) {
   const { diagram } = props;
@@ -219,43 +213,13 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         onEdgeHover: setHoveredEdgeId,
         onSelect,
       });
-      // The hover preview rides a passthrough node next to the hovered
-      // route's label anchor, so zoom and pan follow it for free.
-      const hoveredPoints = layout.edges.find((edge) => edge.id === hoveredEdgeId)?.points;
-      const popoverNode: DiagramReactFlowNode | undefined =
-        hoveredEdgeId != null && hoveredPoints != null
-          ? {
-              id: ROUTE_DIFF_NODE_ID,
-              position:
-                hoveredPoints.length < 2
-                  ? (hoveredPoints.at(0) ?? { x: 0, y: 0 })
-                  : pointAlongPolyline(
-                      hoveredPoints,
-                      Math.min(ROUTE_CONDITION_ENDPOINT_OFFSET, polylineArcLength(hoveredPoints) / 2),
-                      "end",
-                    ),
-              data: {
-                accessibleDescription: "Route change preview",
-                children: (
-                  <RouteDiffCard changes={describeRouteSelectionChange(diagram.graph, selection, hoveredEdgeId)} />
-                ),
-                className: "w-56 p-3",
-                label: "Route changes",
-              },
-              draggable: false,
-              focusable: false,
-              selectable: false,
-              style: { pointerEvents: "none" },
-              type: "card",
-            }
-          : undefined;
       return {
         ...model,
-        nodes: [...decorateNodes(model.nodes, selection), ...(popoverNode ? [popoverNode] : [])],
+        nodes: decorateNodes(model.nodes, selection),
         edges,
       };
     },
-    [controls, decorateNodes, diagram, hoveredEdgeId, onSelect, selection],
+    [controls, decorateNodes, diagram, onSelect, selection],
   );
 
   return (
@@ -264,7 +228,20 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       calculateLayout={calculateLayout}
       buildMeasurementNodes={buildMeasurementNodes}
       buildRenderModel={buildRenderModel}
-    />
+    >
+      {hoveredEdgeId != null ? (
+        // The hover preview is the standard bottom-right info spot — pinned
+        // to the viewport like the links panel, not floating over the canvas.
+        <Panel className="nodrag nopan nowheel pointer-events-none mb-8!" position="bottom-right">
+          <aside
+            aria-label="Route changes"
+            className="w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+          >
+            <RouteDiffCard changes={describeRouteSelectionChange(diagram.graph, selection, hoveredEdgeId)} />
+          </aside>
+        </Panel>
+      ) : null}
+    </DiagramRendererBase>
   );
 }
 
