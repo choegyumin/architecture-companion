@@ -365,6 +365,100 @@ describe("component rendering controls", () => {
     });
   });
 
+  it("decomposes a compound if condition into atomic controls with DNF paths", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      function Other() { return <aside />; }
+      export function App({ first, second }) {
+        if (first && second) return <Leaf />;
+        return <Other />;
+      }
+    `);
+    const controls = graph.controls!;
+    const first = controls.find(({ label }) => label === "first")!;
+    const second = controls.find(({ label }) => label === "second")!;
+    expect(controls).toHaveLength(2);
+    expect(first).toMatchObject({ kind: "conditional", dependsOn: [[]] });
+    expect(second).toMatchObject({ kind: "conditional", dependsOn: [[]] });
+    expect(edgeTo(graph, "Leaf")).toMatchObject({
+      activeWhen: [
+        [
+          { controlId: first.id, value: "on" },
+          { controlId: second.id, value: "on" },
+        ],
+      ],
+    });
+    expect(edgeTo(graph, "Other")).toMatchObject({
+      activeWhen: [[{ controlId: first.id, value: "off" }], [{ controlId: second.id, value: "off" }]],
+    });
+  });
+
+  it("decomposes a compound ternary condition and expands negation by De Morgan", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      function Other() { return <aside />; }
+      export function App({ first, second }) {
+        return (first || second) ? <Leaf /> : <Other />;
+      }
+    `);
+    const controls = graph.controls!;
+    const first = controls.find(({ label }) => label === "first")!;
+    const second = controls.find(({ label }) => label === "second")!;
+    expect(controls).toHaveLength(2);
+    expect(edgeTo(graph, "Leaf")).toMatchObject({
+      activeWhen: [[{ controlId: first.id, value: "on" }], [{ controlId: second.id, value: "on" }]],
+    });
+    expect(edgeTo(graph, "Other")).toMatchObject({
+      activeWhen: [
+        [
+          { controlId: first.id, value: "off" },
+          { controlId: second.id, value: "off" },
+        ],
+      ],
+    });
+  });
+
+  it("decomposes compound operands inside JSX conjunction chains", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      export function App({ first, second, third }) {
+        return <>{first && (second || third) && <Leaf />}</>;
+      }
+    `);
+    const controls = graph.controls!;
+    expect(controls.map(({ label }) => label).toSorted()).toEqual(["first", "second", "third"]);
+    const [first, second, third] = controls;
+    expect(edgeTo(graph, "Leaf")).toMatchObject({
+      activeWhen: [
+        [
+          { controlId: first!.id, value: "on" },
+          { controlId: second!.id, value: "on" },
+        ],
+        [
+          { controlId: first!.id, value: "on" },
+          { controlId: third!.id, value: "on" },
+        ],
+      ],
+    });
+  });
+
+  it("folds quote-style variants of one discriminant into shared cases", async () => {
+    const graph = await graphFor(`
+      function Dark() { return <span />; }
+      function Light() { return <aside />; }
+      export function App({ tone }) { return <>{tone === 'dark' && <Dark />}{tone === "dark" ? null : <Light />}</>; }
+    `);
+    const [tone] = graph.controls!;
+    expect(graph.controls).toHaveLength(1);
+    expect(tone).toMatchObject({
+      kind: "branch",
+      cases: [
+        { id: "dark", label: "dark" },
+        { id: "otherwise", label: "otherwise" },
+      ],
+    });
+  });
+
   it("merges an else-if chain over one subject with a synthesized remainder case", async () => {
     const graph = await graphFor(`
       function Loading() { return <span />; }

@@ -2076,14 +2076,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     for (const child of children) analyzeSuppliedValue(receiver, "children", child, context);
   }
 
-  function controlRuleset(
+  function conditionControlId(
     node: ts.Node,
     ownerId: string,
     label: string,
     when: DiagramRouteRequirementRuleset,
     context: AnalysisContext,
     alternatives?: { id: string; label: string }[],
-  ): (value: string) => DiagramRouteRequirementRuleset {
+  ): string {
     const suffix = createHash("sha256")
       .update(`${toPosixPath(relative(context.scopePath, node.getSourceFile().fileName))}:${node.pos}:${node.end}`)
       .digest("hex")
@@ -2095,8 +2095,113 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       id,
       alternatives ? { ...base, kind: "branch", cases: alternatives } : { ...base, kind: "conditional" },
     );
+    return id;
+  }
+
+  function controlRuleset(
+    node: ts.Node,
+    ownerId: string,
+    label: string,
+    when: DiagramRouteRequirementRuleset,
+    context: AnalysisContext,
+    alternatives?: { id: string; label: string }[],
+  ): (value: string) => DiagramRouteRequirementRuleset {
+    const id = conditionControlId(node, ownerId, label, when, context, alternatives);
     return (value) => combineRulesets(when, [[{ controlId: id, value }]]);
   }
+
+  type ConditionLiteral = Readonly<{ expression: ts.Expression; positive: boolean }>;
+  const MAX_DECOMPOSED_CLAUSES = 8;
+  const MAX_DECOMPOSED_LITERALS = 8;
+
+  // A gate condition that is a pure boolean combination splits into DNF
+  // clauses over atomic operands (ADR 0005 category 4): `a && (b || c)`
+  // becomes [a b] ∨ [a c] and negation expands by De Morgan. An operand that
+  // is not itself a combination — a call, a comparison, a plain `!x` — stays
+  // one atomic control, and oversized expansions fall back to the
+  // whole-expression gate.
+  const isGateCombination = (expression: ts.Expression): boolean => {
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isPrefixUnaryExpression(unwrapped) && unwrapped.operator === ts.SyntaxKind.ExclamationToken)
+      return isGateCombination(unwrapped.operand);
+    return (
+      ts.isBinaryExpression(unwrapped) &&
+      (unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+    );
+  };
+
+  const negateClauses = (
+    clauses: readonly (readonly ConditionLiteral[])[],
+  ): readonly (readonly ConditionLiteral[])[] | undefined => {
+    if (clauses.length > 2) return undefined;
+    const flip = (literal: ConditionLiteral): ConditionLiteral => ({
+      expression: literal.expression,
+      positive: !literal.positive,
+    });
+    // ¬(a ∧ b) = ¬a ∨ ¬b — one clause per negated literal; ¬(C1 ∨ C2) =
+    // ¬C1 ∧ ¬C2 — one clause concatenating both negated clauses.
+    if (clauses.length === 1) return clauses.at(0)!.map((literal) => [flip(literal)]);
+    return [[...clauses.at(0)!.map(flip), ...clauses.at(1)!.map(flip)]];
+  };
+
+  const conditionClauses = (expression: ts.Expression): readonly (readonly ConditionLiteral[])[] | undefined => {
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isPrefixUnaryExpression(unwrapped) && unwrapped.operator === ts.SyntaxKind.ExclamationToken) {
+      const operand = conditionClauses(unwrapped.operand);
+      if (!operand) return undefined;
+      const only = operand.length === 1 ? operand.at(0) : undefined;
+      if (only && only.length === 1 && only.at(0)!.positive) return [[{ expression: unwrapped, positive: true }]];
+      return negateClauses(operand);
+    }
+    if (
+      ts.isBinaryExpression(unwrapped) &&
+      (unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+    ) {
+      const left = conditionClauses(unwrapped.left);
+      const right = conditionClauses(unwrapped.right);
+      if (!left || !right) return undefined;
+      const merged =
+        unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken
+          ? [...left, ...right]
+          : left.flatMap((clause) => right.map((other) => [...clause, ...other]));
+      if (merged.length > MAX_DECOMPOSED_CLAUSES || merged.some((clause) => clause.length > MAX_DECOMPOSED_LITERALS))
+        return undefined;
+      return merged;
+    }
+    return [[{ expression: unwrapped, positive: true }]];
+  };
+
+  // Each literal becomes one atomic conditional control; duplicates collapse
+  // and a contradictory clause drops out of the ruleset.
+  const conditionRequirements = (
+    clauses: readonly (readonly ConditionLiteral[])[],
+    ownerId: string,
+    when: DiagramRouteRequirementRuleset,
+    context: AnalysisContext,
+  ): DiagramRouteRequirementRuleset => {
+    const rules: DiagramRouteRequirementRule[] = [];
+    for (const clause of clauses) {
+      const rule: DiagramRouteRequirementRule = [];
+      const chosen = new Set<string>();
+      let contradiction = false;
+      for (const literal of clause) {
+        const label = literal.expression.getText();
+        const controlId = conditionControlId(literal.expression, ownerId, label, when, context);
+        const value = literal.positive ? "on" : "off";
+        if (chosen.has(`${controlId}\0${literal.positive ? "off" : "on"}`)) {
+          contradiction = true;
+          break;
+        }
+        if (chosen.has(`${controlId}\0${value}`)) continue;
+        chosen.add(`${controlId}\0${value}`);
+        rule.push({ controlId, value });
+      }
+      if (!contradiction) rules.push(rule);
+    }
+    return rules;
+  };
 
   function isEmptyOutput(expression: ts.Expression, context: AnalysisContext): boolean {
     return resolveAliasedValues(expression, context).every(
@@ -2121,6 +2226,23 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const emptyTrue = isEmptyOutput(unwrapped.whenTrue, context);
       const emptyFalse = isEmptyOutput(unwrapped.whenFalse, context);
       if (emptyTrue && emptyFalse) return true;
+      if (isGateCombination(unwrapped.condition)) {
+        const trueClauses = conditionClauses(unwrapped.condition);
+        const falseClauses = trueClauses && negateClauses(trueClauses);
+        if (trueClauses && falseClauses) {
+          if (!emptyTrue)
+            visit(
+              unwrapped.whenTrue,
+              combineRulesets(ruleset, conditionRequirements(trueClauses, ownerId, ruleset, context)),
+            );
+          if (!emptyFalse)
+            visit(
+              unwrapped.whenFalse,
+              combineRulesets(ruleset, conditionRequirements(falseClauses, ownerId, ruleset, context)),
+            );
+          return true;
+        }
+      }
       const label = unwrapped.condition.getText();
       const select = controlRuleset(
         unwrapped,
@@ -2146,10 +2268,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         when: DiagramRouteRequirementRuleset,
       ): DiagramRouteRequirementRuleset {
         const guard = unwrapExpression(condition);
+        const operandClauses = (operand: ts.Expression, prerequisites: DiagramRouteRequirementRuleset) => {
+          if (!isGateCombination(operand)) return undefined;
+          const clauses = conditionClauses(operand);
+          return clauses ? conditionRequirements(clauses, ownerId, prerequisites, context) : undefined;
+        };
         if (ts.isBinaryExpression(guard) && guard.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
           const prerequisites = conjunction(guard.left, guard, when);
+          const decomposed = operandClauses(guard.right, prerequisites);
+          if (decomposed) return combineRulesets(prerequisites, decomposed);
           return controlRuleset(node, ownerId, guard.right.getText(), prerequisites, context)("on");
         }
+        const decomposed = operandClauses(guard, when);
+        if (decomposed) return decomposed;
         return controlRuleset(node, ownerId, condition.getText(), when, context)("on");
       }
       visit(unwrapped.right, conjunction(unwrapped.left, unwrapped, ruleset));
@@ -2293,6 +2424,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           if (!trueOutput && !falseOutput) {
             next = [];
             continue;
+          }
+          if (isGateCombination(statement.expression)) {
+            const trueClauses = conditionClauses(statement.expression);
+            const falseClauses = trueClauses && negateClauses(trueClauses);
+            if (trueClauses && falseClauses) {
+              const thenFlow = walk(
+                statementsOf(statement.thenStatement),
+                combineRulesets(next, conditionRequirements(trueClauses, ownerId, next, context)),
+                breakContinuation,
+                tail,
+              );
+              const elseFlow = walk(
+                statementsOf(statement.elseStatement),
+                combineRulesets(next, conditionRequirements(falseClauses, ownerId, next, context)),
+                breakContinuation,
+                tail,
+              );
+              next = unionRulesets(thenFlow.next, elseFlow.next);
+              breaks = unionRulesets(breaks, thenFlow.breaks, elseFlow.breaks);
+              continue;
+            }
           }
           const label = statement.expression.getText();
           const select = controlRuleset(
@@ -3006,6 +3158,24 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
       return parsedLabels.get(label);
     };
+    // Folding keys come from expression structure, not raw text, so the same
+    // predicate written with different whitespace, parentheses, or quote
+    // styles folds into one control (ADR 0005 category 5).
+    const structureKey = (node: ts.Expression): string => {
+      if (ts.isParenthesizedExpression(node)) return structureKey(node.expression);
+      if (ts.isIdentifier(node)) return `id\0${node.text}`;
+      if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return `lit\0${node.text}`;
+      if (ts.isNumericLiteral(node)) return `lit\0${node.text}`;
+      if (ts.isPropertyAccessExpression(node)) return `get\0${structureKey(node.expression)}\0${node.name.text}`;
+      if (ts.isElementAccessExpression(node))
+        return `at\0${structureKey(node.expression)}\0${node.argumentExpression.getText()}`;
+      if (ts.isCallExpression(node))
+        return `call\0${structureKey(node.expression)}\0${node.arguments.map(structureKey).join("\u0001")}`;
+      if (ts.isPrefixUnaryExpression(node)) return `pre\0${node.operator}\0${structureKey(node.operand)}`;
+      if (ts.isBinaryExpression(node))
+        return `bin\0${node.operatorToken.kind}\0${structureKey(node.left)}\0${structureKey(node.right)}`;
+      return `raw\0${node.kind}\0${node.getText()}`;
+    };
     const unwrapPolarity = (node: ts.Expression): { core: ts.Expression; parity: number } => {
       let core = node;
       let parity = 0;
@@ -3035,16 +3205,18 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       if (!expression) return undefined;
       const { core, parity } = unwrapPolarity(expression);
       if (!ts.isBinaryExpression(core) || !COMPLEMENTARY_OPERATORS[core.operatorToken.kind])
-        return { group: `expression\0${core.getText()}`, caseKey: `polarity:${parity}`, positive: parity === 0 };
+        return { group: `expression\0${structureKey(core)}`, caseKey: `polarity:${parity}`, positive: parity === 0 };
       const operator = COMPLEMENTARY_OPERATORS[core.operatorToken.kind]!;
-      const left = unwrapPolarity(core.left).core.getText();
-      const right = unwrapPolarity(core.right).core.getText();
+      const leftCore = unwrapPolarity(core.left).core;
+      const rightCore = unwrapPolarity(core.right).core;
+      const left = leftCore.getText();
+      const right = rightCore.getText();
       const polarity = parity ^ (operator.inverted ? 1 : 0);
       return {
-        group: `comparison\0${operator.family}\0${left}\0${right}`,
+        group: `comparison\0${operator.family}\0${structureKey(leftCore)}\0${structureKey(rightCore)}`,
         caseKey: `polarity:${polarity}`,
         positive: polarity === 0,
-        ...(parity === 0 && !operator.inverted && isEnumSubject(core.left) && isEnumLiteral(core.right)
+        ...(parity === 0 && !operator.inverted && isEnumSubject(leftCore) && isEnumLiteral(rightCore)
           ? { enumSubject: left, enumCase: right }
           : {}),
       };
@@ -3115,7 +3287,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       );
       return {
         control,
-        groupKey: `${control.owner}\0discriminant\0${operator.family}\0${left.getText()}`,
+        groupKey: `${control.owner}\0discriminant\0${operator.family}\0${structureKey(left)}`,
         subject: left.getText(),
         semantics,
       };
