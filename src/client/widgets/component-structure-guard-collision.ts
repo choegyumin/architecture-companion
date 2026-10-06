@@ -2,41 +2,32 @@ import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-plac
 
 type Point = Readonly<{ x: number; y: number }>;
 
-// Guard pills render at text-xs in a single row with a leading state icon,
-// one AND rule of several pills shares a tinted box, and rules stack top to
-// bottom. Sizes are estimated from label lengths instead of measured so
-// placement stays a pure layout-time decision; the margin absorbs the
-// estimation error.
-const PILL_CHAR_WIDTH = 6;
-// Horizontal padding and border, plus the state icon and its gap.
-const PILL_BOX_PADDING = 34;
-const PILL_HEIGHT = 26;
-const PILL_GAP = 4;
-// The rule box (px-1 py-0.5 plus its 1px border) and the gap between
-// rules (gap-1.5).
-const RULE_BOX_PADDING = 10;
-const RULE_BOX_VERTICAL = 6;
-const RULE_GAP = 6;
+// Route condition labels render at text-xs in a max-w-72 button that wraps
+// at a fixed width and carries a leading state icon. Sizes are estimated
+// from the condition text instead of measured so placement stays a pure
+// layout-time decision; the collision margin absorbs the estimation error.
+const CHAR_WIDTH = 6;
+const ICON_WIDTH = 16;
+const BUTTON_CHROME = 18;
+const MAX_BUTTON_WIDTH = 288;
+const LINE_HEIGHT = 16;
+const BUTTON_CHROME_HEIGHT = 10;
 const COLLISION_MARGIN = 4;
 const PUSH_STEP = 48;
 const RESOLVE_ROUNDS = 4;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
-export function estimateGuardLabelSize(rules: readonly (readonly { label: string }[])[]): GuardLabelSize {
-  let width = 0;
-  let height = 0;
-  for (const [index, rule] of rules.entries()) {
-    const pills =
-      rule.reduce((total, pill) => total + PILL_BOX_PADDING + PILL_CHAR_WIDTH * pill.label.length, 0) +
-      PILL_GAP * Math.max(rule.length - 1, 0);
-    width = Math.max(width, pills + (rule.length > 1 ? RULE_BOX_PADDING : 0));
-    height += PILL_HEIGHT + (rule.length > 1 ? RULE_BOX_VERTICAL : 0) + (index > 0 ? RULE_GAP : 0);
-  }
-  return { width, height };
+export function estimateGuardLabelSize(text: string): GuardLabelSize {
+  const widest = CHAR_WIDTH * text.length + ICON_WIDTH + BUTTON_CHROME;
+  const lines = Math.max(1, Math.ceil(widest / MAX_BUTTON_WIDTH));
+  return {
+    width: Math.min(MAX_BUTTON_WIDTH, Math.max(widest, ICON_WIDTH + BUTTON_CHROME)),
+    height: BUTTON_CHROME_HEIGHT + lines * LINE_HEIGHT,
+  };
 }
 
-/** One guard label group anchored `offset` arc length from its edge's `from` end. */
+/** One route condition label anchored `offset` arc length from its edge's `from` end. */
 export type GuardLabelGroup = Readonly<{
   edgeId: string;
   from: "start" | "end";
@@ -81,11 +72,11 @@ const toBox = (obstacle: GuardLabelObstacle): Box => ({
 });
 
 /**
- * Separates colliding guard labels by pushing the lower label of each pair
- * further from its edge endpoint. Node boxes never yield, and two groups on
- * one edge cannot separate by pushing along it, so those pairs stay put.
- * Residual overlaps after RESOLVE_ROUNDS rounds are accepted. Returns the
- * resolved offset per group key `${edgeId}\0${from}`.
+ * Separates colliding route condition labels by pushing the lower label of
+ * each pair further from its edge endpoint. Node boxes never yield, and two
+ * groups on one edge cannot separate by pushing along it, so those pairs
+ * stay put. Residual overlaps after RESOLVE_ROUNDS rounds are accepted.
+ * Returns the resolved offset per group key `${edgeId}\0${from}`.
  */
 export function resolveGuardLabelOffsets(
   groups: readonly GuardLabelGroup[],

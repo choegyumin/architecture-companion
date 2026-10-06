@@ -1,4 +1,5 @@
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
+import { estimateGuardLabelSize, resolveGuardLabelOffsets } from "@/client/widgets/component-structure-guard-collision";
 import {
   routeConditionIncludesBranch,
   routeConditionText,
@@ -102,20 +103,51 @@ export function attachGuardLabels({
   );
   const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
   const controlIds = new Set(controls.map((control) => control.id));
-  return edges.map((edge) => {
-    if (edge.type !== "route" || !edge.data) return edge;
+  // Route-bearing edges get one combined label; the decoration pass below
+  // needs the anchor for each, so collect them first.
+  const labeled = edges.flatMap((edge) => {
+    if (edge.type !== "route" || !edge.data) return [];
     const graphEdge = graphEdgeById.get(edge.id);
     const guards = graphEdge?.guards;
     // Guards may hold only empty rules (an unconditional edge); those carry
     // no condition to state.
-    if (!guards || !guards.some((rule) => rule.length > 0)) return edge;
+    if (!guards || !guards.some((rule) => rule.length > 0)) return [];
     const points = pointsByEdgeId.get(edge.id) ?? [];
     const arc = polylineArcLength(points);
-    const fallback = edge.data.labelPosition;
-    const from = graphEdge != null && controlIds.has(graphEdge.source) ? "start" : "end";
-    const offset = Math.min(ROUTE_CONDITION_ENDPOINT_OFFSET, arc / 2);
-    const anchor = points.length < 2 ? (points.at(0) ?? fallback) : pointAlongPolyline(points, offset, from);
-    const representative = guards.at(0)?.at(0);
+    const from: "start" | "end" = graphEdge != null && controlIds.has(graphEdge.source) ? "start" : "end";
+    const text = routeConditionText(controls, guards);
+    return [
+      {
+        edge,
+        guards,
+        from,
+        offset: Math.min(ROUTE_CONDITION_ENDPOINT_OFFSET, arc / 2),
+        points,
+        text,
+      },
+    ];
+  });
+  // Labels sharing an anchor region — same-branch arms especially — resolve
+  // by pushing along their own edge, away from the node they leave or reach.
+  const resolved = resolveGuardLabelOffsets(
+    labeled.map(({ edge, from, offset, points, text }) => ({
+      edgeId: edge.id,
+      from,
+      offset,
+      points,
+      fallback: edge.data!.labelPosition,
+      size: estimateGuardLabelSize(text),
+    })),
+    layout.nodes.map((node) => ({ x: node.position.x, y: node.position.y, ...node.size })),
+  );
+  return edges.map((edge) => {
+    const label = labeled.find((item) => item.edge.id === edge.id);
+    if (!label || edge.type !== "route" || !edge.data) return edge;
+    const anchor =
+      label.points.length < 2
+        ? (label.points.at(0) ?? edge.data.labelPosition)
+        : pointAlongPolyline(label.points, resolved.get(`${edge.id}\0${label.from}`) ?? label.offset, label.from);
+    const representative = label.guards.at(0)?.at(0);
     return {
       ...edge,
       data: {
@@ -124,16 +156,16 @@ export function attachGuardLabels({
           {
             // Branch arms hang downstream of the start anchor; arrival labels
             // climb back up from the end anchor, each away from its node.
-            anchorSide: from === "start" ? ("top" as const) : ("bottom" as const),
+            anchorSide: label.from === "start" ? ("top" as const) : ("bottom" as const),
             control: (
               <div onMouseEnter={() => onEdgeHover?.(edge.id)} onMouseLeave={() => onEdgeHover?.(null)}>
                 <RouteConditionLabel
                   active={activeEdges.has(edge.id)}
-                  includesBranch={routeConditionIncludesBranch(controls, guards)}
+                  includesBranch={routeConditionIncludesBranch(controls, label.guards)}
                   onSelect={() => {
                     if (representative) onSelect(edge.id, representative.controlId, representative.value);
                   }}
-                  text={routeConditionText(controls, guards)}
+                  text={label.text}
                 />
               </div>
             ),

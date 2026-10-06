@@ -124,6 +124,26 @@ describe("attachGuardLabels", () => {
     expect(anchors).toHaveLength(0);
   });
 
+  it("stairs same-anchor arm labels apart along their edges", () => {
+    const [on, off] = renderLabel(
+      [graphEdge("on", "mode", [[["mode", "on"]]]), graphEdge("off", "mode", [[["mode", "off"]]])],
+      {
+        layout: layoutOf({
+          on: horizontal,
+          off: [
+            { x: 0, y: 0 },
+            { x: 300, y: 20 },
+          ],
+        }),
+      },
+    );
+
+    // Two arms of one decision anchor at the same start offset; the lower
+    // label pushes further down its own edge instead of stacking.
+    expect(on?.position.x).toBe(64);
+    expect(off!.position.x).toBeGreaterThan(64);
+  });
+
   it("binds the label click to the route's representative requirement", async () => {
     const clicks: [string, string, string][] = [];
     renderLabel([graphEdge("arm", "mode", [[["flag", "on"]]])], {

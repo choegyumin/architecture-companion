@@ -18,19 +18,14 @@ const horizontal = (from: number, to: number, y = 0) => [
 ];
 
 describe("estimateGuardLabelSize", () => {
-  it("sizes a lone clause as one bare row of pills", () => {
-    expect(estimateGuardLabelSize([[{ label: "draft" }]])).toEqual({ width: 34 + 6 * 5, height: 26 });
-    expect(estimateGuardLabelSize([[{ label: "draft" }], [{ label: "On" }]])).toEqual({
-      width: 34 + 6 * 5,
-      height: 26 + 6 + 26,
-    });
+  it("sizes short condition text as one line", () => {
+    expect(estimateGuardLabelSize("draft")).toEqual({ width: 6 * 5 + 16 + 18, height: 10 + 16 });
   });
 
-  it("adds the tinted box around an AND clause of several pills", () => {
-    expect(estimateGuardLabelSize([[{ label: "draft" }, { label: "On" }]])).toEqual({
-      width: 10 + (34 + 6 * 5) + 4 + (34 + 6 * 2),
-      height: 32,
-    });
+  it("wraps condition text past the button's max width into more lines", () => {
+    const size = estimateGuardLabelSize("a".repeat(60));
+    expect(size.width).toBe(288);
+    expect(size.height).toBe(10 + 2 * 16);
   });
 });
 
