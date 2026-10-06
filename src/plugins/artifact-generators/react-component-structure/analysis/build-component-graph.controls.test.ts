@@ -467,6 +467,9 @@ describe("component rendering controls", () => {
     expect(count).toMatchObject({
       kind: "branch",
       label: "count > 0",
+      // One predicate and its complement over the same threshold — a
+      // two-value subject, so it renders as a switch like any boolean gate.
+      polarityPair: true,
       cases: [
         { id: "count > 0", label: "count > 0" },
         { id: "count <= 0", label: "count <= 0" },

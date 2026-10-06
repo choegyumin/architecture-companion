@@ -3604,22 +3604,21 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
         const cases = [...casesByKey.values()].map(({ id, label }) => ({ id, label }));
         const positiveText = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;
-        // Expression-polarity groups are one boolean subject and its negation;
-        // comparison groups overlap in value space and stay case lists.
-        const polarityPair =
-          cases.length === 2 && members.every(({ polarity }) => !polarity.group.startsWith("comparison\0"));
         controls.set(control.id, {
           id: control.id,
           owner: control.owner,
-          // A two-case group is a switch over the subject, so its label is the
-          // positive form; a lone member stays a conditional and keeps its own
-          // polarity — its label names the condition that turns it on.
+          // A two-case group is a switch over one two-value subject, so its
+          // label is the positive form; a lone member stays a conditional and
+          // keeps its own polarity — its label names the condition that turns
+          // it on. Comparison groups qualify too: they pair one predicate with
+          // its complement over the same threshold, which never overlaps —
+          // overlapping thresholds keep separate groups (ADR 0005 category 6).
           ...(cases.length >= 2
             ? {
                 kind: "branch" as const,
                 label: positiveLabel(positiveText),
                 cases,
-                ...(polarityPair ? { polarityPair: true as const } : {}),
+                polarityPair: true as const,
               }
             : { kind: "conditional" as const, label: positiveText }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
