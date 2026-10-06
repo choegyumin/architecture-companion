@@ -1,7 +1,7 @@
 {
   "id": "react-admin-demo-component-structure",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-06T16:19:30.566Z",
+  "updatedAt": "2026-10-06T16:57:20.839Z",
   "generator": "built-in:react-component-structure",
   "layout": {
     "id": "elk-layered",
@@ -103,6 +103,16 @@
             }
           ]
         }
+      },
+      {
+        "type": "decision",
+        "id": "component:src/products/ProductList.tsx#ProductList:control:0",
+        "title": "isSmall"
+      },
+      {
+        "type": "default",
+        "id": "component:src/products/ProductList.tsx#ProductList:control:0:!isSmall:non-component",
+        "title": "Non-component"
       },
       {
         "type": "default",
@@ -697,6 +707,29 @@
       },
       {
         "type": "default",
+        "id": "edge:3a531729f13e33a6",
+        "source": "component:src/products/ProductList.tsx#ProductList:control:0",
+        "target": "external:@mui/material#Box@bcde6a36b212f16c",
+        "sourcePort": "isSmall",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "isSmall"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "isSmall"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:4056ed2ad5105ebb",
         "source": "component:src/products/ProductList.tsx#ListActions",
         "target": "external:react-admin#TopToolbar",
@@ -824,28 +857,6 @@
       },
       {
         "type": "default",
-        "id": "edge:a29ff8ecbdc4f9bf",
-        "source": "external:react-admin#FilterContext.Provider",
-        "target": "external:@mui/material#Box@bcde6a36b212f16c",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
-              "value": "on"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
-              "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
         "id": "edge:a3ec8367d3ad8656",
         "source": "external:@mui/material#Box@7b7af872956b3a73",
         "target": "component:src/products/GridList.tsx#GridList",
@@ -881,6 +892,13 @@
             }
           ]
         ]
+      },
+      {
+        "type": "default",
+        "id": "edge:b7325cfca1942ecd",
+        "source": "external:react-admin#FilterContext.Provider",
+        "target": "component:src/products/ProductList.tsx#ProductList:control:0",
+        "guards": [[]]
       },
       {
         "type": "default",
@@ -1001,6 +1019,29 @@
       },
       {
         "type": "default",
+        "id": "edge:fa80794082552f53",
+        "source": "component:src/products/ProductList.tsx#ProductList:control:0",
+        "target": "component:src/products/ProductList.tsx#ProductList:control:0:!isSmall:non-component",
+        "sourcePort": "!isSmall",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "!isSmall"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
+              "value": "!isSmall"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:fc1430c62afd34ee",
         "source": "external:@mui/material#ImageListItem",
         "target": "external:react-router-dom#Link",
@@ -1042,8 +1083,19 @@
       {
         "id": "component:src/products/ProductList.tsx#ProductList:control:0",
         "owner": "component:src/products/ProductList.tsx#ProductList",
-        "kind": "conditional",
+        "kind": "branch",
         "label": "isSmall",
+        "cases": [
+          {
+            "id": "isSmall",
+            "label": "isSmall"
+          },
+          {
+            "id": "!isSmall",
+            "label": "!isSmall"
+          }
+        ],
+        "polarityPair": true,
         "dependsOn": [[]]
       },
       {
