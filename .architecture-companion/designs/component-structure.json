@@ -1,9 +1,9 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-06T14:50:09.792Z",
+  "updatedAt": "2026-10-06T15:18:47.870Z",
   "vcs": {
-    "revision": "43d8935407783a3863289704195daf2fc9593f5e",
+    "revision": "41c5d8ece038b01309a094746208fb0000cef179",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
@@ -130,7 +130,7 @@
       },
       {
         "type": "decision",
-        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
         "title": "controller.edit.conflict?.kind"
       },
       {
@@ -1407,6 +1407,29 @@
       },
       {
         "type": "default",
+        "id": "edge:267dc80d4e062ea3",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "changed",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "changed"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "changed"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:2a00fe69cf97484d",
         "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
         "target": "external:@xyflow/react#Handle",
@@ -1485,29 +1508,6 @@
         "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:3254613640b6e62f",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "sourcePort": "deleted",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "deleted"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "deleted"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -1628,6 +1628,13 @@
       },
       {
         "type": "default",
+        "id": "edge:4c6d1694841cbf5f",
+        "source": "component:src/shared/react-ui/card.tsx#CardFooter@7fa69c9eaf8d9cac",
+        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "guards": [[]]
+      },
+      {
+        "type": "default",
         "id": "edge:4e153de912b6f65b",
         "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
         "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
@@ -1660,6 +1667,10 @@
             {
               "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
               "value": "on"
+            },
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+              "value": "on"
             }
           ]
         ],
@@ -1667,6 +1678,10 @@
           [
             {
               "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
               "value": "on"
             }
           ]
@@ -1917,13 +1932,6 @@
       },
       {
         "type": "default",
-        "id": "edge:6efe79184065892e",
-        "source": "component:src/shared/react-ui/card.tsx#CardFooter@7fa69c9eaf8d9cac",
-        "target": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-        "guards": [[]]
-      },
-      {
-        "type": "default",
         "id": "edge:73e82cc28567766a",
         "source": "external:@xyflow/react#ReactFlow",
         "target": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
@@ -2018,10 +2026,32 @@
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "on"
+              "value": "off"
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
               "value": "on"
             }
           ]
@@ -2034,10 +2064,32 @@
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "on"
+              "value": "off"
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
               "value": "on"
             }
           ]
@@ -2129,6 +2181,29 @@
       },
       {
         "type": "default",
+        "id": "edge:a835f5ff669ba9e4",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "otherwise",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "otherwise"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "otherwise"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:b1b66ed45e6e35ef",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
@@ -2179,29 +2254,6 @@
         "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
         "activeWhen": [[]],
         "guards": [[]]
-      },
-      {
-        "type": "default",
-        "id": "edge:b8ca1e91b25d2f18",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "sourcePort": "changed",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "changed"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "changed"
-            }
-          ]
-        ]
       },
       {
         "type": "default",
@@ -2335,7 +2387,7 @@
         "activeWhen": [
           [
             {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
               "value": "on"
             }
           ]
@@ -2343,31 +2395,8 @@
         "guards": [
           [
             {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
               "value": "on"
-            }
-          ]
-        ]
-      },
-      {
-        "type": "default",
-        "id": "edge:c9da333afa3fbff6",
-        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-        "target": "component:src/shared/react-ui/button.tsx#Button",
-        "sourcePort": "otherwise",
-        "activeWhen": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "otherwise"
-            }
-          ]
-        ],
-        "guards": [
-          [
-            {
-              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
-              "value": "otherwise"
             }
           ]
         ]
@@ -2489,6 +2518,29 @@
       },
       {
         "type": "default",
+        "id": "edge:e97c84b92b5398d9",
+        "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "target": "component:src/shared/react-ui/button.tsx#Button",
+        "sourcePort": "deleted",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "deleted"
+            }
+          ]
+        ],
+        "guards": [
+          [
+            {
+              "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+              "value": "deleted"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "default",
         "id": "edge:ec050f35a5fdc42c",
         "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
         "target": "component:src/shared/react-ui/tabs.tsx#TabsContent@5f4de2e7b130cde8",
@@ -2513,6 +2565,10 @@
             {
               "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
               "value": "on"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+              "value": "on"
             }
           ]
         ],
@@ -2520,6 +2576,10 @@
           [
             {
               "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
               "value": "on"
             }
           ]
@@ -2638,7 +2698,11 @@
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "on"
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
             }
           ]
         ],
@@ -2650,7 +2714,11 @@
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
-              "value": "on"
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
             }
           ]
         ]
@@ -2753,7 +2821,14 @@
       {
         "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
         "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-        "label": "activeDiagramCollection && activeReviewView",
+        "label": "activeDiagramCollection",
+        "kind": "conditional",
+        "dependsOn": [[]]
+      },
+      {
+        "id": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
+        "owner": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
+        "label": "activeReviewView",
         "kind": "conditional",
         "dependsOn": [[]]
       },
@@ -2792,7 +2867,7 @@
       {
         "id": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
         "owner": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-        "label": "!(!first || !last)",
+        "label": "!first",
         "kind": "conditional",
         "dependsOn": [
           [
@@ -2806,7 +2881,21 @@
       {
         "id": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
         "owner": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-        "label": "data.edge.label || data.edge.href",
+        "label": "!last",
+        "kind": "conditional",
+        "dependsOn": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "id": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:3",
+        "owner": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+        "label": "data.edge.label",
         "kind": "conditional",
         "dependsOn": [
           [
@@ -2816,7 +2905,33 @@
             },
             {
               "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
+            }
+          ]
+        ]
+      },
+      {
+        "id": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:4",
+        "owner": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
+        "label": "data.edge.href",
+        "kind": "conditional",
+        "dependsOn": [
+          [
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
               "value": "on"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:2",
+              "value": "off"
             }
           ]
         ]
@@ -2933,12 +3048,19 @@
       {
         "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
         "owner": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-        "label": "editedAnnotation && controller.edit",
+        "label": "editedAnnotation",
         "kind": "conditional",
         "dependsOn": [[]]
       },
       {
         "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
+        "owner": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
+        "label": "controller.edit",
+        "kind": "conditional",
+        "dependsOn": [[]]
+      },
+      {
+        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
         "owner": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
         "kind": "branch",
         "label": "controller.edit.conflict?.kind",
@@ -2959,7 +3081,7 @@
         "dependsOn": [[]]
       },
       {
-        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
+        "id": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
         "owner": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
         "label": "draft",
         "kind": "conditional",
