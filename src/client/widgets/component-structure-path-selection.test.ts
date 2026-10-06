@@ -22,6 +22,7 @@ const polarityBranch = (id: string, onLabel: string): DiagramControl => ({
     { id: `${id}:on`, label: onLabel },
     { id: `${id}:off`, label: `!(${onLabel})` },
   ],
+  polarityPair: true,
   dependsOn: [[]],
 });
 
@@ -124,6 +125,22 @@ describe("selectComponentPath", () => {
     );
 
     expect(selection).toEqual({ loading: "loading:on", error: "error:off" });
+  });
+
+  it("does not settle branches the generator did not mark as polarity pairs", () => {
+    const unmarked: DiagramGraph = {
+      ...exclusiveGraph,
+      controls: exclusiveGraph.controls!.map((control) => ({ ...control, polarityPair: undefined })),
+    };
+
+    const selection = selectComponentPath(
+      unmarked,
+      { loading: "loading:off", error: "error:on" },
+      "loading",
+      "loading:on",
+    );
+
+    expect(selection).toEqual({ loading: "loading:on", error: "error:on" });
   });
 
   it("reroutes through the negated arm when the on case needs it", () => {

@@ -40,7 +40,7 @@ describe("component rendering controls", () => {
       paths: [
         [
           { label: "outer", value: "true" },
-          { label: "!(hidden)", value: "on" },
+          { label: "!hidden", value: "on" },
         ],
         [{ label: "outer", value: "false" }],
       ],
@@ -50,7 +50,7 @@ describe("component rendering controls", () => {
       paths: [
         [
           { label: "mode", value: "case:0" },
-          { label: "!(hidden)", value: "on" },
+          { label: "!hidden", value: "on" },
         ],
         [{ label: "mode", value: "case:1" }],
       ],
@@ -136,15 +136,16 @@ describe("component rendering controls", () => {
     expect(controls).toHaveLength(3);
     const ready = controls.find((control) => control.label === "ready")!;
     const choice = controls.find((control) => control.label === "choice")!;
-    const visible = controls.find((control) => control.label === "!(hidden)")!;
+    const visible = controls.find((control) => control.label === "!hidden")!;
     expect(ready).toMatchObject({ kind: "conditional", dependsOn: [[]] });
     expect(visible).toMatchObject({ kind: "conditional", dependsOn: [[]] });
     expect(choice).toMatchObject({
       kind: "branch",
+      polarityPair: true,
       dependsOn: [[{ controlId: ready.id, value: "on" }]],
       cases: [
         { id: "true", label: "choice" },
-        { id: "false", label: "!(choice)" },
+        { id: "false", label: "!choice" },
       ],
     });
     expect(edgeTo(graph, "Left")).toMatchObject({
@@ -164,6 +165,37 @@ describe("component rendering controls", () => {
       ],
     });
     expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: visible.id, value: "on" }]] });
+  });
+
+  it("folds double negation when deriving gate labels", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      function Other() { return <aside />; }
+      function Third() { return <footer />; }
+      function Fourth() { return <main />; }
+      export function App({ data, ready, flag }) {
+        return (
+          <>
+            {!(!data) ? null : <Leaf />}
+            {!(!ready) ? <Other /> : null}
+            {!(!flag) ? <Third /> : <Fourth />}
+          </>
+        );
+      }
+    `);
+    const controls = graph.controls!;
+    const [data, ready, flag] = controls;
+    expect(data).toMatchObject({ kind: "conditional", label: "!data" });
+    expect(ready).toMatchObject({ kind: "conditional", label: "ready" });
+    expect(flag).toMatchObject({
+      kind: "branch",
+      label: "flag",
+      polarityPair: true,
+      cases: [
+        { id: "true", label: "flag" },
+        { id: "false", label: "!flag" },
+      ],
+    });
   });
 
   it("keeps each chained condition with its preceding prerequisites", async () => {
@@ -252,7 +284,7 @@ describe("component rendering controls", () => {
     const controls = graph.controls!;
     expect(controls).toHaveLength(2);
     expect(controls.find(({ label }) => label === "ready")).toMatchObject({ kind: "conditional" });
-    const hidden = controls.find(({ label }) => label === "!(hidden)")!;
+    const hidden = controls.find(({ label }) => label === "!hidden")!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({ activeWhen: [[{ controlId: hidden.id, value: "on" }]] });
   });
 
@@ -277,6 +309,7 @@ describe("component rendering controls", () => {
     expect(roomy).toMatchObject({
       kind: "branch",
       label: "roomy",
+      polarityPair: true,
       dependsOn: [[{ controlId: ready.id, value: "on" }]],
       cases: [
         { id: "roomy", label: "roomy" },
@@ -311,13 +344,14 @@ describe("component rendering controls", () => {
     expect(graph.controls).toHaveLength(1);
     expect(roomy).toMatchObject({
       kind: "branch",
-      label: "!!roomy",
+      label: "roomy",
+      polarityPair: true,
       cases: [
-        { id: "!!roomy", label: "!!roomy" },
+        { id: "roomy", label: "roomy" },
         { id: "!roomy", label: "!roomy" },
       ],
     });
-    expect(edgeTo(graph, "Wide")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!!roomy" }]] });
+    expect(edgeTo(graph, "Wide")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "roomy" }]] });
     expect(edgeTo(graph, "Narrow")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!roomy" }]] });
   });
 
@@ -780,7 +814,7 @@ describe("component rendering controls", () => {
       }
     `);
     const controls = graph.controls!;
-    expect(controls.map(({ label }) => label)).toEqual(["!(hidden)", "mode", "ready"]);
+    expect(controls.map(({ label }) => label)).toEqual(["!hidden", "mode", "ready"]);
     const [visible, mode, ready] = controls;
     expect(visible).toMatchObject({ kind: "conditional", dependsOn: [[]] });
     expect(mode).toMatchObject({
@@ -943,9 +977,11 @@ describe("component rendering controls", () => {
       label: "preferred",
       cases: [
         { id: "left", label: "preferred" },
-        { id: "right", label: "!(preferred)" },
+        { id: "right", label: "!preferred" },
       ],
     });
+    // Value alternatives, not a subject and its negation.
+    expect(branch.polarityPair).toBeUndefined();
     expect(edgeTo(graph, "Preferred")).toMatchObject({
       activeWhen: [[{ controlId: branch.id, value: "left" }]],
     });

@@ -2082,7 +2082,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     label: string,
     when: DiagramRouteRequirementRuleset,
     context: AnalysisContext,
-    alternatives?: { id: string; label: string }[],
+    alternatives?: BranchAlternatives,
   ): string {
     const suffix = createHash("sha256")
       .update(`${toPosixPath(relative(context.scopePath, node.getSourceFile().fileName))}:${node.pos}:${node.end}`)
@@ -2093,7 +2093,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const base = { id, owner: ownerId, label, dependsOn: unionRulesets(existing?.dependsOn ?? [], when) };
     context.controls.set(
       id,
-      alternatives ? { ...base, kind: "branch", cases: alternatives } : { ...base, kind: "conditional" },
+      alternatives
+        ? {
+            ...base,
+            kind: "branch",
+            cases: alternatives.cases,
+            ...(alternatives.polarityPair ? { polarityPair: true } : {}),
+          }
+        : { ...base, kind: "conditional" },
     );
     return id;
   }
@@ -2104,11 +2111,60 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     label: string,
     when: DiagramRouteRequirementRuleset,
     context: AnalysisContext,
-    alternatives?: { id: string; label: string }[],
+    alternatives?: BranchAlternatives,
   ): (value: string) => DiagramRouteRequirementRuleset {
     const id = conditionControlId(node, ownerId, label, when, context, alternatives);
     return (value) => combineRulesets(when, [[{ controlId: id, value }]]);
   }
+
+  // Branch cases emitted with the control: `polarityPair` marks the pair as
+  // one boolean subject and its negation (ADR 0005 category 3), so consumers
+  // never parse labels to recover the switch shape.
+  type BranchAlternatives = Readonly<{
+    cases: { id: string; label: string }[];
+    polarityPair?: true;
+  }>;
+
+  // Display-only label normalization: control identity stays the node
+  // (file/pos), so rewriting text never merges or splits controls. Double
+  // negation folds (`!(!x)` → `x`), a negation wraps only when precedence
+  // demands it, and the positive form strips every negation.
+  const normalizedLabel = (label: string): string => {
+    let text = label.trim();
+    for (;;) {
+      if (text.startsWith("!(") && text.endsWith(")")) {
+        const inner = text.slice(2, -1).trim();
+        // Only a double negation folds; `!(a || b)` keeps its negation.
+        if (!inner.startsWith("!") || inner.length === 1) return text;
+        text = normalizedLabel(inner.slice(1).trim());
+        continue;
+      }
+      if (text.startsWith("!!")) {
+        text = text.slice(2).trim();
+        continue;
+      }
+      return text;
+    }
+  };
+  const negateLabel = (label: string): string => {
+    const text = normalizedLabel(label);
+    if (text.startsWith("!") && !text.startsWith("!=")) return normalizedLabel(text.slice(1).trim());
+    return /[<>=+\-*%&|?]|\s/.test(text) ? `!(${text})` : `!${text}`;
+  };
+  const positiveLabel = (label: string): string => {
+    let text = normalizedLabel(label);
+    for (;;) {
+      if (text.startsWith("!(") && text.endsWith(")")) {
+        text = normalizedLabel(text.slice(2, -1).trim());
+        continue;
+      }
+      if (text.startsWith("!") && !text.startsWith("!=") && text.length > 1) {
+        text = normalizedLabel(text.slice(1).trim());
+        continue;
+      }
+      return text;
+    }
+  };
 
   type ConditionLiteral = Readonly<{ expression: ts.Expression; positive: boolean }>;
   const MAX_DECOMPOSED_CLAUSES = 8;
@@ -2187,7 +2243,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const chosen = new Set<string>();
       let contradiction = false;
       for (const literal of clause) {
-        const label = literal.expression.getText();
+        const label = normalizedLabel(literal.expression.getText());
         const controlId = conditionControlId(literal.expression, ownerId, label, when, context);
         const value = literal.positive ? "on" : "off";
         if (chosen.has(`${controlId}\0${literal.positive ? "off" : "on"}`)) {
@@ -2243,19 +2299,22 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return true;
         }
       }
-      const label = unwrapped.condition.getText();
+      const label = normalizedLabel(unwrapped.condition.getText());
       const select = controlRuleset(
         unwrapped,
         ownerId,
-        emptyTrue ? `!(${label})` : label,
+        emptyTrue ? negateLabel(label) : emptyFalse ? label : positiveLabel(label),
         ruleset,
         context,
         emptyTrue || emptyFalse
           ? undefined
-          : [
-              { id: "true", label },
-              { id: "false", label: `!(${label})` },
-            ],
+          : {
+              cases: [
+                { id: "true", label },
+                { id: "false", label: negateLabel(label) },
+              ],
+              polarityPair: true,
+            },
       );
       if (!emptyTrue) visit(unwrapped.whenTrue, select(emptyFalse ? "on" : "true"));
       if (!emptyFalse) visit(unwrapped.whenFalse, select(emptyTrue ? "on" : "false"));
@@ -2277,11 +2336,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           const prerequisites = conjunction(guard.left, guard, when);
           const decomposed = operandClauses(guard.right, prerequisites);
           if (decomposed) return combineRulesets(prerequisites, decomposed);
-          return controlRuleset(node, ownerId, guard.right.getText(), prerequisites, context)("on");
+          return controlRuleset(node, ownerId, normalizedLabel(guard.right.getText()), prerequisites, context)("on");
         }
         const decomposed = operandClauses(guard, when);
         if (decomposed) return decomposed;
-        return controlRuleset(node, ownerId, condition.getText(), when, context)("on");
+        return controlRuleset(node, ownerId, normalizedLabel(condition.getText()), when, context)("on");
       }
       visit(unwrapped.right, conjunction(unwrapped.left, unwrapped, ruleset));
       return true;
@@ -2292,7 +2351,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         unwrapped.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
     ) {
       const nullish = unwrapped.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken;
-      const label = unwrapped.left.getText();
+      const label = normalizedLabel(unwrapped.left.getText());
       const bindings = context.propBindings.get(ownerId);
       function hasOutput(expression: ts.Expression, visited: ReadonlySet<ts.Symbol> = new Set()): boolean {
         const candidate = unwrapExpression(expression);
@@ -2331,14 +2390,16 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const select = controlRuleset(
         unwrapped,
         ownerId,
-        hasLeftOutput ? label : nullish ? `${label} == null` : `!(${label})`,
+        hasLeftOutput ? label : nullish ? `${label} == null` : negateLabel(label),
         ruleset,
         context,
         hasLeftOutput
-          ? [
-              { id: "left", label },
-              { id: "right", label: nullish ? `${label} == null` : `!(${label})` },
-            ]
+          ? {
+              cases: [
+                { id: "left", label },
+                { id: "right", label: nullish ? `${label} == null` : negateLabel(label) },
+              ],
+            }
           : undefined,
       );
       if (hasLeftOutput) visit(unwrapped.left, select("left"));
@@ -2446,18 +2507,21 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               continue;
             }
           }
-          const label = statement.expression.getText();
+          const label = normalizedLabel(statement.expression.getText());
           const select = controlRuleset(
             statement,
             ownerId,
-            trueOutput ? label : `!(${label})`,
+            trueOutput && falseOutput ? positiveLabel(label) : trueOutput ? label : negateLabel(label),
             next,
             context,
             trueOutput && falseOutput
-              ? [
-                  { id: "true", label },
-                  { id: "false", label: `!(${label})` },
-                ]
+              ? {
+                  cases: [
+                    { id: "true", label },
+                    { id: "false", label: negateLabel(label) },
+                  ],
+                  polarityPair: true,
+                }
               : undefined,
           );
           const thenFlow = walk(
@@ -2489,14 +2553,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             next = unionRulesets(flow.next, flow.breaks);
             continue;
           }
-          const select = controlRuleset(
-            statement,
-            ownerId,
-            statement.expression.getText(),
-            next,
-            context,
-            alternatives,
-          );
+          const select = controlRuleset(statement, ownerId, statement.expression.getText(), next, context, {
+            cases: alternatives,
+          });
           let fallthrough: DiagramRouteRequirementRuleset = [];
           let exits: DiagramRouteRequirementRuleset = noDefault ? select(`case:${clauses.length}`) : [];
           for (const [clauseIndex, clause] of clauses.entries()) {
@@ -3261,7 +3320,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           control.cases.length !== 2 ||
           onCase?.id !== "true" ||
           offCase?.id !== "false" ||
-          offCase.label !== `!(${onCase.label})`
+          offCase.label !== negateLabel(onCase.label)
         )
           return undefined;
         label = onCase.label;
@@ -3483,12 +3542,25 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             casesByKey.set(polarity.caseKey, { id: member.label, label: member.label, positive: polarity.positive });
         }
         const cases = [...casesByKey.values()].map(({ id, label }) => ({ id, label }));
-        const label = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;
+        const positiveText = [...casesByKey.values()].find(({ positive }) => positive)?.label ?? cases.at(0)!.label;
+        // Expression-polarity groups are one boolean subject and its negation;
+        // comparison groups overlap in value space and stay case lists.
+        const polarityPair =
+          cases.length === 2 && members.every(({ polarity }) => !polarity.group.startsWith("comparison\0"));
         controls.set(control.id, {
           id: control.id,
           owner: control.owner,
-          label,
-          ...(cases.length >= 2 ? { kind: "branch", cases } : { kind: "conditional" }),
+          // A two-case group is a switch over the subject, so its label is the
+          // positive form; a lone member stays a conditional and keeps its own
+          // polarity — its label names the condition that turns it on.
+          ...(cases.length >= 2
+            ? {
+                kind: "branch" as const,
+                label: positiveLabel(positiveText),
+                cases,
+                ...(polarityPair ? { polarityPair: true as const } : {}),
+              }
+            : { kind: "conditional" as const, label: positiveText }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
         });
         continue;

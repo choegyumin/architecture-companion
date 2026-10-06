@@ -11,7 +11,6 @@ import {
   type ComponentSelection,
   initialComponentSelection,
   isPolarityPairBranch,
-  polarityPairLabel,
   selectComponentPath,
   selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
@@ -136,9 +135,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                       </div>
                     ) : (
                       <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
-                        <span className="truncate">
-                          {control.kind === "branch" ? polarityPairLabel(control) : control.label}
-                        </span>
+                        <span className="truncate">{control.label}</span>
                         <Switch
                           checked={
                             control.kind === "branch"
