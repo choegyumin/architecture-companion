@@ -56,7 +56,7 @@ function renderLabel(edges: readonly DiagramEdge[], overrides: Partial<Parameter
     controls,
     layout: layoutOf(Object.fromEntries(edges.map((edge) => [edge.id, horizontal]))),
     edges: edges.map((edge) => routeEdge(edge.id)),
-    selection: {},
+    activeEdges: new Set<string>(),
     onSelect: () => {},
     ...overrides,
   });
@@ -96,7 +96,27 @@ describe("attachGuardLabels", () => {
     const label = screen.getByRole("button");
     expect(label).toHaveTextContent("(On && flag) || Off");
     // A rule naming a branch case marks the label with the split icon.
-    expect(label.querySelector("svg")).not.toBeNull();
+    expect(label.querySelector("svg")).toHaveClass("lucide-split");
+  });
+
+  it("marks a conditional-only route with the check icon", () => {
+    renderLabel([graphEdge("gated", "decision", [[["flag", "on"]]])]);
+
+    expect(screen.getByRole("button").querySelector("svg")).toHaveClass("lucide-check");
+  });
+
+  it("dims the leading icon until the route holds", () => {
+    renderLabel(
+      [graphEdge("held", "decision", [[["flag", "on"]]]), graphEdge("unheld", "decision", [[["flag", "on"]]])],
+      { activeEdges: new Set(["held"]) },
+    );
+
+    // Labels render in edge order, so the held route's icon stays lit while
+    // the unheld one dims.
+    const icons = screen.getAllByRole("button").map((button) => button.querySelector("svg")!);
+    expect(icons.at(0)).toHaveClass("lucide-check");
+    expect(icons.at(0)).not.toHaveClass("opacity-25");
+    expect(icons.at(1)).toHaveClass("lucide-check", "opacity-25");
   });
 
   it("keeps unconditional edges bare", () => {

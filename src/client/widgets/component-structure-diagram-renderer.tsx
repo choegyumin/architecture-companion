@@ -192,9 +192,9 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         edges: dimmed,
         graph: diagram.graph,
         layout,
+        activeEdges: emphasis.edges,
         onEdgeHover: setHoveredEdgeId,
         onSelect,
-        selection,
       });
       // The hover preview rides a passthrough node next to the hovered
       // route's label anchor, so zoom and pan follow it for free.

@@ -1,5 +1,4 @@
 import type { DiagramReactFlowEdge } from "@/client/parts/diagram-canvas";
-import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
 import {
   routeConditionIncludesBranch,
   routeConditionText,
@@ -77,7 +76,8 @@ type ComponentGuardLabelsProps = Readonly<{
   controls: readonly DiagramControl[];
   layout: DiagramLayout;
   edges: readonly DiagramReactFlowEdge[];
-  selection: ComponentSelection;
+  /** Routes whose condition holds under the current selection — their icon stays lit. */
+  activeEdges: ReadonlySet<string>;
   onSelect: (edgeId: string, controlId: string, value: string) => void;
   onEdgeHover?: (edgeId: string | null) => void;
 }>;
@@ -93,6 +93,7 @@ export function attachGuardLabels({
   controls,
   layout,
   edges,
+  activeEdges,
   onSelect,
   onEdgeHover,
 }: ComponentGuardLabelsProps): DiagramReactFlowEdge[] {
@@ -127,6 +128,7 @@ export function attachGuardLabels({
             control: (
               <div onMouseEnter={() => onEdgeHover?.(edge.id)} onMouseLeave={() => onEdgeHover?.(null)}>
                 <RouteConditionLabel
+                  active={activeEdges.has(edge.id)}
                   includesBranch={routeConditionIncludesBranch(controls, guards)}
                   onSelect={() => {
                     if (representative) onSelect(edge.id, representative.controlId, representative.value);

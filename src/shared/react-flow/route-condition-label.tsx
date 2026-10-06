@@ -1,21 +1,25 @@
-import { Split } from "lucide-react";
+import { Check, Split } from "lucide-react";
 
 import { cn } from "@/shared/react/class-name";
 
 // The combined activation condition of one route, written once on the edge.
-// A leading split icon marks routes that carry a branch case; plain
-// conditional gates keep the bare text. The label wraps at a fixed max width
+// A leading icon separates the control kinds: a splitting arrow marks routes
+// that carry a branch case, a check mark marks plain conditional gates, and
+// the icon dims until the route holds. The label wraps at a fixed max width
 // instead of growing an unbounded row, and clicking it applies the route's
 // whole rule (the inferred before/after diff hover previews).
 export function RouteConditionLabel({
+  active,
   includesBranch,
   onSelect,
   text,
 }: Readonly<{
+  active: boolean;
   includesBranch: boolean;
   onSelect: () => void;
   text: string;
 }>) {
+  const Icon = includesBranch ? Split : Check;
   return (
     <button
       aria-label={`Route condition: ${text}`}
@@ -29,9 +33,11 @@ export function RouteConditionLabel({
       }}
       type="button"
     >
-      {includesBranch ? (
-        <Split aria-hidden="true" className="mr-1 inline size-3 shrink-0 align-[-2px]" data-icon="inline-start" />
-      ) : null}
+      <Icon
+        aria-hidden="true"
+        className={cn("mr-1 inline size-3 shrink-0 align-[-2px]", !active && "opacity-25")}
+        data-icon="inline-start"
+      />
       <span className="wrap-break-word whitespace-pre-wrap">{text}</span>
     </button>
   );
