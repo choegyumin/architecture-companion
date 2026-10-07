@@ -4,7 +4,7 @@
   "updatedAt": "2026-10-07T16:01:02.520Z",
   "vcs": {
     "revision": "9b430674fc3f5418840276aeca9daa74a050cda4",
-    "divergesFromRevision": false
+    "divergesFromRevision": true
   },
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
@@ -491,6 +491,66 @@
         ]
       },
       {
+        "id": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "title": "component-structure-diagram-renderer.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/component-structure-diagram-renderer.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/component-structure-guard-collision.ts",
+        "title": "component-structure-guard-collision.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/component-structure-guard-collision.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/component-structure-guards.tsx",
+        "title": "component-structure-guards.tsx",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/component-structure-guards.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/component-structure-path-selection.ts",
+        "title": "component-structure-path-selection.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/component-structure-path-selection.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/client/widgets/component-structure-route-conditions.ts",
+        "title": "component-structure-route-conditions.ts",
+        "groupId": "group:directory:src/client/widgets",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/widgets/component-structure-route-conditions.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
         "title": "dependency-graph-aggregate-routes.ts",
         "groupId": "group:directory:src/client/widgets",
@@ -827,6 +887,18 @@
         ]
       },
       {
+        "id": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts",
+        "title": "component-structure-diagram-layout.ts",
+        "groupId": "group:directory:src/features/diagram/_layout",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/_layout/component-structure-diagram-layout.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/features/diagram/_layout/dependency-graph-layout.ts",
         "title": "dependency-graph-layout.ts",
         "groupId": "group:directory:src/features/diagram/_layout",
@@ -835,6 +907,18 @@
           {
             "text": "source",
             "href": "source:///src/features/diagram/_layout/dependency-graph-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/_layout/elk-core.ts",
+        "title": "elk-core.ts",
+        "groupId": "group:directory:src/features/diagram/_layout",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/_layout/elk-core.ts"
           }
         ]
       },
@@ -859,6 +943,18 @@
           {
             "text": "source",
             "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/decision-nodes.ts",
+        "title": "decision-nodes.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/decision-nodes.ts"
           }
         ]
       },
@@ -919,6 +1015,18 @@
           {
             "text": "source",
             "href": "source:///src/features/diagram/diagram-link.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/diagram/diagram-route-requirement-rules.ts",
+        "title": "diagram-route-requirement-rules.ts",
+        "groupId": "group:directory:src/features/diagram",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/diagram/diagram-route-requirement-rules.ts"
           }
         ]
       },
@@ -1319,6 +1427,30 @@
         ]
       },
       {
+        "id": "file:src/shared/react-flow/decision-node.tsx",
+        "title": "decision-node.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/decision-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/edge-hover.ts",
+        "title": "edge-hover.ts",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/edge-hover.ts"
+          }
+        ]
+      },
+      {
         "id": "file:src/shared/react-flow/fragment-node.tsx",
         "title": "fragment-node.tsx",
         "groupId": "group:directory:src/shared/react-flow",
@@ -1327,6 +1459,18 @@
           {
             "text": "source",
             "href": "source:///src/shared/react-flow/fragment-node.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-flow/guard-edge-label.tsx",
+        "title": "guard-edge-label.tsx",
+        "groupId": "group:directory:src/shared/react-flow",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-flow/guard-edge-label.tsx"
           }
         ]
       },
@@ -1535,6 +1679,18 @@
         ]
       },
       {
+        "id": "file:src/shared/react-ui/select.tsx",
+        "title": "select.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/select.tsx"
+          }
+        ]
+      },
+      {
         "id": "file:src/shared/react-ui/separator.tsx",
         "title": "separator.tsx",
         "groupId": "group:directory:src/shared/react-ui",
@@ -1543,6 +1699,18 @@
           {
             "text": "source",
             "href": "source:///src/shared/react-ui/separator.tsx"
+          }
+        ]
+      },
+      {
+        "id": "file:src/shared/react-ui/switch.tsx",
+        "title": "switch.tsx",
+        "groupId": "group:directory:src/shared/react-ui",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/shared/react-ui/switch.tsx"
           }
         ]
       },
@@ -2105,6 +2273,12 @@
         "target": "file:src/shared/react-flow/card-node.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/diagram-canvas.tsx",
+        "target": "file:src/shared/react-flow/edge-hover.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:runtime",
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.tsx",
@@ -2158,6 +2332,93 @@
         "type": "default",
         "source": "file:src/client/parts/diagram-canvas.viewport.ts",
         "target": "file:src/features/diagram/diagram-spatial.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guard-collision.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/component-structure-guard-collision.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/component-structure-guards.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/component-structure-path-selection.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-route-conditions.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/component-structure-route-conditions.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/client/widgets/diagram-renderer-base.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-guards.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-guards.tsx",
+        "target": "file:src/shared/react-flow/edge-hover.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fguard-edge-label.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-guards.tsx",
+        "target": "file:src/shared/react-flow/guard-edge-label.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fselect.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-guards.tsx",
+        "target": "file:src/shared/react-ui/select.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fswitch.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-guards.tsx",
+        "target": "file:src/shared/react-ui/switch.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-path-selection.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-route-conditions.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/component-structure-route-conditions.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
         "kind": "type-only"
       },
       {
@@ -2534,16 +2795,16 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-overlay-panel.tsx:runtime",
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer-base.tsx",
         "target": "file:src/shared/react-flow/base-overlay-panel.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -2632,6 +2893,12 @@
         "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
         "target": "file:src/shared/react-flow/message-edge.tsx",
         "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.tsx",
+        "target": "file:src/client/widgets/component-structure-diagram-renderer.tsx"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:runtime",
@@ -2847,30 +3114,6 @@
         "target": "file:src/features/catalog/catalog-revision-id.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:external%3Azod:runtime",
-        "type": "default",
-        "source": "file:src/features/artifact/artifact.ts",
-        "target": "external:zod"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/artifact/artifact.ts",
-        "target": "file:src/features/artifact-generator/artifact-generator-reference.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/artifact/artifact.ts",
-        "target": "file:src/features/diagram/diagram-graph.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/artifact/artifact.ts",
-        "target": "file:src/features/diagram/diagram-layout.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:external%3Azod:runtime",
         "type": "default",
         "source": "file:src/features/artifact-generator/artifact-generator-id.ts",
@@ -2896,6 +3139,30 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-reference.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram-layout.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:external%3Azod:runtime",
         "type": "default",
         "source": "file:src/features/catalog/catalog-revision-id.ts",
@@ -2917,6 +3184,25 @@
         "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
         "source": "file:src/features/catalog/catalog.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-core.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/elk-core.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts",
+        "target": "file:src/features/diagram/decision-nodes.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts",
         "target": "file:src/features/diagram/diagram-graph.ts",
         "kind": "type-only"
       },
@@ -2947,9 +3233,9 @@
         "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:external%3Aelkjs:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-core.ts:external%3Aelkjs:runtime",
         "type": "default",
-        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "source": "file:src/features/diagram/_layout/elk-core.ts",
         "target": "external:elkjs"
       },
       {
@@ -2964,6 +3250,12 @@
         "type": "default",
         "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
         "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-core.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/_layout/elk-layered-diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/elk-core.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -3012,6 +3304,19 @@
         "target": "file:src/shared/universal/get-or-throw.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/decision-nodes.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-route-requirement-rules.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/decision-nodes.ts",
+        "target": "file:src/features/diagram/diagram-route-requirement-rules.ts"
+      },
+      {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-node-bundle.ts:runtime",
         "type": "default",
         "source": "file:src/features/diagram/dependency-edge-projection.ts",
@@ -3041,6 +3346,12 @@
         "type": "default",
         "source": "file:src/features/diagram/diagram-layout.ts",
         "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-layout.ts",
+        "target": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:runtime",
@@ -3078,6 +3389,13 @@
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-link.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
         "source": "file:src/features/diagram/diagram-link.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-route-requirement-rules.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/diagram/diagram-route-requirement-rules.ts",
         "target": "file:src/features/diagram/diagram-graph.ts",
         "kind": "type-only"
       },
@@ -3480,24 +3798,6 @@
         "target": "file:src/server/read-catalog.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Aclsx:runtime",
-        "type": "default",
-        "source": "file:src/shared/react/class-name.ts",
-        "target": "external:clsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Atailwind-merge:runtime",
-        "type": "default",
-        "source": "file:src/shared/react/class-name.ts",
-        "target": "external:tailwind-merge"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:external%3Areact:runtime",
-        "type": "default",
-        "source": "file:src/shared/react/safe-context.ts",
-        "target": "external:react"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:external%3Areact:type-only",
         "type": "default",
         "source": "file:src/shared/react-flow/base-edge-label.tsx",
@@ -3543,16 +3843,28 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/card-node.tsx",
+        "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/card-node.tsx",
         "target": "file:src/shared/react/class-name.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fcard-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdecision-node.tsx:external%3A%40xyflow%2Freact:runtime",
         "type": "default",
-        "source": "file:src/shared/react-flow/card-node.tsx",
-        "target": "file:src/shared/react-ui/button.tsx"
+        "source": "file:src/shared/react-flow/decision-node.tsx",
+        "target": "external:@xyflow/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdecision-node.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/decision-node.tsx",
+        "target": "external:react"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:external%3A%40xyflow%2Freact:type-only",
@@ -3560,6 +3872,18 @@
         "source": "file:src/shared/react-flow/fragment-node.tsx",
         "target": "external:@xyflow/react",
         "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fguard-edge-label.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/guard-edge-label.tsx",
+        "target": "external:react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fguard-edge-label.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/guard-edge-label.tsx",
+        "target": "file:src/shared/react-flow/edge-hover.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flabeled-group-node.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -3642,16 +3966,16 @@
         "target": "external:react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-flow/node-search.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcommand.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-flow/node-search.tsx",
         "target": "file:src/shared/react-ui/command.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-flow/node-search.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Froute-edge.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -3691,16 +4015,16 @@
         "target": "external:react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-ui/alert-dialog.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/alert-dialog.tsx",
         "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/alert-dialog.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:external%3A%40base-ui%2Freact:runtime",
@@ -3806,12 +4130,6 @@
         "target": "external:react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-ui/field.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/field.tsx",
@@ -3822,6 +4140,12 @@
         "type": "default",
         "source": "file:src/shared/react-ui/field.tsx",
         "target": "file:src/shared/react-ui/separator.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ffield.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/field.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:external%3A%40base-ui%2Futils:runtime",
@@ -3854,16 +4178,16 @@
         "target": "external:class-variance-authority"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-ui/item.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/item.tsx",
         "target": "file:src/shared/react-ui/separator.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/item.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:external%3Areact:runtime",
@@ -3878,6 +4202,18 @@
         "target": "file:src/shared/react/class-name.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fselect.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/select.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fselect.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/select.tsx",
+        "target": "external:react"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fseparator.tsx:external%3A%40base-ui%2Freact:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/separator.tsx",
@@ -3888,6 +4224,24 @@
         "type": "default",
         "source": "file:src/shared/react-ui/separator.tsx",
         "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fswitch.tsx:external%3A%40base-ui%2Freact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/switch.tsx",
+        "target": "external:@base-ui/react"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fswitch.tsx:external%3Aclass-variance-authority:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/switch.tsx",
+        "target": "external:class-variance-authority"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fswitch.tsx:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/switch.tsx",
+        "target": "external:react"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:external%3A%40base-ui%2Freact:runtime",
@@ -3945,12 +4299,6 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-ui/theme-toggle.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/theme-toggle.tsx",
@@ -3961,6 +4309,12 @@
         "type": "default",
         "source": "file:src/shared/react-ui/theme-toggle.tsx",
         "target": "file:src/shared/react-ui/theme-context.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-toggle.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/theme-toggle.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:external%3A%40base-ui%2Freact:runtime",
@@ -3975,16 +4329,16 @@
         "target": "external:lucide-react"
       },
       {
-        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-        "type": "default",
-        "source": "file:src/shared/react-ui/toast.tsx",
-        "target": "file:src/shared/react/class-name.ts"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
         "type": "default",
         "source": "file:src/shared/react-ui/toast.tsx",
         "target": "file:src/shared/react-ui/button.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoast.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+        "type": "default",
+        "source": "file:src/shared/react-ui/toast.tsx",
+        "target": "file:src/shared/react/class-name.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:external%3A%40base-ui%2Freact:runtime",
@@ -4003,6 +4357,24 @@
         "type": "default",
         "source": "file:src/shared/react-ui/toggle.tsx",
         "target": "file:src/shared/react/class-name.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Aclsx:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/class-name.ts",
+        "target": "external:clsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Atailwind-merge:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/class-name.ts",
+        "target": "external:tailwind-merge"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:external%3Areact:runtime",
+        "type": "default",
+        "source": "file:src/shared/react/safe-context.ts",
+        "target": "external:react"
       }
     ]
   }
