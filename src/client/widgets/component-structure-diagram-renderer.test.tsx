@@ -154,6 +154,19 @@ describe("component structure paths", () => {
 
     expect(screen.getByRole("combobox", { name: "mode" })).toHaveTextContent("Large");
   });
+  it("lights the hovered label's route and previews its changes", async () => {
+    render(<DiagramRenderer annotations={annotations} diagram={diagram} onOpenSource={() => {}} />);
+    await waitForDiagramReady();
+
+    const label = screen.getByRole("button", { name: "Route condition: showDetails" });
+    fireEvent.mouseEnter(label);
+    expect(document.querySelectorAll(".react-flow__edge.is-edge-hovered")).toHaveLength(1);
+    expect(await screen.findByLabelText("Route changes")).toBeInTheDocument();
+
+    fireEvent.mouseLeave(label);
+    expect(document.querySelectorAll(".react-flow__edge.is-edge-hovered")).toHaveLength(0);
+    expect(screen.queryByLabelText("Route changes")).not.toBeInTheDocument();
+  });
   it("ranks branch content reached through another visible source and a when-only prerequisite", async () => {
     const base = branchGraph([
       connection("a-small", "app", "small", "small"),

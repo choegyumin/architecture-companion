@@ -145,7 +145,8 @@
     @apply opacity-[0.55] transition-opacity;
   }
 
-  .react-flow__edge-route:hover {
+  .react-flow__edge-route:hover,
+  .react-flow__edge-route.is-edge-hovered {
     @apply opacity-100;
   }
 

@@ -7,6 +7,7 @@ import {
 } from "@/client/widgets/component-structure-route-conditions";
 import type { DefaultDiagramEdge, DiagramControl, DiagramEdge } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+import { clearEdgeHover, reportEdgeHover } from "@/shared/react-flow/edge-hover";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 import { RouteConditionLabel } from "@/shared/react-flow/route-condition-label";
 
@@ -78,7 +79,6 @@ type ComponentGuardLabelsProps = Readonly<{
   /** Routes whose condition holds under the current selection — their icon stays lit. */
   activeEdges: ReadonlySet<string>;
   onSelect: (edgeId: string, controlId: string, value: string) => void;
-  onEdgeHover?: (edgeId: string | null) => void;
 }>;
 
 // A route's full activation condition rides one combined label. Branch arms
@@ -94,7 +94,6 @@ export function attachGuardLabels({
   edges,
   activeEdges,
   onSelect,
-  onEdgeHover,
 }: ComponentGuardLabelsProps): DiagramReactFlowEdge[] {
   const graphEdgeById = new Map(
     graph.edges.filter((edge): edge is DefaultDiagramEdge => edge.type === "default").map((edge) => [edge.id, edge]),
@@ -156,7 +155,12 @@ export function attachGuardLabels({
             // climb back up from the end anchor, each away from its node.
             anchorSide: label.from === "start" ? ("top" as const) : ("bottom" as const),
             control: (
-              <div onMouseEnter={() => onEdgeHover?.(edge.id)} onMouseLeave={() => onEdgeHover?.(null)}>
+              // Hover reports light the edge itself (and the label's own CSS
+              // keeps the label lit) — the canvas decides what that means.
+              <div
+                onMouseEnter={() => reportEdgeHover({ kind: "label", edgeId: edge.id })}
+                onMouseLeave={() => clearEdgeHover({ kind: "label", edgeId: edge.id })}
+              >
                 <RouteConditionLabel
                   active={activeEdges.has(edge.id)}
                   includesBranch={routeConditionIncludesBranch(controls, label.guards)}

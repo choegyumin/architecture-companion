@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DiagramCanvas } from "@/client/parts/diagram-canvas";
+import { clearEdgeHover, reportEdgeHover, resetEdgeHover } from "@/shared/react-flow/edge-hover";
 
 const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
@@ -36,7 +37,7 @@ vi.mock("@xyflow/react", () => ({
     onPaneClick,
   }: {
     children: ReactNode;
-    edges: readonly { id: string }[];
+    edges: readonly { id: string; className?: string }[];
     nodes: readonly { id: string; type: string; parentId?: string }[];
     onEdgeClick?: (event: MouseEvent<Element>, edge: { id: string }) => void;
     onInit: (instance: unknown) => void;
@@ -69,6 +70,7 @@ vi.mock("@xyflow/react", () => ({
         {edges.map((edge) => (
           <span
             aria-label={`React Flow edge ${edge.id}`}
+            className={edge.className}
             key={edge.id}
             onClick={(event) => onEdgeClick?.(event, edge)}
           />
@@ -84,6 +86,7 @@ describe("diagram canvas", () => {
     mocks.platform.os.mac = false;
     mocks.screenToFlowPosition.mockClear();
     mocks.fitView.mockClear();
+    resetEdgeHover();
   });
 
   it("converts canvas clicks to flow coordinates and forwards them", async () => {
@@ -138,6 +141,70 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).toHaveBeenNthCalledWith(1, { x: 12, y: 34 }, { type: "node", id: "checkout-page" });
     expect(onCanvasClick).toHaveBeenNthCalledWith(2, { x: 12, y: 34 }, { type: "group", id: "checkout-boundary" });
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
+  });
+
+  it("lights the hovered route's edge through the shared hover channel", async () => {
+    render(
+      <DiagramCanvas
+        edges={[
+          {
+            id: "lit-edge",
+            source: "app",
+            target: "page",
+            type: "route",
+            data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
+          },
+          {
+            id: "dark-edge",
+            source: "app",
+            target: "page",
+            type: "route",
+            data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
+          },
+        ]}
+        nodes={[]}
+      />,
+    );
+    const litEdge = await screen.findByLabelText("React Flow edge lit-edge");
+    await act(async () => undefined);
+
+    act(() => reportEdgeHover({ kind: "label", edgeId: "lit-edge" }));
+    expect(litEdge).toHaveClass("is-edge-hovered");
+    expect(screen.getByLabelText("React Flow edge dark-edge")).not.toHaveClass("is-edge-hovered");
+
+    act(() => clearEdgeHover({ kind: "label", edgeId: "lit-edge" }));
+    expect(litEdge).not.toHaveClass("is-edge-hovered");
+  });
+
+  it("lets a renderer resolve hover origins to a custom edge set", async () => {
+    render(
+      <DiagramCanvas
+        edges={[
+          {
+            id: "arm-edge",
+            source: "app",
+            target: "page",
+            type: "route",
+            data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
+          },
+          {
+            id: "unrelated-edge",
+            source: "app",
+            target: "page",
+            type: "route",
+            data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
+          },
+        ]}
+        nodes={[]}
+        resolveEdgeHover={(origin) => (origin.kind === "node" ? new Set(["arm-edge"]) : new Set([origin.edgeId]))}
+      />,
+    );
+    const armEdge = await screen.findByLabelText("React Flow edge arm-edge");
+    await act(async () => undefined);
+
+    act(() => reportEdgeHover({ kind: "node", nodeId: "app" }));
+    expect(armEdge).toHaveClass("is-edge-hovered");
+    expect(screen.getByLabelText("React Flow edge unrelated-edge")).not.toHaveClass("is-edge-hovered");
   });
 
   it("focuses node and group shapes, and clears focus on the blank pane", async () => {

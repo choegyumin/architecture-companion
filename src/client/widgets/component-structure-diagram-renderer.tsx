@@ -1,5 +1,5 @@
 import { Panel } from "@xyflow/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import { attachGuardLabels, collectComponentOrigins } from "@/client/widgets/component-structure-guards";
@@ -23,6 +23,7 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-diagram-layout";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
+import { type EdgeHoverOrigin, subscribeEdgeHover } from "@/shared/react-flow/edge-hover";
 import {
   Select,
   SelectIcon,
@@ -47,7 +48,11 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   const controls = useMemo(() => diagram.graph.controls ?? [], [diagram]);
   const initialSelection = useMemo(() => initialComponentSelection(diagram.graph), [diagram]);
   const [selection, setSelection] = useState<ComponentSelection>(initialSelection);
-  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
+  // Labels report hover into the shared channel; the changes preview reads the
+  // same origin the canvas lights the edge from.
+  const [hoverOrigin, setHoverOrigin] = useState<EdgeHoverOrigin | null>(null);
+  useEffect(() => subscribeEdgeHover(setHoverOrigin), []);
+  const hoveredEdgeId = hoverOrigin?.kind === "label" ? hoverOrigin.edgeId : null;
 
   // Label clicks drive a route's whole rule; owner fields set one control's
   // value directly. Both land in the same selection state.
@@ -202,7 +207,6 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         graph: diagram.graph,
         layout,
         activeEdges: emphasis.edges,
-        onEdgeHover: setHoveredEdgeId,
         onSelect,
       });
       return {
