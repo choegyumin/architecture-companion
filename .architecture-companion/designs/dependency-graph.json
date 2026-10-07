@@ -1,13 +1,13 @@
 {
   "id": "dependency-graph",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-07T16:01:02.520Z",
   "vcs": {
-    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "revision": "9b430674fc3f5418840276aeca9daa74a050cda4",
     "divergesFromRevision": false
   },
   "generator": "built-in:js-module-dependency-graph",
-  "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/diagram-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
+  "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
   "layout": {
     "id": "dependency-graph"
   },
@@ -51,13 +51,18 @@
         "parentId": "group:directory:src/features"
       },
       {
-        "id": "group:directory:src/features/diagram",
-        "title": "diagram",
+        "id": "group:directory:src/features/artifact-generator",
+        "title": "artifact-generator",
         "parentId": "group:directory:src/features"
       },
       {
-        "id": "group:directory:src/features/diagram-generator",
-        "title": "diagram-generator",
+        "id": "group:directory:src/features/catalog",
+        "title": "catalog",
+        "parentId": "group:directory:src/features"
+      },
+      {
+        "id": "group:directory:src/features/diagram",
+        "title": "diagram",
         "parentId": "group:directory:src/features"
       },
       {
@@ -70,44 +75,44 @@
         "title": "plugins"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators",
-        "title": "diagram-generators",
+        "id": "group:directory:src/plugins/artifact-generators",
+        "title": "artifact-generators",
         "parentId": "group:directory:src/plugins"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "id": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph",
         "title": "js-module-dependency-graph",
-        "parentId": "group:directory:src/plugins/diagram-generators"
+        "parentId": "group:directory:src/plugins/artifact-generators"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "id": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
         "title": "analysis",
-        "parentId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph"
+        "parentId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/cli",
+        "id": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/cli",
         "title": "cli",
-        "parentId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph"
+        "parentId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "id": "group:directory:src/plugins/artifact-generators/react-component-structure",
         "title": "react-component-structure",
-        "parentId": "group:directory:src/plugins/diagram-generators"
+        "parentId": "group:directory:src/plugins/artifact-generators"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "id": "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
         "title": "analysis",
-        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+        "parentId": "group:directory:src/plugins/artifact-generators/react-component-structure"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
+        "id": "group:directory:src/plugins/artifact-generators/react-component-structure/cli",
         "title": "cli",
-        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+        "parentId": "group:directory:src/plugins/artifact-generators/react-component-structure"
       },
       {
-        "id": "group:directory:src/plugins/diagram-generators/react-component-structure/packaging",
+        "id": "group:directory:src/plugins/artifact-generators/react-component-structure/packaging",
         "title": "packaging",
-        "parentId": "group:directory:src/plugins/diagram-generators/react-component-structure"
+        "parentId": "group:directory:src/plugins/artifact-generators/react-component-structure"
       },
       {
         "id": "group:directory:src/server",
@@ -450,6 +455,18 @@
         ]
       },
       {
+        "id": "file:src/client/parts/artifact-list.tsx",
+        "title": "artifact-list.tsx",
+        "groupId": "group:directory:src/client/parts",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/client/parts/artifact-list.tsx"
+          }
+        ]
+      },
+      {
         "id": "file:src/client/parts/diagram-canvas.tsx",
         "title": "diagram-canvas.tsx",
         "groupId": "group:directory:src/client/parts",
@@ -470,18 +487,6 @@
           {
             "text": "source",
             "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/client/parts/diagram-list.tsx",
-        "title": "diagram-list.tsx",
-        "groupId": "group:directory:src/client/parts",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/client/parts/diagram-list.tsx"
           }
         ]
       },
@@ -750,14 +755,38 @@
         ]
       },
       {
-        "id": "file:src/features/artifact/artifact-revision-id.ts",
-        "title": "artifact-revision-id.ts",
-        "groupId": "group:directory:src/features/artifact",
+        "id": "file:src/features/artifact-generator/artifact-generator-id.ts",
+        "title": "artifact-generator-id.ts",
+        "groupId": "group:directory:src/features/artifact-generator",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/features/artifact/artifact-revision-id.ts"
+            "href": "source:///src/features/artifact-generator/artifact-generator-id.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/artifact-generator/artifact-generator-manifest.ts",
+        "title": "artifact-generator-manifest.ts",
+        "groupId": "group:directory:src/features/artifact-generator",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/artifact-generator/artifact-generator-manifest.ts"
+          }
+        ]
+      },
+      {
+        "id": "file:src/features/artifact-generator/artifact-generator-reference.ts",
+        "title": "artifact-generator-reference.ts",
+        "groupId": "group:directory:src/features/artifact-generator",
+        "type": "default",
+        "links": [
+          {
+            "text": "source",
+            "href": "source:///src/features/artifact-generator/artifact-generator-reference.ts"
           }
         ]
       },
@@ -774,38 +803,26 @@
         ]
       },
       {
-        "id": "file:src/features/diagram-generator/diagram-generator-id.ts",
-        "title": "diagram-generator-id.ts",
-        "groupId": "group:directory:src/features/diagram-generator",
+        "id": "file:src/features/catalog/catalog-revision-id.ts",
+        "title": "catalog-revision-id.ts",
+        "groupId": "group:directory:src/features/catalog",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/features/diagram-generator/diagram-generator-id.ts"
+            "href": "source:///src/features/catalog/catalog-revision-id.ts"
           }
         ]
       },
       {
-        "id": "file:src/features/diagram-generator/diagram-generator-manifest.ts",
-        "title": "diagram-generator-manifest.ts",
-        "groupId": "group:directory:src/features/diagram-generator",
+        "id": "file:src/features/catalog/catalog.ts",
+        "title": "catalog.ts",
+        "groupId": "group:directory:src/features/catalog",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/features/diagram-generator/diagram-generator-manifest.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/features/diagram-generator/diagram-generator-reference.ts",
-        "title": "diagram-generator-reference.ts",
-        "groupId": "group:directory:src/features/diagram-generator",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/features/diagram-generator/diagram-generator-reference.ts"
+            "href": "source:///src/features/catalog/catalog.ts"
           }
         ]
       },
@@ -918,158 +935,146 @@
         ]
       },
       {
-        "id": "file:src/features/diagram/diagram.ts",
-        "title": "diagram.ts",
-        "groupId": "group:directory:src/features/diagram",
-        "type": "default",
-        "links": [
-          {
-            "text": "source",
-            "href": "source:///src/features/diagram/diagram.ts"
-          }
-        ]
-      },
-      {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
+        "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "title": "analyze-module-dependencies.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
+            "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
         "title": "build-module-graph.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
+            "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "title": "collect-source-files.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
+            "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts",
+        "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/cli/command.ts",
         "title": "command.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/cli",
+        "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts"
+            "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/cli/command.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
+        "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/run.ts",
         "title": "run.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/js-module-dependency-graph",
+        "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/js-module-dependency-graph/run.ts"
+            "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/run.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "title": "build-component-graph.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/analysis/collect-source-files.ts",
         "title": "collect-source-files.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/analysis/collect-source-files.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts",
         "title": "load-typescript.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/cli/command.ts",
         "title": "command.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/cli",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure/cli",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/cli/command.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/cli/command.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/packaging/node-bundling.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/packaging/node-bundling.ts",
         "title": "node-bundling.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure/packaging",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure/packaging",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/packaging/node-bundling.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/packaging/node-bundling.ts"
           }
         ]
       },
       {
-        "id": "file:src/plugins/diagram-generators/react-component-structure/run.ts",
+        "id": "file:src/plugins/artifact-generators/react-component-structure/run.ts",
         "title": "run.ts",
-        "groupId": "group:directory:src/plugins/diagram-generators/react-component-structure",
+        "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/plugins/diagram-generators/react-component-structure/run.ts"
+            "href": "source:///src/plugins/artifact-generators/react-component-structure/run.ts"
           }
         ]
       },
       {
-        "id": "file:src/server/consumer-scope.ts",
-        "title": "consumer-scope.ts",
+        "id": "file:src/server/companion-scope.ts",
+        "title": "companion-scope.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/consumer-scope.ts"
+            "href": "source:///src/server/companion-scope.ts"
           }
         ]
       },
@@ -1098,14 +1103,14 @@
         ]
       },
       {
-        "id": "file:src/server/create-artifact-revision-id.ts",
-        "title": "create-artifact-revision-id.ts",
+        "id": "file:src/server/create-catalog-revision-id.ts",
+        "title": "create-catalog-revision-id.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/create-artifact-revision-id.ts"
+            "href": "source:///src/server/create-catalog-revision-id.ts"
           }
         ]
       },
@@ -1158,26 +1163,26 @@
         ]
       },
       {
-        "id": "file:src/server/read-artifact.ts",
-        "title": "read-artifact.ts",
+        "id": "file:src/server/read-catalog.ts",
+        "title": "read-catalog.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/read-artifact.ts"
+            "href": "source:///src/server/read-catalog.ts"
           }
         ]
       },
       {
-        "id": "file:src/server/resolve-consumer-scope.ts",
-        "title": "resolve-consumer-scope.ts",
+        "id": "file:src/server/resolve-companion-scope.ts",
+        "title": "resolve-companion-scope.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/resolve-consumer-scope.ts"
+            "href": "source:///src/server/resolve-companion-scope.ts"
           }
         ]
       },
@@ -1218,26 +1223,26 @@
         ]
       },
       {
-        "id": "file:src/server/validate-artifact.ts",
-        "title": "validate-artifact.ts",
+        "id": "file:src/server/validate-catalog.ts",
+        "title": "validate-catalog.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/validate-artifact.ts"
+            "href": "source:///src/server/validate-catalog.ts"
           }
         ]
       },
       {
-        "id": "file:src/server/write-artifact.ts",
-        "title": "write-artifact.ts",
+        "id": "file:src/server/write-catalog.ts",
+        "title": "write-catalog.ts",
         "groupId": "group:directory:src/server",
         "type": "default",
         "links": [
           {
             "text": "source",
-            "href": "source:///src/server/write-artifact.ts"
+            "href": "source:///src/server/write-catalog.ts"
           }
         ]
       },
@@ -1664,10 +1669,10 @@
     ],
     "edges": [
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
         "type": "default",
         "source": "file:src/cli/serve.command.ts",
-        "target": "file:src/server/resolve-consumer-scope.ts"
+        "target": "file:src/server/resolve-companion-scope.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fserve.command.ts:file%3Asrc%2Fserver%2Fstart-server.ts:runtime",
@@ -1682,16 +1687,16 @@
         "target": "file:src/cli/serve.command.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
         "type": "default",
         "source": "file:src/cli/validate-schemas.command.ts",
-        "target": "file:src/server/read-artifact.ts"
+        "target": "file:src/server/read-catalog.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
         "type": "default",
         "source": "file:src/cli/validate-schemas.command.ts",
-        "target": "file:src/server/resolve-consumer-scope.ts"
+        "target": "file:src/server/resolve-companion-scope.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fvalidate-schemas.ts:file%3Asrc%2Fcli%2Fvalidate-schemas.command.ts:runtime",
@@ -1712,10 +1717,10 @@
         "target": "file:src/server/read-active-revision-annotations.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
         "type": "default",
         "source": "file:src/cli/view-annotations.command.ts",
-        "target": "file:src/server/resolve-consumer-scope.ts"
+        "target": "file:src/server/resolve-companion-scope.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fview-annotations.ts:file%3Asrc%2Fcli%2Fview-annotations.command.ts:runtime",
@@ -1724,30 +1729,30 @@
         "target": "file:src/cli/view-annotations.command.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:type-only",
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-id.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-id.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-manifest.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-manifest.ts:runtime",
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-manifest.ts"
+        "target": "file:src/features/artifact-generator/artifact-generator-manifest.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:type-only",
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-reference.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-reference.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
         "type": "default",
         "source": "file:src/cli/view-generators.command.ts",
-        "target": "file:src/server/resolve-consumer-scope.ts"
+        "target": "file:src/server/resolve-companion-scope.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
@@ -1781,17 +1786,17 @@
         "target": "file:src/features/annotation/revision-annotations.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
         "type": "default",
         "source": "file:src/client/data-client.ts",
-        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "target": "file:src/features/artifact/artifact.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:type-only",
         "type": "default",
         "source": "file:src/client/data-client.ts",
-        "target": "file:src/features/diagram/diagram.ts",
+        "target": "file:src/features/catalog/catalog-revision-id.ts",
         "kind": "type-only"
       },
       {
@@ -1882,10 +1887,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:runtime",
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fparts%2Fartifact-list.tsx:runtime",
         "type": "default",
         "source": "file:src/client/pages/workspace-page.tsx",
-        "target": "file:src/client/parts/diagram-list.tsx"
+        "target": "file:src/client/parts/artifact-list.tsx"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.tsx:runtime",
@@ -1920,10 +1925,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:type-only",
         "type": "default",
         "source": "file:src/client/pages/workspace-page.tsx",
-        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "target": "file:src/features/catalog/catalog-revision-id.ts",
         "kind": "type-only"
       },
       {
@@ -2023,6 +2028,25 @@
         "type": "default",
         "source": "file:src/client/parts/annotation-layer.tsx",
         "target": "file:src/shared/react-ui/textarea.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fartifact-list.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/parts/artifact-list.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fartifact-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/artifact-list.tsx",
+        "target": "file:src/shared/react-ui/card.tsx"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fartifact-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+        "type": "default",
+        "source": "file:src/client/parts/artifact-list.tsx",
+        "target": "file:src/shared/react-ui/item.tsx"
       },
       {
         "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3A%40base-ui%2Futils:runtime",
@@ -2137,25 +2161,6 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/parts/diagram-list.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
-        "type": "default",
-        "source": "file:src/client/parts/diagram-list.tsx",
-        "target": "file:src/shared/react-ui/card.tsx"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-list.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
-        "type": "default",
-        "source": "file:src/client/parts/diagram-list.tsx",
-        "target": "file:src/shared/react-ui/item.tsx"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-aggregate-routes.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-edge-routes.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-aggregate-routes.ts",
@@ -2243,6 +2248,13 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdependency-edge-projection.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
@@ -2253,13 +2265,6 @@
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.react-flow.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2300,6 +2305,13 @@
         "target": "file:src/client/widgets/diagram-renderer-base.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
@@ -2317,13 +2329,6 @@
         "type": "default",
         "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2515,17 +2520,17 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer-base.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer-base.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2574,6 +2579,13 @@
         "kind": "type-only"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
@@ -2591,13 +2603,6 @@
         "type": "default",
         "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2686,17 +2691,17 @@
         "target": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
         "type": "default",
         "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2718,6 +2723,13 @@
         "target": "file:src/client/widgets/elk-layered-diagram-renderer.react-flow.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Felk-layered-diagram-layout.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
@@ -2731,30 +2743,23 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/elk-layered-diagram-renderer.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
-        "kind": "type-only"
-      },
-      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:runtime",
         "type": "default",
         "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
         "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
         "type": "default",
         "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2777,6 +2782,13 @@
         "target": "file:src/client/widgets/sequence-diagram-renderer.react-flow.tsx"
       },
       {
+        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "type": "default",
+        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
+        "target": "file:src/features/artifact/artifact.ts",
+        "kind": "type-only"
+      },
+      {
         "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fsequence-diagram-layout.ts:runtime",
         "type": "default",
         "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
@@ -2787,13 +2799,6 @@
         "type": "default",
         "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
         "target": "file:src/features/diagram/diagram-spatial.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fsequence-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:type-only",
-        "type": "default",
-        "source": "file:src/client/widgets/sequence-diagram-renderer.tsx",
-        "target": "file:src/features/diagram/diagram.ts",
         "kind": "type-only"
       },
       {
@@ -2836,16 +2841,10 @@
         "target": "file:src/features/annotation/annotation-document.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:runtime",
         "type": "default",
         "source": "file:src/features/annotation/revision-annotations.ts",
-        "target": "file:src/features/artifact/artifact-revision-id.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:external%3Azod:runtime",
-        "type": "default",
-        "source": "file:src/features/artifact/artifact-revision-id.ts",
-        "target": "external:zod"
+        "target": "file:src/features/catalog/catalog-revision-id.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:external%3Azod:runtime",
@@ -2854,17 +2853,72 @@
         "target": "external:zod"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:runtime",
         "type": "default",
         "source": "file:src/features/artifact/artifact.ts",
-        "target": "file:src/features/diagram/diagram-graph.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-reference.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact/artifact.ts",
+        "target": "file:src/features/diagram/diagram-layout.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact-generator/artifact-generator-id.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-manifest.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact-generator/artifact-generator-manifest.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-id.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/artifact-generator/artifact-generator-reference.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-reference.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/artifact-generator/artifact-generator-reference.ts",
+        "target": "file:src/features/artifact-generator/artifact-generator-id.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:runtime",
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:external%3Azod:runtime",
         "type": "default",
-        "source": "file:src/features/artifact/artifact.ts",
-        "target": "file:src/features/diagram/diagram.ts"
+        "source": "file:src/features/catalog/catalog-revision-id.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:external%3Azod:runtime",
+        "type": "default",
+        "source": "file:src/features/catalog/catalog.ts",
+        "target": "external:zod"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+        "type": "default",
+        "source": "file:src/features/catalog/catalog.ts",
+        "target": "file:src/features/artifact/artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "type": "default",
+        "source": "file:src/features/catalog/catalog.ts",
+        "target": "file:src/features/diagram/diagram-graph.ts",
+        "kind": "type-only"
       },
       {
         "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fdependency-graph-layout.ts:external%3Azod:runtime",
@@ -3028,207 +3082,158 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:external%3Azod:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
         "type": "default",
-        "source": "file:src/features/diagram/diagram.ts",
-        "target": "external:zod"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram/diagram.ts",
-        "target": "file:src/features/diagram/diagram-graph.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-layout.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram/diagram.ts",
-        "target": "file:src/features/diagram/diagram-layout.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram/diagram.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-reference.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:external%3Azod:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram-generator/diagram-generator-id.ts",
-        "target": "external:zod"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-manifest.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram-generator/diagram-generator-manifest.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-id.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:external%3Azod:runtime",
-        "type": "default",
-        "source": "file:src/features/diagram-generator/diagram-generator-reference.ts",
-        "target": "external:zod"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-reference.ts:file%3Asrc%2Ffeatures%2Fdiagram-generator%2Fdiagram-generator-id.ts:type-only",
-        "type": "default",
-        "source": "file:src/features/diagram-generator/diagram-generator-reference.ts",
-        "target": "file:src/features/diagram-generator/diagram-generator-id.ts",
-        "kind": "type-only"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
-        "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "target": "external:dependency-cruiser"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
+        "target": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
         "target": "file:src/features/diagram/diagram-graph.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "target": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "target": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "target": "external:ignore"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fbuild-module-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/cli/command.ts",
+        "target": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Frun.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fcli%2Fcommand.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/js-module-dependency-graph/run.ts",
-        "target": "file:src/plugins/diagram-generators/js-module-dependency-graph/cli/command.ts"
+        "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/run.ts",
+        "target": "file:src/plugins/artifact-generators/js-module-dependency-graph/cli/command.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Aignore:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Aignore:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "external:ignore"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Amicromatch:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Amicromatch:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "external:micromatch"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Atypescript:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:external%3Atypescript:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "external:typescript",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "file:src/features/diagram/diagram-graph.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts"
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
+        "target": "file:src/plugins/artifact-generators/react-component-structure/analysis/collect-source-files.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts"
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
+        "target": "file:src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:external%3Aignore:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/collect-source-files.ts",
         "target": "external:ignore"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fcollect-source-files.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/collect-source-files.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/collect-source-files.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts",
         "target": "external:typescript"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:type-only",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:external%3Atypescript:type-only",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts",
         "target": "external:typescript",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fload-typescript.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/analysis/load-typescript.ts",
+        "source": "file:src/plugins/artifact-generators/react-component-structure/analysis/load-typescript.ts",
         "target": "file:src/shared/node/path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/analysis/build-component-graph.ts"
+        "source": "file:src/plugins/artifact-generators/react-component-structure/cli/command.ts",
+        "target": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Frun.ts:file%3Asrc%2Fplugins%2Fdiagram-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Frun.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fcli%2Fcommand.ts:runtime",
         "type": "default",
-        "source": "file:src/plugins/diagram-generators/react-component-structure/run.ts",
-        "target": "file:src/plugins/diagram-generators/react-component-structure/cli/command.ts"
+        "source": "file:src/plugins/artifact-generators/react-component-structure/run.ts",
+        "target": "file:src/plugins/artifact-generators/react-component-structure/cli/command.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fcreate-annotation-etag.ts:file%3Asrc%2Ffeatures%2Fannotation%2Frevision-annotations.ts:type-only",
@@ -3250,17 +3255,17 @@
         "target": "file:src/features/annotation/revision-annotations.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:type-only",
         "type": "default",
         "source": "file:src/server/create-app.ts",
-        "target": "file:src/features/artifact/artifact-revision-id.ts",
+        "target": "file:src/features/catalog/catalog-revision-id.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
         "type": "default",
         "source": "file:src/server/create-app.ts",
-        "target": "file:src/server/consumer-scope.ts",
+        "target": "file:src/server/companion-scope.ts",
         "kind": "type-only"
       },
       {
@@ -3270,10 +3275,10 @@
         "target": "file:src/server/create-annotation-etag.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcreate-catalog-revision-id.ts:runtime",
         "type": "default",
         "source": "file:src/server/create-app.ts",
-        "target": "file:src/server/create-artifact-revision-id.ts"
+        "target": "file:src/server/create-catalog-revision-id.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:runtime",
@@ -3300,10 +3305,10 @@
         "target": "file:src/server/read-active-revision-annotations.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
         "type": "default",
         "source": "file:src/server/create-app.ts",
-        "target": "file:src/server/read-artifact.ts"
+        "target": "file:src/server/read-catalog.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Freview-updates.ts:type-only",
@@ -3325,16 +3330,16 @@
         "target": "file:src/shared/node/open-local-path.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-catalog-revision-id.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:runtime",
         "type": "default",
-        "source": "file:src/server/create-artifact-revision-id.ts",
-        "target": "file:src/features/artifact/artifact-revision-id.ts"
+        "source": "file:src/server/create-catalog-revision-id.ts",
+        "target": "file:src/features/catalog/catalog-revision-id.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fcreate-catalog-revision-id.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:runtime",
         "type": "default",
-        "source": "file:src/server/create-artifact-revision-id.ts",
-        "target": "file:src/features/artifact/artifact.ts"
+        "source": "file:src/server/create-catalog-revision-id.ts",
+        "target": "file:src/features/catalog/catalog.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
@@ -3343,16 +3348,16 @@
         "target": "file:src/features/annotation/annotation-document.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog-revision-id.ts:runtime",
         "type": "default",
         "source": "file:src/server/file-annotation-repository.ts",
-        "target": "file:src/features/artifact/artifact-revision-id.ts"
+        "target": "file:src/features/catalog/catalog-revision-id.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fopen-source-reference.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fserver%2Fopen-source-reference.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
         "type": "default",
         "source": "file:src/server/open-source-reference.ts",
-        "target": "file:src/server/consumer-scope.ts",
+        "target": "file:src/server/companion-scope.ts",
         "kind": "type-only"
       },
       {
@@ -3369,10 +3374,10 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fcreate-catalog-revision-id.ts:runtime",
         "type": "default",
         "source": "file:src/server/read-active-revision-annotations.ts",
-        "target": "file:src/server/create-artifact-revision-id.ts"
+        "target": "file:src/server/create-catalog-revision-id.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:type-only",
@@ -3382,42 +3387,42 @@
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-active-revision-annotations.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
         "type": "default",
         "source": "file:src/server/read-active-revision-annotations.ts",
-        "target": "file:src/server/read-artifact.ts"
+        "target": "file:src/server/read-catalog.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-catalog.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
         "type": "default",
-        "source": "file:src/server/read-artifact.ts",
-        "target": "file:src/features/artifact/artifact.ts",
+        "source": "file:src/server/read-catalog.ts",
+        "target": "file:src/features/artifact/artifact.ts"
+      },
+      {
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-catalog.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:type-only",
+        "type": "default",
+        "source": "file:src/server/read-catalog.ts",
+        "target": "file:src/features/catalog/catalog.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fread-catalog.ts:file%3Asrc%2Fserver%2Fvalidate-catalog.ts:runtime",
         "type": "default",
-        "source": "file:src/server/read-artifact.ts",
-        "target": "file:src/features/diagram/diagram.ts"
+        "source": "file:src/server/read-catalog.ts",
+        "target": "file:src/server/validate-catalog.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fread-artifact.ts:file%3Asrc%2Fserver%2Fvalidate-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
         "type": "default",
-        "source": "file:src/server/read-artifact.ts",
-        "target": "file:src/server/validate-artifact.ts"
-      },
-      {
-        "id": "dependency:file%3Asrc%2Fserver%2Fresolve-consumer-scope.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
-        "type": "default",
-        "source": "file:src/server/resolve-consumer-scope.ts",
-        "target": "file:src/server/consumer-scope.ts",
+        "source": "file:src/server/resolve-companion-scope.ts",
+        "target": "file:src/server/companion-scope.ts",
         "kind": "type-only"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fcreate-artifact-revision-id.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fcreate-catalog-revision-id.ts:runtime",
         "type": "default",
         "source": "file:src/server/review-updates.ts",
-        "target": "file:src/server/create-artifact-revision-id.ts"
+        "target": "file:src/server/create-catalog-revision-id.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Ffile-annotation-repository.ts:runtime",
@@ -3426,10 +3431,10 @@
         "target": "file:src/server/file-annotation-repository.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Freview-updates.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
         "type": "default",
         "source": "file:src/server/review-updates.ts",
-        "target": "file:src/server/read-artifact.ts"
+        "target": "file:src/server/read-catalog.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fserver%2Fsource-open-request.ts:file%3Asrc%2Fserver%2Flocal-app-action-request.ts:runtime",
@@ -3444,10 +3449,10 @@
         "target": "external:@hono/node-server"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:file%3Asrc%2Fserver%2Fconsumer-scope.ts:type-only",
+        "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
         "type": "default",
         "source": "file:src/server/start-server.ts",
-        "target": "file:src/server/consumer-scope.ts",
+        "target": "file:src/server/companion-scope.ts",
         "kind": "type-only"
       },
       {
@@ -3463,16 +3468,16 @@
         "target": "file:src/server/review-updates.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fvalidate-artifact.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fvalidate-catalog.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:runtime",
         "type": "default",
-        "source": "file:src/server/validate-artifact.ts",
-        "target": "file:src/features/artifact/artifact.ts"
+        "source": "file:src/server/validate-catalog.ts",
+        "target": "file:src/features/catalog/catalog.ts"
       },
       {
-        "id": "dependency:file%3Asrc%2Fserver%2Fwrite-artifact.ts:file%3Asrc%2Fserver%2Fread-artifact.ts:runtime",
+        "id": "dependency:file%3Asrc%2Fserver%2Fwrite-catalog.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
         "type": "default",
-        "source": "file:src/server/write-artifact.ts",
-        "target": "file:src/server/read-artifact.ts"
+        "source": "file:src/server/write-catalog.ts",
+        "target": "file:src/server/read-catalog.ts"
       },
       {
         "id": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Aclsx:runtime",
