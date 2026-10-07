@@ -94,6 +94,65 @@ describe("resolveGuardLabelOffsets", () => {
     expect(offsets.get("a\0start")).toBe(64);
   });
 
+  it("pulls a mixed pair back to its own reference ends, arm above arrival", () => {
+    // An arm label hanging down from a decision meets an arrival label
+    // climbing up to it; the arm pulls up toward its decision, the arrival
+    // pulls down toward its destination, and they part.
+    const arm = group({
+      edgeId: "arm",
+      points: [
+        { x: 0, y: 0 },
+        { x: 0, y: 300 },
+      ],
+    });
+    const arrival = group({
+      edgeId: "arrival",
+      from: "end",
+      points: [
+        { x: 0, y: 0 },
+        { x: 0, y: 140 },
+      ],
+    });
+    const offsets = resolveGuardLabelOffsets([arm, arrival], []);
+
+    expect(offsets.get("arm\0start")).toBeLessThan(64);
+    expect(offsets.get("arrival\0end")).toBeLessThan(64);
+    const armAnchor = pointAlongPolyline(arm.points, offsets.get("arm\0start")!, "start");
+    const arrivalAnchor = pointAlongPolyline(arrival.points, offsets.get("arrival\0end")!, "end");
+    // The arm label's box grows downward and the arrival's upward, so clear
+    // separation means the arm's bottom sits above the arrival's top.
+    expect(armAnchor.y + arm.size.height).toBeLessThanOrEqual(arrivalAnchor.y - arrival.size.height);
+  });
+
+  it("shifts the whole pull to the arm when the arrival is pinned to its node", () => {
+    const arm = group({
+      edgeId: "arm",
+      points: [
+        { x: 0, y: 0 },
+        { x: 0, y: 300 },
+      ],
+    });
+    const arrival = group({
+      edgeId: "arrival",
+      from: "end",
+      points: [
+        { x: 0, y: 0 },
+        { x: 0, y: 140 },
+      ],
+    });
+    // A node sits right below the arrival label's pull path, so pulling the
+    // arrival down would land on it.
+    const offsets = resolveGuardLabelOffsets([arm, arrival], [{ x: -30, y: 100, width: 60, height: 40 }]);
+
+    const arrivalAnchor = pointAlongPolyline(arrival.points, offsets.get("arrival\0end")!, "end");
+    // An end-anchored box ends COLLISION_MARGIN (4) below its anchor.
+    const arrivalBottom = arrivalAnchor.y + 4;
+    expect(arrivalBottom).toBeLessThanOrEqual(100);
+    expect(offsets.get("arm\0start")).toBeLessThan(64);
+    const armAnchor = pointAlongPolyline(arm.points, offsets.get("arm\0start")!, "start");
+    expect(armAnchor.y + arm.size.height).toBeLessThanOrEqual(arrivalAnchor.y - arrival.size.height);
+  });
+
   it("separates near-parallel arms of one decision by the measured overlap", () => {
     // Three arms leave the same decision at staggered ports and converge on
     // one target, so their labels share an anchor region: the middle and

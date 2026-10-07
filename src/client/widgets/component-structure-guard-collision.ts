@@ -14,6 +14,11 @@ const LINE_HEIGHT = 16;
 const BUTTON_CHROME_HEIGHT = 10;
 const COLLISION_MARGIN = 4;
 const RESOLVE_ROUNDS = 4;
+// Pulling a mixed pair back toward the reference ends stops before the
+// label would sit on its own node; the scan granularity keeps limits
+// deterministic while staying finer than the label heights involved.
+const MIN_PULL_OFFSET = 8;
+const PULL_SCAN_STEP = 4;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
@@ -102,13 +107,31 @@ const separationTravel = (box: Box, against: Box, direction: Point): number => {
   return travels.length > 0 ? Math.min(...travels) : 0;
 };
 
+// How far a label can pull back toward its reference end (its offset's
+// floor) before its box would touch a node. Only node boxes gate the pull;
+// new label overlaps are the next round's business.
+const pullRoom = (group: GuardLabelGroup, offset: number, obstacles: readonly GuardLabelObstacle[]): number => {
+  let room = 0;
+  for (let candidate = offset - PULL_SCAN_STEP; candidate >= MIN_PULL_OFFSET; candidate -= PULL_SCAN_STEP) {
+    const box = boxOf(group, candidate);
+    if (obstacles.some((obstacle) => overlaps(box, toBox(obstacle)))) break;
+    room = offset - candidate;
+  }
+  return room;
+};
+
 /**
  * Separates colliding route condition labels by pushing the lower label of
  * each pair along its own edge, just far enough to clear the measured
- * overlap. Node boxes never yield, and two groups on one edge cannot
- * separate by pushing along it, so those pairs stay put. Labels that still
- * overlap after RESOLVE_ROUNDS rounds are accepted. Returns the resolved
- * offset per group key `${edgeId}\0${from}`.
+ * overlap. Branch-arm labels (start-anchored) and arrival labels
+ * (end-anchored) are opposites: a pair of both kinds separates by pulling
+ * each label back toward its own reference end — the arm label up toward
+ * its decision, the arrival label down toward its destination — sharing the
+ * needed travel within the room each has before touching a node. Node boxes
+ * never yield, and two groups on one edge cannot separate by pushing along
+ * it, so those pairs stay put. Labels that still overlap after
+ * RESOLVE_ROUNDS rounds are accepted. Returns the resolved offset per group
+ * key `${edgeId}\0${from}`.
  */
 export function resolveGuardLabelOffsets(
   groups: readonly GuardLabelGroup[],
@@ -121,22 +144,58 @@ export function resolveGuardLabelOffsets(
       return { group, offset, anchor: anchorOf(group, offset), box: boxOf(group, offset) };
     });
     // A group may collide with several others; it travels the largest of
-    // the separations those pairs ask for.
-    const pushes = new Map<string, number>();
+    // the separations those pairs ask for. Deltas are signed — pushes grow
+    // the offset, pulls shrink it — and a pull wins over a push on the same
+    // group in one round: pulling back is the ordering fix, the push can be
+    // re-asked next round.
+    const moves = new Map<string, number>();
+    const record = (group: GuardLabelGroup, delta: number) => {
+      const key = groupKey(group);
+      const known = moves.get(key);
+      if (known == null || (known > 0 && delta < 0)) moves.set(key, delta);
+      else if (known > 0 && delta > 0) moves.set(key, Math.max(known, delta));
+      else if (known < 0 && delta < 0) moves.set(key, Math.min(known, delta));
+    };
     const push = (mover: (typeof placed)[number], against: Box) => {
       const direction = pushDirectionOf(mover.group, mover.offset);
       if (!direction) return;
       const travel = Math.ceil(separationTravel(mover.box, against, direction));
-      if (travel <= 0) return;
-      const key = groupKey(mover.group);
-      pushes.set(key, Math.max(pushes.get(key) ?? 0, travel));
+      if (travel > 0) record(mover.group, travel);
+    };
+    const pullPairApart = (start: (typeof placed)[number], end: (typeof placed)[number]) => {
+      // Both labels move toward their own reference end: the arm label up,
+      // the arrival label down, so the pair parts along their facing
+      // directions and the arm label stays above the arrival label. The
+      // boxes grow into each other (start downward, end upward), so the
+      // needed travel is how far the facing sides have crossed.
+      const facing = start.box.bottom - end.box.top;
+      if (facing <= 0) return false;
+      const dirStart = pushDirectionOf(start.group, start.offset);
+      const dirEnd = pushDirectionOf(end.group, end.offset);
+      if (!dirStart || !dirEnd) return false;
+      const need = facing + 1;
+      const startShare = Math.abs(dirStart.y) > 1e-6 ? Math.ceil(need / (2 * Math.abs(dirStart.y))) : 0;
+      const startPull = Math.min(startShare, pullRoom(start.group, start.offset, obstacles));
+      const remaining = need - startPull * Math.abs(dirStart.y);
+      const endShare = Math.abs(dirEnd.y) > 1e-6 && remaining > 0 ? Math.ceil(remaining / Math.abs(dirEnd.y)) : 0;
+      const endPull = Math.min(endShare, pullRoom(end.group, end.offset, obstacles));
+      if (startPull <= 0 && endPull <= 0) return false;
+      if (startPull > 0) record(start.group, -startPull);
+      if (endPull > 0) record(end.group, -endPull);
+      return true;
     };
     for (let index = 0; index < placed.length; index += 1) {
       const current = placed.at(index)!;
       for (let other = index + 1; other < placed.length; other += 1) {
         const candidate = placed.at(other)!;
         if (candidate.group.edgeId === current.group.edgeId || !overlaps(current.box, candidate.box)) continue;
-        // The label that renders lower yields; equal heights break by edge id.
+        if (current.group.from !== candidate.group.from) {
+          const start = current.group.from === "start" ? current : candidate;
+          const end = start === current ? candidate : current;
+          if (pullPairApart(start, end)) continue;
+        }
+        // Same-kind pairs (and mixed pairs that cannot pull apart) push the
+        // lower label away; equal heights break by edge id.
         const lower =
           candidate.anchor.y > current.anchor.y
             ? candidate
@@ -151,8 +210,10 @@ export function resolveGuardLabelOffsets(
         if (overlaps(current.box, toBox(obstacle))) push(current, toBox(obstacle));
       }
     }
-    if (pushes.size === 0) break;
-    for (const [key, travel] of pushes) offsets.set(key, (offsets.get(key) ?? 0) + travel);
+    if (moves.size === 0) break;
+    for (const [key, delta] of moves) {
+      offsets.set(key, Math.max(MIN_PULL_OFFSET, (offsets.get(key) ?? 0) + delta));
+    }
   }
   return offsets;
 }
