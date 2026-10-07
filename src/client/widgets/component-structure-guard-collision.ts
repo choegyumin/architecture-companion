@@ -13,7 +13,6 @@ const MAX_BUTTON_WIDTH = 288;
 const LINE_HEIGHT = 16;
 const BUTTON_CHROME_HEIGHT = 10;
 const COLLISION_MARGIN = 4;
-const PUSH_STEP = 48;
 const RESOLVE_ROUNDS = 4;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
@@ -71,12 +70,45 @@ const toBox = (obstacle: GuardLabelObstacle): Box => ({
   bottom: obstacle.y + obstacle.height,
 });
 
+// Unit direction the anchor travels as its offset grows: along the segment
+// the anchor sits on, away from the `from` end. Labels on a degenerate
+// polyline (fewer than two points) cannot move at all.
+const pushDirectionOf = (group: GuardLabelGroup, offset: number): Point | undefined => {
+  if (group.points.length < 2) return undefined;
+  const chain = group.from === "start" ? group.points : [...group.points].reverse();
+  let remaining = Math.max(offset, 0);
+  for (let index = 1; index < chain.length; index += 1) {
+    const start = chain.at(index - 1)!;
+    const end = chain.at(index)!;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    if (length === 0) continue;
+    if (remaining <= length) return { x: dx / length, y: dy / length };
+    remaining -= length;
+  }
+  return undefined;
+};
+
+// Smallest travel along `direction` that separates the two boxes on some
+// axis: pushing along the mover's own edge clears either the horizontal or
+// the vertical overlap, whichever comes first.
+const separationTravel = (box: Box, against: Box, direction: Point): number => {
+  const overlapX = Math.min(box.right, against.right) - Math.max(box.left, against.left);
+  const overlapY = Math.min(box.bottom, against.bottom) - Math.max(box.top, against.top);
+  const travels: number[] = [];
+  if (Math.abs(direction.x) > 1e-6) travels.push(overlapX / Math.abs(direction.x));
+  if (Math.abs(direction.y) > 1e-6) travels.push(overlapY / Math.abs(direction.y));
+  return travels.length > 0 ? Math.min(...travels) : 0;
+};
+
 /**
  * Separates colliding route condition labels by pushing the lower label of
- * each pair further from its edge endpoint. Node boxes never yield, and two
- * groups on one edge cannot separate by pushing along it, so those pairs
- * stay put. Residual overlaps after RESOLVE_ROUNDS rounds are accepted.
- * Returns the resolved offset per group key `${edgeId}\0${from}`.
+ * each pair along its own edge, just far enough to clear the measured
+ * overlap. Node boxes never yield, and two groups on one edge cannot
+ * separate by pushing along it, so those pairs stay put. Labels that still
+ * overlap after RESOLVE_ROUNDS rounds are accepted. Returns the resolved
+ * offset per group key `${edgeId}\0${from}`.
  */
 export function resolveGuardLabelOffsets(
   groups: readonly GuardLabelGroup[],
@@ -88,7 +120,17 @@ export function resolveGuardLabelOffsets(
       const offset = offsets.get(groupKey(group)) ?? group.offset;
       return { group, offset, anchor: anchorOf(group, offset), box: boxOf(group, offset) };
     });
-    const movers = new Set<string>();
+    // A group may collide with several others; it travels the largest of
+    // the separations those pairs ask for.
+    const pushes = new Map<string, number>();
+    const push = (mover: (typeof placed)[number], against: Box) => {
+      const direction = pushDirectionOf(mover.group, mover.offset);
+      if (!direction) return;
+      const travel = Math.ceil(separationTravel(mover.box, against, direction));
+      if (travel <= 0) return;
+      const key = groupKey(mover.group);
+      pushes.set(key, Math.max(pushes.get(key) ?? 0, travel));
+    };
     for (let index = 0; index < placed.length; index += 1) {
       const current = placed.at(index)!;
       for (let other = index + 1; other < placed.length; other += 1) {
@@ -103,14 +145,14 @@ export function resolveGuardLabelOffsets(
               : candidate.group.edgeId > current.group.edgeId
                 ? candidate
                 : current;
-        movers.add(groupKey(lower.group));
+        push(lower, lower === current ? candidate.box : current.box);
       }
       for (const obstacle of obstacles) {
-        if (overlaps(current.box, toBox(obstacle))) movers.add(groupKey(current.group));
+        if (overlaps(current.box, toBox(obstacle))) push(current, toBox(obstacle));
       }
     }
-    if (movers.size === 0) break;
-    for (const key of movers) offsets.set(key, (offsets.get(key) ?? 0) + PUSH_STEP);
+    if (pushes.size === 0) break;
+    for (const [key, travel] of pushes) offsets.set(key, (offsets.get(key) ?? 0) + travel);
   }
   return offsets;
 }
