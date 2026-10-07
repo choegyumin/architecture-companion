@@ -8,12 +8,10 @@ export default defineConfig({
   },
   test: {
     testTimeout: process.env.CI === "true" ? 15_000 : 5_000,
-    include: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+    include: ["{src,scripts,specs,tests}/**/*.{spec,test}.{ts,tsx}"],
     exclude: [
       "**/node_modules/**",
       "**/patches/**",
-      "**/worktrees/**",
-      "**/.worktrees/**",
       "**/__fixtures__/**",
       "**/build/**",
       "**/dist/**",
