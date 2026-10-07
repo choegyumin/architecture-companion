@@ -57,10 +57,24 @@ export const componentStructureArtifactSchema = artifactMemberSchema(
   componentStructureDiagramGraphSchema,
 );
 
-export type ElkLayeredArtifact = z.infer<typeof elkLayeredArtifactSchema>;
-export type SequenceArtifact = z.infer<typeof sequenceArtifactSchema>;
-export type DependencyGraphArtifact = z.infer<typeof dependencyGraphArtifactSchema>;
-export type ComponentStructureArtifact = z.infer<typeof componentStructureArtifactSchema>;
+type ArtifactMember<Schema extends z.ZodTypeAny> = DistributiveOmit<z.infer<Schema>, "generator"> & {
+  generator: ArtifactGeneratorReference;
+};
+
+export type ElkLayeredArtifact = ArtifactMember<typeof elkLayeredArtifactSchema>;
+export type SequenceArtifact = ArtifactMember<typeof sequenceArtifactSchema>;
+export type DependencyGraphArtifact = ArtifactMember<typeof dependencyGraphArtifactSchema>;
+export type ComponentStructureArtifact = ArtifactMember<typeof componentStructureArtifactSchema>;
+
+// Layout ids sit one level below the member root, so plain comparisons do
+// not narrow the artifact union; these guards carry the pairing instead.
+export function isElkLayeredArtifact(artifact: Artifact): artifact is ElkLayeredArtifact {
+  return artifact.layout.id === "elk-layered";
+}
+
+export function isComponentStructureArtifact(artifact: Artifact): artifact is ComponentStructureArtifact {
+  return artifact.layout.id === "component-structure";
+}
 
 export const artifactSchema = z.union([
   elkLayeredArtifactSchema,

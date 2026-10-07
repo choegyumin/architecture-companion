@@ -29,6 +29,8 @@ type DiagramRendererBaseProps = DiagramRendererProps &
   Readonly<{
     calculateLayout: (diagram: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
     children?: ReactNode;
+    /** Renderers whose measured nodes differ from the stored graph (projections) supply their own. */
+    buildMeasurementNodes?: (diagram: Artifact, onOpenSource: (href: string) => void) => DiagramReactFlowNode[];
     buildRenderModel: (
       diagram: Artifact,
       layout: DiagramLayout,
@@ -56,12 +58,16 @@ function DiagramRendererContent({
   diagram,
   onOpenSource,
   calculateLayout,
+  buildMeasurementNodes = buildDiagramMeasurementNodes,
   buildRenderModel,
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
 }: DiagramContentProps) {
-  const measurementNodes = useMemo(() => buildDiagramMeasurementNodes(diagram, onOpenSource), [diagram, onOpenSource]);
+  const measurementNodes = useMemo(
+    () => buildMeasurementNodes(diagram, onOpenSource),
+    [diagram, onOpenSource, buildMeasurementNodes],
+  );
   const searchLabels = useMemo(
     () => new Map([...diagram.graph.nodes, ...diagram.graph.groups].map(({ id, title }) => [id, title])),
     [diagram],

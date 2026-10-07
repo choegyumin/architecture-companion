@@ -5,7 +5,16 @@ import type { MouseEvent } from "react";
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
-import type { DefaultDiagramNode, LifelineDiagramNode, MessageDiagramEdge } from "@/features/diagram/diagram-graph";
+import type {
+  ProjectedComponentStructureGraph,
+  ProjectedComponentStructureNode,
+} from "@/features/diagram/decision-nodes";
+import type {
+  DefaultDiagramNode,
+  DiagramGroup,
+  LifelineDiagramNode,
+  MessageDiagramEdge,
+} from "@/features/diagram/diagram-graph";
 import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
 import type {
   DiagramLayout,
@@ -14,6 +23,7 @@ import type {
   DiagramNodeSizes,
 } from "@/features/diagram/diagram-spatial";
 import type { CardReactFlowNode } from "@/shared/react-flow/card-node";
+import type { DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
 import type { LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import type { LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import type { MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
@@ -32,6 +42,16 @@ export const DIAGRAM_EDGE_COLOR = "var(--diagram-edge)";
 const DEFAULT_NODE_SIZE = { height: 144, width: 288 } as const;
 const FRAGMENT_NODE_SIZE = { height: 160, width: 448 } as const;
 const LIFELINE_NODE_SIZE = { height: 160, width: 224 } as const;
+export const DECISION_NODE_SIZE = { height: 48, width: 48 } as const;
+
+function toDecisionNodeData(
+  node: Extract<ProjectedComponentStructureNode, { type: "decision" }>,
+): DecisionReactFlowNode["data"] {
+  return {
+    controlLabel: node.title,
+    ports: node.control.cases.map(({ id }) => id),
+  };
+}
 
 export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
@@ -40,7 +60,13 @@ export type DiagramReactFlowRenderModel = Readonly<{
 }>;
 
 function toCardNodeData(
-  node: DefaultDiagramNode,
+  node: Readonly<{
+    title: string;
+    kind?: string;
+    description?: string;
+    details?: readonly string[];
+    links?: DefaultDiagramNode["links"];
+  }>,
   onLinkActivate: DiagramLinkActivationHandler,
 ): CardReactFlowNode["data"] {
   return {
@@ -102,66 +128,86 @@ function toLifelineNodeData(
   };
 }
 
+type MeasurableDiagramNode = Artifact["graph"]["nodes"][number] | ProjectedComponentStructureNode;
+
+function toMeasurementNode(node: MeasurableDiagramNode, onOpenSource: (href: string) => void): DiagramReactFlowNode {
+  const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
+  const common = {
+    id: node.id,
+    position: { x: 0, y: 0 },
+    draggable: false,
+    focusable: false,
+    selectable: false,
+  } as const;
+
+  if (node.type === "default" || node.type === "non-component") {
+    return {
+      ...common,
+      type: "card",
+      data: toCardNodeData(node, onLinkActivate),
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      style: { opacity: 0, pointerEvents: "none" },
+    };
+  }
+
+  if (node.type === "decision") {
+    return {
+      ...common,
+      type: "decision",
+      data: toDecisionNodeData(node),
+      style: { opacity: 0, pointerEvents: "none" },
+    };
+  }
+
+  if (node.type === "lifeline") {
+    return {
+      ...common,
+      type: "lifeline",
+      data: toLifelineNodeData(node, onLinkActivate),
+      style: {
+        opacity: 0,
+        pointerEvents: "none",
+        width: LIFELINE_NODE_SIZE.width,
+      },
+    };
+  }
+
+  return {
+    ...common,
+    type: "fragment",
+    data: {
+      node: {
+        operator: node.operator,
+        branches: node.branches.map(({ id, guard }) => ({ id, guard })),
+      },
+    },
+    style: {
+      opacity: 0,
+      pointerEvents: "none",
+      width: FRAGMENT_NODE_SIZE.width,
+      height: FRAGMENT_NODE_SIZE.height,
+    },
+  };
+}
+
 export function buildDiagramMeasurementNodes(
   diagram: Artifact,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowNode[] {
-  const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
+  return diagram.graph.nodes.map((node) => toMeasurementNode(node, onOpenSource));
+}
 
-  return diagram.graph.nodes.map((node): DiagramReactFlowNode => {
-    const common = {
-      id: node.id,
-      position: { x: 0, y: 0 },
-      draggable: false,
-      focusable: false,
-      selectable: false,
-    } as const;
-
-    if (node.type === "default") {
-      return {
-        ...common,
-        type: "card",
-        data: toCardNodeData(node, onLinkActivate),
-        sourcePosition: Position.Right,
-        targetPosition: Position.Left,
-        style: { opacity: 0, pointerEvents: "none" },
-      };
-    }
-
-    if (node.type === "lifeline") {
-      return {
-        ...common,
-        type: "lifeline",
-        data: toLifelineNodeData(node, onLinkActivate),
-        style: {
-          opacity: 0,
-          pointerEvents: "none",
-          width: LIFELINE_NODE_SIZE.width,
-        },
-      };
-    }
-
-    return {
-      ...common,
-      type: "fragment",
-      data: {
-        node: {
-          operator: node.operator,
-          branches: node.branches.map(({ id, guard }) => ({ id, guard })),
-        },
-      },
-      style: {
-        opacity: 0,
-        pointerEvents: "none",
-        width: FRAGMENT_NODE_SIZE.width,
-        height: FRAGMENT_NODE_SIZE.height,
-      },
-    };
-  });
+/** Measurement nodes for a projected component structure graph: cards, non-component cards, and decision diamonds. */
+export function buildComponentStructureMeasurementNodes(
+  graph: ProjectedComponentStructureGraph,
+  onOpenSource: (href: string) => void,
+): DiagramReactFlowNode[] {
+  return graph.nodes.map((node) => toMeasurementNode(node, onOpenSource));
 }
 
 export function resolveDiagramNodeSizes(
-  diagram: Artifact,
+  diagram: Pick<Artifact, "graph"> | Readonly<{ nodes: ProjectedComponentStructureGraph["nodes"] }>,
   nodes: readonly Pick<Node, "id" | "measured" | "type">[],
 ): DiagramNodeSizes {
   const measuredNodeSizes = Object.fromEntries(
@@ -171,24 +217,27 @@ export function resolveDiagramNodeSizes(
       }
       if (node.type === "lifeline") return [node.id, LIFELINE_NODE_SIZE];
       if (node.type === "fragment") return [node.id, FRAGMENT_NODE_SIZE];
+      if (node.type === "decision") return [node.id, DECISION_NODE_SIZE];
       return [node.id, DEFAULT_NODE_SIZE];
     }),
   );
-  const missingNode = diagram.graph.nodes.find(({ id }) => !measuredNodeSizes[id]);
-  if (missingNode) throw new Error(`React Flow did not measure diagram node: ${missingNode.id}`);
+  const expectedIds = "graph" in diagram ? diagram.graph.nodes.map(({ id }) => id) : diagram.nodes.map(({ id }) => id);
+  const missingId = expectedIds.find((id) => !measuredNodeSizes[id]);
+  if (missingId != null) throw new Error(`React Flow did not measure diagram node: ${missingId}`);
 
   return measuredNodeSizes;
 }
 
-export function buildDiagramReactFlowNodes(
-  diagram: Artifact,
+function toDiagramReactFlowNodes(
+  groups: readonly DiagramGroup[],
+  graphNodes: readonly MeasurableDiagramNode[],
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
-  nodesActivatable = false,
+  nodesActivatable: boolean,
 ): DiagramReactFlowNode[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
-  const groups = layout.groups.map<LabeledGroupReactFlowNode>((placement) => {
-    const group = diagram.graph.groups.find(({ id }) => id === placement.id);
+  const placedGroups = layout.groups.map<LabeledGroupReactFlowNode>((placement) => {
+    const group = groups.find(({ id }) => id === placement.id);
     if (!group) throw new Error(`Layout result references an unknown diagram group: ${placement.id}`);
 
     return {
@@ -208,7 +257,7 @@ export function buildDiagramReactFlowNodes(
     };
   });
   const nodes = layout.nodes.map<DiagramReactFlowNode>((placement) => {
-    const node = diagram.graph.nodes.find(({ id }) => id === placement.id);
+    const node = graphNodes.find(({ id }) => id === placement.id);
     if (!node) throw new Error(`Layout result references an unknown diagram node: ${placement.id}`);
 
     const common = {
@@ -221,7 +270,7 @@ export function buildDiagramReactFlowNodes(
       selectable: false,
     } as const;
 
-    if (node.type === "default") {
+    if (node.type === "default" || node.type === "non-component") {
       return {
         ...common,
         type: "card",
@@ -231,6 +280,14 @@ export function buildDiagramReactFlowNodes(
         },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
+      };
+    }
+
+    if (node.type === "decision") {
+      return {
+        ...common,
+        type: "decision",
+        data: toDecisionNodeData(node),
       };
     }
 
@@ -255,7 +312,25 @@ export function buildDiagramReactFlowNodes(
       },
     };
   });
-  return [...groups, ...nodes];
+  return [...placedGroups, ...nodes];
+}
+
+export function buildDiagramReactFlowNodes(
+  diagram: Artifact,
+  layout: DiagramLayout,
+  onOpenSource: (href: string) => void,
+  nodesActivatable = false,
+): DiagramReactFlowNode[] {
+  return toDiagramReactFlowNodes(diagram.graph.groups, diagram.graph.nodes, layout, onOpenSource, nodesActivatable);
+}
+
+/** Placed nodes for a projected component structure graph, including its decision diamonds and non-component cards. */
+export function buildComponentStructureReactFlowNodes(
+  graph: ProjectedComponentStructureGraph,
+  layout: DiagramLayout,
+  onOpenSource: (href: string) => void,
+): DiagramReactFlowNode[] {
+  return toDiagramReactFlowNodes(graph.groups, graph.nodes, layout, onOpenSource, false);
 }
 
 export function toMessageReactFlowEdge(
