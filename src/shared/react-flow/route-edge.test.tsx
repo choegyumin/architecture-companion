@@ -91,7 +91,7 @@ describe("route edge", () => {
           labelPosition: { x: 50, y: 50 },
           labelControls: [{ control, position: { x: 20, y: 10 } }],
         }}
-        id="fork"
+        id="branch"
         source="source"
         sourcePosition={Position.Right}
         sourceX={0}

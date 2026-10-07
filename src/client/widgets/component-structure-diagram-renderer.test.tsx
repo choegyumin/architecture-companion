@@ -625,7 +625,7 @@ describe("component structure paths", () => {
       route,
     );
     expect(screen.getAllByRole("article")).toHaveLength(3);
-    // Two connections; conditional guards attach chips without fork trunks.
+    // Two connections; conditional guards attach chips without branch trunks.
     expect(screen.getAllByRole("img")).toHaveLength(2);
   });
 
