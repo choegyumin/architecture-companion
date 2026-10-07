@@ -41,38 +41,38 @@ describe("resolveGuardLabelOffsets", () => {
     expect(offsets.get("b\0start")).toBe(64);
   });
 
-  it("pushes the lower label of a colliding pair away from its endpoint", () => {
+  it("separates a colliding pair by whichever label's move is cheaper", () => {
     const offsets = resolveGuardLabelOffsets(
       [group({ edgeId: "a", points: horizontal(0, 300) }), group({ edgeId: "b", points: horizontal(0, 300, 20) })],
       [],
     );
 
-    expect(offsets.get("a\0start")).toBe(64);
-    expect(offsets.get("b\0start")).toBe(112);
+    // The first label slots back toward its decision just enough for the
+    // pair to clear; the second keeps its base offset.
+    expect(offsets.get("a\0start")).toBe(16);
+    expect(offsets.get("b\0start")).toBe(64);
   });
 
-  it("breaks equal-height collisions by pushing the later edge id", () => {
+  it("separates an equal-height pair through the nearest clear slot", () => {
     const offsets = resolveGuardLabelOffsets(
       [group({ edgeId: "a", points: horizontal(0, 300) }), group({ edgeId: "b", points: horizontal(20, 320) })],
       [],
     );
 
-    // The boxes overlap horizontally by exactly their shared span minus the
-    // 20px stagger, so clearing that measured overlap suffices.
-    expect(offsets.get("a\0start")).toBe(64);
-    expect(offsets.get("b\0start")).toBe(64 + 28);
+    expect(offsets.get("a\0start")).toBe(36);
+    expect(offsets.get("b\0start")).toBe(64);
   });
 
-  it("pushes a label off a node card until it clears", () => {
+  it("clears a label off a node card through the nearest gap", () => {
     const offsets = resolveGuardLabelOffsets(
       [group({ edgeId: "a", points: horizontal(0, 300) })],
       [{ x: 70, y: -20, width: 40, height: 40 }],
     );
 
-    expect(offsets.get("a\0start")).toBe(134);
+    expect(offsets.get("a\0start")).toBe(44);
   });
 
-  it("leaves both groups of one edge in place when they overlap", () => {
+  it("slots two labels of one edge apart by moving one back along it", () => {
     const offsets = resolveGuardLabelOffsets(
       [
         group({ edgeId: "a", from: "start", points: horizontal(0, 120) }),
@@ -81,8 +81,10 @@ describe("resolveGuardLabelOffsets", () => {
       [],
     );
 
+    // The arrival label slides toward its destination end, freeing the arm
+    // label to keep its base offset.
     expect(offsets.get("a\0start")).toBe(64);
-    expect(offsets.get("a\0end")).toBe(64);
+    expect(offsets.get("a\0end")).toBe(104);
   });
 
   it("leaves an immovable label at its base offset instead of inflating it", () => {
@@ -94,10 +96,10 @@ describe("resolveGuardLabelOffsets", () => {
     expect(offsets.get("a\0start")).toBe(64);
   });
 
-  it("pulls a mixed pair back to its own reference ends, arm above arrival", () => {
+  it("separates a mixed pair with the arm label above the arrival label", () => {
     // An arm label hanging down from a decision meets an arrival label
-    // climbing up to it; the arm pulls up toward its decision, the arrival
-    // pulls down toward its destination, and they part.
+    // climbing up to it; the pair parts along whichever side's move is
+    // cheaper, and the arm label stays above the arrival label.
     const arm = group({
       edgeId: "arm",
       points: [
@@ -115,12 +117,11 @@ describe("resolveGuardLabelOffsets", () => {
     });
     const offsets = resolveGuardLabelOffsets([arm, arrival], []);
 
-    expect(offsets.get("arm\0start")).toBeLessThan(64);
-    expect(offsets.get("arrival\0end")).toBeLessThan(64);
     const armAnchor = pointAlongPolyline(arm.points, offsets.get("arm\0start")!, "start");
     const arrivalAnchor = pointAlongPolyline(arrival.points, offsets.get("arrival\0end")!, "end");
     // The arm label's box grows downward and the arrival's upward, so clear
     // separation means the arm's bottom sits above the arrival's top.
+    expect(armAnchor.y).toBeLessThan(arrivalAnchor.y);
     expect(armAnchor.y + arm.size.height).toBeLessThanOrEqual(arrivalAnchor.y - arrival.size.height);
   });
 

@@ -1,4 +1,4 @@
-import { pointAlongPolyline } from "@/shared/react-flow/polyline-edge-label-placement";
+import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
 type Point = Readonly<{ x: number; y: number }>;
 
@@ -13,12 +13,18 @@ const MAX_BUTTON_WIDTH = 288;
 const LINE_HEIGHT = 16;
 const BUTTON_CHROME_HEIGHT = 10;
 const COLLISION_MARGIN = 4;
-const RESOLVE_ROUNDS = 4;
-// Pulling a mixed pair back toward the reference ends stops before the
-// label would sit on its own node; the scan granularity keeps limits
-// deterministic while staying finer than the label heights involved.
-const MIN_PULL_OFFSET = 8;
-const PULL_SCAN_STEP = 4;
+// Labels pick from discrete slots along their own edge; 4px stays finer
+// than the label heights involved while keeping the choice deterministic.
+const SLOT_STEP = 4;
+const MIN_OFFSET = 8;
+// Costs: label overlaps count as their overlap area, node overlaps weigh
+// far more (labels must not sit on cards), a mixed pair whose arm label
+// ends up below its arrival label breaks the reading order, and the tiny
+// drift term prefers the base offset among equally clear slots.
+const OBSTACLE_WEIGHT = 100;
+const ORDER_WEIGHT = 10;
+const DRIFT_WEIGHT = 0.001;
+const MAX_PASSES = 8;
 
 export type GuardLabelSize = Readonly<{ width: number; height: number }>;
 
@@ -65,9 +71,6 @@ const boxOf = (group: GuardLabelGroup, offset: number): Box => {
   };
 };
 
-const overlaps = (a: Box, b: Box): boolean =>
-  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-
 const toBox = (obstacle: GuardLabelObstacle): Box => ({
   left: obstacle.x,
   top: obstacle.y,
@@ -75,145 +78,109 @@ const toBox = (obstacle: GuardLabelObstacle): Box => ({
   bottom: obstacle.y + obstacle.height,
 });
 
-// Unit direction the anchor travels as its offset grows: along the segment
-// the anchor sits on, away from the `from` end. Labels on a degenerate
-// polyline (fewer than two points) cannot move at all.
-const pushDirectionOf = (group: GuardLabelGroup, offset: number): Point | undefined => {
-  if (group.points.length < 2) return undefined;
-  const chain = group.from === "start" ? group.points : [...group.points].reverse();
-  let remaining = Math.max(offset, 0);
-  for (let index = 1; index < chain.length; index += 1) {
-    const start = chain.at(index - 1)!;
-    const end = chain.at(index)!;
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.hypot(dx, dy);
-    if (length === 0) continue;
-    if (remaining <= length) return { x: dx / length, y: dy / length };
-    remaining -= length;
-  }
-  return undefined;
+const overlapAxis = (aFirst: number, aLast: number, bFirst: number, bLast: number): number =>
+  Math.min(aLast, bLast) - Math.max(aFirst, bFirst);
+
+// Offsets a label may take: discrete slots across its whole edge, always
+// including its base offset. Degenerate polylines offer only the base.
+const slotsOf = (group: GuardLabelGroup): readonly number[] => {
+  if (group.points.length < 2) return [group.offset];
+  const far = Math.max(group.offset, polylineArcLength(group.points));
+  const slots: number[] = [];
+  for (let offset = MIN_OFFSET; offset <= far; offset += SLOT_STEP) slots.push(offset);
+  if (!slots.includes(group.offset)) slots.push(group.offset);
+  return slots;
 };
 
-// Smallest travel along `direction` that separates the two boxes on some
-// axis: pushing along the mover's own edge clears either the horizontal or
-// the vertical overlap, whichever comes first.
-const separationTravel = (box: Box, against: Box, direction: Point): number => {
-  const overlapX = Math.min(box.right, against.right) - Math.max(box.left, against.left);
-  const overlapY = Math.min(box.bottom, against.bottom) - Math.max(box.top, against.top);
-  const travels: number[] = [];
-  if (Math.abs(direction.x) > 1e-6) travels.push(overlapX / Math.abs(direction.x));
-  if (Math.abs(direction.y) > 1e-6) travels.push(overlapY / Math.abs(direction.y));
-  return travels.length > 0 ? Math.min(...travels) : 0;
+type Placement = Readonly<{ group: GuardLabelGroup; offset: number; anchor: Point; box: Box }>;
+
+const place = (group: GuardLabelGroup, offset: number): Placement => ({
+  group,
+  offset,
+  anchor: anchorOf(group, offset),
+  box: boxOf(group, offset),
+});
+
+// What one label's placement costs against a fixed world: its overlap area
+// with another label (weighted by the mixed-pair order rule), or with a
+// node.
+const pairCost = (self: Placement, other: Placement): number => {
+  const overlapX = overlapAxis(self.box.left, self.box.right, other.box.left, other.box.right);
+  const overlapY = overlapAxis(self.box.top, self.box.bottom, other.box.top, other.box.bottom);
+  const area = overlapX > 0 && overlapY > 0 ? overlapX * overlapY : 0;
+  // A mixed pair whose boxes can touch horizontally reads with the arm
+  // label above the arrival label; crossing costs extra whether or not the
+  // boxes still overlap, because the order is a placement rule, not an
+  // overlap relief.
+  if (self.group.from === other.group.from || overlapX <= 0) return area;
+  const arm = self.group.from === "start" ? self : other;
+  const arrival = arm === self ? other : self;
+  const inverted = arm.anchor.y - arrival.anchor.y;
+  return inverted > 0 ? area + inverted * ORDER_WEIGHT : area;
 };
 
-// How far a label can pull back toward its reference end (its offset's
-// floor) before its box would touch a node. Only node boxes gate the pull;
-// new label overlaps are the next round's business.
-const pullRoom = (group: GuardLabelGroup, offset: number, obstacles: readonly GuardLabelObstacle[]): number => {
-  let room = 0;
-  for (let candidate = offset - PULL_SCAN_STEP; candidate >= MIN_PULL_OFFSET; candidate -= PULL_SCAN_STEP) {
-    const box = boxOf(group, candidate);
-    if (obstacles.some((obstacle) => overlaps(box, toBox(obstacle)))) break;
-    room = offset - candidate;
-  }
-  return room;
+const obstacleCost = (self: Placement, obstacle: Box): number => {
+  const overlapX = overlapAxis(self.box.left, self.box.right, obstacle.left, obstacle.right);
+  const overlapY = overlapAxis(self.box.top, self.box.bottom, obstacle.top, obstacle.bottom);
+  return overlapX > 0 && overlapY > 0 ? overlapX * overlapY * OBSTACLE_WEIGHT : 0;
 };
 
 /**
- * Separates colliding route condition labels by pushing the lower label of
- * each pair along its own edge, just far enough to clear the measured
- * overlap. Branch-arm labels (start-anchored) and arrival labels
- * (end-anchored) are opposites: a pair of both kinds separates by pulling
- * each label back toward its own reference end — the arm label up toward
- * its decision, the arrival label down toward its destination — sharing the
- * needed travel within the room each has before touching a node. Node boxes
- * never yield, and two groups on one edge cannot separate by pushing along
- * it, so those pairs stay put. Labels that still overlap after
- * RESOLVE_ROUNDS rounds are accepted. Returns the resolved offset per group
- * key `${edgeId}\0${from}`.
+ * Places every route condition label in one global decision. Each label
+ * picks from discrete slots along its own edge; a greedy pass repeatedly
+ * moves the label with the worst conflict to its cheapest slot (all other
+ * labels fixed) until nothing improves. Node boxes never yield, and labels
+ * that still overlap at the end are accepted. Returns the chosen offset per
+ * group key `${edgeId}\0${from}`.
  */
 export function resolveGuardLabelOffsets(
   groups: readonly GuardLabelGroup[],
   obstacles: readonly GuardLabelObstacle[],
 ): ReadonlyMap<string, number> {
-  const offsets = new Map(groups.map((group) => [groupKey(group), group.offset]));
-  for (let round = 0; round < RESOLVE_ROUNDS; round += 1) {
-    const placed = groups.map((group) => {
-      const offset = offsets.get(groupKey(group)) ?? group.offset;
-      return { group, offset, anchor: anchorOf(group, offset), box: boxOf(group, offset) };
+  const placements = groups.map((group) => place(group, group.offset));
+  const obstacleBoxes = obstacles.map(toBox);
+  const costAgainstWorld = (self: Placement, others: readonly Placement[]): number => {
+    let cost = 0;
+    for (const other of others) {
+      if (other.group.edgeId === self.group.edgeId && other.group.from === self.group.from) continue;
+      cost += pairCost(self, other);
+    }
+    for (const obstacle of obstacleBoxes) cost += obstacleCost(self, obstacle);
+    // Prefer the base offset among equally clear slots.
+    return cost + Math.abs(self.offset - self.group.offset) * DRIFT_WEIGHT;
+  };
+  const index = new Map(placements.map((placement) => [groupKey(placement.group), placement]));
+  const slotsByGroup = new Map(groups.map((group) => [groupKey(group), slotsOf(group)]));
+
+  for (let pass = 0; pass < MAX_PASSES; pass += 1) {
+    const ordered = [...placements].sort((a, b) => {
+      const conflictOf = (placement: Placement) =>
+        costAgainstWorld(placement, placements) - Math.abs(placement.offset - placement.group.offset) * DRIFT_WEIGHT;
+      const difference = conflictOf(b) - conflictOf(a);
+      return difference !== 0 ? difference : groupKey(a.group).localeCompare(groupKey(b.group));
     });
-    // A group may collide with several others; it travels the largest of
-    // the separations those pairs ask for. Deltas are signed — pushes grow
-    // the offset, pulls shrink it — and a pull wins over a push on the same
-    // group in one round: pulling back is the ordering fix, the push can be
-    // re-asked next round.
-    const moves = new Map<string, number>();
-    const record = (group: GuardLabelGroup, delta: number) => {
-      const key = groupKey(group);
-      const known = moves.get(key);
-      if (known == null || (known > 0 && delta < 0)) moves.set(key, delta);
-      else if (known > 0 && delta > 0) moves.set(key, Math.max(known, delta));
-      else if (known < 0 && delta < 0) moves.set(key, Math.min(known, delta));
-    };
-    const push = (mover: (typeof placed)[number], against: Box) => {
-      const direction = pushDirectionOf(mover.group, mover.offset);
-      if (!direction) return;
-      const travel = Math.ceil(separationTravel(mover.box, against, direction));
-      if (travel > 0) record(mover.group, travel);
-    };
-    const pullPairApart = (start: (typeof placed)[number], end: (typeof placed)[number]) => {
-      // Both labels move toward their own reference end: the arm label up,
-      // the arrival label down, so the pair parts along their facing
-      // directions and the arm label stays above the arrival label. The
-      // boxes grow into each other (start downward, end upward), so the
-      // needed travel is how far the facing sides have crossed.
-      const facing = start.box.bottom - end.box.top;
-      if (facing <= 0) return false;
-      const dirStart = pushDirectionOf(start.group, start.offset);
-      const dirEnd = pushDirectionOf(end.group, end.offset);
-      if (!dirStart || !dirEnd) return false;
-      const need = facing + 1;
-      const startShare = Math.abs(dirStart.y) > 1e-6 ? Math.ceil(need / (2 * Math.abs(dirStart.y))) : 0;
-      const startPull = Math.min(startShare, pullRoom(start.group, start.offset, obstacles));
-      const remaining = need - startPull * Math.abs(dirStart.y);
-      const endShare = Math.abs(dirEnd.y) > 1e-6 && remaining > 0 ? Math.ceil(remaining / Math.abs(dirEnd.y)) : 0;
-      const endPull = Math.min(endShare, pullRoom(end.group, end.offset, obstacles));
-      if (startPull <= 0 && endPull <= 0) return false;
-      if (startPull > 0) record(start.group, -startPull);
-      if (endPull > 0) record(end.group, -endPull);
-      return true;
-    };
-    for (let index = 0; index < placed.length; index += 1) {
-      const current = placed.at(index)!;
-      for (let other = index + 1; other < placed.length; other += 1) {
-        const candidate = placed.at(other)!;
-        if (candidate.group.edgeId === current.group.edgeId || !overlaps(current.box, candidate.box)) continue;
-        if (current.group.from !== candidate.group.from) {
-          const start = current.group.from === "start" ? current : candidate;
-          const end = start === current ? candidate : current;
-          if (pullPairApart(start, end)) continue;
+    let improved = false;
+    for (const current of ordered) {
+      const key = groupKey(current.group);
+      const slots = slotsByGroup.get(key)!;
+      let best = current;
+      let bestCost = costAgainstWorld(current, placements);
+      for (const offset of slots) {
+        if (offset === current.offset) continue;
+        const candidate = place(current.group, offset);
+        const cost = costAgainstWorld(candidate, placements);
+        if (cost < bestCost) {
+          best = candidate;
+          bestCost = cost;
         }
-        // Same-kind pairs (and mixed pairs that cannot pull apart) push the
-        // lower label away; equal heights break by edge id.
-        const lower =
-          candidate.anchor.y > current.anchor.y
-            ? candidate
-            : current.anchor.y > candidate.anchor.y
-              ? current
-              : candidate.group.edgeId > current.group.edgeId
-                ? candidate
-                : current;
-        push(lower, lower === current ? candidate.box : current.box);
       }
-      for (const obstacle of obstacles) {
-        if (overlaps(current.box, toBox(obstacle))) push(current, toBox(obstacle));
+      if (best !== current) {
+        index.set(key, best);
+        placements.splice(placements.indexOf(current), 1, best);
+        improved = true;
       }
     }
-    if (moves.size === 0) break;
-    for (const [key, delta] of moves) {
-      offsets.set(key, Math.max(MIN_PULL_OFFSET, (offsets.get(key) ?? 0) + delta));
-    }
+    if (!improved) break;
   }
-  return offsets;
+  return new Map([...index].map(([key, placement]) => [key, placement.offset]));
 }
