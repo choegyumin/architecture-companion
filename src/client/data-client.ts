@@ -6,7 +6,7 @@ import {
   parseRevisionAnnotationsRead,
   type RevisionAnnotationsRead,
 } from "@/features/annotation/revision-annotations";
-import type { Artifact } from "@/features/artifact/artifact";
+import { parseCatalog } from "@/features/catalog/catalog";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
@@ -40,7 +40,7 @@ type AnnotationRevision = Readonly<{
   etag: string;
 }>;
 
-function sortArtifactsByTitle(artifacts: readonly Artifact[]): readonly Artifact[] {
+function sortArtifactsByTitle<Artifact extends { title: string }>(artifacts: readonly Artifact[]): readonly Artifact[] {
   return artifacts.toSorted((left, right) => left.title.localeCompare(right.title));
 }
 
@@ -159,12 +159,16 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
       const review = await response.json();
       if (!review.catalog) return review;
 
+      // The response travels as JSON, so the catalog is re-parsed here: the
+      // parsed type keeps each layout paired with its graph contract, which
+      // the RPC-level type flattens.
+      const catalog = parseCatalog(review.catalog);
       return {
         ...review,
         catalog: {
-          ...review.catalog,
-          behaviors: sortArtifactsByTitle(review.catalog.behaviors),
-          designs: sortArtifactsByTitle(review.catalog.designs),
+          ...catalog,
+          behaviors: sortArtifactsByTitle(catalog.behaviors),
+          designs: sortArtifactsByTitle(catalog.designs),
         },
       };
     },

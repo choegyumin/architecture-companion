@@ -11,5 +11,9 @@ export function DiagramRenderer(props: DiagramRendererProps) {
       return <ElkLayeredDiagramRenderer {...props} />;
     case "sequence":
       return <SequenceDiagramRenderer {...props} />;
+    case "component-structure":
+      // The component structure renderer lands with its widgets; no artifact
+      // uses this layout until the generator emits it.
+      throw new Error("Component structure renderer is not implemented yet.");
   }
 }

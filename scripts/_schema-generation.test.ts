@@ -41,43 +41,54 @@ describe("generateSchemaSources", () => {
       required: ["groups", "nodes", "edges"],
       additionalProperties: false,
     });
-    expect(parseJsonObject(first["artifact.schema.json"])).toMatchObject({
+    const artifactSchemaJson = parseJsonObject(first["artifact.schema.json"]);
+    expect(artifactSchemaJson).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
-      type: "object",
-      required: ["id", "title", "updatedAt", "generator", "instructions", "layout", "graph"],
-      additionalProperties: false,
-      properties: {
-        updatedAt: { type: "string", format: "date-time" },
-        vcs: {
-          type: "object",
-          properties: {
-            revision: { type: "string", minLength: 1 },
-            divergesFromRevision: { type: "boolean" },
-          },
-          required: ["revision", "divergesFromRevision"],
-          additionalProperties: false,
-        },
-        generator: {
-          type: "string",
-          pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
-        },
-        instructions: { type: "string", minLength: 1 },
-        links: {
-          type: "array",
-          items: {
+    });
+    // One union member per layout, each pairing that layout with its graph contract.
+    const members = artifactSchemaJson.anyOf;
+    expect(Array.isArray(members)).toBe(true);
+    expect((members as JsonObject[]).map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
+    const layoutIds = (members as { properties: { layout: { properties: { id: { const: string } } } } }[])
+      .map((member) => member.properties.layout.properties.id.const)
+      .toSorted();
+    expect(layoutIds).toEqual(["component-structure", "dependency-graph", "elk-layered", "sequence"]);
+    for (const member of members as JsonObject[]) {
+      expect(member).toMatchObject({
+        required: ["id", "title", "updatedAt", "generator", "instructions", "layout", "graph"],
+        additionalProperties: false,
+        properties: {
+          updatedAt: { type: "string", format: "date-time" },
+          vcs: {
             type: "object",
             properties: {
-              text: { type: "string", minLength: 1 },
-              href: { type: "string", minLength: 1 },
+              revision: { type: "string", minLength: 1 },
+              divergesFromRevision: { type: "boolean" },
             },
-            required: ["href"],
+            required: ["revision", "divergesFromRevision"],
             additionalProperties: false,
           },
+          generator: {
+            type: "string",
+            pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
+          },
+          instructions: { type: "string", minLength: 1 },
+          links: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                text: { type: "string", minLength: 1 },
+                href: { type: "string", minLength: 1 },
+              },
+              required: ["href"],
+              additionalProperties: false,
+            },
+          },
         },
-        graph: { $ref: "./diagram-graph.schema.json" },
-      },
-    });
+      });
+    }
   });
 
   it("describes accepted input before Zod defaults are applied", () => {

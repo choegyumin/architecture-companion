@@ -34,6 +34,7 @@ describe("diagram renderer React Flow adapter", () => {
   it("converts default artifact elements to the generic React Flow contract", () => {
     const diagram = {
       ...sequenceDiagram,
+      layout: { id: "elk-layered" },
       graph: {
         ...sequenceDiagram.graph,
         groups: [{ id: "group", title: "Group", description: "Boundary" }],
@@ -131,6 +132,7 @@ describe("diagram renderer React Flow adapter", () => {
   it("omits the card eyebrow when a default node has no kind", () => {
     const diagram = {
       ...sequenceDiagram,
+      layout: { id: "elk-layered" },
       graph: {
         groups: [],
         nodes: [{ id: "component", type: "default", title: "Component" }],
@@ -147,6 +149,7 @@ describe("diagram renderer React Flow adapter", () => {
   it("keeps inline render edges unlabeled", () => {
     const diagram = {
       ...sequenceDiagram,
+      layout: { id: "elk-layered" },
       graph: {
         groups: [],
         nodes: [
@@ -191,6 +194,7 @@ describe("diagram renderer React Flow adapter", () => {
   it("preserves case-sensitive prop names in relationship kinds", () => {
     const diagram = {
       ...sequenceDiagram,
+      layout: { id: "elk-layered" },
       graph: {
         groups: [],
         nodes: [
@@ -254,6 +258,7 @@ describe("diagram renderer React Flow adapter", () => {
   it("uses renderer sizes for node types that are not measured", () => {
     const diagram = {
       ...sequenceDiagram,
+      layout: { id: "elk-layered" },
       graph: {
         ...sequenceDiagram.graph,
         nodes: [

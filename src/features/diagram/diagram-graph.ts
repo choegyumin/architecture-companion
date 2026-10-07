@@ -255,19 +255,39 @@ function validateGraphIntegrity(graph: DiagramGraphLike): readonly GraphIssue[] 
   });
 
   graph.edges.forEach((edge, index) => {
-    if (!nodeById.has(edge.source)) {
+    const source = nodeById.get(edge.source);
+    const target = nodeById.get(edge.target);
+    if (!source) {
       issues.push({
         code: "custom",
         path: ["edges", index, "source"],
         message: `Diagram edge ${edge.id} sources unknown node ${edge.source}`,
       });
     }
-    if (!nodeById.has(edge.target)) {
+    if (!target) {
       issues.push({
         code: "custom",
         path: ["edges", index, "target"],
         message: `Diagram edge ${edge.id} targets unknown node ${edge.target}`,
       });
+    }
+    // A message edge connects two lifelines wherever it appears, not only in
+    // the sequence contract.
+    if (edge.type === "message") {
+      if (source?.type !== "lifeline") {
+        issues.push({
+          code: "custom",
+          path: ["edges", index, "source"],
+          message: `Message edge ${edge.id} source must be a lifeline`,
+        });
+      }
+      if (target?.type !== "lifeline") {
+        issues.push({
+          code: "custom",
+          path: ["edges", index, "target"],
+          message: `Message edge ${edge.id} target must be a lifeline`,
+        });
+      }
     }
   });
   return issues;
@@ -391,26 +411,6 @@ function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue
       });
     }
   });
-
-  graph.edges.forEach((edge, index) => {
-    if (edge.type !== "message") return;
-    const source = graph.nodes.find((node) => node.id === edge.source);
-    const target = graph.nodes.find((node) => node.id === edge.target);
-    if (source?.type !== "lifeline") {
-      issues.push({
-        code: "custom",
-        path: ["edges", index, "source"],
-        message: `Message edge ${edge.id} source must be a lifeline`,
-      });
-    }
-    if (target?.type !== "lifeline") {
-      issues.push({
-        code: "custom",
-        path: ["edges", index, "target"],
-        message: `Message edge ${edge.id} target must be a lifeline`,
-      });
-    }
-  });
   return issues;
 }
 
@@ -454,6 +454,7 @@ export type DependencyDiagramGraph = z.infer<typeof dependencyDiagramGraphSchema
 export const componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
   component: diagramComponentMetadataSchema.optional(),
 });
+export type ComponentStructureDiagramNode = z.infer<typeof componentStructureDiagramNodeSchema>;
 
 /** Additional graph properties a component structure diagram stores: its roots and controls. */
 export const componentStructureAdditionalSchema = z

@@ -205,7 +205,9 @@ describe("design (architecture·implementation) review", () => {
     const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
-      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid artifact: Invalid discriminator value");
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Invalid artifact: layout.id: Unsupported layout configuration: unknown",
+      );
     } finally {
       await cleanupScope();
     }
@@ -224,7 +226,9 @@ describe("design (architecture·implementation) review", () => {
     const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
-      expect(await screen.findByRole("alert")).toHaveTextContent("Invalid artifact: Invalid option: expected one of");
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Invalid artifact: layout.options.elk.direction: Invalid option: expected one of",
+      );
     } finally {
       await cleanupScope();
     }

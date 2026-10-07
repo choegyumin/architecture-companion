@@ -134,14 +134,14 @@ describe("artifact parsing", () => {
     for (const node of [...validSequenceDiagram.graph.nodes, fragment]) {
       expect(() =>
         parseArtifact({ ...dependencyDiagram, graph: { ...dependencyDiagram.graph, nodes: [node] } }),
-      ).toThrow("Dependency graph layout supports only default nodes");
+      ).toThrow('graph.nodes.0.type: Invalid input: expected "default"');
     }
     expect(() =>
       parseArtifact({
         ...dependencyDiagram,
         graph: { ...dependencyDiagram.graph, edges: [validSequenceDiagram.graph.edges.at(0)] },
       }),
-    ).toThrow("Dependency graph layout supports only default edges");
+    ).toThrow('graph.edges.0.type: Invalid input: expected "default"');
   });
 
   it("rejects unsupported layout configurations", () => {
@@ -179,7 +179,7 @@ describe("artifact parsing", () => {
           edges: [],
         },
       }),
-    ).toThrow("Sequence layout requires at least one lifeline");
+    ).toThrow("Invalid discriminator value. Expected 'lifeline' | 'fragment'");
   });
 
   test("sequence diagrams allow only lifeline and fragment nodes", () => {
@@ -194,7 +194,7 @@ describe("artifact parsing", () => {
           ],
         },
       }),
-    ).toThrow("Sequence layout supports only lifeline and fragment nodes");
+    ).toThrow("Invalid discriminator value. Expected 'lifeline' | 'fragment'");
   });
 
   test("sequence diagrams allow only message edges", () => {
@@ -206,7 +206,7 @@ describe("artifact parsing", () => {
           edges: [{ id: "dependency", type: "default", source: "client", target: "server" }],
         },
       }),
-    ).toThrow("Sequence layout supports only message edges");
+    ).toThrow('graph.edges.0.type: Invalid input: expected "message"');
   });
 
   it("rejects duplicate element IDs and broken references", () => {
