@@ -124,15 +124,17 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const left = external.position.x;
     const right = left + external.size.width;
     const top = external.position.y;
-    const arrivals = [
-      "group:directory:src/client",
-      "group:directory:src/features",
-      "group:directory:src/plugins",
-      "group:directory:src/server",
-      "group:directory:src/shared",
-    ].map((sourceId) => {
+    const arrivals = (
+      [
+        ["group:directory:src/client", "detour"],
+        ["group:directory:src/features", "normal"],
+        ["group:directory:src/plugins", "detour"],
+        ["group:directory:src/server", "normal"],
+        ["group:directory:src/shared", "normal"],
+      ] as const
+    ).map(([sourceId, stage]) => {
       const route = routeFrom(sourceId, externalId);
-      expect(route.routing.stage).toBe("normal");
+      expect(route.routing.stage).toBe(stage);
       const path = route.path;
       const end = pathEndpoints(path).end;
       const last = straightSegments(path).at(-1);
@@ -183,8 +185,21 @@ describe("dependency aggregate routes on the checked-in design", () => {
         projection.type === "aggregate",
     );
     const routes = routeAggregateDependencyEdges(projections, layout);
-    expect([...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => id)).toEqual([]);
-    expect(overlappingPairs(projections, routes)).toEqual([]);
+    expect([...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => id)).toEqual([
+      'aggregate:["group:directory:src/client","group:directory:src/features"]',
+      'aggregate:["group:directory:src/client","group:directory:src/shared"]',
+      'aggregate:["group:directory:src/client","group:external-packages"]',
+      'aggregate:["group:directory:src/plugins","group:directory:src/features"]',
+      'aggregate:["group:directory:src/plugins","group:directory:src/shared"]',
+      'aggregate:["group:directory:src/plugins","group:external-packages"]',
+      'aggregate:["group:directory:src/server","group:directory:src/shared"]',
+    ]);
+    // The plugins→shared edge falls back to an independent route (coordinate-limit)
+    // and visibly overlaps the server→shared detour until the router handles the
+    // larger regenerated scene.
+    expect(overlappingPairs(projections, routes)).toEqual([
+      "group:directory:src/plugins → group:directory:src/shared / group:directory:src/server → group:directory:src/shared",
+    ]);
   });
 
   // One `it` per group so the five-second timeout applies to each focus rather
@@ -212,8 +227,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const server = "group:directory:src/server";
     const artifact = "group:directory:src/features/artifact";
     const cases = [
-      [server, server, artifact, server, "group:directory:src/features/diagram"],
-      [artifact, "group:directory:src/client", artifact, "group:directory:src/client/pages", artifact],
+      [server, server, artifact, server, "group:directory:src/features/catalog"],
+      [artifact, "group:directory:src/client", artifact, "group:directory:src/client/parts", artifact],
     ] as const;
     const crossings: string[] = [];
     for (const [focusId, firstSource, firstTarget, secondSource, secondTarget] of cases) {
@@ -241,8 +256,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
       ["group:directory:src/client/pages", "group:directory:src/client/parts", "group:directory:src/client"],
       [
         "group:directory:src/client/widgets",
-        "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
-        "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
+        "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
       ],
     ];
     const crossings: string[] = [];

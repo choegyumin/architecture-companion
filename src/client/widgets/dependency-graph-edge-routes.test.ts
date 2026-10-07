@@ -498,7 +498,7 @@ describe("dependency edge routes", () => {
         sourceId: "group:directory:src/cli",
         targets: [
           "group:directory:src/server",
-          "group:directory:src/features/diagram-generator",
+          "group:directory:src/features/artifact-generator",
           "group:directory:src/shared/node",
         ],
       },
@@ -520,7 +520,7 @@ describe("dependency edge routes", () => {
     const annotationId = "group:directory:src/features/annotation";
     await expectFocusedRelations(annotationId, [
       [annotationId, "group:external-packages"],
-      [annotationId, "group:directory:src/features/artifact"],
+      [annotationId, "group:directory:src/features/catalog"],
     ]);
   });
 
