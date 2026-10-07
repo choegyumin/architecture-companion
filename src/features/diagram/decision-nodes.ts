@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import type {
   ComponentStructureDiagramGraph,
   ComponentStructureDiagramNode,
@@ -71,11 +69,25 @@ type Segment = Readonly<{
   activeWhen: DiagramRouteRequirementRuleset;
 }>;
 
+// Segment ids land in DOM ids and React keys inside the browser bundle, so the
+// projection hashes with two decorrelated FNV-1a lanes instead of node:crypto:
+// 64 bits of stable, dependency-free hex, unique within one projected graph.
+function fnv1a32(value: string, basis: number): number {
+  let hash = basis;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(hash ^ value.charCodeAt(index), 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+function segmentHash(value: string): string {
+  return `${fnv1a32(value, 0x811c9dc5).toString(16).padStart(8, "0")}${fnv1a32(value, 0x9747b28c)
+    .toString(16)
+    .padStart(8, "0")}`;
+}
+
 function segmentId(segment: Omit<Segment, "guards" | "activeWhen">): string {
-  return `edge:${createHash("sha256")
-    .update([segment.source, segment.target, segment.sourcePort ?? ""].join("\0"))
-    .digest("hex")
-    .slice(0, 16)}`;
+  return `edge:${segmentHash([segment.source, segment.target, segment.sourcePort ?? ""].join("\0"))}`;
 }
 
 const requirementKey = (requirement: DiagramRouteRequirement): string =>
