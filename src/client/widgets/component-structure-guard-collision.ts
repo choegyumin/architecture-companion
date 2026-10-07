@@ -108,11 +108,17 @@ const pairCost = (self: Placement, other: Placement): number => {
   const overlapX = overlapAxis(self.box.left, self.box.right, other.box.left, other.box.right);
   const overlapY = overlapAxis(self.box.top, self.box.bottom, other.box.top, other.box.bottom);
   const area = overlapX > 0 && overlapY > 0 ? overlapX * overlapY : 0;
-  // A mixed pair whose boxes can touch horizontally reads with the arm
-  // label above the arrival label; crossing costs extra whether or not the
-  // boxes still overlap, because the order is a placement rule, not an
-  // overlap relief.
+  // A mixed pair defends its reading order only while it reads as one
+  // column: same x band and a vertical gap smaller than the pair's own box
+  // heights. Crossing within that band costs extra whether or not the boxes
+  // still overlap — the order is a placement rule, not an overlap relief,
+  // and a pure-intersection gate would let the arm slip tangent-below the
+  // arrival for free. Farther apart the labels read independently and pay
+  // nothing; the charge formerly applied at any distance, so labels fled
+  // far down their edges to escape pairs hundreds of px away.
   if (self.group.from === other.group.from || overlapX <= 0) return area;
+  const band = self.box.bottom - self.box.top + (other.box.bottom - other.box.top);
+  if (overlapY <= -band) return area;
   const arm = self.group.from === "start" ? self : other;
   const arrival = arm === self ? other : self;
   const inverted = arm.anchor.y - arrival.anchor.y;

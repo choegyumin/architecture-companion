@@ -125,6 +125,32 @@ describe("resolveGuardLabelOffsets", () => {
     expect(armAnchor.y + arm.size.height).toBeLessThanOrEqual(arrivalAnchor.y - arrival.size.height);
   });
 
+  it("leaves a mixed pair uncharged when their bands are vertically apart", () => {
+    // The arm label hangs far below the arrival label — past the pair's
+    // combined box heights — so the two read as independent labels: no
+    // reading order exists to defend and both keep their base offsets
+    // instead of one fleeing down its edge.
+    const arm = group({
+      edgeId: "arm",
+      points: [
+        { x: 0, y: 120 },
+        { x: 0, y: 420 },
+      ],
+    });
+    const arrival = group({
+      edgeId: "arrival",
+      from: "end",
+      points: [
+        { x: 0, y: 0 },
+        { x: 0, y: 140 },
+      ],
+    });
+    const offsets = resolveGuardLabelOffsets([arm, arrival], []);
+
+    expect(offsets.get("arm\0start")).toBe(64);
+    expect(offsets.get("arrival\0end")).toBe(64);
+  });
+
   it("shifts the whole pull to the arm when the arrival is pinned to its node", () => {
     const arm = group({
       edgeId: "arm",
