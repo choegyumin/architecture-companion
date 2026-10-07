@@ -3842,6 +3842,32 @@ import { createHash as createHash2 } from "crypto";
 import { lstat as lstat2, realpath as realpath2 } from "fs/promises";
 import { basename, extname as extname2, relative as relative3, resolve as resolve3 } from "path";
 
+// src/features/diagram/diagram-route-requirement-rules.ts
+function unionRulesets(...sets) {
+  const rules = /* @__PURE__ */ new Map();
+  let tautology = false;
+  for (const rule of sets.flat()) {
+    if (rule.length === 0) tautology = true;
+    rules.set(JSON.stringify(rule), rule);
+  }
+  return tautology ? [[]] : [...rules.values()];
+}
+function combineRulesets(left, right) {
+  return unionRulesets(
+    left.flatMap(
+      (prefix) => right.flatMap((suffix) => {
+        const rule = [...prefix];
+        for (const requirement of suffix) {
+          const existing = rule.find(({ controlId }) => controlId === requirement.controlId);
+          if (existing && existing.value !== requirement.value) return [];
+          if (!existing) rule.push(requirement);
+        }
+        return [rule];
+      })
+    )
+  );
+}
+
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";
 function toPosixPath(path) {
@@ -4093,6 +4119,16 @@ async function loadTypeScript(scopePath) {
 
 // src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts
 function createComponentGraphBuilder(ts) {
+  const COMPLEMENTARY_OPERATORS = {
+    [ts.SyntaxKind.GreaterThanToken]: { family: "greater", inverted: false },
+    [ts.SyntaxKind.LessThanEqualsToken]: { family: "greater", inverted: true },
+    [ts.SyntaxKind.GreaterThanEqualsToken]: { family: "greater-or-equal", inverted: false },
+    [ts.SyntaxKind.LessThanToken]: { family: "greater-or-equal", inverted: true },
+    [ts.SyntaxKind.EqualsEqualsEqualsToken]: { family: "equal", inverted: false },
+    [ts.SyntaxKind.ExclamationEqualsEqualsToken]: { family: "equal", inverted: true },
+    [ts.SyntaxKind.EqualsEqualsToken]: { family: "loosely-equal", inverted: false },
+    [ts.SyntaxKind.ExclamationEqualsToken]: { family: "loosely-equal", inverted: true }
+  };
   function formatDiagnostic(diagnostic) {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
   }
@@ -4144,7 +4180,7 @@ function createComponentGraphBuilder(ts) {
     return current;
   }
   function collectReturnExpressions(body) {
-    if (!ts.isBlock(body)) return [body];
+    if (ts.isExpression(body)) return [body];
     const expressions = [];
     function visit(node) {
       if (node !== body && ts.isFunctionLike(node)) return;
@@ -4193,22 +4229,37 @@ function createComponentGraphBuilder(ts) {
     if (!declaration) return false;
     return /^lib\..*\.d\.ts$/.test(basename(declaration.getSourceFile().fileName));
   }
-  function containsReactOutput(expression, checker) {
+  function containsReactOutput(expression, checker, visitedSymbols = /* @__PURE__ */ new Set()) {
     const unwrapped = unwrapExpression(expression);
+    if (ts.isIdentifier(unwrapped) || ts.isPropertyAccessExpression(unwrapped)) {
+      const symbol = canonicalSymbol(checker.getSymbolAtLocation(unwrapped), checker);
+      if (symbol && !visitedSymbols.has(symbol)) {
+        const next = new Set(visitedSymbols).add(symbol);
+        if (symbol.declarations?.some(
+          (declaration) => ts.isVariableDeclaration(declaration) && declaration.initializer && ts.isVariableDeclarationList(declaration.parent) && (declaration.parent.flags & ts.NodeFlags.Const) !== 0 && containsReactOutput(declaration.initializer, checker, next)
+        ))
+          return true;
+      }
+    }
     if (ts.isJsxElement(unwrapped) || ts.isJsxSelfClosingElement(unwrapped) || ts.isJsxFragment(unwrapped)) return true;
     if (ts.isCallExpression(unwrapped)) {
       if (isCreateElementCall(unwrapped, checker)) return true;
       if (!isArrayRenderingMethodCall(unwrapped, checker)) return false;
       return unwrapped.arguments.some(
-        (argument) => (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) && collectReturnExpressions(argument.body).some((returned) => containsReactOutput(returned, checker))
+        (argument) => (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) && collectReturnExpressions(argument.body).some(
+          (returned) => containsReactOutput(returned, checker, visitedSymbols)
+        )
       );
     }
     if (ts.isConditionalExpression(unwrapped)) {
-      return containsReactOutput(unwrapped.whenTrue, checker) || containsReactOutput(unwrapped.whenFalse, checker);
+      return containsReactOutput(unwrapped.whenTrue, checker, visitedSymbols) || containsReactOutput(unwrapped.whenFalse, checker, visitedSymbols);
     }
-    if (ts.isBinaryExpression(unwrapped)) return containsReactOutput(unwrapped.right, checker);
+    if (ts.isBinaryExpression(unwrapped))
+      return containsReactOutput(unwrapped.left, checker, visitedSymbols) || containsReactOutput(unwrapped.right, checker, visitedSymbols);
     if (ts.isArrayLiteralExpression(unwrapped)) {
-      return unwrapped.elements.some((element) => ts.isExpression(element) && containsReactOutput(element, checker));
+      return unwrapped.elements.some(
+        (element) => ts.isExpression(element) && containsReactOutput(element, checker, visitedSymbols)
+      );
     }
     return false;
   }
@@ -4252,9 +4303,18 @@ function createComponentGraphBuilder(ts) {
   function collectComponentDefinitions(sourceFiles, scopePath, checker) {
     const definitions = [];
     const definitionIds = /* @__PURE__ */ new Set();
+    const renderedSymbols = /* @__PURE__ */ new Set();
+    function collectRenderedSymbols(node) {
+      const reference = ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node) ? node.tagName : ts.isCallExpression(node) && isCreateElementCall(node, checker) ? node.arguments.at(0) : void 0;
+      const symbol = reference ? canonicalSymbol(checker.getSymbolAtLocation(reference), checker) : void 0;
+      if (symbol) renderedSymbols.add(symbol);
+      ts.forEachChild(node, collectRenderedSymbols);
+    }
+    for (const sourceFile of sourceFiles) collectRenderedSymbols(sourceFile);
     function addDefinition(sourceFile, declaration, name, symbol, functionLike, renderRoots, body, classComponent, identityName = name) {
       if (!isComponentName(name)) return;
-      if (renderRoots.length === 0 || !renderRoots.some((root) => containsReactOutput(root, checker))) return;
+      if (renderRoots.length === 0 || !renderRoots.some((root) => containsReactOutput(root, checker)) && !renderedSymbols.has(canonicalSymbol(symbol, checker)))
+        return;
       const relativePath = toPosixPath(relative3(scopePath, sourceFile.fileName));
       const id = createComponentId(relativePath, identityName);
       if (definitionIds.has(id)) throw new Error(`Duplicate React component identity: ${id}`);
@@ -4895,99 +4955,146 @@ function createComponentGraphBuilder(ts) {
   function analyzeConsumerRules(definition, context, bindings) {
     const rules = { exact: /* @__PURE__ */ new Map(), spreads: [] };
     const mutableSpreads = rules.spreads;
+    let activeRuleset = [[]];
     function terminal(propName, kind) {
-      addExactRule(rules, propName, { type: "terminal", kind });
+      addExactRule(rules, propName, { type: "terminal", kind, ruleset: activeRuleset });
     }
-    function removeForwardingToProp(targetUseId, targetPropName) {
+    function inActiveRules(rule) {
+      return activeRuleset.some(
+        (prefix) => prefix.every(
+          (requirement) => rule.some(({ controlId, value }) => controlId === requirement.controlId && value === requirement.value)
+        )
+      );
+    }
+    function removeActiveForwarding(matches) {
       for (const [incomingPropName, existing] of rules.exact) {
         rules.exact.set(
           incomingPropName,
-          existing.filter(
-            (rule) => rule.type !== "forward" || rule.targetUseId !== targetUseId || rule.targetPropName !== targetPropName
-          )
+          existing.flatMap((rule) => {
+            if (rule.type !== "forward" || !matches(rule)) return [rule];
+            const kept = rule.ruleset.filter((requirement) => !inActiveRules(requirement));
+            return kept.length > 0 ? [{ ...rule, ruleset: kept }] : [];
+          })
         );
       }
-      for (const [index, spread] of mutableSpreads.entries()) {
+    }
+    function removeForwardingToProp(targetUseId, targetPropName) {
+      removeActiveForwarding((rule) => rule.targetUseId === targetUseId && rule.targetPropName === targetPropName);
+      for (const [index, spread] of [...mutableSpreads].entries()) {
         if (spread.targetUseId !== targetUseId) continue;
+        const ruleset = spread.ruleset.filter(inActiveRules);
+        if (ruleset.length === 0) continue;
+        const retained = spread.ruleset.filter((rule) => !inActiveRules(rule));
+        if (retained.length > 0) mutableSpreads.push({ ...spread, ruleset: retained });
         mutableSpreads[index] = {
           ...spread,
+          ruleset,
           excludedProps: new Set(spread.excludedProps).add(targetPropName)
         };
       }
     }
     function removeForwardingOverriddenBySpread(targetUseId, excludedProps) {
-      for (const [incomingPropName, existing] of rules.exact) {
-        rules.exact.set(
-          incomingPropName,
-          existing.filter(
-            (rule) => rule.type !== "forward" || rule.targetUseId !== targetUseId || excludedProps.has(rule.targetPropName)
-          )
-        );
-      }
+      removeActiveForwarding((rule) => rule.targetUseId === targetUseId && !excludedProps.has(rule.targetPropName));
     }
     function clearForwardingToTarget(targetUseId) {
-      for (const [incomingPropName, existing] of rules.exact) {
-        rules.exact.set(
-          incomingPropName,
-          existing.filter((rule) => rule.type !== "forward" || rule.targetUseId !== targetUseId)
-        );
-      }
+      removeActiveForwarding((rule) => rule.targetUseId === targetUseId);
       for (let index = mutableSpreads.length - 1; index >= 0; index -= 1) {
-        if (mutableSpreads[index]?.targetUseId === targetUseId) mutableSpreads.splice(index, 1);
+        const spread = mutableSpreads[index];
+        if (spread.targetUseId !== targetUseId) continue;
+        const ruleset = spread.ruleset.filter((rule) => !inActiveRules(rule));
+        if (ruleset.length === 0) mutableSpreads.splice(index, 1);
+        else mutableSpreads[index] = { ...spread, ruleset };
       }
     }
-    function collectInvokedRenderProps(expression, traverseRootFunction) {
-      const props = /* @__PURE__ */ new Set();
-      function visit(node, isRoot) {
-        if (ts.isFunctionLike(node) && !(isRoot && traverseRootFunction)) return;
+    function collectInvokedRenderProps(expression, traverseRootFunction, initialRuleset = activeRuleset) {
+      const props = /* @__PURE__ */ new Map();
+      const activeNodes = /* @__PURE__ */ new Set();
+      function visit(node, ruleset, isRoot) {
+        if (activeNodes.has(node)) return;
+        activeNodes.add(node);
+        try {
+          visitValue(node, ruleset, isRoot);
+        } finally {
+          activeNodes.delete(node);
+        }
+      }
+      function visitValue(node, ruleset, isRoot) {
+        if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
+          if (isRoot && traverseRootFunction)
+            controlledReturns(node.body, definition.id, context, (value, next) => visit(value, next, false), ruleset);
+          return;
+        }
+        if (ts.isFunctionLike(node)) return;
+        if (ts.isExpression(node) && controlledExpression(node, definition.id, ruleset, context, (value, next) => visit(value, next, false)))
+          return;
         if (ts.isCallExpression(node)) {
           const propName = getIncomingProp(node.expression, bindings, context.checker);
-          if (propName) props.add(propName);
+          if (propName) {
+            const entry = { propName, ruleset };
+            props.set(JSON.stringify(entry), entry);
+            return;
+          }
         }
-        ts.forEachChild(node, (child) => visit(child, false));
+        if (ts.isExpression(node)) {
+          const values = resolveAliasedValues(node, context);
+          if (values.some((value) => value !== unwrapExpression(node))) {
+            for (const value of values) visit(value, ruleset, isRoot);
+            return;
+          }
+        }
+        ts.forEachChild(node, (child) => visit(child, ruleset, false));
       }
-      visit(expression, true);
-      return [...props];
+      visit(expression, initialRuleset, true);
+      return [...props.values()];
     }
     function analyzeRenderPropInvocations(expression) {
-      for (const propName of collectInvokedRenderProps(expression, false)) terminal(propName, "render-prop");
+      for (const { propName, ruleset } of collectInvokedRenderProps(expression, false))
+        addExactRule(rules, propName, { type: "terminal", kind: "render-prop", ruleset });
     }
     function collectForwardedProps(expression, symbolOverride) {
-      const props = /* @__PURE__ */ new Set();
-      function collect(candidate, visitedSymbols, candidateSymbol) {
+      const props = /* @__PURE__ */ new Map();
+      function collect(candidate, ruleset, visitedSymbols, candidateSymbol) {
+        if (controlledExpression(
+          candidate,
+          definition.id,
+          ruleset,
+          context,
+          (value, next) => collect(value, next, visitedSymbols)
+        ))
+          return;
         const unwrapped = unwrapExpression(candidate);
         const directProp = candidateSymbol ? bindings.propSymbols.get(candidateSymbol) : getIncomingProp(unwrapped, bindings, context.checker);
         if (directProp) {
-          props.add(directProp);
+          const entry = { propName: directProp, ruleset };
+          props.set(JSON.stringify(entry), entry);
           return;
         }
         const property = candidateSymbol ? void 0 : staticObjectPropertyValue(unwrapped, context, visitedSymbols);
         if (property) {
-          collect(property.value, visitedSymbols, property.valueSymbol);
+          collect(property.value, ruleset, visitedSymbols, property.valueSymbol);
           return;
         }
         if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
-          for (const propName of collectInvokedRenderProps(unwrapped, true)) props.add(propName);
+          for (const entry of collectInvokedRenderProps(unwrapped, true, ruleset))
+            props.set(JSON.stringify(entry), entry);
           return;
         }
         if (ts.isObjectLiteralExpression(unwrapped)) {
-          for (const property2 of staticObjectPropertyValues(unwrapped, context)) {
-            collect(property2.value, visitedSymbols, property2.valueSymbol);
-          }
+          for (const property2 of staticObjectPropertyValues(unwrapped, context))
+            collect(property2.value, ruleset, visitedSymbols, property2.valueSymbol);
           return;
         }
         if (ts.isArrayLiteralExpression(unwrapped)) {
-          for (const element of unwrapped.elements) {
-            if (ts.isExpression(element)) collect(element, visitedSymbols);
-          }
+          for (const element of unwrapped.elements)
+            if (ts.isExpression(element)) collect(element, ruleset, visitedSymbols);
           return;
         }
         const reference = localVariableReference(unwrapped, context, visitedSymbols, candidateSymbol);
         if (!reference) return;
-        for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
+        for (const initializer of reference.initializers) collect(initializer, ruleset, reference.visitedSymbols);
       }
-      collect(expression, /* @__PURE__ */ new Set(), symbolOverride);
-      return [...props];
+      collect(expression, activeRuleset, /* @__PURE__ */ new Set(), symbolOverride);
+      return [...props.values()];
     }
     function collectForwardedSpreadExclusions(expression, visitedSymbols = /* @__PURE__ */ new Set()) {
       const unwrapped = unwrapExpression(expression);
@@ -5013,11 +5120,12 @@ function createComponentGraphBuilder(ts) {
           if (!expression) continue;
           analyzeRenderPropInvocations(expression);
           if (!targetUseId) continue;
-          for (const propName of new Set(collectForwardedProps(expression))) {
+          for (const { propName, ruleset } of collectForwardedProps(expression)) {
             addExactRule(rules, propName, {
               type: "forward",
               targetUseId,
-              targetPropName
+              targetPropName,
+              ruleset
             });
           }
         } else if (targetUseId) {
@@ -5028,16 +5136,17 @@ function createComponentGraphBuilder(ts) {
           }
           for (const excludedProps of forwardedSpreads) {
             removeForwardingOverriddenBySpread(targetUseId, excludedProps);
-            mutableSpreads.push({ excludedProps, targetUseId });
+            mutableSpreads.push({ excludedProps, targetUseId, ruleset: activeRuleset });
           }
           for (const forwarded of staticProperties.values.values()) {
             removeForwardingToProp(targetUseId, forwarded.propName);
             analyzeRenderPropInvocations(forwarded.value);
-            for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
+            for (const { propName, ruleset } of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
               addExactRule(rules, propName, {
                 type: "forward",
                 targetUseId,
-                targetPropName: forwarded.propName
+                targetPropName: forwarded.propName,
+                ruleset
               });
             }
           }
@@ -5048,8 +5157,8 @@ function createComponentGraphBuilder(ts) {
       for (const child of effectiveChildren) {
         if (ts.isJsxExpression(child) && child.expression) analyzeRenderPropInvocations(child.expression);
         if (!targetUseId || !ts.isJsxExpression(child) || !child.expression) continue;
-        for (const propName of new Set(collectForwardedProps(child.expression))) {
-          addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children" });
+        for (const { propName, ruleset } of collectForwardedProps(child.expression)) {
+          addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children", ruleset });
         }
       }
     }
@@ -5062,7 +5171,21 @@ function createComponentGraphBuilder(ts) {
         }
       }
     }
-    function analyzeRendered(expression) {
+    const activeExpressions = /* @__PURE__ */ new Set();
+    function analyzeRendered(expression, ruleset = activeRuleset) {
+      if (activeExpressions.has(expression)) return;
+      activeExpressions.add(expression);
+      const previous = activeRuleset;
+      activeRuleset = ruleset;
+      try {
+        if (!controlledExpression(expression, definition.id, ruleset, context, analyzeRendered))
+          analyzeRenderedValue(expression);
+      } finally {
+        activeRuleset = previous;
+        activeExpressions.delete(expression);
+      }
+    }
+    function analyzeRenderedValue(expression) {
       const unwrapped = unwrapExpression(expression);
       const directProp = getIncomingProp(unwrapped, bindings, context.checker);
       if (directProp) {
@@ -5082,7 +5205,7 @@ function createComponentGraphBuilder(ts) {
         if (isArrayRenderingMethodCall(unwrapped, context.checker)) {
           for (const argument of unwrapped.arguments) {
             if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-              for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned);
+              controlledReturns(argument.body, definition.id, context, analyzeRendered, activeRuleset);
             }
           }
         }
@@ -5109,15 +5232,6 @@ function createComponentGraphBuilder(ts) {
         analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
         return;
       }
-      if (ts.isConditionalExpression(unwrapped)) {
-        analyzeRendered(unwrapped.whenTrue);
-        analyzeRendered(unwrapped.whenFalse);
-        return;
-      }
-      if (ts.isBinaryExpression(unwrapped)) {
-        analyzeRendered(unwrapped.right);
-        return;
-      }
       if (ts.isArrayLiteralExpression(unwrapped)) {
         for (const element of unwrapped.elements) {
           if (ts.isExpression(element)) analyzeRendered(element);
@@ -5125,7 +5239,11 @@ function createComponentGraphBuilder(ts) {
         return;
       }
       if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
-        for (const returned of collectReturnExpressions(unwrapped.body)) analyzeRendered(returned);
+        controlledReturns(unwrapped.body, definition.id, context, analyzeRendered, activeRuleset);
+        return;
+      }
+      for (const value of resolveAliasedValues(unwrapped, context)) {
+        if (value !== unwrapped) analyzeRendered(value);
       }
     }
     function analyzeJsxChild(child) {
@@ -5149,16 +5267,17 @@ function createComponentGraphBuilder(ts) {
       const targetUseId = target ? componentUseId(definition.id, call, target.id, context.scopePath) : void 0;
       if (propsExpression && targetUseId) {
         for (const excludedProps of collectForwardedSpreadExclusions(propsExpression)) {
-          mutableSpreads.push({ excludedProps, targetUseId });
+          mutableSpreads.push({ excludedProps, targetUseId, ruleset: activeRuleset });
         }
         for (const forwarded of staticObjectPropertyValues(propsExpression, context)) {
           removeForwardingToProp(targetUseId, forwarded.propName);
           analyzeRenderPropInvocations(forwarded.value);
-          for (const propName of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
+          for (const { propName, ruleset } of collectForwardedProps(forwarded.value, forwarded.valueSymbol)) {
             addExactRule(rules, propName, {
               type: "forward",
               targetUseId,
-              targetPropName: forwarded.propName
+              targetPropName: forwarded.propName,
+              ruleset
             });
           }
         }
@@ -5167,12 +5286,13 @@ function createComponentGraphBuilder(ts) {
       for (const child of children) {
         analyzeRenderPropInvocations(child);
         if (!targetUseId) continue;
-        for (const propName of collectForwardedProps(child)) {
-          addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children" });
+        for (const { propName, ruleset } of collectForwardedProps(child)) {
+          addExactRule(rules, propName, { type: "forward", targetUseId, targetPropName: "children", ruleset });
         }
       }
     }
-    for (const root of definition.renderRoots) analyzeRendered(root);
+    if (definition.body) controlledReturns(definition.body, definition.id, context, analyzeRendered);
+    else for (const root of definition.renderRoots) analyzeRendered(root);
     return rules;
   }
   function relationshipKey(relationship) {
@@ -5180,29 +5300,59 @@ function createComponentGraphBuilder(ts) {
       relationship.source,
       relationship.target,
       relationship.kind,
-      relationship.kind === "direct-render" ? "" : relationship.propName
+      relationship.kind === "inline-render" ? "" : relationship.propName
     ].join("\0");
   }
-  function returnedUses(callback, ownerId, context) {
-    return collectSuppliedUses(collectReturnExpressions(callback.body), ownerId, context);
-  }
-  function collectSuppliedUses(expressions, ownerId, context) {
+  function returnedUses(callback, ownerId, context, initialRuleset = [[]], rulesetsByUse = /* @__PURE__ */ new Map()) {
     const uses = /* @__PURE__ */ new Map();
-    function collect(expression, visitedSymbols = /* @__PURE__ */ new Set()) {
+    controlledReturns(
+      callback.body,
+      ownerId,
+      context,
+      (expression, ruleset) => {
+        for (const use of collectSuppliedUses([expression], ownerId, context, ruleset, rulesetsByUse))
+          uses.set(use.id, use);
+      },
+      initialRuleset
+    );
+    return [...uses.values()];
+  }
+  function collectSuppliedUses(expressions, ownerId, context, initialRuleset = [[]], rulesetsByUse = /* @__PURE__ */ new Map()) {
+    const uses = /* @__PURE__ */ new Map();
+    const activeExpressions = /* @__PURE__ */ new Set();
+    function collect(expression, ruleset, visitedSymbols = /* @__PURE__ */ new Set()) {
+      if (activeExpressions.has(expression)) return;
+      activeExpressions.add(expression);
+      try {
+        collectValue(expression, ruleset, visitedSymbols);
+      } finally {
+        activeExpressions.delete(expression);
+      }
+    }
+    function collectValue(expression, ruleset, visitedSymbols) {
+      if (controlledExpression(
+        expression,
+        ownerId,
+        ruleset,
+        context,
+        (candidate, next) => collect(candidate, next, visitedSymbols)
+      ))
+        return;
       const unwrapped = unwrapExpression(expression);
       if (ts.isJsxFragment(unwrapped)) {
-        for (const child of unwrapped.children) collectChild(child);
+        for (const child of unwrapped.children) collectChild(child, ruleset);
         return;
       }
       if (ts.isJsxElement(unwrapped) || ts.isJsxSelfClosingElement(unwrapped)) {
         const opening = ts.isJsxElement(unwrapped) ? unwrapped.openingElement : unwrapped;
         if (isIntrinsicJsxTag(opening.tagName)) {
-          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) collectChild(child);
+          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) collectChild(child, ruleset);
           return;
         }
         const target = targetForReference(opening.tagName, context);
         if (target) {
           const use = ensureComponentUse(ownerId, unwrapped, target, context);
+          addUseRuleset(context, use.id, ruleset, rulesetsByUse);
           analyzeJsxComponentUsage(unwrapped, use, context);
           uses.set(use.id, use);
         }
@@ -5212,12 +5362,13 @@ function createComponentGraphBuilder(ts) {
         const [tagExpression] = unwrapped.arguments;
         if (!tagExpression) return;
         if (ts.isStringLiteral(tagExpression)) {
-          for (const child of unwrapped.arguments.slice(2)) collect(child);
+          for (const child of unwrapped.arguments.slice(2)) collect(child, ruleset);
           return;
         }
         const target = targetForReference(tagExpression, context);
         if (target) {
           const use = ensureComponentUse(ownerId, unwrapped, target, context);
+          addUseRuleset(context, use.id, ruleset, rulesetsByUse);
           analyzeCreateElementUsage(unwrapped, use, context);
           uses.set(use.id, use);
         }
@@ -5226,58 +5377,74 @@ function createComponentGraphBuilder(ts) {
       if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-            for (const returned of collectReturnExpressions(argument.body)) collect(returned, visitedSymbols);
+            controlledReturns(
+              argument.body,
+              ownerId,
+              context,
+              (returned, next) => collect(returned, next, visitedSymbols),
+              ruleset
+            );
           }
         }
         return;
       }
-      if (ts.isConditionalExpression(unwrapped)) {
-        collect(unwrapped.whenTrue);
-        collect(unwrapped.whenFalse);
-        return;
-      }
       if (ts.isBinaryExpression(unwrapped)) {
-        collect(unwrapped.right);
+        collect(unwrapped.right, ruleset, visitedSymbols);
         return;
       }
       if (ts.isArrayLiteralExpression(unwrapped)) {
-        for (const element of unwrapped.elements) if (ts.isExpression(element)) collect(element, visitedSymbols);
+        for (const element of unwrapped.elements)
+          if (ts.isExpression(element)) collect(element, ruleset, visitedSymbols);
         return;
       }
       const reference = localVariableReference(unwrapped, context, visitedSymbols);
       if (!reference) return;
-      for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
+      for (const initializer of reference.initializers) collect(initializer, ruleset, reference.visitedSymbols);
     }
-    function collectChild(child) {
-      if (ts.isJsxExpression(child) && child.expression) collect(child.expression);
-      else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) collect(child);
+    function collectChild(child, ruleset) {
+      if (ts.isJsxExpression(child) && child.expression) collect(child.expression, ruleset);
+      else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child))
+        collect(child, ruleset);
     }
-    for (const expression of expressions) collect(expression);
-    return [...uses.values()].toSorted((left, right) => left.id.localeCompare(right.id));
+    for (const expression of expressions) collect(expression, initialRuleset);
+    return [...uses.values()];
   }
-  function componentReferenceUses(expression, ownerId, context, symbolOverride) {
+  function componentReferenceUses(expression, ownerId, context, symbolOverride, rulesetsByUse = /* @__PURE__ */ new Map()) {
     const uses = /* @__PURE__ */ new Map();
-    function collect(candidate, visitedSymbols, candidateSymbol) {
+    function collect(candidate, visitedSymbols, candidateSymbol, ruleset = [[]]) {
+      if (controlledExpression(
+        candidate,
+        ownerId,
+        ruleset,
+        context,
+        (expression2, next) => collect(expression2, visitedSymbols, void 0, next)
+      ))
+        return;
       const unwrapped = unwrapExpression(candidate);
       if (ts.isObjectLiteralExpression(unwrapped)) {
         for (const property2 of unwrapped.properties) {
-          if (ts.isPropertyAssignment(property2)) collect(property2.initializer, visitedSymbols);
+          if (ts.isPropertyAssignment(property2)) collect(property2.initializer, visitedSymbols, void 0, ruleset);
           else if (ts.isShorthandPropertyAssignment(property2)) {
-            collect(property2.name, visitedSymbols, context.checker.getShorthandAssignmentValueSymbol(property2));
-          } else if (ts.isSpreadAssignment(property2)) collect(property2.expression, visitedSymbols);
+            collect(
+              property2.name,
+              visitedSymbols,
+              context.checker.getShorthandAssignmentValueSymbol(property2),
+              ruleset
+            );
+          } else if (ts.isSpreadAssignment(property2)) collect(property2.expression, visitedSymbols, void 0, ruleset);
         }
         return;
       }
       if (ts.isArrayLiteralExpression(unwrapped)) {
         for (const element of unwrapped.elements) {
-          if (ts.isExpression(element)) collect(element, visitedSymbols);
+          if (ts.isExpression(element)) collect(element, visitedSymbols, void 0, ruleset);
         }
         return;
       }
       if (!candidateSymbol && !ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return;
       const property = candidateSymbol ? void 0 : staticObjectPropertyValue(unwrapped, context, visitedSymbols);
       if (property) {
-        collect(property.value, visitedSymbols, property.valueSymbol);
+        collect(property.value, visitedSymbols, property.valueSymbol, ruleset);
         return;
       }
       const target = targetForReference(unwrapped, context, candidateSymbol);
@@ -5290,41 +5457,58 @@ function createComponentGraphBuilder(ts) {
       const externalName = target?.title.split(".").at(-1);
       if (target && (target.definition || callable && !!externalName && /^[A-Z]/.test(externalName))) {
         const use = ensureComponentUse(ownerId, unwrapped, target, context);
+        addUseRuleset(context, use.id, ruleset, rulesetsByUse);
         uses.set(use.id, use);
         return;
       }
       const reference = localVariableReference(unwrapped, context, visitedSymbols, candidateSymbol);
       if (!reference) return;
-      for (const initializer of reference.initializers) collect(initializer, reference.visitedSymbols);
+      for (const initializer of reference.initializers)
+        collect(initializer, reference.visitedSymbols, void 0, ruleset);
     }
     collect(expression, /* @__PURE__ */ new Set(), symbolOverride);
-    return [...uses.values()].toSorted((left, right) => left.id.localeCompare(right.id));
+    return [...uses.values()];
   }
-  function addSuppliedValue(receiver, propName, kind, targets) {
+  function addSuppliedValue(receiver, propName, kind, targets, rulesetsByUse) {
     if (targets.length === 0) return;
     receiver.suppliedValues.push({
       propName,
       kind,
-      targetUseIds: [...new Set(targets.map(({ id }) => id))].toSorted()
+      targets: targets.map(({ id }) => ({ useId: id, ruleset: rulesetsByUse.get(id) ?? [[]] }))
     });
   }
   function analyzeSuppliedValue(receiver, propName, expression, context, symbolOverride) {
-    const componentUses = componentReferenceUses(expression, receiver.ownerId, context, symbolOverride);
+    const rulesetsByUse = /* @__PURE__ */ new Map();
+    const componentUses = componentReferenceUses(expression, receiver.ownerId, context, symbolOverride, rulesetsByUse);
     if (componentUses.length > 0) {
-      addSuppliedValue(receiver, propName, "component-prop", componentUses);
+      addSuppliedValue(receiver, propName, "component-prop", componentUses, rulesetsByUse);
       return;
     }
     const values = resolveAliasedValues(expression, context, /* @__PURE__ */ new Set(), symbolOverride);
     const renderUses = /* @__PURE__ */ new Map();
-    for (const value of values) {
-      if (!ts.isArrowFunction(value) && !ts.isFunctionExpression(value)) continue;
-      for (const use of returnedUses(value, receiver.ownerId, context)) renderUses.set(use.id, use);
+    function collectCallbacks(value, ruleset) {
+      if (controlledExpression(value, receiver.ownerId, ruleset, context, collectCallbacks)) return;
+      const unwrapped = unwrapExpression(value);
+      if (ts.isArrowFunction(unwrapped) || ts.isFunctionExpression(unwrapped)) {
+        for (const use of returnedUses(unwrapped, receiver.ownerId, context, ruleset, rulesetsByUse))
+          renderUses.set(use.id, use);
+        return;
+      }
+      for (const candidate of resolveAliasedValues(unwrapped, context))
+        if (candidate !== unwrapped) collectCallbacks(candidate, ruleset);
     }
+    for (const value of values) collectCallbacks(value, [[]]);
     if (renderUses.size > 0) {
-      addSuppliedValue(receiver, propName, "render-prop", [...renderUses.values()]);
+      addSuppliedValue(receiver, propName, "render-prop", [...renderUses.values()], rulesetsByUse);
       return;
     }
-    addSuppliedValue(receiver, propName, "node-prop", collectSuppliedUses(values, receiver.ownerId, context));
+    addSuppliedValue(
+      receiver,
+      propName,
+      "node-prop",
+      collectSuppliedUses(values, receiver.ownerId, context, [[]], rulesetsByUse),
+      rulesetsByUse
+    );
   }
   function analyzeJsxComponentUsage(element, receiver, context) {
     if (context.analyzedUseIds.has(receiver.id)) return;
@@ -5363,26 +5547,431 @@ function createComponentGraphBuilder(ts) {
     }
     for (const child of children) analyzeSuppliedValue(receiver, "children", child, context);
   }
+  function conditionControlId(node, ownerId, label, when, context, alternatives) {
+    const suffix = createHash2("sha256").update(`${toPosixPath(relative3(context.scopePath, node.getSourceFile().fileName))}:${node.pos}:${node.end}`).digest("hex").slice(0, 16);
+    const id = `${ownerId}:control:${suffix}`;
+    const existing = context.controls.get(id);
+    const base = { id, owner: ownerId, label, dependsOn: unionRulesets(existing?.dependsOn ?? [], when) };
+    context.controls.set(
+      id,
+      alternatives ? {
+        ...base,
+        kind: "branch",
+        cases: alternatives.cases,
+        ...alternatives.polarityPair ? { polarityPair: true } : {}
+      } : { ...base, kind: "conditional" }
+    );
+    return id;
+  }
+  function controlRuleset(node, ownerId, label, when, context, alternatives) {
+    const id = conditionControlId(node, ownerId, label, when, context, alternatives);
+    return (value) => combineRulesets(when, [[{ controlId: id, value }]]);
+  }
+  const normalizedLabel = (label) => {
+    let text = label.trim();
+    for (; ; ) {
+      if (text.startsWith("!(") && text.endsWith(")")) {
+        const inner = text.slice(2, -1).trim();
+        if (!inner.startsWith("!") || inner.length === 1) return text;
+        text = normalizedLabel(inner.slice(1).trim());
+        continue;
+      }
+      if (text.startsWith("!!")) {
+        text = text.slice(2).trim();
+        continue;
+      }
+      return text;
+    }
+  };
+  const negateLabel = (label) => {
+    const text = normalizedLabel(label);
+    if (text.startsWith("!") && !text.startsWith("!=")) return normalizedLabel(text.slice(1).trim());
+    return /[<>=+\-*%&|?]|\s/.test(text) ? `!(${text})` : `!${text}`;
+  };
+  const positiveLabel = (label) => {
+    let text = normalizedLabel(label);
+    for (; ; ) {
+      if (text.startsWith("!(") && text.endsWith(")")) {
+        text = normalizedLabel(text.slice(2, -1).trim());
+        continue;
+      }
+      if (text.startsWith("!") && !text.startsWith("!=") && text.length > 1) {
+        text = normalizedLabel(text.slice(1).trim());
+        continue;
+      }
+      return text;
+    }
+  };
+  const polarityPairCases = (label) => {
+    const trueCase = { id: "true", label };
+    const falseCase = { id: "false", label: negateLabel(label) };
+    return normalizedLabel(label) === positiveLabel(label) ? [trueCase, falseCase] : [falseCase, trueCase];
+  };
+  const MAX_DECOMPOSED_CLAUSES = 8;
+  const MAX_DECOMPOSED_LITERALS = 8;
+  const literalCaseText = (node) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? `"${node.text}"` : ts.isNumericLiteral(node) ? node.text : node.getText();
+  const isGateCombination = (expression) => {
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isPrefixUnaryExpression(unwrapped) && unwrapped.operator === ts.SyntaxKind.ExclamationToken)
+      return isGateCombination(unwrapped.operand);
+    return ts.isBinaryExpression(unwrapped) && (unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken || unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken);
+  };
+  const negateClauses = (clauses) => {
+    const flip = (literal) => ({
+      expression: literal.expression,
+      positive: !literal.positive
+    });
+    let expanded = [[]];
+    for (const clause of clauses) {
+      const next = [];
+      for (const base of expanded) for (const literal of clause) next.push([...base, flip(literal)]);
+      expanded = next;
+    }
+    return expanded.length > MAX_DECOMPOSED_CLAUSES ? void 0 : expanded;
+  };
+  const conditionClauses = (expression) => {
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isPrefixUnaryExpression(unwrapped) && unwrapped.operator === ts.SyntaxKind.ExclamationToken) {
+      const operand = conditionClauses(unwrapped.operand);
+      if (!operand) return void 0;
+      const only = operand.length === 1 ? operand.at(0) : void 0;
+      if (only && only.length === 1 && only.at(0).positive) return [[{ expression: unwrapped, positive: true }]];
+      return negateClauses(operand);
+    }
+    if (ts.isBinaryExpression(unwrapped) && (unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken || unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken)) {
+      const left = conditionClauses(unwrapped.left);
+      const right = conditionClauses(unwrapped.right);
+      if (!left || !right) return void 0;
+      const merged = unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken ? [...left, ...right] : left.flatMap((clause) => right.map((other) => [...clause, ...other]));
+      if (merged.length > MAX_DECOMPOSED_CLAUSES || merged.some((clause) => clause.length > MAX_DECOMPOSED_LITERALS))
+        return void 0;
+      return merged;
+    }
+    return [[{ expression: unwrapped, positive: true }]];
+  };
+  const conditionRequirements = (clauses, ownerId, when, context) => {
+    const rules = [];
+    for (const clause of clauses) {
+      const rule = [];
+      const chosen = /* @__PURE__ */ new Set();
+      let contradiction = false;
+      for (const literal of clause) {
+        const label = normalizedLabel(literal.expression.getText());
+        const controlId = conditionControlId(literal.expression, ownerId, label, when, context);
+        const value = literal.positive ? "on" : "off";
+        if (chosen.has(`${controlId}\0${literal.positive ? "off" : "on"}`)) {
+          contradiction = true;
+          break;
+        }
+        if (chosen.has(`${controlId}\0${value}`)) continue;
+        chosen.add(`${controlId}\0${value}`);
+        rule.push({ controlId, value });
+      }
+      if (!contradiction) rules.push(rule);
+    }
+    return rules;
+  };
+  function isEmptyOutput(expression, context) {
+    return resolveAliasedValues(expression, context).every(
+      (unwrapped) => unwrapped.kind === ts.SyntaxKind.NullKeyword || unwrapped.kind === ts.SyntaxKind.FalseKeyword || unwrapped.kind === ts.SyntaxKind.TrueKeyword || ts.isIdentifier(unwrapped) && unwrapped.text === "undefined" || ts.isVoidExpression(unwrapped)
+    );
+  }
+  function controlledExpression(expression, ownerId, ruleset, context, visit) {
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isConditionalExpression(unwrapped)) {
+      const emptyTrue = isEmptyOutput(unwrapped.whenTrue, context);
+      const emptyFalse = isEmptyOutput(unwrapped.whenFalse, context);
+      if (emptyTrue && emptyFalse) return true;
+      if (isGateCombination(unwrapped.condition)) {
+        const trueClauses = conditionClauses(unwrapped.condition);
+        const falseClauses = trueClauses && negateClauses(trueClauses);
+        const trueReady = emptyTrue || trueClauses !== void 0;
+        const falseReady = emptyFalse || falseClauses !== void 0;
+        if (trueReady && falseReady) {
+          if (!emptyTrue)
+            visit(
+              unwrapped.whenTrue,
+              combineRulesets(ruleset, conditionRequirements(trueClauses, ownerId, ruleset, context))
+            );
+          if (!emptyFalse)
+            visit(
+              unwrapped.whenFalse,
+              combineRulesets(ruleset, conditionRequirements(falseClauses, ownerId, ruleset, context))
+            );
+          return true;
+        }
+      }
+      const label = normalizedLabel(unwrapped.condition.getText());
+      const select = controlRuleset(
+        unwrapped,
+        ownerId,
+        emptyTrue ? negateLabel(label) : emptyFalse ? label : positiveLabel(label),
+        ruleset,
+        context,
+        emptyTrue || emptyFalse ? void 0 : {
+          cases: polarityPairCases(label),
+          polarityPair: true
+        }
+      );
+      if (!emptyTrue) visit(unwrapped.whenTrue, select(emptyFalse ? "on" : "true"));
+      if (!emptyFalse) visit(unwrapped.whenFalse, select(emptyTrue ? "on" : "false"));
+      return true;
+    }
+    if (ts.isBinaryExpression(unwrapped) && unwrapped.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      let conjunction2 = function(condition, node, when) {
+        const guard = unwrapExpression(condition);
+        const operandClauses = (operand, prerequisites) => {
+          if (!isGateCombination(operand)) return void 0;
+          const clauses = conditionClauses(operand);
+          return clauses ? conditionRequirements(clauses, ownerId, prerequisites, context) : void 0;
+        };
+        if (ts.isBinaryExpression(guard) && guard.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+          const prerequisites = conjunction2(guard.left, guard, when);
+          const decomposed2 = operandClauses(guard.right, prerequisites);
+          if (decomposed2) return combineRulesets(prerequisites, decomposed2);
+          return controlRuleset(node, ownerId, normalizedLabel(guard.right.getText()), prerequisites, context)("on");
+        }
+        const decomposed = operandClauses(guard, when);
+        if (decomposed) return decomposed;
+        return controlRuleset(node, ownerId, normalizedLabel(condition.getText()), when, context)("on");
+      };
+      var conjunction = conjunction2;
+      visit(unwrapped.right, conjunction2(unwrapped.left, unwrapped, ruleset));
+      return true;
+    }
+    if (ts.isBinaryExpression(unwrapped) && (unwrapped.operatorToken.kind === ts.SyntaxKind.BarBarToken || unwrapped.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) {
+      let hasOutput2 = function(expression2, visited = /* @__PURE__ */ new Set()) {
+        const candidate = unwrapExpression(expression2);
+        if (containsReactOutput(candidate, context.checker, visited) || bindings && getIncomingProp(
+          ts.isCallExpression(candidate) ? candidate.expression : candidate,
+          bindings,
+          context.checker
+        ))
+          return true;
+        if (ts.isConditionalExpression(candidate))
+          return hasOutput2(candidate.whenTrue, visited) || hasOutput2(candidate.whenFalse, visited);
+        if (ts.isBinaryExpression(candidate))
+          return hasOutput2(candidate.right, visited) || (candidate.operatorToken.kind === ts.SyntaxKind.BarBarToken || candidate.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) && hasOutput2(candidate.left, visited);
+        if (ts.isArrowFunction(candidate) || ts.isFunctionExpression(candidate))
+          return collectReturnExpressions(candidate.body).some((returned) => hasOutput2(returned, visited));
+        const reference = localVariableReference(candidate, context, visited);
+        if (reference)
+          return reference.initializers.some((initializer) => hasOutput2(initializer, reference.visitedSymbols));
+        if (!ts.isIdentifier(candidate) && !ts.isPropertyAccessExpression(candidate)) return false;
+        const target = targetForReference(candidate, context);
+        if (target?.definition) return true;
+        if (!target || !/^[A-Z]/.test(target.title.split(".").at(-1) ?? "")) return false;
+        const valueType = context.checker.getTypeAtLocation(candidate);
+        return valueType.getCallSignatures().length + valueType.getConstructSignatures().length > 0;
+      };
+      var hasOutput = hasOutput2;
+      const nullish = unwrapped.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken;
+      const label = normalizedLabel(unwrapped.left.getText());
+      const bindings = context.propBindings.get(ownerId);
+      const hasLeftOutput = hasOutput2(unwrapped.left);
+      const select = controlRuleset(
+        unwrapped,
+        ownerId,
+        hasLeftOutput ? label : nullish ? `${label} == null` : negateLabel(label),
+        ruleset,
+        context,
+        hasLeftOutput ? {
+          // The decision is the left operand's truthiness (`??`: null or
+          // not) — a two-value subject, so it renders as a switch over it,
+          // same as any other boolean gate. What each arm renders is the
+          // graph's business: the arm edges already point at their nodes.
+          cases: [
+            { id: "left", label },
+            { id: "right", label: nullish ? `${label} == null` : negateLabel(label) }
+          ],
+          polarityPair: true
+        } : void 0
+      );
+      if (hasLeftOutput) visit(unwrapped.left, select("left"));
+      visit(unwrapped.right, select(hasLeftOutput ? "right" : "on"));
+      return true;
+    }
+    return false;
+  }
+  function controlledReturns(body, ownerId, context, visit, initialRuleset = [[]]) {
+    if (!ts.isBlock(body)) {
+      visit(body, initialRuleset);
+      return;
+    }
+    const statementsOf = (statement) => !statement ? [] : ts.isBlock(statement) ? statement.statements : [statement];
+    function hasExit(node) {
+      if (ts.isFunctionLike(node)) return false;
+      if (ts.isReturnStatement(node) || ts.isBreakStatement(node) || ts.isThrowStatement(node)) return true;
+      let found = false;
+      ts.forEachChild(node, (child) => {
+        if (hasExit(child)) found = true;
+      });
+      return found;
+    }
+    function mayRender(statements, breakContinuation = []) {
+      for (const [index, statement] of statements.entries()) {
+        const tail = statements.slice(index + 1);
+        if (ts.isReturnStatement(statement))
+          return !!statement.expression && !isEmptyOutput(statement.expression, context);
+        if (ts.isBlock(statement)) return mayRender([...statement.statements, ...tail], breakContinuation);
+        if (ts.isIfStatement(statement))
+          return mayRender([...statementsOf(statement.thenStatement), ...tail], breakContinuation) || mayRender([...statementsOf(statement.elseStatement), ...tail], breakContinuation);
+        if (ts.isSwitchStatement(statement))
+          return statement.caseBlock.clauses.some((clause) => mayRender([...clause.statements, ...tail], tail));
+        if (ts.isBreakStatement(statement)) return mayRender(breakContinuation);
+        if (ts.isThrowStatement(statement)) return false;
+      }
+      return false;
+    }
+    function walk(statements, initial, breakContinuation = [], continuation = []) {
+      let next = initial;
+      let breaks = [];
+      for (const [index, statement] of statements.entries()) {
+        if (next.length === 0) break;
+        if (ts.isReturnStatement(statement)) {
+          if (statement.expression) visit(statement.expression, next);
+          next = [];
+        } else if (ts.isThrowStatement(statement)) {
+          next = [];
+        } else if (ts.isBreakStatement(statement)) {
+          breaks = unionRulesets(breaks, next);
+          next = [];
+        } else if (ts.isBlock(statement)) {
+          const flow = walk(statement.statements, next, breakContinuation, [
+            ...statements.slice(index + 1),
+            ...continuation
+          ]);
+          next = flow.next;
+          breaks = unionRulesets(breaks, flow.breaks);
+        } else if (ts.isIfStatement(statement) && (hasExit(statement.thenStatement) || statement.elseStatement && hasExit(statement.elseStatement))) {
+          const tail = [...statements.slice(index + 1), ...continuation];
+          const trueOutput = mayRender([...statementsOf(statement.thenStatement), ...tail], breakContinuation);
+          const falseOutput = mayRender([...statementsOf(statement.elseStatement), ...tail], breakContinuation);
+          if (!trueOutput && !falseOutput) {
+            next = [];
+            continue;
+          }
+          if (isGateCombination(statement.expression)) {
+            const trueClauses = conditionClauses(statement.expression);
+            const falseClauses = trueClauses && negateClauses(trueClauses);
+            const trueReady = !trueOutput || trueClauses !== void 0;
+            const falseReady = !falseOutput || falseClauses !== void 0;
+            if (trueReady && falseReady) {
+              const thenFlow2 = walk(
+                statementsOf(statement.thenStatement),
+                combineRulesets(next, trueOutput ? conditionRequirements(trueClauses, ownerId, next, context) : []),
+                breakContinuation,
+                tail
+              );
+              const elseFlow2 = walk(
+                statementsOf(statement.elseStatement),
+                combineRulesets(next, falseOutput ? conditionRequirements(falseClauses, ownerId, next, context) : []),
+                breakContinuation,
+                tail
+              );
+              next = unionRulesets(thenFlow2.next, elseFlow2.next);
+              breaks = unionRulesets(breaks, thenFlow2.breaks, elseFlow2.breaks);
+              continue;
+            }
+          }
+          const label = normalizedLabel(statement.expression.getText());
+          const select = controlRuleset(
+            statement,
+            ownerId,
+            trueOutput && falseOutput ? positiveLabel(label) : trueOutput ? label : negateLabel(label),
+            next,
+            context,
+            trueOutput && falseOutput ? {
+              cases: polarityPairCases(label),
+              polarityPair: true
+            } : void 0
+          );
+          const thenFlow = walk(
+            statementsOf(statement.thenStatement),
+            select(trueOutput && falseOutput ? "true" : trueOutput ? "on" : "off"),
+            breakContinuation,
+            tail
+          );
+          const elseFlow = walk(
+            statementsOf(statement.elseStatement),
+            select(trueOutput && falseOutput ? "false" : falseOutput ? "on" : "off"),
+            breakContinuation,
+            tail
+          );
+          next = unionRulesets(thenFlow.next, elseFlow.next);
+          breaks = unionRulesets(breaks, thenFlow.breaks, elseFlow.breaks);
+        } else if (ts.isSwitchStatement(statement)) {
+          const clauses = statement.caseBlock.clauses;
+          if (clauses.length === 0) continue;
+          const alternatives = clauses.map((clause, clauseIndex) => ({
+            id: `case:${clauseIndex}`,
+            label: ts.isCaseClause(clause) ? literalCaseText(clause.expression) : "default"
+          }));
+          const noDefault = !clauses.some(ts.isDefaultClause);
+          if (noDefault) alternatives.push({ id: `case:${clauses.length}`, label: "default" });
+          const tail = [...statements.slice(index + 1), ...continuation];
+          if (alternatives.length === 1) {
+            const flow = walk(clauses.at(0).statements, next, tail, tail);
+            next = unionRulesets(flow.next, flow.breaks);
+            continue;
+          }
+          const select = controlRuleset(statement, ownerId, statement.expression.getText(), next, context, {
+            cases: alternatives
+          });
+          let fallthrough = [];
+          let exits = noDefault ? select(`case:${clauses.length}`) : [];
+          for (const [clauseIndex, clause] of clauses.entries()) {
+            const flow = walk(clause.statements, unionRulesets(fallthrough, select(`case:${clauseIndex}`)), tail, [
+              ...clauses.slice(clauseIndex + 1).flatMap((nextClause) => [...nextClause.statements]),
+              ...tail
+            ]);
+            fallthrough = flow.next;
+            exits = unionRulesets(exits, flow.breaks);
+          }
+          next = unionRulesets(exits, fallthrough);
+        } else if (!ts.isFunctionLike(statement)) {
+          for (const expression of collectReturnExpressions(statement)) visit(expression, next);
+        }
+      }
+      return { next, breaks };
+    }
+    walk(body.statements, initialRuleset);
+  }
+  function addUseRuleset(context, useId, ruleset, rulesetsByUse = context.useRulesets) {
+    rulesetsByUse.set(useId, unionRulesets(rulesetsByUse.get(useId) ?? [], ruleset));
+  }
   function analyzeDefinitionUsages(definition, context) {
-    function analyzeRendered(expression) {
+    const activeExpressions = /* @__PURE__ */ new Set();
+    function analyzeRendered(expression, ruleset = [[]]) {
+      if (activeExpressions.has(expression)) return;
+      activeExpressions.add(expression);
+      try {
+        analyzeRenderedValue(expression, ruleset);
+      } finally {
+        activeExpressions.delete(expression);
+      }
+    }
+    function analyzeRenderedValue(expression, ruleset) {
+      if (controlledExpression(expression, definition.id, ruleset, context, analyzeRendered)) return;
       const unwrapped = unwrapExpression(expression);
       if (ts.isJsxFragment(unwrapped)) {
-        for (const child of unwrapped.children) analyzeChild(child);
+        for (const child of unwrapped.children) analyzeChild(child, ruleset);
         return;
       }
       if (ts.isJsxElement(unwrapped) || ts.isJsxSelfClosingElement(unwrapped)) {
         const opening = ts.isJsxElement(unwrapped) ? unwrapped.openingElement : unwrapped;
         if (isIntrinsicJsxTag(opening.tagName)) {
-          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child);
+          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child, ruleset);
           return;
         }
         const target = targetForReference(opening.tagName, context);
         if (!target) {
-          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child);
+          if (ts.isJsxElement(unwrapped)) for (const child of unwrapped.children) analyzeChild(child, ruleset);
           return;
         }
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
+        addUseRuleset(context, use.id, ruleset);
         analyzeJsxComponentUsage(unwrapped, use, context);
         return;
       }
@@ -5390,50 +5979,51 @@ function createComponentGraphBuilder(ts) {
         const [tagExpression] = unwrapped.arguments;
         if (!tagExpression) return;
         if (ts.isStringLiteral(tagExpression)) {
-          for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child);
+          for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child, ruleset);
           return;
         }
         const target = targetForReference(tagExpression, context);
         if (!target) return;
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
+        addUseRuleset(context, use.id, ruleset);
         analyzeCreateElementUsage(unwrapped, use, context);
         return;
       }
-      if (ts.isConditionalExpression(unwrapped)) {
-        analyzeRendered(unwrapped.whenTrue);
-        analyzeRendered(unwrapped.whenFalse);
-        return;
-      }
-      if (ts.isBinaryExpression(unwrapped)) {
-        analyzeRendered(unwrapped.right);
-        return;
-      }
       if (ts.isArrayLiteralExpression(unwrapped)) {
-        for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element);
+        for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, ruleset);
         return;
       }
       if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-            for (const returned of collectReturnExpressions(argument.body)) analyzeRendered(returned);
+            controlledReturns(argument.body, definition.id, context, analyzeRendered, ruleset);
           }
         }
+        return;
       }
+      const reference = localVariableReference(unwrapped, context, /* @__PURE__ */ new Set());
+      if (reference) for (const initializer of reference.initializers) analyzeRendered(initializer, ruleset);
     }
-    function analyzeChild(child) {
-      if (ts.isJsxExpression(child) && child.expression) analyzeRendered(child.expression);
+    function analyzeChild(child, ruleset) {
+      if (ts.isJsxExpression(child) && child.expression) analyzeRendered(child.expression, ruleset);
       else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
-        analyzeRendered(child);
+        analyzeRendered(child, ruleset);
       }
     }
-    for (const root of definition.renderRoots) analyzeRendered(root);
+    if (definition.body) controlledReturns(definition.body, definition.id, context, analyzeRendered);
+    else for (const root of definition.renderRoots) analyzeRendered(root);
   }
   function resolveConsumerRoutes(receiverUse, propName, kind, rulesByComponentId, context, visited = /* @__PURE__ */ new Set()) {
     const visitKey = `${receiverUse.id}\0${propName}\0${kind}`;
     if (visited.has(visitKey)) return [];
     const nextVisited = new Set(visited).add(visitKey);
-    const step = { useId: receiverUse.id, componentId: receiverUse.target.id, propName };
+    const step = {
+      useId: receiverUse.id,
+      componentId: receiverUse.target.id,
+      propName,
+      ruleset: [[]]
+    };
     const rules = rulesByComponentId.get(receiverUse.target.id);
     if (!rules) {
       if (kind === "render-prop" && /^on[A-Z]/.test(propName)) return [];
@@ -5441,13 +6031,18 @@ function createComponentGraphBuilder(ts) {
     }
     const candidates = [
       ...rules.exact.get(propName) ?? [],
-      ...rules.spreads.filter(({ excludedProps }) => !excludedProps.has(propName)).map(({ targetUseId }) => ({ type: "forward", targetUseId, targetPropName: propName }))
+      ...rules.spreads.filter(({ excludedProps }) => !excludedProps.has(propName)).map(({ targetUseId, ruleset }) => ({
+        type: "forward",
+        targetUseId,
+        targetPropName: propName,
+        ruleset
+      }))
     ];
     const routes = /* @__PURE__ */ new Map();
     for (const rule of candidates) {
       if (rule.type === "terminal") {
         if (rule.kind === kind) {
-          const route = { kind, steps: [step] };
+          const route = { kind, steps: [{ ...step, ruleset: rule.ruleset }] };
           routes.set(JSON.stringify(route), route);
         }
         continue;
@@ -5462,24 +6057,17 @@ function createComponentGraphBuilder(ts) {
         context,
         nextVisited
       )) {
-        const route = { kind, steps: [step, ...downstream.steps] };
+        const route = {
+          kind,
+          steps: [{ ...step, ruleset: rule.ruleset }, ...downstream.steps]
+        };
         routes.set(JSON.stringify(route), route);
       }
     }
     return [...routes.values()];
   }
-  function relationshipKindLabel(relationship) {
-    if (relationship.kind === "direct-render") return relationship.kind;
-    const category = relationship.kind === "node-prop" ? "NODE" : relationship.kind === "render-prop" ? "RENDER" : "COMPONENT";
-    return `${category} (${relationship.propName})`;
-  }
-  function relationshipLabel(relationship, definitionsById) {
-    if (relationship.kind === "direct-render") return void 0;
-    const supplierNames = relationship.supplierIds.map((supplierId) => definitionsById.get(supplierId)?.name ?? supplierId).toSorted();
-    return `from ${supplierNames.join(", ")}`;
-  }
   function edgeId(relationship) {
-    const key = relationship.kind === "direct-render" ? relationshipKey(relationship) : `${relationshipKey(relationship)}\0${relationship.supplierIds.join("\0")}`;
+    const key = relationship.kind === "inline-render" ? relationshipKey(relationship) : `${relationshipKey(relationship)}\0${relationship.supplierIds.join("\0")}`;
     return `edge:${createHash2("sha256").update(key).digest("hex").slice(0, 16)}`;
   }
   function sourceHref(relativePath) {
@@ -5567,6 +6155,28 @@ function createComponentGraphBuilder(ts) {
     const visibleInstances = /* @__PURE__ */ new Map();
     const visibleDefinitionIds = /* @__PURE__ */ new Set();
     const relationships = /* @__PURE__ */ new Map();
+    const controls = /* @__PURE__ */ new Map();
+    const roots = [];
+    function instantiateRuleset(ruleset, instance, source, prerequisites = [[]]) {
+      return ruleset.map(
+        (path) => path.map(({ controlId, value }) => {
+          const template = context.controls.get(controlId);
+          const id = `${instance.id}:control:${controlId.split(":control:").at(-1)}`;
+          const when = combineRulesets(
+            prerequisites,
+            instantiateRuleset(template.dependsOn, instance, source, prerequisites)
+          );
+          const existing = controls.get(id);
+          controls.set(id, {
+            ...template,
+            id,
+            owner: source.id,
+            dependsOn: unionRulesets(existing?.dependsOn ?? [], when)
+          });
+          return { controlId: id, value };
+        })
+      );
+    }
     function targetVisibility(targetId) {
       return visibility.get(targetId) ?? { boundaryVisible: false, implementationAnalyzed: false };
     }
@@ -5588,14 +6198,27 @@ function createComponentGraphBuilder(ts) {
     function addFinalRelationship(relationship) {
       const key = relationshipKey(relationship);
       const existing = relationships.get(key);
-      if (!existing || existing.kind === "direct-render" || relationship.kind === "direct-render") {
+      if (!existing) {
         relationships.set(key, relationship);
         return;
       }
-      relationships.set(key, {
-        ...relationship,
-        supplierIds: [.../* @__PURE__ */ new Set([...existing.supplierIds, ...relationship.supplierIds])].toSorted()
-      });
+      const ruleset = unionRulesets(existing.ruleset, relationship.ruleset);
+      relationships.set(
+        key,
+        existing.kind === "inline-render" || relationship.kind === "inline-render" ? { ...relationship, ruleset } : {
+          ...relationship,
+          ruleset,
+          supplierIds: [.../* @__PURE__ */ new Set([...existing.supplierIds, ...relationship.supplierIds])].toSorted(),
+          supplierInstanceIds: [
+            .../* @__PURE__ */ new Set([...existing.supplierInstanceIds, ...relationship.supplierInstanceIds])
+          ].toSorted(),
+          origins: [
+            ...new Map(
+              [...existing.origins, ...relationship.origins].map((origin) => [JSON.stringify(origin), origin])
+            ).values()
+          ]
+        }
+      );
     }
     function makeVisible(instance) {
       const policy = targetVisibility(instance.target.id);
@@ -5603,19 +6226,21 @@ function createComponentGraphBuilder(ts) {
       visibleInstances.set(instance.id, instance);
       visibleDefinitionIds.add(instance.target.id);
       if (!instance.target.definition || !policy.implementationAnalyzed) return;
-      for (const useId of [...context.directUseIdsByOwner.get(instance.target.id) ?? []].toSorted()) {
+      for (const useId of context.directUseIdsByOwner.get(instance.target.id) ?? []) {
         const use = context.uses.get(useId);
         if (use) processDirectUse(instance, use);
       }
     }
-    function processSuppliedTarget(targetUse, parent, source, owner, kind, propName, trail) {
+    function processSuppliedTarget(targetUse, parent, source, owner, kind, propName, originPropName, trail, ruleset, targetUseRuleset) {
       const visitKey = [targetUse.id, source.id, kind, propName].join("\0");
       if (trail.has(visitKey)) return;
       const nextTrail = new Set(trail).add(visitKey);
       const instance = ensureComponentInstance(parent, targetUse, owner);
       const policy = targetVisibility(targetUse.target.id);
+      const supplierSource = targetVisibility(owner.target.id).boundaryVisible ? owner : source;
+      const targetRulesets = combineRulesets(instantiateRuleset(targetUseRuleset, owner, supplierSource), ruleset);
       if (!policy.boundaryVisible) {
-        processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName });
+        processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName }, targetRulesets);
         return;
       }
       makeVisible(instance);
@@ -5624,11 +6249,14 @@ function createComponentGraphBuilder(ts) {
         target: instance.id,
         kind,
         propName,
-        supplierIds: [targetUse.ownerId]
+        supplierIds: [targetUse.ownerId],
+        supplierInstanceIds: [owner.id],
+        origins: [{ supplierId: targetUse.ownerId, prop: originPropName }],
+        ruleset: targetRulesets
       });
       processUseSupplies(targetUse, instance, instance, owner, nextTrail);
     }
-    function processUseSupplies(receiverUse, receiver, fallbackSource, owner, trail = /* @__PURE__ */ new Set(), inherited) {
+    function processUseSupplies(receiverUse, receiver, fallbackSource, owner, trail = /* @__PURE__ */ new Set(), inherited, inheritedRulesets = [[]]) {
       const receiverVisible = targetVisibility(receiverUse.target.id).boundaryVisible;
       for (const supplied of receiverUse.suppliedValues) {
         const routes = resolveConsumerRoutes(
@@ -5644,6 +6272,7 @@ function createComponentGraphBuilder(ts) {
           let source = fallbackSource;
           let propName = inherited?.propName ?? supplied.propName;
           let visiblePath = receiverVisible;
+          let routeRulesets = inheritedRulesets;
           for (const [index, step] of route.steps.entries()) {
             if (index > 0) {
               const use = context.uses.get(step.useId);
@@ -5654,11 +6283,26 @@ function createComponentGraphBuilder(ts) {
               source = consumer;
               propName = step.propName;
             }
+            routeRulesets = combineRulesets(
+              routeRulesets,
+              instantiateRuleset(step.ruleset, consumer, source, routeRulesets)
+            );
           }
-          for (const targetUseId of supplied.targetUseIds) {
-            const targetUse = context.uses.get(targetUseId);
+          for (const suppliedTarget of supplied.targets) {
+            const targetUse = context.uses.get(suppliedTarget.useId);
             if (targetUse) {
-              processSuppliedTarget(targetUse, consumer, source, owner, inherited?.kind ?? route.kind, propName, trail);
+              processSuppliedTarget(
+                targetUse,
+                consumer,
+                source,
+                owner,
+                inherited?.kind ?? route.kind,
+                propName,
+                supplied.propName,
+                trail,
+                routeRulesets,
+                suppliedTarget.ruleset
+              );
             }
           }
         }
@@ -5667,26 +6311,43 @@ function createComponentGraphBuilder(ts) {
     function processDirectUse(source, use) {
       const instance = ensureComponentInstance(source, use, source);
       const policy = targetVisibility(use.target.id);
+      const ruleset = instantiateRuleset(context.useRulesets.get(use.id) ?? [[]], source, source);
       if (policy.boundaryVisible) {
         makeVisible(instance);
-        addFinalRelationship({ source: source.id, target: instance.id, kind: "direct-render" });
+        addFinalRelationship({ source: source.id, target: instance.id, kind: "inline-render", ruleset });
       }
-      processUseSupplies(use, instance, source, source);
+      processUseSupplies(use, instance, source, source, /* @__PURE__ */ new Set(), void 0, policy.boundaryVisible ? [[]] : ruleset);
     }
     for (const rootId of sourceDefinitionIds(definitions, context.uses)) {
       const definition = definitionsById.get(rootId);
       if (!definition || visibleDefinitionIds.has(rootId) || !targetVisibility(rootId).boundaryVisible) continue;
+      roots.push(rootId);
       makeVisible(createInstance(rootId, { id: definition.id, title: definition.name, definition }));
     }
     return {
       instances: [...visibleInstances.values()],
+      controls: [...controls.values()],
+      roots,
       relationships: [...relationships.values()].toSorted(
         (left, right) => relationshipKey(left).localeCompare(relationshipKey(right))
       )
     };
   }
-  function createGraph(definitions, instances, relationships) {
+  function createGraph(definitions, instances, relationships, controls, roots) {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
+    function componentMetadata(id, definitionId) {
+      const origins = relationships.flatMap(
+        (relationship) => relationship.target === id && relationship.kind !== "inline-render" ? relationship.origins.map(({ supplierId, prop }) => ({
+          supplierId,
+          supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
+          prop
+        })) : []
+      );
+      return {
+        definitionId,
+        origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()]
+      };
+    }
     const localNodes = instances.flatMap(({ id, target }) => {
       const definition = target.definition;
       return definition ? [
@@ -5695,7 +6356,8 @@ function createComponentGraphBuilder(ts) {
           id,
           title: definition.name,
           description: definition.relativePath,
-          links: [{ href: sourceHref(definition.relativePath) }]
+          links: [{ href: sourceHref(definition.relativePath) }],
+          component: componentMetadata(id, target.id)
         }
       ] : [];
     });
@@ -5704,22 +6366,19 @@ function createComponentGraphBuilder(ts) {
       type: "default",
       id,
       title: target.title,
-      description: `${target.externalPackage} boundary`
+      description: `${target.externalPackage} boundary`,
+      component: componentMetadata(id, target.id)
     }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
-    const edges = relationships.filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target)).map((relationship) => {
-      const label = relationshipLabel(relationship, definitionsById);
-      return {
-        type: "default",
-        id: edgeId(relationship),
-        source: relationship.source,
-        target: relationship.target,
-        kind: relationshipKindLabel(relationship),
-        ...label ? { label } : {}
-      };
-    }).toSorted((left, right) => left.id.localeCompare(right.id));
+    const edges = relationships.filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target)).map((relationship) => ({
+      type: "default",
+      id: edgeId(relationship),
+      source: relationship.source,
+      target: relationship.target,
+      activeWhen: relationship.ruleset
+    })).toSorted((left, right) => left.id.localeCompare(right.id));
     const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
-    return { groups: [], nodes, edges };
+    return { groups: [], nodes, edges, roots, controls };
   }
   function focusGraphOnRoots(graph, rootPatterns, instances) {
     const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
@@ -5749,8 +6408,419 @@ function createComponentGraphBuilder(ts) {
     return {
       ...graph,
       nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
-      edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target))
+      edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
+      roots: roots.map(({ id }) => id),
+      controls: graph.controls
     };
+  }
+  function toStoredGraph(graph) {
+    return {
+      groups: graph.groups,
+      nodes: graph.nodes,
+      edges: graph.edges.map((edge) => {
+        const ruleset = edge.activeWhen ?? [[]];
+        return ruleset.length === 1 && ruleset.at(0)?.length === 0 ? { type: "default", id: edge.id, source: edge.source, target: edge.target } : { type: "control", id: edge.id, source: edge.source, target: edge.target, activeWhen: ruleset };
+      }),
+      additional: { roots: graph.roots, controls: graph.controls }
+    };
+  }
+  function mergePolarityConditionals(context, rulesByComponentId) {
+    const parsedLabels = /* @__PURE__ */ new Map();
+    const parseLabel = (label) => {
+      if (!parsedLabels.has(label)) {
+        const sourceFile = ts.createSourceFile("label.ts", label, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+        const [statement] = sourceFile.statements;
+        parsedLabels.set(label, ts.isExpressionStatement(statement) ? statement.expression : void 0);
+      }
+      return parsedLabels.get(label);
+    };
+    const structureKey = (node) => {
+      if (ts.isParenthesizedExpression(node)) return structureKey(node.expression);
+      if (ts.isIdentifier(node)) return `id\0${node.text}`;
+      if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return `lit\0${node.text}`;
+      if (ts.isNumericLiteral(node)) return `lit\0${node.text}`;
+      if (ts.isPropertyAccessExpression(node)) return `get\0${structureKey(node.expression)}\0${node.name.text}`;
+      if (ts.isElementAccessExpression(node))
+        return `at\0${structureKey(node.expression)}\0${node.argumentExpression.getText()}`;
+      if (ts.isCallExpression(node))
+        return `call\0${structureKey(node.expression)}\0${node.arguments.map(structureKey).join("")}`;
+      if (ts.isPrefixUnaryExpression(node)) return `pre\0${node.operator}\0${structureKey(node.operand)}`;
+      if (ts.isBinaryExpression(node))
+        return `bin\0${node.operatorToken.kind}\0${structureKey(node.left)}\0${structureKey(node.right)}`;
+      return `raw\0${node.kind}\0${node.getText()}`;
+    };
+    const unwrapPolarity = (node) => {
+      let core = node;
+      let parity = 0;
+      for (; ; ) {
+        if (ts.isParenthesizedExpression(core)) {
+          core = core.expression;
+          continue;
+        }
+        if (ts.isPrefixUnaryExpression(core) && core.operator === ts.SyntaxKind.ExclamationToken) {
+          parity ^= 1;
+          core = core.operand;
+          continue;
+        }
+        return { core, parity };
+      }
+    };
+    const isEnumSubject = (node) => ts.isIdentifier(node) || ts.isPropertyAccessExpression(node) && isEnumSubject(node.expression);
+    const isEnumLiteral = (node) => ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword;
+    const polarityOfLabel = (text) => {
+      const expression = parseLabel(text);
+      if (!expression) return void 0;
+      const { core, parity } = unwrapPolarity(expression);
+      if (!ts.isBinaryExpression(core) || !COMPLEMENTARY_OPERATORS[core.operatorToken.kind])
+        return { group: `expression\0${structureKey(core)}`, caseKey: `polarity:${parity}`, positive: parity === 0 };
+      const operator = COMPLEMENTARY_OPERATORS[core.operatorToken.kind];
+      const leftCore = unwrapPolarity(core.left).core;
+      const rightCore = unwrapPolarity(core.right).core;
+      const left = leftCore.getText();
+      const right = rightCore.getText();
+      const polarity = parity ^ (operator.inverted ? 1 : 0);
+      return {
+        group: `comparison\0${operator.family}\0${structureKey(leftCore)}\0${structureKey(rightCore)}`,
+        caseKey: `polarity:${polarity}`,
+        positive: polarity === 0,
+        ...parity === 0 && !operator.inverted && isEnumSubject(leftCore) && isEnumLiteral(rightCore) ? { enumSubject: left, enumCase: right } : {}
+      };
+    };
+    const polarityOf = (control) => polarityOfLabel(control.label);
+    const branchCasesOf = (control) => {
+      if (control.kind !== "branch" || control.cases.length !== 2) return void 0;
+      const [trueCase, falseCase] = control.cases;
+      if (!trueCase || !falseCase || trueCase.id !== "true" || falseCase.id !== "false") return void 0;
+      return { trueText: trueCase.label, falseText: falseCase.label };
+    };
+    const groups = /* @__PURE__ */ new Map();
+    const EQUALITY_FAMILIES = /* @__PURE__ */ new Set(["equal", "loosely-equal"]);
+    const discriminantOf = (control) => {
+      let label;
+      let values;
+      if (control.kind === "branch") {
+        const [onCase, offCase] = control.cases;
+        if (control.cases.length !== 2 || onCase?.id !== "true" || offCase?.id !== "false" || offCase.label !== negateLabel(onCase.label))
+          return void 0;
+        label = onCase.label;
+        values = ["true", "false"];
+      } else {
+        label = control.label;
+        values = ["on", "off"];
+      }
+      const expression = parseLabel(label);
+      if (!expression) return void 0;
+      const { core, parity } = unwrapPolarity(expression);
+      if (!ts.isBinaryExpression(core)) return void 0;
+      const operator = COMPLEMENTARY_OPERATORS[core.operatorToken.kind];
+      if (!operator || !EQUALITY_FAMILIES.has(operator.family)) return void 0;
+      const left = unwrapPolarity(core.left).core;
+      const right = unwrapPolarity(core.right).core;
+      if (!isEnumSubject(left) || !isEnumLiteral(right)) return void 0;
+      const literal = literalCaseText(right);
+      if (literal.length === 0) return void 0;
+      const positive = operator.inverted ? parity === 1 : parity === 0;
+      const semantics = new Map(
+        values.map((value, index) => [value, { literal, positive: index === 0 ? positive : !positive }])
+      );
+      return {
+        control,
+        groupKey: `${control.owner}\0discriminant\0${operator.family}\0${structureKey(left)}`,
+        subject: left.getText(),
+        semantics
+      };
+    };
+    const discriminantMembers = /* @__PURE__ */ new Map();
+    const discriminantGroups = /* @__PURE__ */ new Map();
+    for (const control of context.controls.values()) {
+      const member = discriminantOf(control);
+      if (!member) continue;
+      discriminantMembers.set(control.id, member);
+      const group = discriminantGroups.get(member.groupKey) ?? {
+        owner: member.control.owner,
+        subject: member.subject,
+        members: [],
+        positiveLiterals: [],
+        needsRemainder: false,
+        representative: member.control,
+        staysConditional: false
+      };
+      group.members.push(member);
+      for (const { literal, positive } of member.semantics.values()) {
+        if (positive && !group.positiveLiterals.includes(literal)) group.positiveLiterals.push(literal);
+      }
+      discriminantGroups.set(member.groupKey, group);
+    }
+    for (const control of context.controls.values()) {
+      if (discriminantMembers.has(control.id)) continue;
+      const branchCases = branchCasesOf(control);
+      if (!branchCases && control.kind !== "conditional") continue;
+      const polarity = branchCases ? polarityOfLabel(branchCases.trueText) : polarityOf(control);
+      if (!polarity) continue;
+      const key = `${control.owner}\0${polarity.group}`;
+      const members = groups.get(key) ?? [];
+      members.push({ control, polarity, ...branchCases ? { branchCases } : {} });
+      groups.set(key, members);
+    }
+    const scanDiscriminantUsage = (ruleset) => {
+      for (const rule of ruleset) {
+        const states = /* @__PURE__ */ new Map();
+        for (const { controlId, value } of rule) {
+          const member = discriminantMembers.get(controlId);
+          const semantic = member?.semantics.get(value);
+          if (!member || !semantic) continue;
+          const state = states.get(member.groupKey) ?? { positives: /* @__PURE__ */ new Set(), negatives: /* @__PURE__ */ new Set() };
+          (semantic.positive ? state.positives : state.negatives).add(semantic.literal);
+          states.set(member.groupKey, state);
+        }
+        for (const [groupKey, { positives, negatives }] of states) {
+          if (positives.size > 0 || negatives.size === 0) continue;
+          const group = discriminantGroups.get(groupKey);
+          if (group.positiveLiterals.length > 0) group.needsRemainder = true;
+        }
+      }
+    };
+    for (const control of context.controls.values()) scanDiscriminantUsage(control.dependsOn);
+    for (const ruleset of context.useRulesets.values()) scanDiscriminantUsage(ruleset);
+    for (const use of context.uses.values()) {
+      for (const supplied of use.suppliedValues) {
+        for (const target of supplied.targets) scanDiscriminantUsage(target.ruleset);
+      }
+    }
+    for (const rules of rulesByComponentId.values()) {
+      for (const list of rules.exact.values()) for (const rule of list) scanDiscriminantUsage(rule.ruleset);
+      for (const spread of rules.spreads) scanDiscriminantUsage(spread.ruleset);
+    }
+    for (const group of discriminantGroups.values()) {
+      group.staysConditional = group.positiveLiterals.length < 2 && !group.needsRemainder;
+    }
+    const finalGroups = [...groups.values()];
+    const replacements = /* @__PURE__ */ new Map();
+    const memberIds = /* @__PURE__ */ new Set();
+    const mergedGroups = /* @__PURE__ */ new Map();
+    const complementKeyOf = (caseKey) => caseKey.startsWith("polarity:") ? `polarity:${caseKey === "polarity:0" ? 1 : 0}` : caseKey;
+    for (const members of finalGroups) {
+      if (members.length === 1 && members.at(0).branchCases) continue;
+      const representative = members.at(0).control;
+      const caseTextByKey = /* @__PURE__ */ new Map();
+      for (const { control, polarity, branchCases } of members) {
+        if (!caseTextByKey.has(polarity.caseKey))
+          caseTextByKey.set(polarity.caseKey, branchCases ? branchCases.trueText : control.label);
+        if (branchCases && !caseTextByKey.has(complementKeyOf(polarity.caseKey)))
+          caseTextByKey.set(complementKeyOf(polarity.caseKey), branchCases.falseText);
+        memberIds.add(control.id);
+      }
+      const complementText = (caseKey) => caseTextByKey.get(complementKeyOf(caseKey));
+      const staysConditional = caseTextByKey.size < 2;
+      for (const { control, polarity, branchCases } of members) {
+        const values = branchCases ? {
+          true: caseTextByKey.get(polarity.caseKey),
+          false: caseTextByKey.get(complementKeyOf(polarity.caseKey))
+        } : staysConditional ? { on: "on", off: "off" } : {
+          on: caseTextByKey.get(polarity.caseKey),
+          ...complementText(polarity.caseKey) ? { off: complementText(polarity.caseKey) } : {}
+        };
+        replacements.set(control.id, { controlId: representative.id, values });
+      }
+      mergedGroups.set(representative.id, members);
+    }
+    const discriminantByRepresentative = /* @__PURE__ */ new Map();
+    for (const group of discriminantGroups.values()) {
+      discriminantByRepresentative.set(group.representative.id, group);
+      for (const { control } of group.members) memberIds.add(control.id);
+    }
+    const conditionalValueOf = (group, outcomePositive) => {
+      const representative = group.members.at(0).semantics;
+      const onSemantic = representative.get("on") ?? representative.get("true");
+      return onSemantic.positive === outcomePositive ? "on" : "off";
+    };
+    const resolveDiscriminant = (group, positives, negatives) => {
+      const [chosen] = positives;
+      if (chosen !== void 0) {
+        if (negatives.has(chosen)) return [];
+        return group.staysConditional ? [conditionalValueOf(group, true)] : group.positiveLiterals.includes(chosen) ? [chosen] : [];
+      }
+      if (negatives.size === 0) return [];
+      if (group.staysConditional) return [conditionalValueOf(group, false)];
+      const allowed = group.positiveLiterals.filter((literal) => !negatives.has(literal));
+      return group.needsRemainder ? [...allowed, "otherwise"] : allowed;
+    };
+    const rewrite = (ruleset) => {
+      const rewritten = [];
+      for (const rule of ruleset) {
+        const slots = [];
+        const states = /* @__PURE__ */ new Map();
+        let dead = false;
+        for (const requirement of rule) {
+          const member = discriminantMembers.get(requirement.controlId);
+          if (member) {
+            const semantic = member.semantics.get(requirement.value);
+            if (!semantic) {
+              dead = true;
+              break;
+            }
+            const state = states.get(member.groupKey) ?? { positives: /* @__PURE__ */ new Set(), negatives: /* @__PURE__ */ new Set() };
+            (semantic.positive ? state.positives : state.negatives).add(semantic.literal);
+            if (!states.has(member.groupKey)) {
+              states.set(member.groupKey, state);
+              slots.push({ groupKey: member.groupKey, state });
+            }
+            continue;
+          }
+          const replacement = replacements.get(requirement.controlId);
+          if (!replacement) {
+            slots.push({ requirement });
+            continue;
+          }
+          const value = replacement.values[requirement.value];
+          slots.push({ requirement: value === void 0 ? requirement : { controlId: replacement.controlId, value } });
+        }
+        if (dead) continue;
+        const buildRules = (index, base) => {
+          if (index >= slots.length) return [base];
+          const slot = slots[index];
+          if ("requirement" in slot) return buildRules(index + 1, [...base, slot.requirement]);
+          const group = discriminantGroups.get(slot.groupKey);
+          const values = resolveDiscriminant(group, slot.state.positives, slot.state.negatives);
+          return values.flatMap(
+            (value) => buildRules(index + 1, [...base, { controlId: group.representative.id, value }])
+          );
+        };
+        rewritten.push(...buildRules(0, []));
+      }
+      return rewritten;
+    };
+    const controls = /* @__PURE__ */ new Map();
+    for (const control of context.controls.values()) {
+      const members = mergedGroups.get(control.id);
+      if (members) {
+        const casesByKey = /* @__PURE__ */ new Map();
+        for (const { control: member, polarity, branchCases } of members) {
+          if (!casesByKey.has(polarity.caseKey))
+            casesByKey.set(polarity.caseKey, {
+              id: branchCases ? branchCases.trueText : member.label,
+              label: branchCases ? branchCases.trueText : member.label,
+              positive: polarity.positive
+            });
+          if (branchCases && !casesByKey.has(complementKeyOf(polarity.caseKey)))
+            casesByKey.set(complementKeyOf(polarity.caseKey), {
+              id: branchCases.falseText,
+              label: branchCases.falseText,
+              positive: !polarity.positive
+            });
+        }
+        const ordered = [...casesByKey.values()];
+        const positiveCase = ordered.find(({ positive }) => positive);
+        if (ordered.length === 2 && positiveCase && ordered.at(0) !== positiveCase) ordered.reverse();
+        const cases = ordered.map(({ id, label }) => ({ id, label }));
+        const positiveText = positiveCase?.label ?? ordered.at(0).label;
+        controls.set(control.id, {
+          id: control.id,
+          owner: control.owner,
+          // A two-case group is a switch over one two-value subject, so its
+          // label is the positive form; a lone member stays a conditional and
+          // keeps its own polarity — its label names the condition that turns
+          // it on. Comparison groups qualify too: they pair one predicate with
+          // its complement over the same threshold, which never overlaps —
+          // overlapping thresholds keep separate groups (ADR 0005 category 6).
+          ...cases.length >= 2 ? {
+            kind: "branch",
+            label: positiveLabel(positiveText),
+            cases,
+            polarityPair: true
+          } : { kind: "conditional", label: positiveText },
+          dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn)))
+        });
+        continue;
+      }
+      const discriminant = discriminantByRepresentative.get(control.id);
+      if (discriminant) {
+        const dependsOn = unionRulesets(
+          ...discriminant.members.map(({ control: member }) => rewrite(member.dependsOn))
+        );
+        controls.set(
+          control.id,
+          discriminant.staysConditional ? { id: control.id, owner: control.owner, label: control.label, kind: "conditional", dependsOn } : {
+            id: control.id,
+            owner: control.owner,
+            kind: "branch",
+            label: discriminant.subject,
+            cases: [
+              ...discriminant.positiveLiterals.map((literal) => ({ id: literal, label: literal })),
+              ...discriminant.needsRemainder ? [{ id: "otherwise", label: "otherwise" }] : []
+            ],
+            dependsOn
+          }
+        );
+        continue;
+      }
+      if (memberIds.has(control.id)) continue;
+      controls.set(control.id, { ...control, dependsOn: rewrite(control.dependsOn) });
+    }
+    const creationOrder = new Map([...controls.keys()].map((id, index) => [id, index]));
+    const dependents = (control) => [
+      ...new Set(control.dependsOn.flat().map(({ controlId }) => controlId))
+    ];
+    for (; ; ) {
+      const state = /* @__PURE__ */ new Map();
+      const path = [];
+      const visit = (id) => {
+        state.set(id, "visiting");
+        path.push(id);
+        for (const successor2 of dependents(controls.get(id))) {
+          if (!controls.has(successor2)) continue;
+          if (state.get(successor2) === "visiting") return [...path.slice(path.indexOf(successor2)), successor2];
+          if (!state.has(successor2)) {
+            const cycle2 = visit(successor2);
+            if (cycle2) return cycle2;
+          }
+        }
+        state.set(id, "done");
+        path.pop();
+        return void 0;
+      };
+      let cycle;
+      for (const id of controls.keys()) {
+        if (!state.has(id)) {
+          cycle = visit(id);
+          if (cycle) break;
+        }
+      }
+      if (!cycle) break;
+      const ring = cycle.slice(0, -1);
+      const latest = ring.reduce(
+        (left, right) => creationOrder.get(left) > creationOrder.get(right) ? left : right
+      );
+      const successor = ring[(ring.indexOf(latest) + 1) % ring.length];
+      const control = controls.get(latest);
+      controls.set(latest, {
+        ...control,
+        dependsOn: control.dependsOn.map((rule) => rule.filter(({ controlId }) => controlId !== successor))
+      });
+    }
+    context.controls.clear();
+    for (const [id, control] of controls) context.controls.set(id, control);
+    for (const [useId, ruleset] of context.useRulesets) context.useRulesets.set(useId, rewrite(ruleset));
+    for (const [useId, use] of context.uses) {
+      context.uses.set(useId, {
+        ...use,
+        suppliedValues: use.suppliedValues.map((supplied) => ({
+          ...supplied,
+          targets: supplied.targets.map((target) => ({ ...target, ruleset: rewrite(target.ruleset) }))
+        }))
+      });
+    }
+    for (const [componentId, rules] of rulesByComponentId) {
+      rulesByComponentId.set(componentId, {
+        exact: new Map(
+          [...rules.exact].map(([propName, list]) => [
+            propName,
+            list.map((rule) => ({ ...rule, ruleset: rewrite(rule.ruleset) }))
+          ])
+        ),
+        spreads: rules.spreads.map((spread) => ({ ...spread, ruleset: rewrite(spread.ruleset) }))
+      });
+    }
   }
   function mergeEquivalentContexts(graph, instances, relationships) {
     const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
@@ -5761,6 +6831,36 @@ function createComponentGraphBuilder(ts) {
       edges2.push(edge);
       edgesBySource.set(edge.source, edges2);
     }
+    const visibleIds = new Set(graph.nodes.map(({ id }) => id));
+    const availableControls = new Map(
+      graph.controls.filter(({ owner }) => visibleIds.has(owner)).map((control) => [control.id, control])
+    );
+    const neededControls = /* @__PURE__ */ new Set();
+    function requireControls(ruleset) {
+      for (const { controlId } of ruleset.flat()) {
+        const control = availableControls.get(controlId);
+        if (!control || neededControls.has(controlId)) continue;
+        neededControls.add(controlId);
+        requireControls(control.dependsOn);
+      }
+    }
+    for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.activeWhen ?? [[]]);
+    const controls = graph.controls.filter(({ id }) => neededControls.has(id));
+    const controlsByOwner = /* @__PURE__ */ new Map();
+    const controlKeys = /* @__PURE__ */ new Map();
+    for (const control of controls) {
+      const owned = controlsByOwner.get(control.owner) ?? [];
+      controlKeys.set(control.id, String(owned.length));
+      owned.push(control);
+      controlsByOwner.set(control.owner, owned);
+    }
+    const controlsById = new Map(controls.map((control) => [control.id, control]));
+    const normalizeRulesets = (ruleset, classes2) => ruleset.map(
+      (path) => path.filter(({ controlId }) => controlsById.has(controlId)).map(({ controlId, value }) => ({
+        controlId: `${classes2.get(controlsById.get(controlId).owner)}:${controlKeys.get(controlId)}`,
+        value
+      }))
+    );
     let classes = new Map(graph.nodes.map(({ id }) => [id, targetsByInstanceId.get(id).id]));
     for (; ; ) {
       const representatives = /* @__PURE__ */ new Map();
@@ -5769,10 +6869,23 @@ function createComponentGraphBuilder(ts) {
         const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
           const { id, source: _source, target, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id);
-          const suppliers = relationship.kind === "direct-render" ? [] : relationship.supplierIds;
-          return JSON.stringify([metadata, suppliers, classes.get(target)]);
+          const suppliers = relationship.kind === "inline-render" ? [] : relationship.supplierInstanceIds.map((instanceId) => classes.get(instanceId) ?? instanceId).toSorted();
+          return JSON.stringify([
+            {
+              ...metadata,
+              activeWhen: normalizeRulesets(edge.type === "default" ? edge.activeWhen ?? [[]] : [[]], classes)
+            },
+            suppliers,
+            classes.get(target)
+          ]);
         });
-        const signature = JSON.stringify([classes.get(node.id), [...new Set(outgoing)].toSorted()]);
+        const ownedControls = (controlsByOwner.get(node.id) ?? []).map(
+          ({ id: _id, owner: _owner, dependsOn, ...metadata }) => ({
+            ...metadata,
+            dependsOn: normalizeRulesets(dependsOn, classes)
+          })
+        );
+        const signature = JSON.stringify([classes.get(node.id), ownedControls, [...new Set(outgoing)].toSorted()]);
         if (!representatives.has(signature)) representatives.set(signature, node.id);
         refined.set(node.id, representatives.get(signature));
       }
@@ -5792,25 +6905,67 @@ function createComponentGraphBuilder(ts) {
         return [id, classesByDefinition.get(definitionId).size === 1 ? definitionId : classes.get(id)];
       })
     );
-    const nodes = graph.nodes.filter(({ id }) => classes.get(id) === id).map((node) => ({ ...node, id: outputIds.get(node.id) })).toSorted((left, right) => left.id.localeCompare(right.id));
+    const nodes = graph.nodes.filter(({ id }) => classes.get(id) === id).map((node) => {
+      if (node.type !== "default") return { ...node, id: outputIds.get(node.id) };
+      const origins = graph.nodes.flatMap(
+        (candidate) => candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.component.origins : []
+      );
+      return {
+        ...node,
+        id: outputIds.get(node.id),
+        component: {
+          ...node.component,
+          origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()]
+        }
+      };
+    }).toSorted((left, right) => left.id.localeCompare(right.id));
+    const outputControlIds = new Map(
+      controls.map((control) => [control.id, `${outputIds.get(control.owner)}:control:${controlKeys.get(control.id)}`])
+    );
+    const rewriteRulesets = (ruleset) => unionRulesets(
+      ruleset.map(
+        (path) => path.filter(({ controlId }) => outputControlIds.has(controlId)).map(({ controlId, value }) => ({ controlId: outputControlIds.get(controlId), value }))
+      )
+    );
+    const outputControls = /* @__PURE__ */ new Map();
+    for (const control of controls) {
+      const id = outputControlIds.get(control.id);
+      const existing = outputControls.get(id);
+      outputControls.set(id, {
+        ...control,
+        id,
+        owner: outputIds.get(control.owner),
+        dependsOn: unionRulesets(existing?.dependsOn ?? [], rewriteRulesets(control.dependsOn))
+      });
+    }
     const edges = /* @__PURE__ */ new Map();
     for (const edge of graph.edges) {
       const source = outputIds.get(edge.source);
       const target = outputIds.get(edge.target);
       const id = edgeId({ ...relationshipsByEdgeId.get(edge.id), source, target });
-      edges.set(id, { ...edge, id, source, target });
+      const existing = edges.get(id);
+      const ruleset = edge.type === "default" ? rewriteRulesets(edge.activeWhen ?? [[]]) : [[]];
+      edges.set(id, {
+        ...edge,
+        id,
+        source,
+        target,
+        ...edge.type === "default" ? { activeWhen: unionRulesets(existing?.type === "default" ? existing.activeWhen ?? [] : [], ruleset) } : {}
+      });
     }
     return {
       ...graph,
       nodes,
-      edges: [...edges.values()].toSorted((left, right) => left.id.localeCompare(right.id))
+      edges: [...edges.values()].toSorted((left, right) => left.id.localeCompare(right.id)),
+      roots: [...new Set(graph.roots.map((id) => outputIds.get(id)))],
+      controls: [...outputControls.values()]
     };
   }
   async function buildComponentGraph2(options) {
     const scopePath = options.scopePath;
     const sourceFilePaths = await collectSourceFiles(scopePath, options.sourcePaths);
     if (sourceFilePaths.length === 0)
-      throw new Error("No JS, JSX, TS, or TSX source files matched the selected paths.");
+      throw new Error("No JS, JSX, TS, or TSX source files matched the selected ruleset.");
     const compilerOptions = await readCompilerOptions(scopePath, options.tsconfigPath);
     const host = ts.createCompilerHost(compilerOptions);
     host.getCurrentDirectory = () => scopePath;
@@ -5823,8 +6978,8 @@ function createComponentGraphBuilder(ts) {
     if (programErrors.length > 0) {
       throw new Error(`Cannot initialize TypeScript analysis: ${programErrors.map(formatDiagnostic).join("\n")}`);
     }
-    const selectedPaths = new Set(sourceFilePaths);
-    const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedPaths.has(resolve3(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
+    const selectedRulesets = new Set(sourceFilePaths);
+    const sourceFiles = program.getSourceFiles().filter((sourceFile) => selectedRulesets.has(resolve3(sourceFile.fileName))).toSorted((left, right) => left.fileName.localeCompare(right.fileName));
     const syntaxErrors = sourceFiles.flatMap((sourceFile) => program.getSyntacticDiagnostics(sourceFile));
     if (syntaxErrors.length > 0) {
       throw new Error(`Cannot analyze selected source: ${syntaxErrors.map(formatDiagnostic).join("\n")}`);
@@ -5848,14 +7003,18 @@ function createComponentGraphBuilder(ts) {
       externalTargets: /* @__PURE__ */ new Map(),
       uses: /* @__PURE__ */ new Map(),
       directUseIdsByOwner: /* @__PURE__ */ new Map(),
-      analyzedUseIds: /* @__PURE__ */ new Set()
+      analyzedUseIds: /* @__PURE__ */ new Set(),
+      controls: /* @__PURE__ */ new Map(),
+      useRulesets: /* @__PURE__ */ new Map(),
+      propBindings: new Map(definitions.map((definition) => [definition.id, createPropBindings(definition, checker)]))
     };
     for (const definition of definitions) analyzeDefinitionUsages(definition, context);
     const rulesByComponentId = /* @__PURE__ */ new Map();
     for (const definition of definitions) {
-      const bindings = createPropBindings(definition, checker);
+      const bindings = context.propBindings.get(definition.id);
       rulesByComponentId.set(definition.id, analyzeConsumerRules(definition, context, bindings));
     }
+    mergePolarityConditionals(context, rulesByComponentId);
     const visibility = createVisibilityByTarget(
       definitions,
       context.externalTargets,
@@ -5863,9 +7022,15 @@ function createComponentGraphBuilder(ts) {
       options.excludeComponentPatterns ?? []
     );
     const collapsed = collapseComponentStructure(definitions, context, rulesByComponentId, visibility);
-    const graph = createGraph(definitions, collapsed.instances, collapsed.relationships);
+    const graph = createGraph(
+      definitions,
+      collapsed.instances,
+      collapsed.relationships,
+      collapsed.controls,
+      collapsed.roots
+    );
     const focused = options.rootPatterns && options.rootPatterns.length > 0 ? focusGraphOnRoots(graph, [...options.rootPatterns], collapsed.instances) : graph;
-    return mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships);
+    return toStoredGraph(mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships));
   }
   return buildComponentGraph2;
 }

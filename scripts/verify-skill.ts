@@ -496,9 +496,14 @@ async function verifyInstalledReactComponentGenerator(
   ]);
 
   type InstalledGraph = Readonly<{
-    edges: ReadonlyArray<{ kind?: string; label?: string; source: string; target: string }>;
+    additional: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
+    edges: ReadonlyArray<{ source: string; target: string }>;
     groups: readonly unknown[];
-    nodes: ReadonlyArray<{ id: string; title: string }>;
+    nodes: ReadonlyArray<{
+      id: string;
+      title: string;
+      component?: { origins?: ReadonlyArray<{ supplierTitle?: string; prop: string }> };
+    }>;
   }>;
 
   const scriptPath = join(skillRoot, "runtime", "artifact-generators", "react-component-structure", "run.js");
@@ -527,25 +532,28 @@ async function verifyInstalledReactComponentGenerator(
   }
 
   function edgeFacts(graph: InstalledGraph) {
-    const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
+    const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
     return graph.edges
       .map((edge) => ({
-        kind: edge.kind,
-        label: edge.label,
-        source: titlesById.get(edge.source),
-        target: titlesById.get(edge.target),
+        source: nodesById.get(edge.source)?.title,
+        target: nodesById.get(edge.target)?.title,
+        // Edges carry no labels: supplied slots record their prop on the
+        // target's component origins.
+        supplies: (nodesById.get(edge.target)?.component?.origins ?? []).map(({ prop }) => prop).toSorted(),
       }))
       .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   }
 
   const graph = await generateGraph();
-  assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "nodes"]);
+  assert.deepEqual(Object.keys(graph).toSorted(), ["additional", "edges", "groups", "nodes"]);
+  assert.deepEqual(graph.additional.roots, ["component:src/app.tsx#App"]);
+  assert.deepEqual(graph.additional.controls, []);
   assert.deepEqual(graph.groups, []);
   assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
   assert.deepEqual(edgeFacts(graph), [
-    { kind: "direct-render", label: undefined, source: "App", target: "Layout" },
-    { kind: "direct-render", label: undefined, source: "Layout", target: "Header" },
-    { kind: "NODE (children)", label: "from App", source: "Layout", target: "Content" },
+    { source: "App", target: "Layout", supplies: [] },
+    { source: "Layout", target: "Content", supplies: ["children"] },
+    { source: "Layout", target: "Header", supplies: [] },
   ]);
 
   const externalAliasGraph = await generateGraph([], "external-src");
@@ -553,9 +561,7 @@ async function verifyInstalledReactComponentGenerator(
     externalAliasGraph.nodes.map(({ id }) => id),
     ["component:external-src/app.tsx#App", "external:ui-kit#Button"],
   );
-  assert.deepEqual(edgeFacts(externalAliasGraph), [
-    { kind: "direct-render", label: undefined, source: "App", target: "Button" },
-  ]);
+  assert.deepEqual(edgeFacts(externalAliasGraph), [{ source: "App", target: "Button", supplies: [] }]);
 
   const arrayRenderingGraph = await generateGraph([], "array-render-src");
   assert.deepEqual(arrayRenderingGraph.nodes.map(({ title }) => title).toSorted(), [
@@ -567,9 +573,9 @@ async function verifyInstalledReactComponentGenerator(
     "Row",
   ]);
   assert.deepEqual(edgeFacts(arrayRenderingGraph), [
-    { kind: "direct-render", label: undefined, source: "FlatList", target: "Row" },
-    { kind: "direct-render", label: undefined, source: "OptionalList", target: "Row" },
-    { kind: "direct-render", label: undefined, source: "ReadOnlyList", target: "Row" },
+    { source: "FlatList", target: "Row", supplies: [] },
+    { source: "OptionalList", target: "Row", supplies: [] },
+    { source: "ReadOnlyList", target: "Row", supplies: [] },
   ]);
   const sourceAnalyzerGraph = await buildComponentGraph({ scopePath, sourcePaths: ["array-render-src"] });
   assert.deepEqual(
@@ -583,9 +589,7 @@ async function verifyInstalledReactComponentGenerator(
     await generateGraph(["--exclude-path", "src/layout.tsx"]),
   ]) {
     assert.deepEqual(filtered.nodes.map(({ title }) => title).toSorted(), ["App", "Content"]);
-    assert.deepEqual(edgeFacts(filtered), [
-      { kind: "NODE (children)", label: "from App", source: "App", target: "Content" },
-    ]);
+    assert.deepEqual(edgeFacts(filtered), [{ source: "App", target: "Content", supplies: ["children"] }]);
   }
 }
 
