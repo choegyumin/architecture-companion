@@ -1,6 +1,6 @@
 ---
 id: react-component-structure
-description: Build React component structure graphs from verified direct-render, node-prop, render-prop, and component-prop relationships.
+description: Build React component structure graphs from verified inline-render, node-prop, render-prop, and component-prop relationships.
 ---
 
 # React component structure diagram generator

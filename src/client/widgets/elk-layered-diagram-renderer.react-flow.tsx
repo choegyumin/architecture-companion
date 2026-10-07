@@ -47,7 +47,7 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
           placement.points.length > 1
             ? getPolylineEdgeLabelPlacement(placement.points)
             : (placement.points.at(0) ?? { x: 0, y: 0 }),
-        ...(edge.kind && edge.kind !== "direct-render" ? { eyebrow: edge.kind } : {}),
+        ...(edge.kind && edge.kind !== "inline-render" ? { eyebrow: edge.kind } : {}),
         ...(edge.href ? { href: edge.href } : {}),
         onLinkActivate,
       },

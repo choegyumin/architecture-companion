@@ -144,7 +144,7 @@ describe("diagram renderer React Flow adapter", () => {
     expect(measurementNode?.data).not.toHaveProperty("eyebrow");
   });
 
-  it("keeps direct render edges unlabeled", () => {
+  it("keeps inline render edges unlabeled", () => {
     const diagram = {
       ...sequenceDiagram,
       graph: {
@@ -159,7 +159,7 @@ describe("diagram renderer React Flow adapter", () => {
             type: "default",
             source: "parent",
             target: "child",
-            kind: "direct-render",
+            kind: "inline-render",
           },
         ],
       },

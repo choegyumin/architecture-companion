@@ -14,7 +14,7 @@ import { loadTypeScript } from "./load-typescript";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
 
-export type ReactComponentRelationshipKind = "direct-render" | "node-prop" | "render-prop" | "component-prop";
+export type ReactComponentRelationshipKind = "inline-render" | "node-prop" | "render-prop" | "component-prop";
 
 export type ComponentGraphOptions = Readonly<{
   scopePath: string;
@@ -47,12 +47,12 @@ type ComponentTarget = Readonly<{
   definition?: ComponentDefinition;
 }>;
 
-type SuppliedValueKind = Exclude<ReactComponentRelationshipKind, "direct-render">;
+type SuppliedValueKind = Exclude<ReactComponentRelationshipKind, "inline-render">;
 
 type DirectRenderRelationship = Readonly<{
   source: string;
   target: string;
-  kind: "direct-render";
+  kind: "inline-render";
 }>;
 
 type SuppliedRenderRelationship = Readonly<{
@@ -1602,7 +1602,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       relationship.source,
       relationship.target,
       relationship.kind,
-      relationship.kind === "direct-render" ? "" : relationship.propName,
+      relationship.kind === "inline-render" ? "" : relationship.propName,
     ].join("\0");
   }
 
@@ -1967,7 +1967,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   function relationshipKindLabel(relationship: Relationship): string {
-    if (relationship.kind === "direct-render") return relationship.kind;
+    if (relationship.kind === "inline-render") return relationship.kind;
     const category =
       relationship.kind === "node-prop" ? "NODE" : relationship.kind === "render-prop" ? "RENDER" : "COMPONENT";
     return `${category} (${relationship.propName})`;
@@ -1977,7 +1977,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     relationship: Relationship,
     definitionsById: ReadonlyMap<string, ComponentDefinition>,
   ): string | undefined {
-    if (relationship.kind === "direct-render") return undefined;
+    if (relationship.kind === "inline-render") return undefined;
     const supplierNames = relationship.supplierIds
       .map((supplierId) => definitionsById.get(supplierId)?.name ?? supplierId)
       .toSorted();
@@ -1986,7 +1986,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
   function edgeId(relationship: Relationship): string {
     const key =
-      relationship.kind === "direct-render"
+      relationship.kind === "inline-render"
         ? relationshipKey(relationship)
         : `${relationshipKey(relationship)}\0${relationship.supplierIds.join("\0")}`;
     return `edge:${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
@@ -2138,7 +2138,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     function addFinalRelationship(relationship: Relationship): void {
       const key = relationshipKey(relationship);
       const existing = relationships.get(key);
-      if (!existing || existing.kind === "direct-render" || relationship.kind === "direct-render") {
+      if (!existing || existing.kind === "inline-render" || relationship.kind === "inline-render") {
         relationships.set(key, relationship);
         return;
       }
@@ -2241,7 +2241,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const policy = targetVisibility(use.target.id);
       if (policy.boundaryVisible) {
         makeVisible(instance);
-        addFinalRelationship({ source: source.id, target: instance.id, kind: "direct-render" });
+        addFinalRelationship({ source: source.id, target: instance.id, kind: "inline-render" });
       }
       processUseSupplies(use, instance, source, source);
     }
@@ -2374,7 +2374,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
           const { id, source: _source, target, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id)!;
-          const suppliers = relationship.kind === "direct-render" ? [] : relationship.supplierIds;
+          const suppliers = relationship.kind === "inline-render" ? [] : relationship.supplierIds;
           return JSON.stringify([metadata, suppliers, classes.get(target)]);
         });
         const signature = JSON.stringify([classes.get(node.id), [...new Set(outgoing)].toSorted()]);

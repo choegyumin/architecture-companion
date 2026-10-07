@@ -254,12 +254,12 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["A", "App", "B", "First", "Second"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "A", target: "B", kind: "direct-render", label: undefined },
-          { source: "App", target: "First", kind: "direct-render", label: undefined },
-          { source: "App", target: "Second", kind: "direct-render", label: undefined },
-          { source: "B", target: "A", kind: "direct-render", label: undefined },
-          { source: "First", target: "A", kind: "direct-render", label: undefined },
-          { source: "Second", target: "A", kind: "direct-render", label: undefined },
+          { source: "A", target: "B", kind: "inline-render", label: undefined },
+          { source: "App", target: "First", kind: "inline-render", label: undefined },
+          { source: "App", target: "Second", kind: "inline-render", label: undefined },
+          { source: "B", target: "A", kind: "inline-render", label: undefined },
+          { source: "First", target: "A", kind: "inline-render", label: undefined },
+          { source: "Second", target: "A", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -339,7 +339,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(graph.nodes.every((node) => !("kind" in node))).toBe(true);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
+          { source: "App", target: "Layout", kind: "inline-render", label: undefined },
           { source: "Layout", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
@@ -374,7 +374,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Frame", kind: "direct-render", label: undefined },
+          { source: "App", target: "Frame", kind: "inline-render", label: undefined },
           { source: "Frame", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
           {
             source: "Frame",
@@ -486,9 +486,9 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Frame", kind: "direct-render", label: undefined },
+          { source: "App", target: "Frame", kind: "inline-render", label: undefined },
           { source: "Frame", target: "Body", kind: "RENDER (children)", label: "from App" },
-          { source: "Frame", target: "ExternalPanel", kind: "direct-render", label: undefined },
+          { source: "Frame", target: "ExternalPanel", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -513,9 +513,9 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           { source: "Primitive", target: "Body", kind: "RENDER (render)", label: "from App" },
-          { source: "Wrapper", target: "Primitive", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "Primitive", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -548,12 +548,12 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
-          { source: "Layout", target: "Primitive", kind: "direct-render", label: undefined },
+          { source: "App", target: "Layout", kind: "inline-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
+          { source: "Layout", target: "Primitive", kind: "inline-render", label: undefined },
           { source: "Primitive", target: "Content", kind: "NODE (children)", label: "from App" },
           { source: "Primitive", target: "Content", kind: "NODE (content)", label: "from App" },
-          { source: "Wrapper", target: "Primitive", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "Primitive", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -604,7 +604,7 @@ describe("React component structure generator", () => {
         expect(externalFrame).toMatchObject({ description: "ui-kit boundary" });
         expect(externalFrame).not.toHaveProperty("kind");
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFrame", kind: "inline-render", label: undefined },
           {
             source: "ExternalFrame",
             target: "Body",
@@ -663,7 +663,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFlow", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "CardNode",
@@ -730,7 +730,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.some(({ title }) => title === "darkTheme")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFlow", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "Body",
@@ -795,7 +795,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.some(({ title }) => title === "format")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFlow", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -834,7 +834,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "CardNode",
@@ -847,7 +847,7 @@ describe("React component structure generator", () => {
             kind: "NODE (content)",
             label: "from App",
           },
-          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "ExternalFlow", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -884,8 +884,8 @@ describe("React component structure generator", () => {
         expect(graph.nodes.filter(({ title }) => title === "Wrapper")).toHaveLength(2);
         expect(graph.nodes.filter(({ title }) => title === "ExternalFlow")).toHaveLength(2);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "Body",
@@ -898,8 +898,8 @@ describe("React component structure generator", () => {
             kind: "NODE (children)",
             label: "from App",
           },
-          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
-          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "ExternalFlow", kind: "inline-render", label: undefined },
+          { source: "Wrapper", target: "ExternalFlow", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -949,7 +949,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "Body",
@@ -974,7 +974,7 @@ describe("React component structure generator", () => {
             kind: "NODE (panel)",
             label: "from App",
           },
-          { source: "Wrapper", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "ExternalFlow", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1015,7 +1015,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFlow", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFlow", kind: "inline-render", label: undefined },
           {
             source: "ExternalFlow",
             target: "Body",
@@ -1092,7 +1092,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           {
             source: "ExternalPanel",
             target: "Body",
@@ -1111,7 +1111,7 @@ describe("React component structure generator", () => {
             kind: "NODE (panel)",
             label: "from App",
           },
-          { source: "Wrapper", target: "ExternalPanel", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "ExternalPanel", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1170,12 +1170,12 @@ describe("React component structure generator", () => {
           "Wrapper",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           { source: "Boundary", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
           { source: "Boundary", target: "Child", kind: "NODE (children)", label: "from App" },
           { source: "Boundary", target: "Item", kind: "COMPONENT (component)", label: "from App" },
           { source: "Boundary", target: "Panel", kind: "NODE (panel)", label: "from App" },
-          { source: "Wrapper", target: "Boundary", kind: "direct-render", label: undefined },
+          { source: "Wrapper", target: "Boundary", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1229,7 +1229,7 @@ describe("React component structure generator", () => {
           "external:ui-kit#Button",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
           { source: "Button", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
@@ -1349,7 +1349,7 @@ describe("React component structure generator", () => {
           {
             source: "component:src/app.tsx#App",
             target: "external:host-kit#Host",
-            kind: "direct-render",
+            kind: "inline-render",
             label: undefined,
           },
           {
@@ -1396,7 +1396,7 @@ describe("React component structure generator", () => {
           "external:ui-kit#Button",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1497,7 +1497,7 @@ describe("React component structure generator", () => {
             `external:ui-kit#${target}`,
           ]);
           expect(edgeFacts(graph)).toEqual([
-            { source: "App", target, kind: "direct-render", label: undefined },
+            { source: "App", target, kind: "inline-render", label: undefined },
             { source: target, target: "Child", kind: "NODE (children)", label: "from App" },
           ]);
         },
@@ -1566,7 +1566,7 @@ describe("React component structure generator", () => {
           const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
           expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", `external:ui-kit#${target}`]);
-          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "direct-render", label: undefined }]);
+          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "inline-render", label: undefined }]);
         },
       );
     },
@@ -1588,7 +1588,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", "external:ui-kit#Button"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1683,7 +1683,7 @@ describe("React component structure generator", () => {
           const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
           expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", `external:ui-kit#${target}`]);
-          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "direct-render", label: undefined }]);
+          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "inline-render", label: undefined }]);
         },
       );
     },
@@ -1721,7 +1721,7 @@ describe("React component structure generator", () => {
           const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
           expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", `external:ui-kit#${target}`]);
-          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "direct-render", label: undefined }]);
+          expect(edgeFacts(graph)).toEqual([{ source: "App", target, kind: "inline-render", label: undefined }]);
         },
       );
     },
@@ -1755,10 +1755,10 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Boundary", kind: "direct-render", label: undefined },
-          { source: "App", target: "format", kind: "direct-render", label: undefined },
-          { source: "App", target: "Loose", kind: "direct-render", label: undefined },
-          { source: "App", target: "Opaque", kind: "direct-render", label: undefined },
+          { source: "App", target: "Boundary", kind: "inline-render", label: undefined },
+          { source: "App", target: "format", kind: "inline-render", label: undefined },
+          { source: "App", target: "Loose", kind: "inline-render", label: undefined },
+          { source: "App", target: "Opaque", kind: "inline-render", label: undefined },
           { source: "Boundary", target: "Known", kind: "COMPONENT (registry)", label: "from App" },
         ]);
       },
@@ -1813,7 +1813,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", "external:ui-kit#Button"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1844,7 +1844,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Boundary", kind: "direct-render", label: undefined },
+          { source: "App", target: "Boundary", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -1959,7 +1959,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Boundary", kind: "direct-render", label: undefined },
+          { source: "App", target: "Boundary", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2032,7 +2032,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", "external:ui-kit#Boundary"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Boundary", kind: "direct-render", label: undefined },
+          { source: "App", target: "Boundary", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2085,7 +2085,7 @@ describe("React component structure generator", () => {
           "external:ui-kit#Boundary",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Boundary", kind: "direct-render", label: undefined },
+          { source: "App", target: "Boundary", kind: "inline-render", label: undefined },
           { source: "Boundary", target: "LocalBody", kind: "RENDER (renderBody)", label: "from App" },
           { source: "Boundary", target: "LocalContent", kind: "NODE (children)", label: "from App" },
         ]);
@@ -2114,7 +2114,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ id }) => id)).toEqual(["component:src/app.tsx#App", "external:ui-kit#Button"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
         expect(await buildComponentGraph(options)).toEqual(graph);
       },
@@ -2159,7 +2159,7 @@ describe("React component structure generator", () => {
 
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
-        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "inline-render", label: undefined }]);
       },
     );
   });
@@ -2202,7 +2202,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
-        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "inline-render", label: undefined }]);
       },
     );
   });
@@ -2238,7 +2238,7 @@ describe("React component structure generator", () => {
 
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
-        expect(edgeFacts(graph)).toEqual([{ source: "List", target: "Row", kind: "direct-render", label: undefined }]);
+        expect(edgeFacts(graph)).toEqual([{ source: "List", target: "Row", kind: "inline-render", label: undefined }]);
       },
     );
   });
@@ -2267,7 +2267,7 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toContainEqual({
           source: "App",
           target: "Table",
-          kind: "direct-render",
+          kind: "inline-render",
           label: undefined,
         });
       },
@@ -2351,11 +2351,11 @@ describe("React component structure generator", () => {
           "TsxComponent",
         ]);
         expect(edgeFacts(first)).toEqual([
-          { source: "JsComponent", target: "JsxComponent", kind: "direct-render", label: undefined },
-          { source: "JsxComponent", target: "TsComponent", kind: "direct-render", label: undefined },
-          { source: "MjsComponent", target: "TsxComponent", kind: "direct-render", label: undefined },
-          { source: "MtsComponent", target: "MjsComponent", kind: "direct-render", label: undefined },
-          { source: "TsComponent", target: "MtsComponent", kind: "direct-render", label: undefined },
+          { source: "JsComponent", target: "JsxComponent", kind: "inline-render", label: undefined },
+          { source: "JsxComponent", target: "TsComponent", kind: "inline-render", label: undefined },
+          { source: "MjsComponent", target: "TsxComponent", kind: "inline-render", label: undefined },
+          { source: "MtsComponent", target: "MjsComponent", kind: "inline-render", label: undefined },
+          { source: "TsComponent", target: "MtsComponent", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2454,8 +2454,8 @@ describe("React component structure generator", () => {
           expect.objectContaining({ id: "component:src/dialog.jsx#default", title: "Dialog" }),
         );
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Dialog", kind: "direct-render", label: undefined },
-          { source: "Dialog", target: "Panel", kind: "direct-render", label: undefined },
+          { source: "App", target: "Dialog", kind: "inline-render", label: undefined },
+          { source: "Dialog", target: "Panel", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2546,12 +2546,12 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "QuotedLayout", kind: "direct-render", label: undefined },
-          { source: "App", target: "ShorthandLayout", kind: "direct-render", label: undefined },
+          { source: "App", target: "QuotedLayout", kind: "inline-render", label: undefined },
+          { source: "App", target: "ShorthandLayout", kind: "inline-render", label: undefined },
           { source: "Primitive", target: "QuotedContent", kind: "NODE (children)", label: "from App" },
           { source: "Primitive", target: "ShorthandContent", kind: "NODE (children)", label: "from App" },
-          { source: "QuotedLayout", target: "Primitive", kind: "direct-render", label: undefined },
-          { source: "ShorthandLayout", target: "Primitive", kind: "direct-render", label: undefined },
+          { source: "QuotedLayout", target: "Primitive", kind: "inline-render", label: undefined },
+          { source: "ShorthandLayout", target: "Primitive", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2577,7 +2577,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2604,7 +2604,7 @@ describe("React component structure generator", () => {
         expect(external).toMatchObject({ id: "external:ui-kit#Button", title: "Button" });
         expect(external).not.toHaveProperty("kind");
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2636,8 +2636,8 @@ describe("React component structure generator", () => {
           "external:ui-kit#Panel",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
-          { source: "App", target: "Panel", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
+          { source: "App", target: "Panel", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2667,7 +2667,7 @@ describe("React component structure generator", () => {
           "external:ui-kit#Button",
         ]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2689,7 +2689,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2710,7 +2710,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2735,10 +2735,10 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes).toContainEqual(expect.objectContaining({ id: "external:ui-kit#Button", title: "Button" }));
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ForwardConsumer", kind: "direct-render", label: undefined },
-          { source: "App", target: "NamedConsumer", kind: "direct-render", label: undefined },
-          { source: "ForwardConsumer", target: "Button", kind: "direct-render", label: undefined },
-          { source: "NamedConsumer", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "ForwardConsumer", kind: "inline-render", label: undefined },
+          { source: "App", target: "NamedConsumer", kind: "inline-render", label: undefined },
+          { source: "ForwardConsumer", target: "Button", kind: "inline-render", label: undefined },
+          { source: "NamedConsumer", target: "Button", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2765,7 +2765,7 @@ describe("React component structure generator", () => {
           expect.objectContaining({ id: "external:ui-kit#Tabs.Root", title: "Tabs.Root" }),
         );
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Tabs.Root", kind: "direct-render", label: undefined },
+          { source: "App", target: "Tabs.Root", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -2816,8 +2816,8 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExternalFrame", kind: "direct-render", label: undefined },
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExternalFrame", kind: "inline-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           { source: "ExternalFrame", target: "Body", kind: "RENDER (renderBody)", label: "from App" },
           {
             source: "ExternalFrame",
@@ -2846,7 +2846,7 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Child"]);
-        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render", label: undefined }]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "inline-render", label: undefined }]);
       },
     );
   });
@@ -2996,7 +2996,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Wrapper"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Wrapper", kind: "direct-render", label: undefined },
+          { source: "App", target: "Wrapper", kind: "inline-render", label: undefined },
           { source: "Wrapper", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
@@ -3072,10 +3072,10 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.some(({ title }) => title === "A")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ExplicitWrapper", kind: "direct-render", label: undefined },
-          { source: "App", target: "StaticSpreadWrapper", kind: "direct-render", label: undefined },
-          { source: "App", target: "UnknownSpreadWrapper", kind: "direct-render", label: undefined },
-          { source: "ExplicitWrapper", target: "External", kind: "direct-render", label: undefined },
+          { source: "App", target: "ExplicitWrapper", kind: "inline-render", label: undefined },
+          { source: "App", target: "StaticSpreadWrapper", kind: "inline-render", label: undefined },
+          { source: "App", target: "UnknownSpreadWrapper", kind: "inline-render", label: undefined },
+          { source: "ExplicitWrapper", target: "External", kind: "inline-render", label: undefined },
           {
             source: "External",
             target: "B",
@@ -3088,8 +3088,8 @@ describe("React component structure generator", () => {
             kind: "NODE (panel)",
             label: "from StaticSpreadWrapper",
           },
-          { source: "StaticSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
-          { source: "UnknownSpreadWrapper", target: "External", kind: "direct-render", label: undefined },
+          { source: "StaticSpreadWrapper", target: "External", kind: "inline-render", label: undefined },
+          { source: "UnknownSpreadWrapper", target: "External", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -3150,7 +3150,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
+          { source: "App", target: "Layout", kind: "inline-render", label: undefined },
           { source: "Layout", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
@@ -3179,7 +3179,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Content", "Layout"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Layout", kind: "direct-render", label: undefined },
+          { source: "App", target: "Layout", kind: "inline-render", label: undefined },
           { source: "Layout", target: "Content", kind: "RENDER (render)", label: "from App" },
         ]);
       },
@@ -3209,8 +3209,8 @@ describe("React component structure generator", () => {
         });
 
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "ParentA", kind: "direct-render", label: undefined },
-          { source: "App", target: "ParentB", kind: "direct-render", label: undefined },
+          { source: "App", target: "ParentA", kind: "inline-render", label: undefined },
+          { source: "App", target: "ParentB", kind: "inline-render", label: undefined },
           { source: "ParentA", target: "ContentA", kind: "NODE (children)", label: "from ParentA" },
           { source: "ParentB", target: "ContentB", kind: "NODE (children)", label: "from ParentB" },
         ]);
@@ -3274,7 +3274,7 @@ describe("React component structure generator", () => {
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button", "Content"]);
         expect(graph.nodes.some(({ description }) => description === "@base-ui/react boundary")).toBe(false);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Button", kind: "direct-render", label: undefined },
+          { source: "App", target: "Button", kind: "inline-render", label: undefined },
           { source: "Button", target: "Content", kind: "NODE (children)", label: "from App" },
         ]);
       },
@@ -3302,7 +3302,7 @@ describe("React component structure generator", () => {
 
         expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Shared"]);
         expect(edgeFacts(graph)).toEqual([
-          { source: "App", target: "Shared", kind: "direct-render", label: undefined },
+          { source: "App", target: "Shared", kind: "inline-render", label: undefined },
         ]);
       },
     );
@@ -3325,8 +3325,8 @@ describe("React component structure generator", () => {
         });
 
         expect(edgeFacts(baseline)).toEqual([
-          { source: "A", target: "B", kind: "direct-render", label: undefined },
-          { source: "B", target: "A", kind: "direct-render", label: undefined },
+          { source: "A", target: "B", kind: "inline-render", label: undefined },
+          { source: "B", target: "A", kind: "inline-render", label: undefined },
         ]);
         expect(filtered.nodes.map(({ title }) => title)).toEqual(["A"]);
         expect(filtered.edges).toEqual([]);
@@ -3374,7 +3374,7 @@ describe("React component structure generator", () => {
 
       expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
       expect(edgeFacts(graph)).toEqual([
-        { source: "Layout", target: "Content", kind: "direct-render", label: undefined },
+        { source: "Layout", target: "Content", kind: "inline-render", label: undefined },
       ]);
     });
   });
@@ -3429,7 +3429,7 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toContainEqual({
           source: "App",
           target: "Row",
-          kind: "direct-render",
+          kind: "inline-render",
           label: undefined,
         });
       },
@@ -3459,7 +3459,7 @@ describe("React component structure generator", () => {
         expect(edgeFacts(graph)).toContainEqual({
           source: "App",
           target: "RowBase",
-          kind: "direct-render",
+          kind: "inline-render",
           label: undefined,
         });
       },
