@@ -17,6 +17,7 @@ import {
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
+import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
@@ -95,16 +96,17 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
         getOrThrow(bounds.get(edge.target), `Missing dependency target: ${edge.target}`),
         cards.filter(({ id }) => id !== edge.source && id !== edge.target).map(({ bounds }) => bounds),
       );
+      const display = diagramEdgeDisplay(edge);
       return {
         ...common,
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        ...(edge.label ? { label: edge.label } : {}),
+        ...(display.label ? { label: display.label } : {}),
         data: {
           ...route,
-          ...(edge.kind ? { eyebrow: edge.kind } : {}),
-          ...(edge.href ? { href: edge.href } : {}),
+          ...(display.kind ? { eyebrow: display.kind } : {}),
+          ...(display.href ? { href: display.href } : {}),
           onLinkActivate,
         },
       };

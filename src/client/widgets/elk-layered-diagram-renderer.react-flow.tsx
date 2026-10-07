@@ -10,6 +10,7 @@ import {
 } from "@/client/widgets/diagram-renderer.react-flow";
 import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
 import type { Artifact } from "@/features/artifact/artifact";
+import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge } from "@/features/diagram/diagram-spatial";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 
@@ -30,6 +31,7 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
     const edge = diagram.graph.edges.find(({ id }) => id === placement.id);
     if (!edge) throw new Error(`Layout result references an unknown diagram edge: ${placement.id}`);
     if (edge.type === "message") return toMessageReactFlowEdge(edge, placement.points, onLinkActivate);
+    const display = diagramEdgeDisplay(edge);
 
     return {
       id: edge.id,
@@ -40,15 +42,15 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
       markerEnd: { type: MarkerType.ArrowClosed, color: DIAGRAM_EDGE_COLOR },
       style: { stroke: DIAGRAM_EDGE_COLOR, strokeWidth: 2 },
       type: "route",
-      ...(edge.label ? { label: edge.label } : {}),
+      ...(display.label ? { label: display.label } : {}),
       data: {
         path: toEdgePath(placement),
         labelPosition:
           placement.points.length > 1
             ? getPolylineEdgeLabelPlacement(placement.points)
             : (placement.points.at(0) ?? { x: 0, y: 0 }),
-        ...(edge.kind && edge.kind !== "inline-render" ? { eyebrow: edge.kind } : {}),
-        ...(edge.href ? { href: edge.href } : {}),
+        ...(display.kind && display.kind !== "inline-render" ? { eyebrow: display.kind } : {}),
+        ...(display.href ? { href: display.href } : {}),
         onLinkActivate,
       },
     };

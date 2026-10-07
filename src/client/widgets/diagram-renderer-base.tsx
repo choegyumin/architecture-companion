@@ -12,6 +12,7 @@ import {
 } from "@/client/widgets/diagram-renderer.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
+import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
@@ -142,10 +143,10 @@ function DiagramRendererContent({
         {diagram.graph.edges.map((edge) => (
           <li key={edge.id}>
             {edge.source} to {edge.target}
-            {edge.label ? (
+            {diagramEdgeDisplay(edge).label ? (
               <>
                 {": "}
-                <span>{edge.label}</span>
+                <span>{diagramEdgeDisplay(edge).label}</span>
               </>
             ) : null}
           </li>

@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 
 import { version as fallbackVersion } from "typescript/package.json";
 
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import { diagramEdgeDisplay, type DiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { buildComponentGraph } from "./build-component-graph";
 
@@ -52,10 +52,10 @@ async function withFixture(
 
 function edgeFacts(graph: DiagramGraph) {
   const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
-  return graph.edges.map(({ source, target, kind }) => ({
-    source: titlesById.get(source),
-    target: titlesById.get(target),
-    kind,
+  return graph.edges.map((edge) => ({
+    source: titlesById.get(edge.source),
+    target: titlesById.get(edge.target),
+    kind: diagramEdgeDisplay(edge).kind,
   }));
 }
 

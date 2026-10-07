@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import { diagramEdgeDisplay, type DiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { buildComponentGraph } from "./build-component-graph";
 
@@ -50,12 +50,15 @@ async function withFixture(
 function edgeFacts(graph: DiagramGraph) {
   const titlesById = new Map(graph.nodes.map((node) => [node.id, node.title]));
   return graph.edges
-    .map((edge) => ({
-      source: titlesById.get(edge.source),
-      target: titlesById.get(edge.target),
-      kind: edge.kind,
-      label: edge.label,
-    }))
+    .map((edge) => {
+      const { kind, label } = diagramEdgeDisplay(edge);
+      return {
+        source: titlesById.get(edge.source),
+        target: titlesById.get(edge.target),
+        kind,
+        label,
+      };
+    })
     .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
 
@@ -186,12 +189,12 @@ describe("React component structure generator", () => {
         expect(graph.nodes.filter(({ title }) => title === "Marker")).toHaveLength(1);
         const compositions = renderers.map(({ id }) => {
           const edges = graph.edges.filter(({ source }) => source === id);
-          expect(edges.map(({ kind }) => kind).toSorted()).toEqual([
+          expect(edges.map((edge) => diagramEdgeDisplay(edge).kind).toSorted()).toEqual([
             "COMPONENT (component)",
             "NODE (panel)",
             "RENDER (render)",
           ]);
-          expect(edges.every(({ label }) => label === "from App")).toBe(true);
+          expect(edges.every((edge) => diagramEdgeDisplay(edge).label === "from App")).toBe(true);
           return edges.map(({ target }) => titlesById.get(target)).toSorted();
         });
         expect(compositions.toSorted()).toEqual([
@@ -1343,7 +1346,10 @@ describe("React component structure generator", () => {
         ]);
         expect(
           graph.edges
-            .map(({ source, target, kind, label }) => ({ source, target, kind, label }))
+            .map((edge) => {
+              const { kind, label } = diagramEdgeDisplay(edge);
+              return { source: edge.source, target: edge.target, kind, label };
+            })
             .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
         ).toEqual([
           {
