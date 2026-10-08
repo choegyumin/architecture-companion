@@ -194,12 +194,10 @@ describe("dependency aggregate routes on the checked-in design", () => {
       'aggregate:["group:directory:src/plugins","group:external-packages"]',
       'aggregate:["group:directory:src/server","group:directory:src/shared"]',
     ]);
-    // The plugins→shared edge falls back to an independent route (coordinate-limit)
-    // and visibly overlaps the server→shared detour until the router handles the
-    // larger regenerated scene.
-    expect(overlappingPairs(projections, routes)).toEqual([
-      "group:directory:src/plugins → group:directory:src/shared / group:directory:src/server → group:directory:src/shared",
-    ]);
+    // The plugins→shared edge used to visibly overlap the server→shared detour
+    // in the earlier scene; the regenerated layout keeps every aggregate edge
+    // on its own track.
+    expect(overlappingPairs(projections, routes)).toEqual([]);
   });
 
   // One `it` per group so the five-second timeout applies to each focus rather
@@ -228,7 +226,7 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const artifact = "group:directory:src/features/artifact";
     const cases = [
       [server, server, artifact, server, "group:directory:src/features/catalog"],
-      [artifact, "group:directory:src/client", artifact, "group:directory:src/client/parts", artifact],
+      [artifact, "group:directory:src/client/widgets", artifact, "group:directory:src/client/parts", artifact],
     ] as const;
     const crossings: string[] = [];
     for (const [focusId, firstSource, firstTarget, secondSource, secondTarget] of cases) {
