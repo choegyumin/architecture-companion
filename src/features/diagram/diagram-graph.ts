@@ -6,12 +6,15 @@ export const diagramIdSchema = z.string().min(1);
 
 /* === Link === */
 
+// The `id` values double as the generated JSON Schema `$defs` names, so every
+// shared piece renders once and is referenced instead of copied per union member.
 export const diagramLinkSchema = z
   .object({
     text: z.string().min(1).optional(),
     href: z.string().min(1),
   })
-  .strict();
+  .strict()
+  .meta({ id: "Link" });
 export type DiagramLink = z.infer<typeof diagramLinkSchema>;
 
 /* === Route requirements === */
@@ -27,7 +30,10 @@ export const diagramRouteRequirementRuleSchema = z.array(diagramRouteRequirement
 export type DiagramRouteRequirementRule = z.infer<typeof diagramRouteRequirementRuleSchema>;
 
 /** Rules joined by OR, in no particular order: the ruleset holds when any one rule holds. */
-export const diagramRouteRequirementRulesetSchema = z.array(diagramRouteRequirementRuleSchema).min(1);
+export const diagramRouteRequirementRulesetSchema = z
+  .array(diagramRouteRequirementRuleSchema)
+  .min(1)
+  .meta({ id: "RouteRequirementRuleset" });
 export type DiagramRouteRequirementRuleset = z.infer<typeof diagramRouteRequirementRulesetSchema>;
 
 /* === Control === */
@@ -79,7 +85,8 @@ export const defaultDiagramNodeSchema = z
     type: z.literal("default"),
     links: z.array(diagramLinkSchema).optional(),
   })
-  .strict();
+  .strict()
+  .meta({ id: "DefaultNode" });
 export type DefaultDiagramNode = z.infer<typeof defaultDiagramNodeSchema>;
 
 const activationEndpointSchema = z
@@ -103,7 +110,8 @@ export const lifelineDiagramNodeSchema = z
     links: z.array(diagramLinkSchema).optional(),
     activations: z.array(activationSchema),
   })
-  .strict();
+  .strict()
+  .meta({ id: "LifelineNode" });
 export type LifelineDiagramNode = z.infer<typeof lifelineDiagramNodeSchema>;
 
 const fragmentBranchSchema = z
@@ -122,7 +130,8 @@ export const fragmentDiagramNodeSchema = z
     operator: z.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
     branches: z.array(fragmentBranchSchema).min(1),
   })
-  .strict();
+  .strict()
+  .meta({ id: "FragmentNode" });
 export type FragmentDiagramNode = z.infer<typeof fragmentDiagramNodeSchema>;
 
 export const diagramNodeSchema = z.discriminatedUnion("type", [
@@ -144,7 +153,8 @@ export const defaultDiagramEdgeSchema = z
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
   })
-  .strict();
+  .strict()
+  .meta({ id: "DefaultEdge" });
 export type DefaultDiagramEdge = z.infer<typeof defaultDiagramEdgeSchema>;
 
 /** A composition gated by controls: the relationship applies when its `activeWhen` ruleset holds. */
@@ -156,7 +166,8 @@ export const controlDiagramEdgeSchema = z
     target: diagramIdSchema,
     activeWhen: diagramRouteRequirementRulesetSchema,
   })
-  .strict();
+  .strict()
+  .meta({ id: "ControlEdge" });
 export type ControlDiagramEdge = z.infer<typeof controlDiagramEdgeSchema>;
 
 export const messageDiagramEdgeSchema = z
@@ -170,7 +181,8 @@ export const messageDiagramEdgeSchema = z
     href: z.string().min(1).optional(),
     messageType: z.enum(["sync", "async", "return"]).default("sync"),
   })
-  .strict();
+  .strict()
+  .meta({ id: "MessageEdge" });
 export type MessageDiagramEdge = z.infer<typeof messageDiagramEdgeSchema>;
 
 export const diagramEdgeSchema = z.discriminatedUnion("type", [
@@ -194,7 +206,8 @@ export const diagramGroupSchema = z
     description: z.string().min(1).optional(),
     parentId: diagramIdSchema.optional(),
   })
-  .strict();
+  .strict()
+  .meta({ id: "Group" });
 export type DiagramGroup = z.infer<typeof diagramGroupSchema>;
 
 /* === Graph === */
@@ -311,7 +324,8 @@ export const diagramGraphSchema = z
   .strict()
   .superRefine((graph, context) => {
     for (const issue of validateGraphIntegrity(graph)) context.addIssue(issue);
-  });
+  })
+  .meta({ id: "DiagramGraph" });
 export type DiagramGraph = z.infer<typeof diagramGraphSchema>;
 
 /* === Layout-specific graphs === */
@@ -436,7 +450,8 @@ export const sequenceDiagramGraphSchema = z
         : []),
     ];
     for (const issue of issues) context.addIssue(issue);
-  });
+  })
+  .meta({ id: "SequenceGraph" });
 export type SequenceDiagramGraph = z.infer<typeof sequenceDiagramGraphSchema>;
 
 export const dependencyDiagramGraphSchema = z
@@ -448,7 +463,8 @@ export const dependencyDiagramGraphSchema = z
   .strict()
   .superRefine((graph, context) => {
     for (const issue of validateGraphIntegrity(graph)) context.addIssue(issue);
-  });
+  })
+  .meta({ id: "DependencyGraph" });
 export type DependencyDiagramGraph = z.infer<typeof dependencyDiagramGraphSchema>;
 
 export const componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
@@ -602,5 +618,6 @@ export const componentStructureDiagramGraphSchema = z
   .strict()
   .superRefine((graph, context) => {
     for (const issue of validateComponentStructureGraph(graph)) context.addIssue(issue);
-  });
+  })
+  .meta({ id: "ComponentStructureGraph" });
 export type ComponentStructureDiagramGraph = z.infer<typeof componentStructureDiagramGraphSchema>;

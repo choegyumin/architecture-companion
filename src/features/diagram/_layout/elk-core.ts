@@ -54,7 +54,8 @@ export const elkOptionMapSchema = z
         });
       }
     }
-  });
+  })
+  .meta({ id: "ElkOptions" });
 
 export const ELK_ROOT_ID = "architecture-companion-layout-root";
 

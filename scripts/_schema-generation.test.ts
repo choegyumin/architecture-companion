@@ -12,96 +12,88 @@ function parseJsonObject(source: string): JsonObject {
   return parsed as JsonObject;
 }
 
-function findObject(value: unknown, predicate: (candidate: JsonObject) => boolean): JsonObject | undefined {
-  if (Array.isArray(value)) {
-    return value.map((entry) => findObject(entry, predicate)).find((entry) => entry !== undefined);
-  }
-  if (typeof value !== "object" || value === null) return undefined;
-
-  const object = value as JsonObject;
-  if (predicate(object)) return object;
-  return Object.values(object)
-    .map((entry) => findObject(entry, predicate))
-    .find((entry) => entry !== undefined);
+function refName(schema: unknown): string {
+  expect(schema).toMatchObject({ $ref: expect.stringMatching(/^#\/\$defs\//) });
+  return (schema as { $ref: string }).$ref.replace("#/$defs/", "");
 }
 
 describe("generateSchemaSources", () => {
-  it("renders the two tracked Draft 2020-12 schemas deterministically", () => {
+  it("renders the tracked Draft 2020-12 schema deterministically", () => {
     const first = generateSchemaSources();
     const second = generateSchemaSources();
 
-    expect(Object.keys(first).toSorted()).toEqual([...generatedSchemaFileNames].toSorted());
+    expect(Object.keys(first)).toEqual([...generatedSchemaFileNames]);
     expect(first).toEqual(second);
     expect(Object.values(first).every((source) => source.endsWith("\n"))).toBe(true);
 
-    expect(parseJsonObject(first["diagram-graph.schema.json"])).toMatchObject({
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "./diagram-graph.schema.json",
-      type: "object",
-      required: ["groups", "nodes", "edges"],
-      additionalProperties: false,
-    });
     const artifactSchemaJson = parseJsonObject(first["artifact.schema.json"]);
     expect(artifactSchemaJson).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
     });
-    // One union member per layout, each pairing that layout with its graph contract.
-    const members = artifactSchemaJson.anyOf;
-    expect(Array.isArray(members)).toBe(true);
-    expect((members as JsonObject[]).map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
-    const layoutIds = (members as { properties: { layout: { properties: { id: { const: string } } } } }[])
-      .map((member) => member.properties.layout.properties.id.const)
-      .toSorted();
-    expect(layoutIds).toEqual(["component-structure", "dependency-graph", "elk-layered", "sequence"]);
-    for (const member of members as JsonObject[]) {
+
+    // Every shared subschema is a named `$defs` entry, so each renders once
+    // and every use references it.
+    expect(Object.keys(artifactSchemaJson.$defs as JsonObject).toSorted()).toEqual(
+      [
+        "ArtifactId",
+        "ControlEdge",
+        "DefaultEdge",
+        "DefaultNode",
+        "DependencyGraph",
+        "DiagramGraph",
+        "ElkOptions",
+        "FragmentNode",
+        "Generator",
+        "Group",
+        "LifelineNode",
+        "Link",
+        "Links",
+        "MessageEdge",
+        "RouteRequirementRuleset",
+        "SequenceGraph",
+        "UpdatedAt",
+        "Vcs",
+        "ComponentStructureGraph",
+      ].toSorted(),
+    );
+
+    // One union member per layout, each pairing that layout with its named
+    // graph contract and referencing the shared envelope pieces.
+    const members = artifactSchemaJson.anyOf as JsonObject[];
+    expect(members.map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
+    const graphDefByLayoutId: Record<string, string> = {};
+    for (const member of members) {
+      const properties = member.properties as JsonObject;
+      const layoutId = ((properties.layout as JsonObject).properties as JsonObject).id as {
+        const: string;
+      };
+      graphDefByLayoutId[layoutId.const] = refName(properties.graph);
       expect(member).toMatchObject({
         required: ["id", "title", "updatedAt", "generator", "instructions", "layout", "graph"],
         additionalProperties: false,
-        properties: {
-          updatedAt: { type: "string", format: "date-time" },
-          vcs: {
-            type: "object",
-            properties: {
-              revision: { type: "string", minLength: 1 },
-              divergesFromRevision: { type: "boolean" },
-            },
-            required: ["revision", "divergesFromRevision"],
-            additionalProperties: false,
-          },
-          generator: {
-            type: "string",
-            pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
-          },
-          instructions: { type: "string", minLength: 1 },
-          links: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                text: { type: "string", minLength: 1 },
-                href: { type: "string", minLength: 1 },
-              },
-              required: ["href"],
-              additionalProperties: false,
-            },
-          },
-        },
       });
+      expect(refName(properties.id)).toBe("ArtifactId");
+      expect(refName(properties.updatedAt)).toBe("UpdatedAt");
+      expect(refName(properties.vcs)).toBe("Vcs");
+      expect(refName(properties.generator)).toBe("Generator");
+      expect(refName(properties.links)).toBe("Links");
     }
+    expect(graphDefByLayoutId).toEqual({
+      "component-structure": "ComponentStructureGraph",
+      "dependency-graph": "DependencyGraph",
+      "elk-layered": "DiagramGraph",
+      sequence: "SequenceGraph",
+    });
   });
 
   it("describes accepted input before Zod defaults are applied", () => {
-    const graphSchema = parseJsonObject(generateSchemaSources()["diagram-graph.schema.json"]);
-    const messageEdgeSchema = findObject(graphSchema, (candidate) => {
-      const properties = candidate.properties;
-      return typeof properties === "object" && properties !== null && "messageType" in properties;
-    });
+    const defs = parseJsonObject(generateSchemaSources()["artifact.schema.json"]).$defs as JsonObject;
+    const messageEdgeSchema = defs.MessageEdge as JsonObject;
 
-    expect(messageEdgeSchema).toBeDefined();
     expect(messageEdgeSchema).toMatchObject({
       properties: { messageType: { default: "sync" } },
     });
-    expect(messageEdgeSchema?.required).not.toContain("messageType");
+    expect(messageEdgeSchema.required).not.toContain("messageType");
   });
 });

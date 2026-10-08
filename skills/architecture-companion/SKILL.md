@@ -15,11 +15,11 @@ Present product behavior and software design as interactive diagrams that can be
 
 For follow-up requests after a Review UI review, start with **Review follow-up**, even if the request includes diagram changes.
 
-| Request                                                         | Starting procedure  | Documents to read                                                                                                                                  |
-| --------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/artifact.schema.json` and its referenced schemas, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
-| Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                                                       |
-| Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                                            |
+| Request                                                         | Starting procedure  | Documents to read                                                                                                       |
+| --------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/artifact.schema.json`, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
+| Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                            |
+| Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                 |
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
@@ -27,7 +27,7 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
 1. Read any existing diagram files in `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` first. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated diagrams and existing IDs for concepts that retain their meaning.
 
-2. Read `<AC>/schemas/artifact.schema.json` and its referenced `$ref` schemas to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
+2. Read `<AC>/schemas/artifact.schema.json` to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
 
 3. When generating or regenerating a diagram, discover the installed generators. For simple wording or metadata changes that do not rebuild the graph, skip discovery and execution and proceed to step 5.
 

@@ -16,24 +16,28 @@ import {
   sequenceDiagramGraphSchema,
 } from "@/features/diagram/diagram-graph";
 
+// The `id` values double as the generated JSON Schema `$defs` names, so the
+// envelope fields shared by every union member render once and are referenced.
 export const artifactIdSchema = z
   .string()
-  .regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
+  .regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)")
+  .meta({ id: "ArtifactId" });
 
 const artifactBaseShape = {
   id: artifactIdSchema,
   title: z.string().min(1),
-  updatedAt: z.string().datetime(),
+  updatedAt: z.string().datetime().meta({ id: "UpdatedAt" }),
   vcs: z
     .object({
       revision: z.string().min(1),
       divergesFromRevision: z.boolean(),
     })
     .strict()
-    .optional(),
+    .optional()
+    .meta({ id: "Vcs" }),
   generator: artifactGeneratorReferenceSchema,
   instructions: z.string().min(1),
-  links: z.array(diagramLinkSchema).readonly().optional(),
+  links: z.array(diagramLinkSchema).readonly().optional().meta({ id: "Links" }),
 };
 
 // One layout-graph pair: the layout decides which graph contract applies, and
