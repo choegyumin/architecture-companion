@@ -34,6 +34,7 @@ export function GuardEdgeLabel({
         event.stopPropagation();
         onSelect();
       }}
+      onBlur={() => onHighlightChange?.(false)}
       onFocus={() => onHighlightChange?.(true)}
       onMouseEnter={() => onHighlightChange?.(true)}
       onMouseLeave={() => onHighlightChange?.(false)}
