@@ -276499,10 +276499,10 @@ var diagramIdSchema = external_exports.string().min(1);
 var diagramLinkSchema = external_exports.object({
   text: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1)
-}).strict();
+}).strict().meta({ id: "Link" });
 var diagramRouteRequirementSchema = external_exports.object({ controlId: diagramIdSchema, value: external_exports.string().min(1) }).strict();
 var diagramRouteRequirementRuleSchema = external_exports.array(diagramRouteRequirementSchema);
-var diagramRouteRequirementRulesetSchema = external_exports.array(diagramRouteRequirementRuleSchema).min(1);
+var diagramRouteRequirementRulesetSchema = external_exports.array(diagramRouteRequirementRuleSchema).min(1).meta({ id: "RouteRequirementRuleset" });
 var diagramControlBaseShape = {
   id: diagramIdSchema,
   owner: diagramIdSchema,
@@ -276515,7 +276515,7 @@ var diagramControlSchema = external_exports.discriminatedUnion("kind", [
     ...diagramControlBaseShape,
     kind: external_exports.literal("branch"),
     cases: external_exports.array(external_exports.object({ id: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
-    /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels (ADR 0005). */
+    /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels. */
     polarityPair: external_exports.literal(true).optional()
   }).strict()
 ]);
@@ -276537,7 +276537,7 @@ var defaultDiagramNodeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   type: external_exports.literal("default"),
   links: external_exports.array(diagramLinkSchema).optional()
-}).strict();
+}).strict().meta({ id: "DefaultNode" });
 var activationEndpointSchema = external_exports.object({
   messageId: diagramIdSchema,
   endpoint: external_exports.enum(["source", "target"])
@@ -276553,7 +276553,7 @@ var lifelineDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("lifeline"),
   links: external_exports.array(diagramLinkSchema).optional(),
   activations: external_exports.array(activationSchema)
-}).strict();
+}).strict().meta({ id: "LifelineNode" });
 var fragmentBranchSchema = external_exports.object({
   id: diagramIdSchema,
   guard: external_exports.string().min(1),
@@ -276566,7 +276566,7 @@ var fragmentDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("fragment"),
   operator: external_exports.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
   branches: external_exports.array(fragmentBranchSchema).min(1)
-}).strict();
+}).strict().meta({ id: "FragmentNode" });
 var diagramNodeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
   lifelineDiagramNodeSchema,
@@ -276580,14 +276580,14 @@ var defaultDiagramEdgeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional()
-}).strict();
+}).strict().meta({ id: "DefaultEdge" });
 var controlDiagramEdgeSchema = external_exports.object({
   id: diagramIdSchema,
   type: external_exports.literal("control"),
   source: diagramIdSchema,
   target: diagramIdSchema,
   activeWhen: diagramRouteRequirementRulesetSchema
-}).strict();
+}).strict().meta({ id: "ControlEdge" });
 var messageDiagramEdgeSchema = external_exports.object({
   id: diagramIdSchema,
   type: external_exports.literal("message"),
@@ -276597,7 +276597,7 @@ var messageDiagramEdgeSchema = external_exports.object({
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional(),
   messageType: external_exports.enum(["sync", "async", "return"]).default("sync")
-}).strict();
+}).strict().meta({ id: "MessageEdge" });
 var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramEdgeSchema,
   controlDiagramEdgeSchema,
@@ -276608,7 +276608,7 @@ var diagramGroupSchema = external_exports.object({
   title: external_exports.string().min(1),
   description: external_exports.string().min(1).optional(),
   parentId: diagramIdSchema.optional()
-}).strict();
+}).strict().meta({ id: "Group" });
 function validateGraphIntegrity(graph) {
   const issues = [];
   const graphElements = [
@@ -276694,7 +276694,7 @@ var graphBaseShape = {
 };
 var diagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "DiagramGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
@@ -276797,14 +276797,14 @@ var sequenceDiagramGraphSchema = external_exports.object({
     ...!graph.nodes.some((node2) => node2.type === "lifeline") ? [{ code: "custom", path: ["nodes"], message: "Sequence layout requires at least one lifeline" }] : []
   ];
   for (const issue2 of issues) context.addIssue(issue2);
-});
+}).meta({ id: "SequenceGraph" });
 var dependencyDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
   nodes: external_exports.array(defaultDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "DependencyGraph" });
 var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
   component: diagramComponentMetadataSchema.optional()
 });
@@ -276934,7 +276934,7 @@ var componentStructureDiagramGraphSchema = external_exports.object({
   additional: componentStructureAdditionalSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "ComponentStructureGraph" });
 
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";

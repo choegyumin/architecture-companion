@@ -12,7 +12,7 @@ Use to review how JavaScript or TypeScript source modules depend on one another 
 ```json
 {
   "generator": "built-in:js-module-dependency-graph",
-  "layout": { "id": "dependency-graph" }
+  "diagram": { "layout": { "id": "dependency-graph" } }
 }
 ```
 

@@ -19714,7 +19714,7 @@ var elkOptionMapSchema = external_exports.object({
       });
     }
   }
-});
+}).meta({ id: "ElkOptions" });
 var GROUP_PADDING = { top: 96, right: 32, bottom: 32, left: 32 };
 var EMPTY_GROUP_SIZE = {
   width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
@@ -19725,8 +19725,6 @@ var EMPTY_GROUP_SIZE = {
 var componentStructureDiagramLayoutConfigSchema = external_exports.object({
   id: external_exports.literal("component-structure"),
   options: external_exports.object({
-    nudgeObstacleNodes: external_exports.boolean().optional(),
-    bezierEdges: external_exports.boolean().optional(),
     elk: elkOptionMapSchema.optional()
   }).strict().optional()
 }).strict();
@@ -19760,10 +19758,10 @@ var diagramIdSchema = external_exports.string().min(1);
 var diagramLinkSchema = external_exports.object({
   text: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1)
-}).strict();
+}).strict().meta({ id: "Link" });
 var diagramRouteRequirementSchema = external_exports.object({ controlId: diagramIdSchema, value: external_exports.string().min(1) }).strict();
 var diagramRouteRequirementRuleSchema = external_exports.array(diagramRouteRequirementSchema);
-var diagramRouteRequirementRulesetSchema = external_exports.array(diagramRouteRequirementRuleSchema).min(1);
+var diagramRouteRequirementRulesetSchema = external_exports.array(diagramRouteRequirementRuleSchema).min(1).meta({ id: "RouteRequirementRuleset" });
 var diagramControlBaseShape = {
   id: diagramIdSchema,
   owner: diagramIdSchema,
@@ -19776,7 +19774,7 @@ var diagramControlSchema = external_exports.discriminatedUnion("kind", [
     ...diagramControlBaseShape,
     kind: external_exports.literal("branch"),
     cases: external_exports.array(external_exports.object({ id: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
-    /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels (ADR 0005). */
+    /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels. */
     polarityPair: external_exports.literal(true).optional()
   }).strict()
 ]);
@@ -19798,7 +19796,7 @@ var defaultDiagramNodeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   type: external_exports.literal("default"),
   links: external_exports.array(diagramLinkSchema).optional()
-}).strict();
+}).strict().meta({ id: "DefaultNode" });
 var activationEndpointSchema = external_exports.object({
   messageId: diagramIdSchema,
   endpoint: external_exports.enum(["source", "target"])
@@ -19814,7 +19812,7 @@ var lifelineDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("lifeline"),
   links: external_exports.array(diagramLinkSchema).optional(),
   activations: external_exports.array(activationSchema)
-}).strict();
+}).strict().meta({ id: "LifelineNode" });
 var fragmentBranchSchema = external_exports.object({
   id: diagramIdSchema,
   guard: external_exports.string().min(1),
@@ -19827,7 +19825,7 @@ var fragmentDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("fragment"),
   operator: external_exports.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
   branches: external_exports.array(fragmentBranchSchema).min(1)
-}).strict();
+}).strict().meta({ id: "FragmentNode" });
 var diagramNodeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
   lifelineDiagramNodeSchema,
@@ -19841,14 +19839,14 @@ var defaultDiagramEdgeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional()
-}).strict();
+}).strict().meta({ id: "DefaultEdge" });
 var controlDiagramEdgeSchema = external_exports.object({
   id: diagramIdSchema,
   type: external_exports.literal("control"),
   source: diagramIdSchema,
   target: diagramIdSchema,
   activeWhen: diagramRouteRequirementRulesetSchema
-}).strict();
+}).strict().meta({ id: "ControlEdge" });
 var messageDiagramEdgeSchema = external_exports.object({
   id: diagramIdSchema,
   type: external_exports.literal("message"),
@@ -19858,7 +19856,7 @@ var messageDiagramEdgeSchema = external_exports.object({
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional(),
   messageType: external_exports.enum(["sync", "async", "return"]).default("sync")
-}).strict();
+}).strict().meta({ id: "MessageEdge" });
 var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramEdgeSchema,
   controlDiagramEdgeSchema,
@@ -19869,7 +19867,7 @@ var diagramGroupSchema = external_exports.object({
   title: external_exports.string().min(1),
   description: external_exports.string().min(1).optional(),
   parentId: diagramIdSchema.optional()
-}).strict();
+}).strict().meta({ id: "Group" });
 function validateGraphIntegrity(graph) {
   const issues = [];
   const graphElements = [
@@ -19955,7 +19953,7 @@ var graphBaseShape = {
 };
 var diagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "DiagramGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
@@ -20058,14 +20056,14 @@ var sequenceDiagramGraphSchema = external_exports.object({
     ...!graph.nodes.some((node2) => node2.type === "lifeline") ? [{ code: "custom", path: ["nodes"], message: "Sequence layout requires at least one lifeline" }] : []
   ];
   for (const issue2 of issues) context.addIssue(issue2);
-});
+}).meta({ id: "SequenceGraph" });
 var dependencyDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
   nodes: external_exports.array(defaultDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "DependencyGraph" });
 var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
   component: diagramComponentMetadataSchema.optional()
 });
@@ -20195,7 +20193,7 @@ var componentStructureDiagramGraphSchema = external_exports.object({
   additional: componentStructureAdditionalSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
-});
+}).meta({ id: "ComponentStructureGraph" });
 
 // src/features/artifact/artifact.ts
 var artifactIdSchema = external_exports.string().regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
@@ -20211,47 +20209,51 @@ var artifactBaseShape = {
   instructions: external_exports.string().min(1),
   links: external_exports.array(diagramLinkSchema).readonly().optional()
 };
-var artifactMemberSchema = (layout, graph) => external_exports.object({ ...artifactBaseShape, layout, graph }).strict();
-var elkLayeredArtifactSchema = artifactMemberSchema(elkLayeredDiagramLayoutConfigSchema, diagramGraphSchema);
-var sequenceArtifactSchema = artifactMemberSchema(
-  sequenceDiagramLayoutConfigSchema,
-  sequenceDiagramGraphSchema
-);
-var dependencyGraphArtifactSchema = artifactMemberSchema(
+var diagramMemberSchema = (layout, graph) => external_exports.object({ layout, graph }).strict();
+var elkLayeredDiagramSchema = diagramMemberSchema(elkLayeredDiagramLayoutConfigSchema, diagramGraphSchema);
+var sequenceDiagramSchema = diagramMemberSchema(sequenceDiagramLayoutConfigSchema, sequenceDiagramGraphSchema);
+var dependencyGraphDiagramSchema = diagramMemberSchema(
   dependencyGraphLayoutConfigSchema,
   dependencyDiagramGraphSchema
 );
-var componentStructureArtifactSchema = artifactMemberSchema(
+var componentStructureDiagramSchema = diagramMemberSchema(
   componentStructureDiagramLayoutConfigSchema,
   componentStructureDiagramGraphSchema
 );
-var artifactSchema = external_exports.union([
-  elkLayeredArtifactSchema,
-  sequenceArtifactSchema,
-  dependencyGraphArtifactSchema,
-  componentStructureArtifactSchema
+var diagramSchema = external_exports.union([
+  elkLayeredDiagramSchema,
+  sequenceDiagramSchema,
+  dependencyGraphDiagramSchema,
+  componentStructureDiagramSchema
 ]);
-var artifactMembersByLayoutId = {
-  "elk-layered": elkLayeredArtifactSchema,
-  sequence: sequenceArtifactSchema,
-  "dependency-graph": dependencyGraphArtifactSchema,
-  "component-structure": componentStructureArtifactSchema
+var artifactSchema = external_exports.object({
+  ...artifactBaseShape,
+  diagram: diagramSchema
+}).strict();
+var diagramMembersByLayoutId = {
+  "elk-layered": elkLayeredDiagramSchema,
+  sequence: sequenceDiagramSchema,
+  "dependency-graph": dependencyGraphDiagramSchema,
+  "component-structure": componentStructureDiagramSchema
 };
 function toIssueMessages(error62) {
   return error62.issues.map(({ message, path }) => path.length > 0 ? `${path.join(".")}: ${message}` : message).join("; ");
 }
 function parseArtifact(input2) {
-  const layout = input2?.layout;
+  const layout = input2?.diagram?.layout;
   if (layout != null && typeof layout === "object" && typeof layout.id === "string") {
-    const member = artifactMembersByLayoutId[layout.id];
+    const member = diagramMembersByLayoutId[layout.id];
     if (member === void 0) {
-      throw new Error(`Invalid artifact: layout.id: Unsupported layout configuration: ${layout.id}`);
+      throw new Error(`Invalid artifact: diagram.layout.id: Unsupported layout configuration: ${layout.id}`);
     }
-    const result2 = member.safeParse(input2);
-    if (!result2.success) {
-      throw new Error(`Invalid artifact: ${toIssueMessages(result2.error)}`, { cause: result2.error });
+    const diagram = input2.diagram;
+    const diagramResult = member.safeParse(diagram);
+    if (!diagramResult.success) {
+      const issues = new external_exports.ZodError(
+        diagramResult.error.issues.map((issue2) => ({ ...issue2, path: ["diagram", ...issue2.path] }))
+      );
+      throw new Error(`Invalid artifact: ${toIssueMessages(issues)}`, { cause: issues });
     }
-    return result2.data;
   }
   const result = artifactSchema.safeParse(input2);
   if (!result.success) {

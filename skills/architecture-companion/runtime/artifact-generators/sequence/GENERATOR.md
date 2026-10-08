@@ -12,7 +12,7 @@ Use when time-ordered interactions are themselves the subject of review. Investi
 ```json
 {
   "generator": "built-in:sequence",
-  "layout": { "id": "sequence" }
+  "diagram": { "layout": { "id": "sequence" } }
 }
 ```
 

@@ -12,11 +12,12 @@ Use to review, at the source level, how React components within selected JavaScr
 ```json
 {
   "generator": "built-in:react-component-structure",
-  "layout": {
-    "id": "component-structure",
-    "options": {
-      "nudgeObstacleNodes": true,
-      "elk": { "direction": "DOWN" }
+  "diagram": {
+    "layout": {
+      "id": "component-structure",
+      "options": {
+        "elk": { "direction": "DOWN" }
+      }
     }
   }
 }

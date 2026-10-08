@@ -6722,7 +6722,7 @@ function createComponentGraphBuilder(ts) {
           // keeps its own polarity — its label names the condition that turns
           // it on. Comparison groups qualify too: they pair one predicate with
           // its complement over the same threshold, which never overlaps —
-          // overlapping thresholds keep separate groups (ADR 0005 category 6).
+          // overlapping thresholds keep separate groups.
           ...cases.length >= 2 ? {
             kind: "branch",
             label: positiveLabel(positiveText),
