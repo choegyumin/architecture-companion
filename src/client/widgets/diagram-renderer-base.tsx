@@ -212,6 +212,7 @@ export function DiagramRendererBase({
   diagram,
   onOpenSource,
   calculateLayout,
+  buildMeasurementNodes,
   buildRenderModel,
   onGroupActivate,
   onNodeActivate,
@@ -227,6 +228,7 @@ export function DiagramRendererBase({
         diagram={diagram}
         onOpenSource={onOpenSource}
         calculateLayout={calculateLayout}
+        buildMeasurementNodes={buildMeasurementNodes}
         buildRenderModel={buildRenderModel}
         onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
