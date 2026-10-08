@@ -12,10 +12,10 @@ import type {
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 /*
- * The ELK execution core shared by layered layouts (ADR 0003): option
- * resolution, the ELK run itself, and result extraction. Everything
- * downstream of a raw layout - obstacle nudging, decision anchors, segment
- * geometry - belongs to the individual layout, not here.
+ * The ELK execution core shared by layered layouts: option resolution, the
+ * ELK run itself, and result extraction. Everything downstream of a raw
+ * layout - obstacle nudging, decision anchors, segment geometry - belongs
+ * to the individual layout, not here.
  */
 
 const DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"] as const;

@@ -10,10 +10,10 @@ import { combineRulesets, unionRulesets } from "@/features/diagram/diagram-route
 
 /*
  * The projection layer between the stored component structure graph and its
- * display (ADR 0007): branch controls become decision nodes, gated
- * relationships split into segments through those nodes, and dead cases
- * become non-component nodes. None of this is stored - every shape here is
- * derived for display from the stored roots, controls, and control edges.
+ * display: branch controls become decision nodes, gated relationships split
+ * into segments through those nodes, and dead cases become non-component
+ * nodes. None of this is stored - every shape here is derived for display
+ * from the stored roots, controls, and control edges.
  */
 
 /** A branch control projected as its decision node; the node's id is the control's id. */

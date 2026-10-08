@@ -34,9 +34,9 @@ import type {
 
 /*
  * Component structure layout: layered placement through the shared ELK core,
- * with decision-node geometry of its own (ADR 0003). Decision diamonds anchor
- * every edge on their outline - arms leave through per-case ports, entries
- * arrive at the upstream tip, and reverse edges ride the slopes.
+ * with decision-node geometry of its own. Decision diamonds anchor every edge
+ * on their outline - arms leave through per-case ports, entries arrive at the
+ * upstream tip, and reverse edges ride the slopes.
  */
 
 export const componentStructureDiagramLayoutConfigSchema = z

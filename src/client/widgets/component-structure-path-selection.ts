@@ -110,7 +110,7 @@ function compareMetrics(left: ReturnType<typeof routeMetrics>, right: ReturnType
 // subject and its negation, so from the owner's seat it is one on/off gate —
 // the first case on, its complement off. The data stays a branch (its arms
 // still split by case) — only the owning card's field renders a switch for
-// it. The flag carries what label parsing used to infer (ADR 0005).
+// it. The flag carries what label parsing used to infer.
 export function isPolarityPairBranch(control: DiagramControl): boolean {
   return control.kind === "branch" && control.polarityPair === true && control.cases.length === 2;
 }

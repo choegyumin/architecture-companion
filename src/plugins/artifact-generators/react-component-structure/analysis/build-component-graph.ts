@@ -2139,8 +2139,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   // Branch cases emitted with the control: `polarityPair` marks the pair as
-  // one boolean subject and its negation (ADR 0005 category 3), so consumers
-  // never parse labels to recover the switch shape.
+  // one boolean subject and its negation, so consumers never parse labels to
+  // recover the switch shape.
   type BranchAlternatives = Readonly<{
     cases: { id: string; label: string }[];
     polarityPair?: true;
@@ -2202,9 +2202,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   const MAX_DECOMPOSED_LITERALS = 8;
 
   // Case labels keep the literal notation: string quotes distinguish types
-  // (`"1"` ↔ `1`) and keep case ids collision-free (ADR 0005 category 1).
-  // Quote style normalizes to double quotes so `'dark'` and `"dark"` share
-  // one case — the fold itself runs on structure keys either way.
+  // (`"1"` ↔ `1`) and keep case ids collision-free. Quote style normalizes to
+  // double quotes so `'dark'` and `"dark"` share one case — the fold itself
+  // runs on structure keys either way.
   const literalCaseText = (node: ts.Expression): string =>
     ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
       ? `"${node.text}"`
@@ -2213,8 +2213,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         : node.getText();
 
   // A gate condition that is a pure boolean combination splits into DNF
-  // clauses over atomic operands (ADR 0005 category 4): `a && (b || c)`
-  // becomes [a b] ∨ [a c] and negation expands by De Morgan. An operand that
+  // clauses over atomic operands: `a && (b || c)` becomes [a b] ∨ [a c] and
+  // negation expands by De Morgan. An operand that
   // is not itself a combination — a call, a comparison, a plain `!x` — stays
   // one atomic control, and oversized expansions fall back to the
   // whole-expression gate.
@@ -3288,7 +3288,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     };
     // Folding keys come from expression structure, not raw text, so the same
     // predicate written with different whitespace, parentheses, or quote
-    // styles folds into one control (ADR 0005 category 5).
+    // styles folds into one control.
     const structureKey = (node: ts.Expression): string => {
       if (ts.isParenthesizedExpression(node)) return structureKey(node.expression);
       if (ts.isIdentifier(node)) return `id\0${node.text}`;
@@ -3372,8 +3372,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     // literal value. Every gate over the same subject — a conditional or a
     // true/false branch — enumerates one case per value instead of separate
     // polarity pairs, with a synthesized remainder case for routes that need
-    // "any other value" (ADR 0005). Case labels are the comparands and the
-    // branch label is the subject, not the source expressions.
+    // "any other value". Case labels are the comparands and the branch label
+    // is the subject, not the source expressions.
     type DiscriminantSemantics = Readonly<{ literal: string; positive: boolean }>;
     type DiscriminantMember = Readonly<{
       control: DiagramControl;
@@ -3677,7 +3677,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           // keeps its own polarity — its label names the condition that turns
           // it on. Comparison groups qualify too: they pair one predicate with
           // its complement over the same threshold, which never overlaps —
-          // overlapping thresholds keep separate groups (ADR 0005 category 6).
+          // overlapping thresholds keep separate groups.
           ...(cases.length >= 2
             ? {
                 kind: "branch" as const,

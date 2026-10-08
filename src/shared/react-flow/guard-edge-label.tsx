@@ -3,8 +3,8 @@ import { Check, Split } from "lucide-react";
 import { cn } from "@/shared/react/class-name";
 
 // The combined activation condition of one route, written once on the edge
-// (ADR 0007: the label is presentation only — the guards themselves are
-// derived at display time, never stored). A leading icon separates the
+// (the label is presentation only — the guards themselves are derived at
+// display time, never stored). A leading icon separates the
 // control kinds: a splitting arrow marks routes that carry a branch case, a
 // check mark marks plain conditional gates, and the icon dims until the
 // route holds. The label wraps at a fixed max width instead of growing an
