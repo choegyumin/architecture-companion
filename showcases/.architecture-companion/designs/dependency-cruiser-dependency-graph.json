@@ -1,9 +1,9 @@
 {
   "id": "dependency-cruiser-dependency-graph",
   "title": "Module Dependency Graph — Dependency Cruiser",
-  "updatedAt": "2026-09-29T06:44:16.000Z",
+  "updatedAt": "2026-10-08T00:00:00.000Z",
   "generator": "built-in:js-module-dependency-graph",
-  "instructions": "Each box is a module; an arrow from A to B means A imports B. Folder groups mirror the repository directory tree, so the nesting shows the intended layering of the tool. Use this larger sample to review coupling between subsystems, spot wide or cyclic reach, and judge whether the folder structure still matches the dependency direction.",
+  "instructions": "## Purpose\n\nReview coupling between subsystems of the dependency-cruiser codebase, spot wide or cyclic reach, and judge whether the folder structure still matches the dependency direction. Each box is a module; an arrow from A to B means A imports B. Folder groups mirror the repository directory tree, so the nesting shows the intended layering of the tool.\n\n## Regeneration\n\nManually transcribed from dependency-cruiser's published self-dependency graph: https://sverweij.github.io/dependency-cruiser/dependency-cruiser-dependency-graph.html. There is no source-repository regeneration procedure; to recreate the artifact, transcribe the published graph again, mirroring its modules, imports, and nested folder groups.",
   "diagram": {
     "layout": {
       "id": "dependency-graph"

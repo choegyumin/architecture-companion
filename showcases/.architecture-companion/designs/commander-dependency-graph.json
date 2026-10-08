@@ -1,9 +1,9 @@
 {
   "id": "commander-dependency-graph",
   "title": "Module Dependency Graph — Commander",
-  "updatedAt": "2026-09-29T06:44:16.000Z",
+  "updatedAt": "2026-10-08T00:00:00.000Z",
   "generator": "built-in:js-module-dependency-graph",
-  "instructions": "Each box is a module; an arrow from A to B means A imports B at the top of the file. Boxes sit in folder groups mirroring the repository directories; external npm packages and Node built-ins collect in the external packages group. Use it to review which parts of the library reach the outside world and how deep the internal layering runs.",
+  "instructions": "## Purpose\n\nReview which parts of the commander library reach the outside world and how deep its internal layering runs. Each box is a module; an arrow from A to B means A imports B at the top of the file. Boxes sit in folder groups mirroring the repository directories; external npm packages and Node built-ins collect in the external packages group.\n\n## Regeneration\n\nManually transcribed from dependency-cruiser's published commander sample graph: https://github.com/sverweij/dependency-cruiser/blob/main/doc/real-world-samples/commander.svg. There is no source-repository regeneration procedure; to recreate the artifact, transcribe the published graph again, mirroring its modules, imports, and folder groups.",
   "diagram": {
     "layout": {
       "id": "dependency-graph"
