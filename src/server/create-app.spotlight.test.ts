@@ -18,14 +18,16 @@ function catalog(): CompanionCatalog {
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions: "## Purpose\nReview the checkout trigger.",
-        layout: { id: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [
-            { type: "default", id: "cart", kind: "page", title: "Cart" },
-            { type: "default", id: "pay", kind: "action", title: "Pay" },
-          ],
-          edges: [{ type: "default", id: "e1", source: "cart", target: "pay" }],
+        diagram: {
+          layout: { id: "elk-layered" },
+          graph: {
+            groups: [],
+            nodes: [
+              { type: "default", id: "cart", kind: "page", title: "Cart" },
+              { type: "default", id: "pay", kind: "action", title: "Pay" },
+            ],
+            edges: [{ type: "default", id: "e1", source: "cart", target: "pay" }],
+          },
         },
       },
     ],

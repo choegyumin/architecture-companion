@@ -44,9 +44,9 @@ export function validateSpotlightAgainstCatalog(
     return { status: "invalid", message: `Spotlight references an unknown artifact: ${spotlight.artifactId}` };
   }
 
-  const groupIds = new Set(artifact.graph.groups.map(({ id }) => id));
-  const nodeIds = new Set(artifact.graph.nodes.map(({ id }) => id));
-  const edgeIds = new Set(artifact.graph.edges.map(({ id }) => id));
+  const groupIds = new Set(artifact.diagram.graph.groups.map(({ id }) => id));
+  const nodeIds = new Set(artifact.diagram.graph.nodes.map(({ id }) => id));
+  const edgeIds = new Set(artifact.diagram.graph.edges.map(({ id }) => id));
   const endpointIds = new Set([...groupIds, ...nodeIds]);
 
   const problems: string[] = [];

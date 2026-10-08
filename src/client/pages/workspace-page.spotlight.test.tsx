@@ -18,14 +18,16 @@ const catalog = {
       title: "Invite member",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview member invitations.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [
-          { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
-          { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
-        ],
-        edges: [{ type: "default", id: "invite-delivered", source: "invite", target: "delivered" }],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
+            { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
+          ],
+          edges: [{ type: "default", id: "invite-delivered", source: "invite", target: "delivered" }],
+        },
       },
     },
   ],
@@ -36,14 +38,16 @@ const catalog = {
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview checkout ownership.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [
-          { type: "default", id: "checkout-page", kind: "component", title: "Checkout page" },
-          { type: "default", id: "payment-client", kind: "client", title: "Payment client" },
-        ],
-        edges: [{ type: "default", id: "uses-payment-client", source: "checkout-page", target: "payment-client" }],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            { type: "default", id: "checkout-page", kind: "component", title: "Checkout page" },
+            { type: "default", id: "payment-client", kind: "client", title: "Payment client" },
+          ],
+          edges: [{ type: "default", id: "uses-payment-client", source: "checkout-page", target: "payment-client" }],
+        },
       },
     },
   ],
