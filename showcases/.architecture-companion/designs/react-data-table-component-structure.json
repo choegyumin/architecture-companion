@@ -1,10 +1,10 @@
 {
   "id": "react-data-table-component-structure",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-03T18:28:11.762Z",
+  "updatedAt": "2026-10-08T05:57:59.426Z",
   "generator": "built-in:react-component-structure",
   "layout": {
-    "id": "elk-layered",
+    "id": "component-structure",
     "options": {
       "nudgeObstacleNodes": true,
       "elk": {
@@ -19,700 +19,2078 @@
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
         "title": "CellBase",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellBase",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
         "title": "CellBase",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellBase",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+              "supplierTitle": "DataTableHead",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
         "title": "CellBase",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellBase",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
         "title": "CellBase",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellBase",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
         "title": "CellExtended",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellExtended",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
         "title": "CellExtended",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellExtended",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
         "title": "CellExtended",
-        "description": "src/components/Cell.tsx"
+        "description": "src/components/Cell.tsx",
+        "component": {
+          "definitionId": "component:src/components/Cell.tsx#CellExtended",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/CellEditor.tsx#CellEditor",
         "title": "CellEditor",
-        "description": "src/components/CellEditor.tsx"
+        "description": "src/components/CellEditor.tsx",
+        "component": {
+          "definitionId": "component:src/components/CellEditor.tsx#CellEditor",
+          "origins": [
+            {
+              "supplierId": "component:src/components/TableCell.tsx#EditableCell",
+              "supplierTitle": "EditableCell",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Checkbox.tsx#Checkbox",
         "title": "Checkbox",
-        "description": "src/components/Checkbox.tsx"
+        "description": "src/components/Checkbox.tsx",
+        "component": {
+          "definitionId": "component:src/components/Checkbox.tsx#Checkbox",
+          "origins": [
+            {
+              "supplierId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
+              "supplierTitle": "TableCellCheckbox",
+              "prop": "children"
+            },
+            {
+              "supplierId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
+              "supplierTitle": "ColumnCheckbox",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ColumnFilter.tsx#ColumnFilter",
         "title": "ColumnFilter",
-        "description": "src/components/ColumnFilter.tsx"
+        "description": "src/components/ColumnFilter.tsx",
+        "component": {
+          "definitionId": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+          "origins": [
+            {
+              "supplierId": "component:src/components/TableCol.tsx#TableCol",
+              "supplierTitle": "TableCol",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
         "title": "ConditionLogicGroup",
-        "description": "src/components/ColumnFilter.tsx"
+        "description": "src/components/ColumnFilter.tsx",
+        "component": {
+          "definitionId": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ColumnFilter.tsx#ConditionRow",
         "title": "ConditionRow",
-        "description": "src/components/ColumnFilter.tsx"
+        "description": "src/components/ColumnFilter.tsx",
+        "component": {
+          "definitionId": "component:src/components/ColumnFilter.tsx#ConditionRow",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
         "title": "SetFilterPanel",
-        "description": "src/components/ColumnFilter.tsx"
+        "description": "src/components/ColumnFilter.tsx",
+        "component": {
+          "definitionId": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ContextMenu.tsx#ContextMenu",
         "title": "ContextMenu",
-        "description": "src/components/ContextMenu.tsx"
+        "description": "src/components/ContextMenu.tsx",
+        "component": {
+          "definitionId": "component:src/components/ContextMenu.tsx#ContextMenu",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/DataTable.tsx#DataTableInner",
         "title": "DataTableInner",
-        "description": "src/components/DataTable.tsx"
+        "description": "src/components/DataTable.tsx",
+        "component": {
+          "definitionId": "component:src/components/DataTable.tsx#DataTableInner",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/DataTableBody.tsx#DataTableBody",
         "title": "DataTableBody",
-        "description": "src/components/DataTableBody.tsx"
+        "description": "src/components/DataTableBody.tsx",
+        "component": {
+          "definitionId": "component:src/components/DataTableBody.tsx#DataTableBody",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/DataTableBody.tsx#SkeletonCell",
         "title": "SkeletonCell",
-        "description": "src/components/DataTableBody.tsx"
+        "description": "src/components/DataTableBody.tsx",
+        "component": {
+          "definitionId": "component:src/components/DataTableBody.tsx#SkeletonCell",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/DataTableBody.tsx#SkeletonRow",
         "title": "SkeletonRow",
-        "description": "src/components/DataTableBody.tsx"
+        "description": "src/components/DataTableBody.tsx",
+        "component": {
+          "definitionId": "component:src/components/DataTableBody.tsx#SkeletonRow",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
+              "supplierTitle": "DataTableBody",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/DataTableHead.tsx#DataTableHead",
         "title": "DataTableHead",
-        "description": "src/components/DataTableHead.tsx"
+        "description": "src/components/DataTableHead.tsx",
+        "component": {
+          "definitionId": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ExpanderButton.tsx#ExpanderButton",
         "title": "ExpanderButton",
-        "description": "src/components/ExpanderButton.tsx"
+        "description": "src/components/ExpanderButton.tsx",
+        "component": {
+          "definitionId": "component:src/components/ExpanderButton.tsx#ExpanderButton",
+          "origins": [
+            {
+              "supplierId": "component:src/components/TableCellExpander.tsx#CellExpander",
+              "supplierTitle": "CellExpander",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ExpanderRow.tsx#ExpanderRow",
         "title": "ExpanderRow",
-        "description": "src/components/ExpanderRow.tsx"
+        "description": "src/components/ExpanderRow.tsx",
+        "component": {
+          "definitionId": "component:src/components/ExpanderRow.tsx#ExpanderRow",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
         "title": "NoDataWrapper",
-        "description": "src/components/NoDataWrapper.tsx"
+        "description": "src/components/NoDataWrapper.tsx",
+        "component": {
+          "definitionId": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
+          "origins": []
+        }
+      },
+      {
+        "type": "default",
+        "id": "component:src/components/Pagination.tsx#Pagination",
+        "title": "Pagination",
+        "description": "src/components/Pagination.tsx",
+        "component": {
+          "definitionId": "component:src/components/Pagination.tsx#Pagination",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "Pagination"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
         "title": "PinnedScrollbar",
-        "description": "src/components/PinnedScrollbar.tsx"
+        "description": "src/components/PinnedScrollbar.tsx",
+        "component": {
+          "definitionId": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
         "title": "ResponsiveWrapper",
-        "description": "src/components/ResponsiveWrapper.tsx"
+        "description": "src/components/ResponsiveWrapper.tsx",
+        "component": {
+          "definitionId": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
         "title": "RightPinSpacer",
-        "description": "src/components/RightPinSpacer.tsx"
+        "description": "src/components/RightPinSpacer.tsx",
+        "component": {
+          "definitionId": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
+          "origins": []
+        }
+      },
+      {
+        "type": "default",
+        "id": "component:src/components/Select.tsx#Select",
+        "title": "Select",
+        "description": "src/components/Select.tsx",
+        "component": {
+          "definitionId": "component:src/components/Select.tsx#Select",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/Table.tsx#Table",
         "title": "Table",
-        "description": "src/components/Table.tsx"
+        "description": "src/components/Table.tsx",
+        "component": {
+          "definitionId": "component:src/components/Table.tsx#Table",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
         "title": "Body",
-        "description": "src/components/TableBody.tsx"
+        "description": "src/components/TableBody.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableBody.tsx#Body",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
         "title": "Body",
-        "description": "src/components/TableBody.tsx"
+        "description": "src/components/TableBody.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableBody.tsx#Body",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCell.tsx#Cell",
         "title": "Cell",
-        "description": "src/components/TableCell.tsx"
+        "description": "src/components/TableCell.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCell.tsx#Cell",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCell.tsx#EditableCell",
         "title": "EditableCell",
-        "description": "src/components/TableCell.tsx"
+        "description": "src/components/TableCell.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCell.tsx#EditableCell",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCell.tsx#PlainCell",
         "title": "PlainCell",
-        "description": "src/components/TableCell.tsx"
+        "description": "src/components/TableCell.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCell.tsx#PlainCell",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
         "title": "TableCellCheckbox",
-        "description": "src/components/TableCellCheckbox.tsx"
+        "description": "src/components/TableCellCheckbox.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCellExpander.tsx#CellExpander",
         "title": "CellExpander",
-        "description": "src/components/TableCellExpander.tsx"
+        "description": "src/components/TableCellExpander.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCellExpander.tsx#CellExpander",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableCol.tsx#TableCol",
         "title": "TableCol",
-        "description": "src/components/TableCol.tsx"
+        "description": "src/components/TableCol.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableCol.tsx#TableCol",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+              "supplierTitle": "DataTableHead",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
         "title": "ColumnCheckbox",
-        "description": "src/components/TableColCheckbox.tsx"
+        "description": "src/components/TableColCheckbox.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+              "supplierTitle": "DataTableHead",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableColExpander.tsx#ColumnExpander",
         "title": "ColumnExpander",
-        "description": "src/components/TableColExpander.tsx"
+        "description": "src/components/TableColExpander.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableColExpander.tsx#ColumnExpander",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+              "supplierTitle": "DataTableHead",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableFooter.tsx#TableFooter",
         "title": "TableFooter",
-        "description": "src/components/TableFooter.tsx"
+        "description": "src/components/TableFooter.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableFooter.tsx#TableFooter",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
         "title": "Head",
-        "description": "src/components/TableHead.tsx"
+        "description": "src/components/TableHead.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableHead.tsx#Head",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
         "title": "Head",
-        "description": "src/components/TableHead.tsx"
+        "description": "src/components/TableHead.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableHead.tsx#Head",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableHeader.tsx#Header",
         "title": "Header",
-        "description": "src/components/TableHeader.tsx"
+        "description": "src/components/TableHeader.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableHeader.tsx#Header",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableHeadRow.tsx#HeadRow",
         "title": "HeadRow",
-        "description": "src/components/TableHeadRow.tsx"
+        "description": "src/components/TableHeadRow.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableHeadRow.tsx#HeadRow",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+              "supplierTitle": "DataTableHead",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
         "title": "TablePaginationFooter",
-        "description": "src/components/TablePaginationFooter.tsx"
+        "description": "src/components/TablePaginationFooter.tsx",
+        "component": {
+          "definitionId": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableRow.tsx#Row",
         "title": "Row",
-        "description": "src/components/TableRow.tsx"
+        "description": "src/components/TableRow.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableRow.tsx#Row",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
+              "supplierTitle": "DataTableBody",
+              "prop": "children"
+            }
+          ]
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableSubheader.tsx#Subheader",
         "title": "Subheader",
-        "description": "src/components/TableSubheader.tsx"
+        "description": "src/components/TableSubheader.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableSubheader.tsx#Subheader",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/components/TableWrapper.tsx#Wrapper",
         "title": "Wrapper",
-        "description": "src/components/TableWrapper.tsx"
+        "description": "src/components/TableWrapper.tsx",
+        "component": {
+          "definitionId": "component:src/components/TableWrapper.tsx#Wrapper",
+          "origins": [
+            {
+              "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+              "supplierTitle": "DataTableInner",
+              "prop": "children"
+            }
+          ]
+        }
+      },
+      {
+        "type": "default",
+        "id": "component:src/icons/Dropdown.tsx#DropdownIcon",
+        "title": "DropdownIcon",
+        "description": "src/icons/Dropdown.tsx",
+        "component": {
+          "definitionId": "component:src/icons/Dropdown.tsx#DropdownIcon",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/icons/FilterIcon.tsx#FilterIcon",
         "title": "FilterIcon",
-        "description": "src/icons/FilterIcon.tsx"
+        "description": "src/icons/FilterIcon.tsx",
+        "component": {
+          "definitionId": "component:src/icons/FilterIcon.tsx#FilterIcon",
+          "origins": []
+        }
       },
       {
         "type": "default",
         "id": "component:src/icons/MenuIcon.tsx#MenuIcon",
         "title": "MenuIcon",
-        "description": "src/icons/MenuIcon.tsx"
+        "description": "src/icons/MenuIcon.tsx",
+        "component": {
+          "definitionId": "component:src/icons/MenuIcon.tsx#MenuIcon",
+          "origins": [
+            {
+              "supplierId": "component:src/components/TableCol.tsx#TableCol",
+              "supplierTitle": "TableCol",
+              "prop": "children"
+            }
+          ]
+        }
       }
     ],
     "edges": [
       {
         "type": "default",
+        "id": "edge:03259b12342f765c",
+        "source": "component:src/components/TableColExpander.tsx#ColumnExpander",
+        "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052"
+      },
+      {
+        "type": "control",
         "id": "edge:03570acbee5e0588",
         "source": "component:src/components/TableHeadRow.tsx#HeadRow",
         "target": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
+              "value": "!(selectAll?.hideSelectAll)"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:106dd1baff5cd3ae",
+        "id": "edge:06d55d89deaf38f1",
+        "source": "component:src/components/TableCellExpander.tsx#CellExpander",
+        "target": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b"
+      },
+      {
+        "type": "control",
+        "id": "edge:0de9f4aa91443c3f",
         "source": "component:src/components/DataTable.tsx#DataTableInner",
-        "target": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
-        "kind": "direct-render"
+        "target": "component:src/components/TableHeader.tsx#Header",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:1238ccb72878870b",
         "source": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
-        "target": "component:src/components/ExpanderButton.tsx#ExpanderButton",
-        "kind": "NODE (children)",
-        "label": "from CellExpander"
+        "target": "component:src/components/ExpanderButton.tsx#ExpanderButton"
       },
       {
-        "type": "default",
-        "id": "edge:19f5f08c4e79552c",
-        "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/components/TableCellExpander.tsx#CellExpander",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:170de849e5280413",
+        "source": "component:src/components/TableCell.tsx#Cell",
+        "target": "component:src/components/TableCell.tsx#EditableCell",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCell.tsx#Cell:control:0",
+              "value": "on"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/components/TableCell.tsx#Cell:control:1",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:1cd0c257ec67f816",
+        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+        "target": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:2",
+              "value": "isSet"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:2094b72f0974196b",
         "source": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
-        "target": "component:src/components/Checkbox.tsx#Checkbox",
-        "kind": "NODE (children)",
-        "label": "from TableCellCheckbox"
+        "target": "component:src/components/Checkbox.tsx#Checkbox"
       },
       {
-        "type": "default",
-        "id": "edge:20a7f8b766ee30f8",
-        "source": "component:src/components/DataTableBody.tsx#DataTableBody",
-        "target": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:2245b0e5e6415884",
-        "source": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
-        "target": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
+        "type": "control",
         "id": "edge:240d0a92f2528849",
         "source": "component:src/components/Table.tsx#Table",
         "target": "component:src/components/TableFooter.tsx#TableFooter",
-        "kind": "NODE (children)",
-        "label": "from DataTableInner"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:6",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:34c013b64f846454",
         "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
         "target": "component:src/components/TableColExpander.tsx#ColumnExpander",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:4",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:3a638ed29c5fd812",
+        "source": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
+        "target": "component:src/components/Pagination.tsx#Pagination",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:4",
+              "value": "right"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:37e93dd41930ee78",
-        "source": "component:src/components/TableFooter.tsx#TableFooter",
-        "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
-        "kind": "direct-render"
+        "id": "edge:48bcc9c582c514c1",
+        "source": "component:src/components/Select.tsx#Select",
+        "target": "component:src/icons/Dropdown.tsx#DropdownIcon"
       },
       {
-        "type": "default",
-        "id": "edge:441301a14f3d6832",
-        "source": "component:src/components/TableCell.tsx#PlainCell",
-        "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:491bedcf947c534e",
+        "source": "component:src/components/TableRow.tsx#Row",
+        "target": "component:src/components/TableCellExpander.tsx#CellExpander",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:2",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:4d04515b23aa25db",
-        "source": "component:src/components/TableCol.tsx#TableCol",
-        "target": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:4b10209e218738e5",
+        "source": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
+        "target": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:4e30a353fa5e7649",
+        "type": "control",
+        "id": "edge:4ba50fe1a64066ae",
+        "source": "component:src/components/Pagination.tsx#Pagination",
+        "target": "component:src/components/Select.tsx#Select",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/Pagination.tsx#Pagination:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/Pagination.tsx#Pagination:control:1",
+              "value": "shouldShow"
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/components/Pagination.tsx#Pagination:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/Pagination.tsx#Pagination:control:1",
+              "value": "!shouldShow"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:4e7596ded298162c",
         "source": "component:src/components/DataTableBody.tsx#DataTableBody",
-        "target": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:578724d4eff854a6",
-        "source": "component:src/components/DataTableHead.tsx#DataTableHead",
-        "target": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
-        "kind": "direct-render"
+        "target": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
+              "value": "hasData"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:5860ac38a6bd6366",
         "source": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
-        "target": "component:src/components/TableWrapper.tsx#Wrapper",
-        "kind": "NODE (children)",
-        "label": "from DataTableInner"
+        "target": "component:src/components/TableWrapper.tsx#Wrapper"
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:590787d8cbebe038",
         "source": "component:src/components/TableHeadRow.tsx#HeadRow",
         "target": "component:src/components/TableColExpander.tsx#ColumnExpander",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:4",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:5b6d3f4579c2f7ac",
+        "source": "component:src/components/TableFooter.tsx#TableFooter",
+        "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:3",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:5b761604ca52a137",
         "source": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
-        "target": "component:src/components/TableRow.tsx#Row",
-        "kind": "NODE (children)",
-        "label": "from DataTableBody"
+        "target": "component:src/components/TableRow.tsx#Row"
       },
       {
-        "type": "default",
-        "id": "edge:60d6aa853c2b8d5d",
-        "source": "component:src/components/DataTableBody.tsx#SkeletonRow",
-        "target": "component:src/components/DataTableBody.tsx#SkeletonCell",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:64a208a62fc4f01a",
+        "source": "component:src/components/DataTableHead.tsx#DataTableHead",
+        "target": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:0",
+              "value": "true"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:627a0e69daaf52f4",
-        "source": "component:src/components/DataTableBody.tsx#DataTableBody",
-        "target": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:63b43c06b0cb90f6",
-        "source": "component:src/components/DataTable.tsx#DataTableInner",
-        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:67bfd66f052ac6b7",
+        "type": "control",
+        "id": "edge:6a8a23f00b104972",
         "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/icons/MenuIcon.tsx#MenuIcon",
-        "kind": "direct-render"
+        "target": "component:src/components/TableCell.tsx#Cell",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:3",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:69fea565e308fd74",
+        "type": "control",
+        "id": "edge:71a25d7f46c858a5",
+        "source": "component:src/components/TableRow.tsx#Row",
+        "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:3",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:4",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:5",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:7ccc1e5b94b6a44b",
         "source": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
         "target": "component:src/components/Checkbox.tsx#Checkbox",
-        "kind": "direct-render"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#SetFilterPanel:control:0",
+              "value": "otherwise"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:6d6efa328182ab0f",
-        "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:71986930beca12cc",
-        "source": "component:src/components/TableCell.tsx#EditableCell",
-        "target": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:7dd5cc3ac76e388d",
-        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-        "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:80dcd30767190345",
-        "source": "component:src/components/TableColExpander.tsx#ColumnExpander",
-        "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
+        "type": "control",
         "id": "edge:82765d9040180b16",
         "source": "component:src/components/Table.tsx#Table",
         "target": "component:src/components/DataTableHead.tsx#DataTableHead",
-        "kind": "NODE (children)",
-        "label": "from DataTableInner"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:5",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:87dd71d6353d25f9",
+        "source": "component:src/components/DataTableBody.tsx#DataTableBody",
+        "target": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
+              "value": "!hasData"
+            },
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:1",
+              "value": "!isBusy"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:8aaa33a7577403d5",
-        "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/components/ExpanderRow.tsx#ExpanderRow",
-        "kind": "direct-render"
+        "id": "edge:89f07022f732e22d",
+        "source": "component:src/components/DataTableBody.tsx#SkeletonRow",
+        "target": "component:src/components/DataTableBody.tsx#SkeletonCell"
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:958f0aa5a8188e5a",
         "source": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
         "target": "component:src/components/CellEditor.tsx#CellEditor",
-        "kind": "NODE (children)",
-        "label": "from EditableCell"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCell.tsx#EditableCell:control:0",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:9aad0e5a75a7d8c9",
         "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
-        "target": "component:src/components/TableCol.tsx#TableCol",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "target": "component:src/components/TableCol.tsx#TableCol"
       },
       {
-        "type": "default",
-        "id": "edge:a454e9e0db7dc4a2",
+        "type": "control",
+        "id": "edge:9b37cd4b6be5bdb3",
         "source": "component:src/components/DataTable.tsx#DataTableInner",
         "target": "component:src/components/ContextMenu.tsx#ContextMenu",
-        "kind": "direct-render"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:9",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:9f087375772d8f40",
+        "source": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
+        "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup:control:0",
+              "value": "false"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:a7c51f96aec00a79",
-        "source": "component:src/components/TableCell.tsx#Cell",
-        "target": "component:src/components/TableCell.tsx#PlainCell",
-        "kind": "direct-render"
+        "id": "edge:a1f8790a87df1c7d",
+        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+        "target": "component:src/icons/FilterIcon.tsx#FilterIcon"
+      },
+      {
+        "type": "control",
+        "id": "edge:a41f2ecf3bd935f2",
+        "source": "component:src/components/TableCol.tsx#TableCol",
+        "target": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCol.tsx#TableCol:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:a76db91e6ca9f74c",
+        "source": "component:src/components/TableRow.tsx#Row",
+        "target": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:0",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:a86743a55d28a072",
+        "source": "component:src/components/TableFooter.tsx#TableFooter",
+        "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+              "value": "false"
+            },
+            {
+              "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:1",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:a87908432f8463af",
         "source": "component:src/components/TableWrapper.tsx#Wrapper",
-        "target": "component:src/components/Table.tsx#Table",
-        "kind": "NODE (children)",
-        "label": "from DataTableInner"
+        "target": "component:src/components/Table.tsx#Table"
+      },
+      {
+        "type": "control",
+        "id": "edge:ad9e9dfed29ab801",
+        "source": "component:src/components/TableRow.tsx#Row",
+        "target": "component:src/icons/MenuIcon.tsx#MenuIcon",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:6",
+              "value": "on"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:ae79b7ccf46d8cc2",
+        "source": "component:src/components/TableCell.tsx#Cell",
+        "target": "component:src/components/TableCell.tsx#PlainCell",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCell.tsx#Cell:control:0",
+              "value": "off"
+            },
+            {
+              "controlId": "component:src/components/TableCell.tsx#Cell:control:1",
+              "value": "off"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
+        "id": "edge:af9482ce22017efb",
+        "source": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
+        "target": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd"
+      },
+      {
+        "type": "control",
         "id": "edge:afac23500db9b7cd",
         "source": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
         "target": "component:src/icons/MenuIcon.tsx#MenuIcon",
-        "kind": "NODE (children)",
-        "label": "from TableCol"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCol.tsx#TableCol:control:4",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:aff1af16815885df",
-        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-        "target": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
-        "kind": "direct-render"
+        "id": "edge:afc9bcfdab8fa262",
+        "source": "component:src/components/DataTable.tsx#DataTableInner",
+        "target": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper"
       },
       {
-        "type": "default",
-        "id": "edge:b352638c4cef8e5c",
-        "source": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
-        "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:b77389d76c4303f2",
+        "source": "component:src/components/DataTable.tsx#DataTableInner",
+        "target": "component:src/components/TableSubheader.tsx#Subheader",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:1",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:b883c71c67ca5f65",
         "source": "component:src/components/TableHeadRow.tsx#HeadRow",
         "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
+              "value": "selectAll?.hideSelectAll"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:ba8ad0feeea68095",
-        "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/components/TableCell.tsx#Cell",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:befb18fa487f45fa",
-        "source": "component:src/components/TableRow.tsx#Row",
-        "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:c0b0b8ffbd7ee54c",
-        "source": "component:src/components/TableCellExpander.tsx#CellExpander",
-        "target": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:c42a3638ea427b18",
-        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-        "target": "component:src/icons/FilterIcon.tsx#FilterIcon",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
+        "type": "control",
         "id": "edge:c86c99d4ad080307",
         "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
         "target": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
+              "value": "!(selectAll?.hideSelectAll)"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:c8b97eb507951b3f",
         "source": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
-        "target": "component:src/components/TableHeadRow.tsx#HeadRow",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "target": "component:src/components/TableHeadRow.tsx#HeadRow"
       },
       {
-        "type": "default",
-        "id": "edge:c9280ba279ac3cde",
+        "type": "control",
+        "id": "edge:ccff9ed7c798028c",
+        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+        "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:2",
+              "value": "!isSet"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:d249df2ee7f56363",
+        "source": "component:src/components/DataTableBody.tsx#DataTableBody",
+        "target": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:1",
+              "value": "isBusy"
+            },
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
+              "value": "!hasData"
+            },
+            {
+              "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:2",
+              "value": "progressSkeleton"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:d669e3352ff0293e",
+        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+        "target": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:2",
+              "value": "!isSet"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "control",
+        "id": "edge:dbc17788da99b37b",
         "source": "component:src/components/DataTable.tsx#DataTableInner",
-        "target": "component:src/components/TableSubheader.tsx#Subheader",
-        "kind": "direct-render"
+        "target": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:7",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:8",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:ceec97b5e59c1635",
-        "source": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-        "target": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
-        "kind": "direct-render"
-      },
-      {
-        "type": "default",
-        "id": "edge:d18fe2bb928796cf",
+        "type": "control",
+        "id": "edge:df1483ddde29a90b",
         "source": "component:src/components/DataTableHead.tsx#DataTableHead",
         "target": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
-        "kind": "direct-render"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:0",
+              "value": "false"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
-        "id": "edge:da9b40d2021fb84a",
-        "source": "component:src/components/DataTable.tsx#DataTableInner",
-        "target": "component:src/components/TableHeader.tsx#Header",
-        "kind": "direct-render"
+        "id": "edge:dfe2b58988bf0590",
+        "source": "component:src/components/TableCell.tsx#EditableCell",
+        "target": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488"
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:e004bfaf14d9dde4",
         "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
         "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-        "kind": "NODE (children)",
-        "label": "from DataTableHead"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
+              "value": "selectAll?.hideSelectAll"
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:e10997903666f615",
         "source": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
-        "target": "component:src/components/Checkbox.tsx#Checkbox",
-        "kind": "NODE (children)",
-        "label": "from ColumnCheckbox"
+        "target": "component:src/components/Checkbox.tsx#Checkbox"
       },
       {
         "type": "default",
-        "id": "edge:e495bd4a658863b0",
-        "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-        "target": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
-        "kind": "direct-render"
+        "id": "edge:ee5438856dfe87fb",
+        "source": "component:src/components/TableCell.tsx#PlainCell",
+        "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345"
       },
       {
         "type": "default",
         "id": "edge:ef97d0bdce6a0fc4",
         "source": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
-        "target": "component:src/components/DataTableBody.tsx#SkeletonRow",
-        "kind": "NODE (children)",
-        "label": "from DataTableBody"
+        "target": "component:src/components/DataTableBody.tsx#SkeletonRow"
       },
       {
-        "type": "default",
-        "id": "edge:f23df6cda4e361de",
-        "source": "component:src/components/TableFooter.tsx#TableFooter",
-        "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:f0b874ff352bf456",
+        "source": "component:src/components/TableRow.tsx#Row",
+        "target": "component:src/components/ExpanderRow.tsx#ExpanderRow",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:7",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableRow.tsx#Row:control:8",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
+        "type": "control",
         "id": "edge:f3c6138799d1d593",
         "source": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
         "target": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-        "kind": "NODE (children)",
-        "label": "from TableCol"
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/TableCol.tsx#TableCol:control:1",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/TableCol.tsx#TableCol:control:3",
+              "value": "on"
+            }
+          ]
+        ]
       },
       {
-        "type": "default",
-        "id": "edge:f6c789db93507d1e",
-        "source": "component:src/components/TableCell.tsx#Cell",
-        "target": "component:src/components/TableCell.tsx#EditableCell",
-        "kind": "direct-render"
+        "type": "control",
+        "id": "edge:f4a3b20fa2244265",
+        "source": "component:src/components/DataTable.tsx#DataTableInner",
+        "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
+        "activeWhen": [
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"top\""
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"both\""
+            }
+          ],
+          [
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+              "value": "on"
+            },
+            {
+              "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+              "value": "\"bottom\""
+            }
+          ]
+        ]
       },
       {
         "type": "default",
         "id": "edge:fcfbb865c4484622",
         "source": "component:src/components/Table.tsx#Table",
-        "target": "component:src/components/DataTableBody.tsx#DataTableBody",
-        "kind": "NODE (children)",
-        "label": "from DataTableInner"
-      },
-      {
-        "type": "default",
-        "id": "edge:fee397a2a014007b",
-        "source": "component:src/components/DataTable.tsx#DataTableInner",
-        "target": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
-        "kind": "direct-render"
+        "target": "component:src/components/DataTableBody.tsx#DataTableBody"
       }
-    ]
+    ],
+    "additional": {
+      "roots": ["component:src/components/DataTable.tsx#DataTableInner"],
+      "controls": [
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:0",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "showHeader",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:1",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "subHeader",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "enabledPagination",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:3",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "branch",
+          "label": "paginationPosition",
+          "cases": [
+            {
+              "id": "\"top\"",
+              "label": "\"top\""
+            },
+            {
+              "id": "\"both\"",
+              "label": "\"both\""
+            },
+            {
+              "id": "\"bottom\"",
+              "label": "\"bottom\""
+            }
+          ],
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:2",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:4",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "label": "paginationComponent",
+          "dependsOn": [[]],
+          "kind": "branch",
+          "cases": [
+            {
+              "id": "left",
+              "label": "paginationComponent"
+            },
+            {
+              "id": "right",
+              "label": "!paginationComponent"
+            }
+          ],
+          "polarityPair": true
+        },
+        {
+          "id": "component:src/components/Pagination.tsx#Pagination:control:0",
+          "owner": "component:src/components/Pagination.tsx#Pagination",
+          "kind": "conditional",
+          "label": "!options.noRowsPerPage",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/Pagination.tsx#Pagination:control:1",
+          "owner": "component:src/components/Pagination.tsx#Pagination",
+          "kind": "branch",
+          "label": "shouldShow",
+          "cases": [
+            {
+              "id": "shouldShow",
+              "label": "shouldShow"
+            },
+            {
+              "id": "!shouldShow",
+              "label": "!shouldShow"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:5",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "showTableHead",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:0",
+          "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "label": "hasGroups",
+          "dependsOn": [[]],
+          "kind": "branch",
+          "cases": [
+            {
+              "id": "true",
+              "label": "hasGroups"
+            },
+            {
+              "id": "false",
+              "label": "!hasGroups"
+            }
+          ],
+          "polarityPair": true
+        },
+        {
+          "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+          "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "kind": "conditional",
+          "label": "selectableRows",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
+          "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "kind": "branch",
+          "label": "selectAll?.hideSelectAll",
+          "cases": [
+            {
+              "id": "selectAll?.hideSelectAll",
+              "label": "selectAll?.hideSelectAll"
+            },
+            {
+              "id": "!(selectAll?.hideSelectAll)",
+              "label": "!(selectAll?.hideSelectAll)"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox:control:0",
+          "owner": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
+          "kind": "conditional",
+          "label": "selectAll",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:3",
+          "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "kind": "conditional",
+          "label": "expandableRows",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:4",
+          "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
+          "kind": "conditional",
+          "label": "!expandableRowsHideExpander",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/DataTableHead.tsx#DataTableHead:control:3",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableCol.tsx#TableCol:control:0",
+          "owner": "component:src/components/TableCol.tsx#TableCol",
+          "kind": "conditional",
+          "label": "!column.omit",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableCol.tsx#TableCol:control:1",
+          "owner": "component:src/components/TableCol.tsx#TableCol",
+          "kind": "conditional",
+          "label": "column.filterable",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableCol.tsx#TableCol:control:2",
+          "owner": "component:src/components/TableCol.tsx#TableCol",
+          "kind": "conditional",
+          "label": "onResizeStart",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableCol.tsx#TableCol:control:3",
+          "owner": "component:src/components/TableCol.tsx#TableCol",
+          "kind": "conditional",
+          "label": "column.id != null",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:1",
+                "value": "on"
+              }
+            ],
+            [
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:0",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:1",
+                "value": "on"
+              }
+            ],
+            [
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:2",
+                "value": "on"
+              }
+            ],
+            [
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:0",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/TableCol.tsx#TableCol:control:2",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+          "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+          "kind": "conditional",
+          "label": "open",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
+          "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+          "kind": "conditional",
+          "label": "panelPos",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:2",
+          "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
+          "kind": "branch",
+          "label": "isSet",
+          "cases": [
+            {
+              "id": "isSet",
+              "label": "isSet"
+            },
+            {
+              "id": "!isSet",
+              "label": "!isSet"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/ColumnFilter.tsx#SetFilterPanel:control:0",
+          "owner": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
+          "kind": "branch",
+          "label": "visible.length",
+          "cases": [
+            {
+              "id": "0",
+              "label": "0"
+            },
+            {
+              "id": "otherwise",
+              "label": "otherwise"
+            }
+          ],
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup:control:0",
+          "owner": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
+          "label": "condition",
+          "dependsOn": [[]],
+          "kind": "branch",
+          "cases": [
+            {
+              "id": "false",
+              "label": "condition"
+            },
+            {
+              "id": "true",
+              "label": "!condition"
+            }
+          ],
+          "polarityPair": true
+        },
+        {
+          "id": "component:src/components/TableCol.tsx#TableCol:control:4",
+          "owner": "component:src/components/TableCol.tsx#TableCol",
+          "kind": "conditional",
+          "label": "headerMenu?.menuButton",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
+          "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
+          "kind": "branch",
+          "label": "hasData",
+          "cases": [
+            {
+              "id": "hasData",
+              "label": "hasData"
+            },
+            {
+              "id": "!hasData",
+              "label": "!hasData"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:1",
+          "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
+          "kind": "branch",
+          "label": "isBusy",
+          "cases": [
+            {
+              "id": "isBusy",
+              "label": "isBusy"
+            },
+            {
+              "id": "!isBusy",
+              "label": "!isBusy"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:2",
+          "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
+          "kind": "branch",
+          "label": "progressSkeleton",
+          "cases": [
+            {
+              "id": "progressSkeleton",
+              "label": "progressSkeleton"
+            },
+            {
+              "id": "!progressSkeleton",
+              "label": "!progressSkeleton"
+            }
+          ],
+          "polarityPair": true,
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:1",
+                "value": "isBusy"
+              },
+              {
+                "controlId": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
+                "value": "!hasData"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:0",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "selection",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:1",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "expansion",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:2",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "!expansion.hideExpander",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:1",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:3",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "!column.omit",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:4",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "firstRightPinnedId != null",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:3",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:5",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "column.id === firstRightPinnedId",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:3",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:4",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableCell.tsx#Cell:control:0",
+          "owner": "component:src/components/TableCell.tsx#Cell",
+          "kind": "conditional",
+          "label": "props.column.editor",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableCell.tsx#Cell:control:1",
+          "owner": "component:src/components/TableCell.tsx#Cell",
+          "kind": "conditional",
+          "label": "props.column.editable",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableCell.tsx#EditableCell:control:0",
+          "owner": "component:src/components/TableCell.tsx#EditableCell",
+          "kind": "conditional",
+          "label": "editor",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:6",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "rowMenu?.menuButton",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:7",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "expanderMounted",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:1",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableRow.tsx#Row:control:8",
+          "owner": "component:src/components/TableRow.tsx#Row",
+          "kind": "conditional",
+          "label": "expansion.component",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:1",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/TableRow.tsx#Row:control:7",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:6",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "showFooterRow",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+          "owner": "component:src/components/TableFooter.tsx#TableFooter",
+          "label": "FooterComponentProp",
+          "dependsOn": [[]],
+          "kind": "branch",
+          "cases": [
+            {
+              "id": "true",
+              "label": "FooterComponentProp"
+            },
+            {
+              "id": "false",
+              "label": "!FooterComponentProp"
+            }
+          ],
+          "polarityPair": true
+        },
+        {
+          "id": "component:src/components/TableFooter.tsx#TableFooter:control:1",
+          "owner": "component:src/components/TableFooter.tsx#TableFooter",
+          "kind": "conditional",
+          "label": "!column.omit",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+                "value": "false"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableFooter.tsx#TableFooter:control:2",
+          "owner": "component:src/components/TableFooter.tsx#TableFooter",
+          "kind": "conditional",
+          "label": "firstRightPinnedId != null",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+                "value": "false"
+              },
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:1",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/TableFooter.tsx#TableFooter:control:3",
+          "owner": "component:src/components/TableFooter.tsx#TableFooter",
+          "kind": "conditional",
+          "label": "column.id === firstRightPinnedId",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:0",
+                "value": "false"
+              },
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:1",
+                "value": "on"
+              },
+              {
+                "controlId": "component:src/components/TableFooter.tsx#TableFooter:control:2",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:7",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "hasPinnedColumns",
+          "dependsOn": [[]]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:8",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "responsive",
+          "dependsOn": [
+            [
+              {
+                "controlId": "component:src/components/DataTable.tsx#DataTableInner:control:7",
+                "value": "on"
+              }
+            ]
+          ]
+        },
+        {
+          "id": "component:src/components/DataTable.tsx#DataTableInner:control:9",
+          "owner": "component:src/components/DataTable.tsx#DataTableInner",
+          "kind": "conditional",
+          "label": "menu.open",
+          "dependsOn": [[]]
+        }
+      ]
+    }
   },
   "instructions": "## Purpose\n\nExamine how react-data-table-component assembles its table: DataTableInner provides every context and renders the responsive wrapper chain down to Table, Head, and Body, while feature components (ColumnFilter, ContextMenu, ExpanderButton, Pagination) receive values through supplied props instead of direct imports.\n\n## Regeneration\n\nClone https://github.com/jbetancur/react-data-table-component.git, then from its root:\n\n```sh\nnpm install\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --root \"DataTableInner\" \\\n  \"src\"\n```\n\nOnly the dependency install is needed; the analysis reads the library sources directly, not the built dist. The root is DataTableInner, the implementation behind the React.forwardRef export, because the wrapper itself resolves to a React API boundary rather than a component definition.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files."
 }
