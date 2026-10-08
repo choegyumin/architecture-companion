@@ -30,7 +30,7 @@ import { layoutComponentStructureDiagram } from "@/features/diagram/_layout/comp
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
-import { type EdgeHoverOrigin, subscribeEdgeHover } from "@/shared/react-flow/edge-hover";
+import { type EdgeHoverOrigin, subscribeEdgeHover } from "@/shared/react-flow/edge-highlight";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 import {
   Select,

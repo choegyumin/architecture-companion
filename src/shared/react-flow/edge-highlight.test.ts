@@ -4,7 +4,7 @@ import {
   reportEdgeHover,
   resetEdgeHover,
   subscribeEdgeHover,
-} from "@/shared/react-flow/edge-hover";
+} from "@/shared/react-flow/edge-highlight";
 
 describe("edge hover channel", () => {
   afterEach(() => resetEdgeHover());

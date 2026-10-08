@@ -38,7 +38,7 @@ import {
   type EdgeHoverOrigin,
   resetEdgeHover,
   subscribeEdgeHover,
-} from "@/shared/react-flow/edge-hover";
+} from "@/shared/react-flow/edge-highlight";
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";

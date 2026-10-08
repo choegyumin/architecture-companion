@@ -7,7 +7,7 @@ import {
 import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
-import { clearEdgeHover, reportEdgeHover } from "@/shared/react-flow/edge-hover";
+import { clearEdgeHover, reportEdgeHover } from "@/shared/react-flow/edge-highlight";
 import { GuardEdgeLabel } from "@/shared/react-flow/guard-edge-label";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
