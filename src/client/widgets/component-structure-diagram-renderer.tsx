@@ -154,7 +154,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
             data: {
               ...node.data,
               active,
-              accessibleDescription: active ? "Active path" : "Inactive path",
+              accessibleDescription: active ? undefined : "Inactive path",
             },
           };
         }
@@ -168,8 +168,8 @@ function ComponentStructureContent(props: DiagramRendererProps) {
           ...node,
           data: {
             ...node.data,
-            accessibleDescription: active ? "Active path" : "Inactive path",
-            className: active ? "border-primary/50 bg-primary/5" : "border-dashed bg-muted/50 opacity-60",
+            accessibleDescription: active ? undefined : "Inactive path",
+            className: active ? undefined : "border-dashed bg-muted/50 opacity-50",
             details: [...(node.data.details ?? []), ...nodeOrigins],
             // Hovering nodes stays quiet: the changes preview belongs to
             // guard edge labels, which name the exact rule they show.
@@ -286,7 +286,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         }),
       };
       const dimmed = model.edges.map((edge) => {
-        const ariaLabel = `${edge.source} to ${edge.target}: ${emphasis.edges.has(edge.id) ? "Active path" : "Inactive path"}`;
+        const ariaLabel = `${edge.source} to ${edge.target}${emphasis.edges.has(edge.id) ? "" : ": Inactive path"}`;
         const style = { ...edge.style, opacity: emphasis.edges.has(edge.id) ? 1 : 0.25 };
         return { ...edge, ariaLabel, style };
       });

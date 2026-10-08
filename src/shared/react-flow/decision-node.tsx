@@ -22,11 +22,13 @@ export function DecisionNode({ data, isConnectable }: NodeProps<DecisionReactFlo
     <div aria-description={data.accessibleDescription} aria-label={data.controlLabel} className="relative" role="img">
       <Handle isConnectable={isConnectable} position={Position.Left} style={{ opacity: 0 }} type="target" />
       <svg aria-hidden="true" className="block" height={48} width={48}>
+        {/* An active diamond carries no emphasis: it rides the diagram's line
+            ink at full strength, and only an inactive path fades. */}
         <polygon
           className={cn(
             "fill-background stroke-2",
-            data.active ? "stroke-primary" : "stroke-muted-foreground/50",
-            !data.active && "opacity-60",
+            data.active ? "stroke-diagram-edge" : "stroke-muted-foreground/50",
+            !data.active && "opacity-50",
           )}
           points="24,2 46,24 24,46 2,24"
         />
