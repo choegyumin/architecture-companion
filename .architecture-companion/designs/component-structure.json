@@ -12,7 +12,6 @@
     "layout": {
       "id": "component-structure",
       "options": {
-        "nudgeObstacleNodes": true,
         "elk": {
           "direction": "DOWN"
         }

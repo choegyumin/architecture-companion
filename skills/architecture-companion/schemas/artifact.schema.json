@@ -156,12 +156,6 @@
                 "options": {
                   "type": "object",
                   "properties": {
-                    "nudgeObstacleNodes": {
-                      "type": "boolean"
-                    },
-                    "bezierEdges": {
-                      "type": "boolean"
-                    },
                     "elk": {
                       "$ref": "#/$defs/ElkOptions"
                     }

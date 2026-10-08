@@ -39,13 +39,14 @@ import type {
  * upstream tip, and reverse edges ride the slopes.
  */
 
+// Obstacle nudging and polyline routing are not authorable here: the
+// component structure geometry contract (decision ports, reverse anchors,
+// segment splitting) only exists on the straightened polyline path.
 export const componentStructureDiagramLayoutConfigSchema = z
   .object({
     id: z.literal("component-structure"),
     options: z
       .object({
-        nudgeObstacleNodes: z.boolean().optional(),
-        bezierEdges: z.boolean().optional(),
         elk: elkOptionMapSchema.optional(),
       })
       .strict()
@@ -397,10 +398,6 @@ export function straightenComponentStructureEdges(
   return { ...layout, nodes, edges: toStraightEdges(graph, layout, rects, direction) };
 }
 
-function toBezierRoutedLayout(layout: DiagramLayout): DiagramLayout {
-  return { ...layout, edges: layout.edges.map((edge) => ({ ...edge, routing: "bezier" as const })) };
-}
-
 export async function layoutComponentStructureDiagram(
   graph: ProjectedComponentStructureGraph,
   nodeSizes: DiagramNodeSizes,
@@ -433,17 +430,5 @@ export async function layoutComponentStructureDiagram(
     initialView: toElkViewportPolicy(graph.nodes, graph.edges, resolved.direction),
   };
   const reAnchored = reAnchorReverseDecisionEdges(graph, layout, resolved.direction);
-  if (options?.nudgeObstacleNodes === true) {
-    const straightened = straightenComponentStructureEdges(graph, reAnchored, resolved.direction);
-    return options.bezierEdges === true ? toBezierRoutedLayout(straightened) : straightened;
-  }
-  if (options?.bezierEdges === true) {
-    // Border-to-border segments without obstacle nudging; the renderer sways
-    // each two-point edge into a natural bezier and smooths any leftover route.
-    return toBezierRoutedLayout({
-      ...reAnchored,
-      edges: toStraightEdges(graph, reAnchored, toNodeRects(reAnchored.nodes, reAnchored.groups), resolved.direction),
-    });
-  }
-  return reAnchored;
+  return straightenComponentStructureEdges(graph, reAnchored, resolved.direction);
 }
