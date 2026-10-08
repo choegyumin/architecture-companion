@@ -1,9 +1,9 @@
 {
   "id": "dependency-graph",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-08T05:57:20.874Z",
+  "updatedAt": "2026-10-08T12:22:37.000Z",
   "vcs": {
-    "revision": "5af7781d5e8abc06d55dbec948b08751f7d1004b",
+    "revision": "830b040eb095818acfb791c3cbe89bb448a7a36f",
     "divergesFromRevision": false
   },
   "generator": "built-in:js-module-dependency-graph",
@@ -70,6 +70,11 @@
           "id": "group:directory:src/features/diagram/_layout",
           "title": "_layout",
           "parentId": "group:directory:src/features/diagram"
+        },
+        {
+          "id": "group:directory:src/features/spotlight",
+          "title": "spotlight",
+          "parentId": "group:directory:src/features"
         },
         {
           "id": "group:directory:src/plugins",
@@ -708,6 +713,18 @@
           ]
         },
         {
+          "id": "file:src/client/widgets/diagram-spotlight.ts",
+          "title": "diagram-spotlight.ts",
+          "groupId": "group:directory:src/client/widgets",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/diagram-spotlight.ts"
+            }
+          ]
+        },
+        {
           "id": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts",
           "title": "elk-layered-diagram-renderer.edge-paths.ts",
           "groupId": "group:directory:src/client/widgets",
@@ -1044,6 +1061,18 @@
           ]
         },
         {
+          "id": "file:src/features/spotlight/spotlight.ts",
+          "title": "spotlight.ts",
+          "groupId": "group:directory:src/features/spotlight",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/spotlight/spotlight.ts"
+            }
+          ]
+        },
+        {
           "id": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
           "title": "analyze-module-dependencies.ts",
           "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
@@ -1320,6 +1349,30 @@
           ]
         },
         {
+          "id": "file:src/server/spotlight-channel.ts",
+          "title": "spotlight-channel.ts",
+          "groupId": "group:directory:src/server",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/spotlight-channel.ts"
+            }
+          ]
+        },
+        {
+          "id": "file:src/server/spotlight-request.ts",
+          "title": "spotlight-request.ts",
+          "groupId": "group:directory:src/server",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/spotlight-request.ts"
+            }
+          ]
+        },
+        {
           "id": "file:src/server/start-server.ts",
           "title": "start-server.ts",
           "groupId": "group:directory:src/server",
@@ -1440,14 +1493,14 @@
           ]
         },
         {
-          "id": "file:src/shared/react-flow/edge-hover.ts",
-          "title": "edge-hover.ts",
+          "id": "file:src/shared/react-flow/edge-highlight.ts",
+          "title": "edge-highlight.ts",
           "groupId": "group:directory:src/shared/react-flow",
           "type": "default",
           "links": [
             {
               "text": "source",
-              "href": "source:///src/shared/react-flow/edge-hover.ts"
+              "href": "source:///src/shared/react-flow/edge-highlight.ts"
             }
           ]
         },
@@ -1968,6 +2021,12 @@
           "target": "file:src/features/catalog/catalog.ts"
         },
         {
+          "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:runtime",
+          "type": "default",
+          "source": "file:src/client/data-client.ts",
+          "target": "file:src/features/spotlight/spotlight.ts"
+        },
+        {
           "id": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Fserver%2Fcreate-app.ts:type-only",
           "type": "default",
           "source": "file:src/client/data-client.ts",
@@ -2097,6 +2156,13 @@
           "type": "default",
           "source": "file:src/client/pages/workspace-page.tsx",
           "target": "file:src/features/catalog/catalog-revision-id.ts",
+          "kind": "type-only"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "source": "file:src/client/pages/workspace-page.tsx",
+          "target": "file:src/features/spotlight/spotlight.ts",
           "kind": "type-only"
         },
         {
@@ -2279,10 +2345,10 @@
           "target": "file:src/shared/react-flow/decision-node.tsx"
         },
         {
-          "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+          "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-highlight.ts:runtime",
           "type": "default",
           "source": "file:src/client/parts/diagram-canvas.tsx",
-          "target": "file:src/shared/react-flow/edge-hover.ts"
+          "target": "file:src/shared/react-flow/edge-highlight.ts"
         },
         {
           "id": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:runtime",
@@ -2428,10 +2494,10 @@
           "kind": "type-only"
         },
         {
-          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-highlight.ts:runtime",
           "type": "default",
           "source": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
-          "target": "file:src/shared/react-flow/edge-hover.ts"
+          "target": "file:src/shared/react-flow/edge-highlight.ts"
         },
         {
           "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fpolyline-edge-label-placement.ts:runtime",
@@ -2498,10 +2564,10 @@
           "kind": "type-only"
         },
         {
-          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-hover.ts:runtime",
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fedge-highlight.ts:runtime",
           "type": "default",
           "source": "file:src/client/widgets/component-structure-guards.tsx",
-          "target": "file:src/shared/react-flow/edge-hover.ts"
+          "target": "file:src/shared/react-flow/edge-highlight.ts"
         },
         {
           "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fguard-edge-label.tsx:runtime",
@@ -2908,6 +2974,12 @@
           "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
         },
         {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:runtime",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+          "target": "file:src/client/widgets/diagram-spotlight.ts"
+        },
+        {
           "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
           "type": "default",
           "source": "file:src/client/widgets/diagram-renderer-base.tsx",
@@ -2932,6 +3004,13 @@
           "type": "default",
           "source": "file:src/client/widgets/diagram-renderer-base.tsx",
           "target": "file:src/features/diagram/diagram-spatial.ts",
+          "kind": "type-only"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-renderer-base.tsx",
+          "target": "file:src/features/spotlight/spotlight.ts",
           "kind": "type-only"
         },
         {
@@ -3078,6 +3157,34 @@
           "type": "default",
           "source": "file:src/client/widgets/diagram-renderer.tsx",
           "target": "file:src/client/widgets/sequence-diagram-renderer.tsx"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:type-only",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-spotlight.ts",
+          "target": "file:src/client/parts/diagram-canvas.tsx",
+          "kind": "type-only"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:type-only",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-spotlight.ts",
+          "target": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+          "kind": "type-only"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-spotlight.ts",
+          "target": "file:src/features/annotation/annotation-document.ts",
+          "kind": "type-only"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "source": "file:src/client/widgets/diagram-spotlight.ts",
+          "target": "file:src/features/spotlight/spotlight.ts",
+          "kind": "type-only"
         },
         {
           "id": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.edge-paths.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -3604,6 +3711,31 @@
           "kind": "type-only"
         },
         {
+          "id": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:external%3Azod:runtime",
+          "type": "default",
+          "source": "file:src/features/spotlight/spotlight.ts",
+          "target": "external:zod"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
+          "type": "default",
+          "source": "file:src/features/spotlight/spotlight.ts",
+          "target": "file:src/features/annotation/annotation-document.ts"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+          "type": "default",
+          "source": "file:src/features/spotlight/spotlight.ts",
+          "target": "file:src/features/artifact/artifact.ts"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:type-only",
+          "type": "default",
+          "source": "file:src/features/spotlight/spotlight.ts",
+          "target": "file:src/features/catalog/catalog.ts",
+          "kind": "type-only"
+        },
+        {
           "id": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
           "type": "default",
           "source": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
@@ -3790,6 +3922,12 @@
           "kind": "type-only"
         },
         {
+          "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:runtime",
+          "type": "default",
+          "source": "file:src/server/create-app.ts",
+          "target": "file:src/features/spotlight/spotlight.ts"
+        },
+        {
           "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
           "type": "default",
           "source": "file:src/server/create-app.ts",
@@ -3850,6 +3988,18 @@
           "type": "default",
           "source": "file:src/server/create-app.ts",
           "target": "file:src/server/source-open-request.ts"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fspotlight-channel.ts:runtime",
+          "type": "default",
+          "source": "file:src/server/create-app.ts",
+          "target": "file:src/server/spotlight-channel.ts"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fspotlight-request.ts:runtime",
+          "type": "default",
+          "source": "file:src/server/create-app.ts",
+          "target": "file:src/server/spotlight-request.ts"
         },
         {
           "id": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fshared%2Fnode%2Fopen-local-path.ts:runtime",
@@ -3969,6 +4119,13 @@
           "type": "default",
           "source": "file:src/server/source-open-request.ts",
           "target": "file:src/server/local-app-action-request.ts"
+        },
+        {
+          "id": "dependency:file%3Asrc%2Fserver%2Fspotlight-channel.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "source": "file:src/server/spotlight-channel.ts",
+          "target": "file:src/features/spotlight/spotlight.ts",
+          "kind": "type-only"
         },
         {
           "id": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:external%3A%40hono%2Fnode-server:runtime",

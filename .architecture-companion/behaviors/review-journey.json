@@ -1,13 +1,13 @@
 {
   "id": "review-journey",
   "title": "Architecture review journey",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-08T12:22:37.000Z",
   "vcs": {
-    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "revision": "830b040eb095818acfb791c3cbe89bb448a7a36f",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",
-  "instructions": "## Purpose\nReview the user journey from receiving an architecture review URL to inspecting evidence, leaving comments, and requesting follow-up work from the coding agent.\n\n## Regeneration\nInspect specs/user-review-architecture.spec.tsx, specs/user-comment-architecture.spec.tsx, specs/agent-follow-up-review.spec.ts, src/client/pages/workspace-page.tsx, src/client/parts/annotation-layer.tsx, and skills/architecture-companion/review-follow-up.md. Reconstruct the actor-observed review steps, including dependency focus interactions and comment targets, without expanding the internal server or rendering implementation.",
+  "instructions": "## Purpose\nReview the user journey from receiving an architecture review URL to inspecting evidence, following agent spotlights, leaving comments, and requesting follow-up work from the coding agent.\n\n## Regeneration\nInspect specs/user-review-architecture.spec.tsx, specs/user-comment-architecture.spec.tsx, specs/agent-follow-up-review.spec.ts, src/features/spotlight/spotlight.ts, src/server/create-app.spotlight.test.ts, src/client/pages/workspace-page.spotlight.test.tsx, src/client/pages/workspace-page.tsx, src/client/parts/annotation-layer.tsx, and skills/architecture-companion/review-follow-up.md. Reconstruct the actor-observed review steps, including dependency focus interactions, spotlight follow behavior, and comment targets, without expanding the internal server or rendering implementation.",
   "links": [
     {
       "href": "source:///specs/user-review-architecture.spec.tsx"
@@ -43,10 +43,25 @@
         },
         {
           "type": "default",
+          "id": "journey-agent-spotlight",
+          "kind": "trigger",
+          "title": "Spotlight an answer",
+          "description": "The reviewer asks the coding agent about the architecture, and the agent publishes a spotlight that names an artifact and the diagram elements that answer the question.",
+          "links": [
+            {
+              "href": "source:///src/features/spotlight/spotlight.ts"
+            },
+            {
+              "href": "source:///src/server/create-app.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
           "id": "journey-inspect-architecture",
           "kind": "action",
           "title": "Review diagrams and sources",
-          "description": "The reviewer inspects the process and design diagrams and opens source evidence. In a dependency graph, hovering a route highlights it; selecting a group, node, or aggregate label focuses related edges, and clicking the blank canvas clears focus.",
+          "description": "The reviewer inspects the process and design diagrams and opens source evidence. In a dependency graph, hovering a route highlights it; selecting a group, node, or aggregate label focuses related edges, and clicking the blank canvas clears focus. When the agent publishes a spotlight, the workspace switches to that artifact, emphasizes the targeted nodes and edges, dims the rest, and frames the targeted area in the viewport until the spotlight is replaced or cleared.",
           "links": [
             {
               "href": "source:///src/client/pages/workspace-page.tsx"
@@ -83,6 +98,12 @@
           "type": "default",
           "id": "journey-share-to-inspect",
           "source": "journey-share-review",
+          "target": "journey-inspect-architecture"
+        },
+        {
+          "type": "default",
+          "id": "journey-spotlight-to-inspect",
+          "source": "journey-agent-spotlight",
           "target": "journey-inspect-architecture"
         },
         {
