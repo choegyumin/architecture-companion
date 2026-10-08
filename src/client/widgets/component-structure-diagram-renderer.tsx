@@ -30,7 +30,7 @@ import { layoutComponentStructureDiagram } from "@/features/diagram/_layout/comp
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
-import { type EdgeHoverOrigin, subscribeEdgeHover } from "@/shared/react-flow/edge-highlight";
+import { type EdgeHighlightOrigin, subscribeEdgeHighlight } from "@/shared/react-flow/edge-highlight";
 import { getPolylineEdgeLabelPlacement } from "@/shared/react-flow/polyline-edge-label-placement";
 import {
   Select,
@@ -59,7 +59,7 @@ function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
   return layoutComponentStructureDiagram(projectDecisionNodes(diagram.graph), nodeSizes, diagram.layout.options);
 }
 
-// The hover preview for one route: what would have to change to run the
+// The highlight preview for one route: what would have to change to run the
 // route's rule, stated as before → after per control and grouped under the
 // component that owns each control. An empty list means the route already
 // holds.
@@ -108,11 +108,11 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   const controls = useMemo(() => projected?.controls ?? [], [projected]);
   const initialSelection = useMemo(() => (projected ? initialComponentSelection(projected) : {}), [projected]);
   const [selection, setSelection] = useState<ComponentSelection>(initialSelection);
-  // Labels report hover into the shared channel; the changes preview reads the
-  // same origin the canvas lights the edge from.
-  const [hoverOrigin, setHoverOrigin] = useState<EdgeHoverOrigin | null>(null);
-  useEffect(() => subscribeEdgeHover(setHoverOrigin), []);
-  const hoveredEdgeId = hoverOrigin?.kind === "label" ? hoverOrigin.edgeId : null;
+  // Labels report highlights into the shared channel; the changes preview
+  // reads the same origin the canvas lights the edge from.
+  const [highlightOrigin, setHighlightOrigin] = useState<EdgeHighlightOrigin | null>(null);
+  useEffect(() => subscribeEdgeHighlight(setHighlightOrigin), []);
+  const highlightedEdgeId = highlightOrigin?.kind === "label" ? highlightOrigin.edgeId : null;
 
   // Label clicks drive a route's whole rule; owner fields set one control's
   // value directly. Both land in the same selection state.
@@ -314,15 +314,15 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       buildMeasurementNodes={buildMeasurementNodes}
       buildRenderModel={buildRenderModel}
     >
-      {hoveredEdgeId != null && projected ? (
-        // The hover preview is the standard bottom-right info spot — pinned
+      {highlightedEdgeId != null && projected ? (
+        // The highlight preview is the standard bottom-right info spot — pinned
         // to the viewport like the links panel, not floating over the canvas.
         <Panel className="nodrag nopan nowheel pointer-events-none mb-8!" position="bottom-right">
           <aside
             aria-label="Route changes"
             className="w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
           >
-            <RouteChangesPreview changes={describeRouteSelectionChange(projected, selection, hoveredEdgeId)} />
+            <RouteChangesPreview changes={describeRouteSelectionChange(projected, selection, highlightedEdgeId)} />
           </aside>
         </Panel>
       ) : null}

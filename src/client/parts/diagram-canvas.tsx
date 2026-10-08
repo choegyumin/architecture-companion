@@ -33,11 +33,11 @@ import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/rea
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
 import { DecisionNode, type DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
 import {
-  defaultEdgeHoverHighlight,
-  EDGE_HOVER_CLASS,
-  type EdgeHoverOrigin,
-  resetEdgeHover,
-  subscribeEdgeHover,
+  defaultEdgeHighlight,
+  EDGE_HIGHLIGHT_CLASS,
+  type EdgeHighlightOrigin,
+  resetEdgeHighlight,
+  subscribeEdgeHighlight,
 } from "@/shared/react-flow/edge-highlight";
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
@@ -90,11 +90,11 @@ type DiagramCanvasProps = Readonly<{
   onPaneActivate?: () => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
   /**
-   * Maps a hover origin to the edges it lights. Unset defaults to the hovered
-   * route itself (node hovers light nothing); a renderer that tracks its own
-   * graph can widen the highlight to a whole path.
+   * Maps a highlight origin to the edges it lights. Unset defaults to the
+   * origin's own route (node origins light nothing); a renderer that tracks
+   * its own graph can widen the highlight to a whole path.
    */
-  resolveEdgeHover?: (origin: EdgeHoverOrigin) => ReadonlySet<string>;
+  resolveEdgeHighlight?: (origin: EdgeHighlightOrigin) => ReadonlySet<string>;
   initialView?: DiagramViewFramingOptions;
 }>;
 
@@ -109,12 +109,12 @@ export function DiagramCanvas({
   onNodeActivate,
   onPaneActivate,
   onNodesChange,
-  resolveEdgeHover,
+  resolveEdgeHighlight,
   initialView,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<DiagramReactFlowNode, DiagramReactFlowEdge>>();
-  const [hoverOrigin, setHoverOrigin] = useState<EdgeHoverOrigin | null>(null);
+  const [highlightOrigin, setHighlightOrigin] = useState<EdgeHighlightOrigin | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isMacOS = platform.os.mac;
@@ -141,25 +141,31 @@ export function DiagramCanvas({
     });
   }, [isMacOS, searchEnabled]);
 
-  // Labels report hover through the module-level channel; the canvas decides
-  // which edges light. Dropping the held origin on unmount keeps a vanished
-  // label from lighting edges in the next mounted diagram.
+  // Labels report highlights through the module-level channel; the canvas
+  // decides which edges light. Dropping the held origin on unmount keeps a
+  // vanished label from lighting edges in the next mounted diagram.
   useEffect(() => {
-    const unsubscribe = subscribeEdgeHover(setHoverOrigin);
+    const unsubscribe = subscribeEdgeHighlight(setHighlightOrigin);
     return () => {
       unsubscribe();
-      resetEdgeHover();
+      resetEdgeHighlight();
     };
   }, []);
   const highlightedEdges = useMemo(
-    () => (hoverOrigin == null ? null : (resolveEdgeHover?.(hoverOrigin) ?? defaultEdgeHoverHighlight(hoverOrigin))),
-    [hoverOrigin, resolveEdgeHover],
+    () =>
+      highlightOrigin == null
+        ? null
+        : (resolveEdgeHighlight?.(highlightOrigin) ?? defaultEdgeHighlight(highlightOrigin)),
+    [highlightOrigin, resolveEdgeHighlight],
   );
-  const hoverStampedEdges = useMemo(() => {
+  const highlightStampedEdges = useMemo(() => {
     if (highlightedEdges == null || highlightedEdges.size === 0) return edges;
     return edges.map((edge) =>
       highlightedEdges.has(edge.id)
-        ? { ...edge, className: edge.className == null ? EDGE_HOVER_CLASS : `${edge.className} ${EDGE_HOVER_CLASS}` }
+        ? {
+            ...edge,
+            className: edge.className == null ? EDGE_HIGHLIGHT_CLASS : `${edge.className} ${EDGE_HIGHLIGHT_CLASS}`,
+          }
         : edge,
     );
   }, [edges, highlightedEdges]);
@@ -234,7 +240,7 @@ export function DiagramCanvas({
         className={className}
         colorMode={resolvedTheme}
         style={{ "--xy-background-color": "var(--surface)" } as CSSProperties}
-        edges={hoverStampedEdges}
+        edges={highlightStampedEdges}
         edgesFocusable={false}
         edgeTypes={diagramEdgeTypes}
         elementsSelectable={false}

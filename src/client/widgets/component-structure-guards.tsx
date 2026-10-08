@@ -7,7 +7,7 @@ import {
 import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
-import { clearEdgeHover, reportEdgeHover } from "@/shared/react-flow/edge-highlight";
+import { clearEdgeHighlight, reportEdgeHighlight } from "@/shared/react-flow/edge-highlight";
 import { GuardEdgeLabel } from "@/shared/react-flow/guard-edge-label";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
@@ -54,7 +54,7 @@ type ComponentGuardLabelsProps = Readonly<{
 // (edges leaving a decision node) label near their start so the case reads
 // beside the control that owns it; every other route labels near its arrival,
 // growing back up the edge. Clicking the label applies that route's whole rule;
-// hovering reports into the shared channel, and the canvas decides what lights.
+// highlighting reports into the shared channel, and the canvas decides what lights.
 const GUARD_LABEL_ENDPOINT_OFFSET = 64;
 
 export function attachGuardLabels({
@@ -129,9 +129,9 @@ export function attachGuardLabels({
                 onSelect={() => {
                   if (representative) onSelect(edge.id, representative.controlId, representative.value);
                 }}
-                onHoverChange={(hovered) => {
-                  if (hovered) reportEdgeHover({ kind: "label", edgeId: edge.id });
-                  else clearEdgeHover({ kind: "label", edgeId: edge.id });
+                onHighlightChange={(highlighted) => {
+                  if (highlighted) reportEdgeHighlight({ kind: "label", edgeId: edge.id });
+                  else clearEdgeHighlight({ kind: "label", edgeId: edge.id });
                 }}
                 text={label.text}
               />

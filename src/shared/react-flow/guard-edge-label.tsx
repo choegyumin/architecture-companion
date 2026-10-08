@@ -8,18 +8,18 @@ import { cn } from "@/shared/react/class-name";
 // control kinds: a splitting arrow marks routes that carry a branch case, a
 // check mark marks plain conditional gates, and the icon dims until the
 // route holds. The label wraps at a fixed max width instead of growing an
-// unbounded row; the consumer owns what a click or hover means.
+// unbounded row; the consumer owns what a click or highlight means.
 export function GuardEdgeLabel({
   active,
   includesBranch,
   onSelect,
-  onHoverChange,
+  onHighlightChange,
   text,
 }: Readonly<{
   active: boolean;
   includesBranch: boolean;
   onSelect: () => void;
-  onHoverChange?: (hovered: boolean) => void;
+  onHighlightChange?: (highlighted: boolean) => void;
   text: string;
 }>) {
   const Icon = includesBranch ? Split : Check;
@@ -34,9 +34,9 @@ export function GuardEdgeLabel({
         event.stopPropagation();
         onSelect();
       }}
-      onFocus={() => onHoverChange?.(true)}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
+      onFocus={() => onHighlightChange?.(true)}
+      onMouseEnter={() => onHighlightChange?.(true)}
+      onMouseLeave={() => onHighlightChange?.(false)}
       type="button"
     >
       <Icon
