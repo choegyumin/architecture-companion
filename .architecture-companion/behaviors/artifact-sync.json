@@ -8,12 +8,6 @@
   },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how an open Review UI responds to artifact changes while retaining the last valid artifact and isolating comments by revision.\n\n## Regeneration\nInspect src/server/review-updates.ts, src/server/read-artifact.ts, src/server/create-artifact-revision-id.ts, src/client/data-client.ts, and src/client/pages/workspace-page.tsx. Check the revision-update scenarios in specs/user-continue-new-review.spec.tsx and the server and workspace revision tests. Reconstruct the product flow from change detection through validation, branching into retaining the current artifact or activating and displaying the new revision.",
-  "layout": {
-    "id": "elk-layered",
-    "options": {
-      "bezierEdges": true
-    }
-  },
   "links": [
     {
       "href": "source:///specs/user-continue-new-review.spec.tsx"
@@ -25,98 +19,106 @@
       "href": "source:///src/client/pages/workspace-page.revision.test.tsx"
     }
   ],
-  "graph": {
-    "groups": [],
-    "nodes": [
-      {
-        "type": "default",
-        "id": "revision-detect-change",
-        "kind": "trigger",
-        "title": "Artifact change detected",
-        "description": "File polling and SSE notify the open workspace of artifact changes.",
-        "links": [
-          {
-            "href": "source:///src/server/review-updates.ts"
-          },
-          {
-            "href": "source:///src/client/data-client.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "revision-validate-artifact",
-        "kind": "condition",
-        "title": "Is the changed artifact valid?",
-        "description": "The server validates the new artifact's JSON, schemas, and diagram composition.",
-        "links": [
-          {
-            "href": "source:///src/server/read-artifact.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "revision-keep-current",
-        "kind": "result",
-        "title": "Keep the last valid artifact",
-        "description": "When the change is invalid, show the error and keep the current artifact.",
-        "links": [
-          {
-            "href": "source:///src/client/pages/workspace-page.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "revision-activate-next",
-        "kind": "action",
-        "title": "Activate the new revision",
-        "description": "Compute the revision ID of the whole valid artifact and replace the current review.",
-        "links": [
-          {
-            "href": "source:///src/server/create-artifact-revision-id.ts"
-          },
-          {
-            "href": "source:///src/client/pages/workspace-page.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "revision-show-updated",
-        "kind": "result",
-        "title": "Show the updated artifact",
-        "description": "Show the new diagrams and exclude comments from the previous revision from the current canvas."
+  "diagram": {
+    "layout": {
+      "id": "elk-layered",
+      "options": {
+        "bezierEdges": true
       }
-    ],
-    "edges": [
-      {
-        "type": "default",
-        "id": "revision-detect-to-validate",
-        "source": "revision-detect-change",
-        "target": "revision-validate-artifact"
-      },
-      {
-        "type": "default",
-        "id": "revision-invalid-to-current",
-        "source": "revision-validate-artifact",
-        "target": "revision-keep-current",
-        "label": "Invalid"
-      },
-      {
-        "type": "default",
-        "id": "revision-valid-to-activate",
-        "source": "revision-validate-artifact",
-        "target": "revision-activate-next",
-        "label": "Valid"
-      },
-      {
-        "type": "default",
-        "id": "revision-activate-to-show",
-        "source": "revision-activate-next",
-        "target": "revision-show-updated"
-      }
-    ]
+    },
+    "graph": {
+      "groups": [],
+      "nodes": [
+        {
+          "type": "default",
+          "id": "revision-detect-change",
+          "kind": "trigger",
+          "title": "Artifact change detected",
+          "description": "File polling and SSE notify the open workspace of artifact changes.",
+          "links": [
+            {
+              "href": "source:///src/server/review-updates.ts"
+            },
+            {
+              "href": "source:///src/client/data-client.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "revision-validate-artifact",
+          "kind": "condition",
+          "title": "Is the changed artifact valid?",
+          "description": "The server validates the new artifact's JSON, schemas, and diagram composition.",
+          "links": [
+            {
+              "href": "source:///src/server/read-artifact.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "revision-keep-current",
+          "kind": "result",
+          "title": "Keep the last valid artifact",
+          "description": "When the change is invalid, show the error and keep the current artifact.",
+          "links": [
+            {
+              "href": "source:///src/client/pages/workspace-page.tsx"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "revision-activate-next",
+          "kind": "action",
+          "title": "Activate the new revision",
+          "description": "Compute the revision ID of the whole valid artifact and replace the current review.",
+          "links": [
+            {
+              "href": "source:///src/server/create-artifact-revision-id.ts"
+            },
+            {
+              "href": "source:///src/client/pages/workspace-page.tsx"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "revision-show-updated",
+          "kind": "result",
+          "title": "Show the updated artifact",
+          "description": "Show the new diagrams and exclude comments from the previous revision from the current canvas."
+        }
+      ],
+      "edges": [
+        {
+          "type": "default",
+          "id": "revision-detect-to-validate",
+          "source": "revision-detect-change",
+          "target": "revision-validate-artifact"
+        },
+        {
+          "type": "default",
+          "id": "revision-invalid-to-current",
+          "source": "revision-validate-artifact",
+          "target": "revision-keep-current",
+          "label": "Invalid"
+        },
+        {
+          "type": "default",
+          "id": "revision-valid-to-activate",
+          "source": "revision-validate-artifact",
+          "target": "revision-activate-next",
+          "label": "Valid"
+        },
+        {
+          "type": "default",
+          "id": "revision-activate-to-show",
+          "source": "revision-activate-next",
+          "target": "revision-show-updated"
+        }
+      ]
+    }
   }
 }

@@ -19,56 +19,58 @@ const checkoutDiagram = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the page, payment form, and client relations.",
-  layout: { id: "elk-layered" },
-  graph: {
-    groups: [{ id: "checkout-feature", title: "Checkout feature" }],
-    nodes: [
-      {
-        type: "default",
-        id: "checkout-page",
-        kind: "component",
-        title: "Checkout page",
-        description: "Coordinates checkout",
-        details: ["Load the cart", "Submit the order"],
-        groupId: "checkout-feature",
-      },
-      {
-        type: "default",
-        id: "payment-form",
-        kind: "component",
-        title: "Payment form",
-        description: "Collects payment details",
-        details: ["Validate payment fields"],
-        groupId: "checkout-feature",
-      },
-      {
-        type: "default",
-        id: "payment-client",
-        kind: "client",
-        title: "Payment client",
-        description: "Calls the payment API",
-        details: ["Create a payment intent"],
-        groupId: "checkout-feature",
-      },
-    ],
-    edges: [
-      {
-        type: "default",
-        id: "payment-details",
-        kind: "data-flow",
-        source: "payment-form",
-        target: "payment-client",
-        label: "Payment details",
-      },
-      {
-        type: "default",
-        id: "uses-payment-client",
-        kind: "dependency",
-        source: "checkout-page",
-        target: "payment-client",
-        label: "Uses payment client",
-      },
-    ],
+  diagram: {
+    layout: { id: "elk-layered" },
+    graph: {
+      groups: [{ id: "checkout-feature", title: "Checkout feature" }],
+      nodes: [
+        {
+          type: "default",
+          id: "checkout-page",
+          kind: "component",
+          title: "Checkout page",
+          description: "Coordinates checkout",
+          details: ["Load the cart", "Submit the order"],
+          groupId: "checkout-feature",
+        },
+        {
+          type: "default",
+          id: "payment-form",
+          kind: "component",
+          title: "Payment form",
+          description: "Collects payment details",
+          details: ["Validate payment fields"],
+          groupId: "checkout-feature",
+        },
+        {
+          type: "default",
+          id: "payment-client",
+          kind: "client",
+          title: "Payment client",
+          description: "Calls the payment API",
+          details: ["Create a payment intent"],
+          groupId: "checkout-feature",
+        },
+      ],
+      edges: [
+        {
+          type: "default",
+          id: "payment-details",
+          kind: "data-flow",
+          source: "payment-form",
+          target: "payment-client",
+          label: "Payment details",
+        },
+        {
+          type: "default",
+          id: "uses-payment-client",
+          kind: "dependency",
+          source: "checkout-page",
+          target: "payment-client",
+          label: "Uses payment client",
+        },
+      ],
+    },
   },
 };
 const catalogDiagram = {
@@ -77,20 +79,22 @@ const catalogDiagram = {
   title: "Catalog structure",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview product browsing ownership.\n\n## Regeneration\nRebuild the catalog page boundary.",
-  layout: { id: "elk-layered" },
-  graph: {
-    groups: [],
-    nodes: [
-      {
-        type: "default",
-        id: "catalog-page",
-        kind: "component",
-        title: "Catalog page",
-        description: "Supports product discovery",
-        details: ["Browse products"],
-      },
-    ],
-    edges: [],
+  diagram: {
+    layout: { id: "elk-layered" },
+    graph: {
+      groups: [],
+      nodes: [
+        {
+          type: "default",
+          id: "catalog-page",
+          kind: "component",
+          title: "Catalog page",
+          description: "Supports product discovery",
+          details: ["Browse products"],
+        },
+      ],
+      edges: [],
+    },
   },
 };
 const designArtifact = {
@@ -100,14 +104,16 @@ const designArtifact = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
-      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-      graph: {
-        groups: [],
-        nodes: [
-          { type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" },
-          { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
-        ],
-        edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+      diagram: {
+        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        graph: {
+          groups: [],
+          nodes: [
+            { type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" },
+            { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
+          ],
+          edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+        },
       },
       id: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
@@ -125,20 +131,22 @@ const processArtifact = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview member invitations.\n\n## Regeneration\nRebuild submission, eligibility, sending, and delivery steps.",
-      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-      graph: {
-        groups: [],
-        nodes: [
-          { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
-          { type: "default", id: "eligible", kind: "condition", title: "Eligible member?" },
-          { type: "default", id: "send", kind: "action", title: "Send invitation" },
-          { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
-        ],
-        edges: [
-          { type: "default", id: "invite-eligible", source: "invite", target: "eligible" },
-          { type: "default", id: "eligible-send", source: "eligible", target: "send", label: "Eligible" },
-          { type: "default", id: "send-delivered", source: "send", target: "delivered" },
-        ],
+      diagram: {
+        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        graph: {
+          groups: [],
+          nodes: [
+            { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
+            { type: "default", id: "eligible", kind: "condition", title: "Eligible member?" },
+            { type: "default", id: "send", kind: "action", title: "Send invitation" },
+            { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
+          ],
+          edges: [
+            { type: "default", id: "invite-eligible", source: "invite", target: "eligible" },
+            { type: "default", id: "eligible-send", source: "eligible", target: "send", label: "Eligible" },
+            { type: "default", id: "send-delivered", source: "send", target: "delivered" },
+          ],
+        },
       },
     },
     {
@@ -148,11 +156,13 @@ const processArtifact = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview member removal.\n\n## Regeneration\nRebuild the removal trigger from the member workflow.",
-      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "remove", kind: "trigger", title: "Member removal requested" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "remove", kind: "trigger", title: "Member removal requested" }],
+          edges: [],
+        },
       },
     },
   ],
@@ -200,13 +210,13 @@ describe("design (architecture·implementation) review", () => {
   it("shows an actionable error for an unknown layout configuration", async () => {
     const invalidArtifact = {
       ...designArtifact,
-      designs: [{ ...checkoutDiagram, layout: { id: "unknown" } }],
+      designs: [{ ...checkoutDiagram, diagram: { ...checkoutDiagram.diagram, layout: { id: "unknown" } } }],
     };
     const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Invalid artifact: layout.id: Unsupported layout configuration: unknown",
+        "Invalid artifact: diagram.layout.id: Unsupported layout configuration: unknown",
       );
     } finally {
       await cleanupScope();
@@ -219,7 +229,10 @@ describe("design (architecture·implementation) review", () => {
       designs: [
         {
           ...checkoutDiagram,
-          layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
+          diagram: {
+            ...checkoutDiagram.diagram,
+            layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
+          },
         },
       ],
     };
@@ -227,7 +240,7 @@ describe("design (architecture·implementation) review", () => {
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Invalid artifact: layout.options.elk.direction: Invalid option: expected one of",
+        "Invalid artifact: diagram.layout.options.elk.direction: Invalid option: expected one of",
       );
     } finally {
       await cleanupScope();
@@ -268,22 +281,24 @@ describe("dependency graph review", () => {
           generator: "built-in:freeform",
           instructions:
             "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the grouped module relations.",
-          layout: { id: "dependency-graph" },
-          graph: {
-            groups: [
-              { id: "source", title: "Source" },
-              { id: "nested", title: "Nested", parentId: "source" },
-              { id: "target", title: "Target" },
-            ],
-            nodes: [
-              { id: "a", type: "default", title: "A", groupId: "source" },
-              { id: "b", type: "default", title: "B", groupId: "nested" },
-              { id: "c", type: "default", title: "C", groupId: "target" },
-            ],
-            edges: [
-              { id: "a-c", type: "default", source: "a", target: "c" },
-              { id: "b-c", type: "default", source: "b", target: "c" },
-            ],
+          diagram: {
+            layout: { id: "dependency-graph" },
+            graph: {
+              groups: [
+                { id: "source", title: "Source" },
+                { id: "nested", title: "Nested", parentId: "source" },
+                { id: "target", title: "Target" },
+              ],
+              nodes: [
+                { id: "a", type: "default", title: "A", groupId: "source" },
+                { id: "b", type: "default", title: "B", groupId: "nested" },
+                { id: "c", type: "default", title: "C", groupId: "target" },
+              ],
+              edges: [
+                { id: "a-c", type: "default", source: "a", target: "c" },
+                { id: "b-c", type: "default", source: "b", target: "c" },
+              ],
+            },
           },
         },
       ],
@@ -314,23 +329,25 @@ describe("process (product workflow) review", () => {
           generator: "built-in:freeform",
           instructions:
             "## Purpose\nReview client-server requests.\n\n## Regeneration\nRebuild the client and server lifelines and request message.",
-          layout: { id: "sequence" },
-          graph: {
-            groups: [],
-            nodes: [
-              { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-              { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
-            ],
-            edges: [
-              {
-                id: "request",
-                type: "message",
-                source: "client",
-                target: "server",
-                messageType: "sync",
-                label: "Request",
-              },
-            ],
+          diagram: {
+            layout: { id: "sequence" },
+            graph: {
+              groups: [],
+              nodes: [
+                { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+                { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+              ],
+              edges: [
+                {
+                  id: "request",
+                  type: "message",
+                  source: "client",
+                  target: "server",
+                  messageType: "sync",
+                  label: "Request",
+                },
+              ],
+            },
           },
         },
       ],

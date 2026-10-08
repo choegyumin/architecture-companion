@@ -27,16 +27,34 @@ describe("generateSchemaSources", () => {
     expect(Object.values(first).every((source) => source.endsWith("\n"))).toBe(true);
 
     const artifactSchemaJson = parseJsonObject(first["artifact.schema.json"]);
+    // The envelope is declared once at the root; only the `diagram` field
+    // varies by layout.
     expect(artifactSchemaJson).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
+      type: "object",
+      required: ["id", "title", "updatedAt", "generator", "instructions", "diagram"],
+      additionalProperties: false,
+      properties: {
+        id: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
+        updatedAt: { type: "string", format: "date-time" },
+        generator: {
+          type: "string",
+          pattern: "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$",
+        },
+        instructions: { type: "string", minLength: 1 },
+        links: {
+          type: "array",
+          items: { $ref: "#/$defs/Link" },
+        },
+      },
     });
 
     // Every shared subschema is a named `$defs` entry, so each renders once
     // and every use references it.
     expect(Object.keys(artifactSchemaJson.$defs as JsonObject).toSorted()).toEqual(
       [
-        "ArtifactId",
+        "ComponentStructureGraph",
         "ControlEdge",
         "DefaultEdge",
         "DefaultNode",
@@ -44,40 +62,29 @@ describe("generateSchemaSources", () => {
         "DiagramGraph",
         "ElkOptions",
         "FragmentNode",
-        "Generator",
         "Group",
         "LifelineNode",
         "Link",
-        "Links",
         "MessageEdge",
         "RouteRequirementRuleset",
         "SequenceGraph",
-        "UpdatedAt",
-        "Vcs",
-        "ComponentStructureGraph",
       ].toSorted(),
     );
 
     // One union member per layout, each pairing that layout with its named
-    // graph contract and referencing the shared envelope pieces.
-    const members = artifactSchemaJson.anyOf as JsonObject[];
+    // graph contract.
+    const members = ((artifactSchemaJson.properties as JsonObject).diagram as JsonObject).anyOf as JsonObject[];
     expect(members.map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
     const graphDefByLayoutId: Record<string, string> = {};
     for (const member of members) {
-      const properties = member.properties as JsonObject;
-      const layoutId = ((properties.layout as JsonObject).properties as JsonObject).id as {
+      const layoutId = (((member.properties as JsonObject).layout as JsonObject).properties as JsonObject).id as {
         const: string;
       };
-      graphDefByLayoutId[layoutId.const] = refName(properties.graph);
+      graphDefByLayoutId[layoutId.const] = refName((member.properties as JsonObject).graph);
       expect(member).toMatchObject({
-        required: ["id", "title", "updatedAt", "generator", "instructions", "layout", "graph"],
+        required: ["layout", "graph"],
         additionalProperties: false,
       });
-      expect(refName(properties.id)).toBe("ArtifactId");
-      expect(refName(properties.updatedAt)).toBe("UpdatedAt");
-      expect(refName(properties.vcs)).toBe("Vcs");
-      expect(refName(properties.generator)).toBe("Generator");
-      expect(refName(properties.links)).toBe("Links");
     }
     expect(graphDefByLayoutId).toEqual({
       "component-structure": "ComponentStructureGraph",

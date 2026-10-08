@@ -52,11 +52,15 @@ function toEdgePath(placement: DiagramLayoutEdge): string {
   return toPolylinePath(placement.points);
 }
 
-function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (!isComponentStructureArtifact(diagram)) throw new Error("Expected a component structure diagram layout.");
+function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
+  if (!isComponentStructureArtifact(artifact)) throw new Error("Expected a component structure diagram layout.");
   // Decision nodes and split segments are display projections, so the
   // layout always places the projected graph.
-  return layoutComponentStructureDiagram(projectDecisionNodes(diagram.graph), nodeSizes, diagram.layout.options);
+  return layoutComponentStructureDiagram(
+    projectDecisionNodes(artifact.diagram.graph),
+    nodeSizes,
+    artifact.diagram.layout.options,
+  );
 }
 
 // The highlight preview for one route: what would have to change to run the
@@ -98,12 +102,12 @@ function RouteChangesPreview({ changes }: Readonly<{ changes: readonly RouteCond
 }
 
 function ComponentStructureContent(props: DiagramRendererProps) {
-  const { diagram } = props;
+  const { artifact } = props;
   // The projection owns everything display-only: decision nodes, split
   // segments, guards, and non-component nodes.
   const projected = useMemo(
-    () => (isComponentStructureArtifact(diagram) ? projectDecisionNodes(diagram.graph) : null),
-    [diagram],
+    () => (isComponentStructureArtifact(artifact) ? projectDecisionNodes(artifact.diagram.graph) : null),
+    [artifact],
   );
   const controls = useMemo(() => projected?.controls ?? [], [projected]);
   const initialSelection = useMemo(() => (projected ? initialComponentSelection(projected) : {}), [projected]);
@@ -240,10 +244,10 @@ function ComponentStructureContent(props: DiagramRendererProps) {
     [controlsByOwner, onControlSelect, projected],
   );
   const buildMeasurementNodes = useCallback(
-    (measuredDiagram: Artifact, onOpenSource: (href: string) => void) => {
-      if (!isComponentStructureArtifact(measuredDiagram)) throw new Error("Expected a component structure layout.");
+    (measuredArtifact: Artifact, onOpenSource: (href: string) => void) => {
+      if (!isComponentStructureArtifact(measuredArtifact)) throw new Error("Expected a component structure layout.");
       return decorateNodes(
-        buildComponentStructureMeasurementNodes(projectDecisionNodes(measuredDiagram.graph), onOpenSource),
+        buildComponentStructureMeasurementNodes(projectDecisionNodes(measuredArtifact.diagram.graph), onOpenSource),
         initialSelection,
       );
     },
@@ -251,11 +255,11 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   );
   const buildRenderModel = useCallback(
     (
-      renderedDiagram: Artifact,
+      renderedArtifact: Artifact,
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ): DiagramReactFlowRenderModel => {
-      if (!projected || !isComponentStructureArtifact(renderedDiagram)) {
+      if (!projected || !isComponentStructureArtifact(renderedArtifact)) {
         throw new Error("Expected a component structure layout.");
       }
       const emphasis = componentPathEmphasis(projected, selection);
@@ -331,5 +335,5 @@ function ComponentStructureContent(props: DiagramRendererProps) {
 }
 
 export function ComponentStructureDiagramRenderer(props: DiagramRendererProps) {
-  return <ComponentStructureContent key={JSON.stringify(props.diagram)} {...props} />;
+  return <ComponentStructureContent key={JSON.stringify(props.artifact)} {...props} />;
 }

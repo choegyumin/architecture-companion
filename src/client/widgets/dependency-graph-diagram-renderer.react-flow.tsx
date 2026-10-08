@@ -29,22 +29,22 @@ type DependencyRenderOptions = Readonly<{
 }>;
 
 export function buildDependencyGraphDiagramReactFlowRenderModel(
-  diagram: Artifact,
+  artifact: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},
 ): DiagramReactFlowRenderModel {
-  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.nodesActivatable);
+  const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
   const cards = layout.nodes.map(({ id }) => ({
     id,
     bounds: getOrThrow(bounds.get(id), `Missing dependency node bounds: ${id}`),
   }));
-  const edgesById = new Map(diagram.graph.edges.map((edge) => [edge.id, edge]));
+  const edgesById = new Map(artifact.diagram.graph.edges.map((edge) => [edge.id, edge]));
   const placementById = new Map(layout.edges.map((placement) => [placement.id, placement]));
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeTargets = new Map<string, AnnotationTarget>();
-  const projections = projectDependencyEdges(diagram.graph, options.focus);
+  const projections = projectDependencyEdges(artifact.diagram.graph, options.focus);
   const bundles = [...(collectVirtualBundles(layout, bounds) ?? [])];
   const groupIds = new Set([...layout.groups.map(({ id }) => id), ...bundles.map(([, { id }]) => id)]);
   const hasGroupEndpoint = (sourceId: string, targetId: string) => groupIds.has(sourceId) || groupIds.has(targetId);

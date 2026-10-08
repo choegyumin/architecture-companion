@@ -22,23 +22,27 @@ const diagram = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview the selected diagram layout.\n\n## Regeneration\nRebuild the example elements for the selected layout.",
-  graph: { groups: [], nodes: [{ id: "node", type: "default", title: "Node" }], edges: [] },
+  diagram: {
+    layout: { id: "elk-layered" },
+    graph: { groups: [], nodes: [{ id: "node", type: "default", title: "Node" }], edges: [] },
+  },
 } as const;
 
 describe("diagram renderer selection", () => {
   it("selects the dependency renderer by layout ID", () => {
-    const dependencyDiagram = { ...diagram, layout: { id: "dependency-graph" } } satisfies Artifact;
+    const dependencyDiagram = {
+      ...diagram,
+      diagram: { ...diagram.diagram, layout: { id: "dependency-graph" } },
+    } satisfies Artifact;
 
-    render(<DiagramRenderer annotations={annotations} diagram={dependencyDiagram} onOpenSource={vi.fn()} />);
+    render(<DiagramRenderer annotations={annotations} artifact={dependencyDiagram} onOpenSource={vi.fn()} />);
 
     expect(screen.getByText("Dependency graph renderer")).toBeInTheDocument();
     expect(screen.queryByText("ELK layout renderer")).not.toBeInTheDocument();
   });
 
   it("selects the ELK renderer by layout ID", () => {
-    const elkDiagram = { ...diagram, layout: { id: "elk-layered" } } satisfies Artifact;
-
-    render(<DiagramRenderer annotations={annotations} diagram={elkDiagram} onOpenSource={vi.fn()} />);
+    render(<DiagramRenderer annotations={annotations} artifact={diagram} onOpenSource={vi.fn()} />);
 
     expect(screen.getByText("ELK layout renderer")).toBeInTheDocument();
     expect(screen.queryByText("Sequence layout renderer")).not.toBeInTheDocument();
@@ -47,15 +51,17 @@ describe("diagram renderer selection", () => {
   it("selects the sequence renderer by layout ID", () => {
     const sequenceDiagram = {
       ...diagram,
-      graph: {
-        groups: [],
-        nodes: [{ id: "participant", type: "lifeline", kind: "participant", title: "Participant", activations: [] }],
-        edges: [],
+      diagram: {
+        layout: { id: "sequence" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "participant", type: "lifeline", kind: "participant", title: "Participant", activations: [] }],
+          edges: [],
+        },
       },
-      layout: { id: "sequence" },
     } satisfies Artifact;
 
-    render(<DiagramRenderer annotations={annotations} diagram={sequenceDiagram} onOpenSource={vi.fn()} />);
+    render(<DiagramRenderer annotations={annotations} artifact={sequenceDiagram} onOpenSource={vi.fn()} />);
 
     expect(screen.getByText("Sequence layout renderer")).toBeInTheDocument();
     expect(screen.queryByText("ELK layout renderer")).not.toBeInTheDocument();

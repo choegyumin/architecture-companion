@@ -8,144 +8,146 @@
   },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
-  "layout": {
-    "id": "elk-layered",
-    "options": {
-      "bezierEdges": true
-    }
-  },
   "links": [
     {
       "href": "source:///specs/agent-handoff-architecture.spec.ts"
     }
   ],
-  "graph": {
-    "groups": [],
-    "nodes": [
-      {
-        "type": "default",
-        "id": "agent-receive-review-task",
-        "kind": "trigger",
-        "title": "Receive an architecture review request",
-        "description": "The coding agent starts preparing a review for the designated consumer scope."
-      },
-      {
-        "type": "default",
-        "id": "agent-discover-generators",
-        "kind": "action",
-        "title": "Discover available generators",
-        "description": "The agent harness discovers built-in, global, and project generator manifests.",
-        "links": [
-          {
-            "href": "source:///src/cli/view-generators.command.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "agent-write-artifact",
-        "kind": "action",
-        "title": "Write the artifact",
-        "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
-        "links": [
-          {
-            "href": "source:///skills/architecture-companion/schemas/diagram.schema.json"
-          },
-          {
-            "href": "source:///skills/architecture-companion/artifact-writing.md"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "agent-start-runtime",
-        "kind": "action",
-        "title": "Run the Architecture Companion server",
-        "description": "Start the server for the designated scope and print the loopback URL.",
-        "links": [
-          {
-            "href": "source:///src/cli/serve.command.ts"
-          },
-          {
-            "href": "source:///src/server/start-server.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "agent-artifact-valid",
-        "kind": "condition",
-        "title": "Does the artifact contain diagrams and pass validation?",
-        "description": "Confirm that at least one diagram exists across behaviors and designs, then validate the artifact with validate-schemas before sharing a URL.",
-        "links": [
-          {
-            "href": "source:///src/cli/validate-schemas.command.ts"
-          },
-          {
-            "href": "source:///skills/architecture-companion/SKILL.md"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "agent-fix-artifact",
-        "kind": "action",
-        "title": "Complete or fix the artifact",
-        "description": "Add the requested diagrams if none exist. Fix validation errors and rerun the command until it prints Artifact is valid."
-      },
-      {
-        "type": "default",
-        "id": "agent-share-url",
-        "kind": "result",
-        "title": "Hand off review URL",
-        "description": "Explain what the validated artifact covers and hand the review URL to the reviewer."
+  "diagram": {
+    "layout": {
+      "id": "elk-layered",
+      "options": {
+        "bezierEdges": true
       }
-    ],
-    "edges": [
-      {
-        "type": "default",
-        "id": "agent-task-to-discovery",
-        "source": "agent-receive-review-task",
-        "target": "agent-discover-generators"
-      },
-      {
-        "type": "default",
-        "id": "agent-discovery-to-artifact",
-        "source": "agent-discover-generators",
-        "target": "agent-write-artifact"
-      },
-      {
-        "type": "default",
-        "id": "agent-artifact-to-runtime",
-        "source": "agent-write-artifact",
-        "target": "agent-artifact-valid"
-      },
-      {
-        "type": "default",
-        "id": "agent-runtime-to-validation",
-        "source": "agent-artifact-valid",
-        "target": "agent-start-runtime",
-        "label": "Yes"
-      },
-      {
-        "type": "default",
-        "id": "agent-invalid-to-fix",
-        "source": "agent-artifact-valid",
-        "target": "agent-fix-artifact",
-        "label": "No"
-      },
-      {
-        "type": "default",
-        "id": "agent-fix-to-validation",
-        "source": "agent-fix-artifact",
-        "target": "agent-artifact-valid"
-      },
-      {
-        "type": "default",
-        "id": "agent-valid-to-share",
-        "source": "agent-start-runtime",
-        "target": "agent-share-url"
-      }
-    ]
+    },
+    "graph": {
+      "groups": [],
+      "nodes": [
+        {
+          "type": "default",
+          "id": "agent-receive-review-task",
+          "kind": "trigger",
+          "title": "Receive an architecture review request",
+          "description": "The coding agent starts preparing a review for the designated consumer scope."
+        },
+        {
+          "type": "default",
+          "id": "agent-discover-generators",
+          "kind": "action",
+          "title": "Discover available generators",
+          "description": "The agent harness discovers built-in, global, and project generator manifests.",
+          "links": [
+            {
+              "href": "source:///src/cli/view-generators.command.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "agent-write-artifact",
+          "kind": "action",
+          "title": "Write the artifact",
+          "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
+          "links": [
+            {
+              "href": "source:///skills/architecture-companion/schemas/diagram.schema.json"
+            },
+            {
+              "href": "source:///skills/architecture-companion/artifact-writing.md"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "agent-start-runtime",
+          "kind": "action",
+          "title": "Run the Architecture Companion server",
+          "description": "Start the server for the designated scope and print the loopback URL.",
+          "links": [
+            {
+              "href": "source:///src/cli/serve.command.ts"
+            },
+            {
+              "href": "source:///src/server/start-server.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "agent-artifact-valid",
+          "kind": "condition",
+          "title": "Does the artifact contain diagrams and pass validation?",
+          "description": "Confirm that at least one diagram exists across behaviors and designs, then validate the artifact with validate-schemas before sharing a URL.",
+          "links": [
+            {
+              "href": "source:///src/cli/validate-schemas.command.ts"
+            },
+            {
+              "href": "source:///skills/architecture-companion/SKILL.md"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "agent-fix-artifact",
+          "kind": "action",
+          "title": "Complete or fix the artifact",
+          "description": "Add the requested diagrams if none exist. Fix validation errors and rerun the command until it prints Artifact is valid."
+        },
+        {
+          "type": "default",
+          "id": "agent-share-url",
+          "kind": "result",
+          "title": "Hand off review URL",
+          "description": "Explain what the validated artifact covers and hand the review URL to the reviewer."
+        }
+      ],
+      "edges": [
+        {
+          "type": "default",
+          "id": "agent-task-to-discovery",
+          "source": "agent-receive-review-task",
+          "target": "agent-discover-generators"
+        },
+        {
+          "type": "default",
+          "id": "agent-discovery-to-artifact",
+          "source": "agent-discover-generators",
+          "target": "agent-write-artifact"
+        },
+        {
+          "type": "default",
+          "id": "agent-artifact-to-runtime",
+          "source": "agent-write-artifact",
+          "target": "agent-artifact-valid"
+        },
+        {
+          "type": "default",
+          "id": "agent-runtime-to-validation",
+          "source": "agent-artifact-valid",
+          "target": "agent-start-runtime",
+          "label": "Yes"
+        },
+        {
+          "type": "default",
+          "id": "agent-invalid-to-fix",
+          "source": "agent-artifact-valid",
+          "target": "agent-fix-artifact",
+          "label": "No"
+        },
+        {
+          "type": "default",
+          "id": "agent-fix-to-validation",
+          "source": "agent-fix-artifact",
+          "target": "agent-artifact-valid"
+        },
+        {
+          "type": "default",
+          "id": "agent-valid-to-share",
+          "source": "agent-start-runtime",
+          "target": "agent-share-url"
+        }
+      ]
+    }
   }
 }

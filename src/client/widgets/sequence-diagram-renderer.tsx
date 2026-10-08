@@ -4,9 +4,9 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { layoutSequenceDiagram } from "@/features/diagram/_layout/sequence-diagram-layout";
 import type { DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 
-function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (diagram.layout.id !== "sequence") throw new Error("Expected a sequence diagram layout.");
-  return layoutSequenceDiagram(diagram.graph, nodeSizes);
+function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
+  if (artifact.diagram.layout.id !== "sequence") throw new Error("Expected a sequence diagram layout.");
+  return layoutSequenceDiagram(artifact.diagram.graph, nodeSizes);
 }
 
 export function SequenceDiagramRenderer(props: DiagramRendererProps) {

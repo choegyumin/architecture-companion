@@ -24,22 +24,24 @@ const diagram = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
-  layout: { id: "dependency-graph" },
-  graph: {
-    groups: [
-      { id: "source", title: "Source" },
-      { id: "target", title: "Target" },
-    ],
-    nodes: [
-      { id: "one", type: "default", title: "One", groupId: "source" },
-      { id: "two", type: "default", title: "Two", groupId: "source" },
-      { id: "other", type: "default", title: "Other", groupId: "target" },
-    ],
-    edges: [
-      { id: "one-other", type: "default", source: "one", target: "other" },
-      { id: "two-other", type: "default", source: "two", target: "other" },
-      { id: "one-two", type: "default", source: "one", target: "two" },
-    ],
+  diagram: {
+    layout: { id: "dependency-graph" },
+    graph: {
+      groups: [
+        { id: "source", title: "Source" },
+        { id: "target", title: "Target" },
+      ],
+      nodes: [
+        { id: "one", type: "default", title: "One", groupId: "source" },
+        { id: "two", type: "default", title: "Two", groupId: "source" },
+        { id: "other", type: "default", title: "Other", groupId: "target" },
+      ],
+      edges: [
+        { id: "one-other", type: "default", source: "one", target: "other" },
+        { id: "two-other", type: "default", source: "two", target: "other" },
+        { id: "one-two", type: "default", source: "one", target: "two" },
+      ],
+    },
   },
 } satisfies Artifact;
 
@@ -125,7 +127,7 @@ describe("dependency graph Comment snapshot", () => {
           <DiagramRenderer
             annotations={annotations}
             commentEnabled={commentEnabled}
-            diagram={diagram}
+            artifact={diagram}
             onOpenSource={vi.fn()}
           />
         </div>

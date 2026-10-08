@@ -27,11 +27,13 @@ function catalog(label: string): CompanionCatalog {
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-        graph: {
-          groups: [],
-          nodes: [{ type: "default", id: "submit", kind: "trigger", title: `${label} workflow` }],
-          edges: [],
+        diagram: {
+          layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          graph: {
+            groups: [],
+            nodes: [{ type: "default", id: "submit", kind: "trigger", title: `${label} workflow` }],
+            edges: [],
+          },
         },
         id: "checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
@@ -45,20 +47,22 @@ function catalog(label: string): CompanionCatalog {
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from the current checkout components.",
-        layout: { id: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [
-            {
-              type: "default",
-              id: "checkout-page",
-              kind: "component",
-              title: `${label} component`,
-              description: "Coordinates checkout",
-              details: ["Submit the order"],
-            },
-          ],
-          edges: [],
+        diagram: {
+          layout: { id: "elk-layered" },
+          graph: {
+            groups: [],
+            nodes: [
+              {
+                type: "default",
+                id: "checkout-page",
+                kind: "component",
+                title: `${label} component`,
+                description: "Coordinates checkout",
+                details: ["Submit the order"],
+              },
+            ],
+            edges: [],
+          },
         },
       },
     ],

@@ -21,14 +21,14 @@ function toEdgePath(placement: DiagramLayoutEdge): string {
 }
 
 export function buildElkLayeredDiagramReactFlowRenderModel(
-  diagram: Artifact,
+  artifact: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowRenderModel {
-  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource);
+  const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource);
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edges = layout.edges.map<DiagramReactFlowEdge>((placement) => {
-    const edge = diagram.graph.edges.find(({ id }) => id === placement.id);
+    const edge = artifact.diagram.graph.edges.find(({ id }) => id === placement.id);
     if (!edge) throw new Error(`Layout result references an unknown diagram edge: ${placement.id}`);
     if (edge.type === "message") return toMessageReactFlowEdge(edge, placement.points, onLinkActivate);
     const display = diagramEdgeDisplay(edge);

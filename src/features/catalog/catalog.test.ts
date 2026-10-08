@@ -7,20 +7,22 @@ const validBehavior = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout payment flow.\n\n## Regeneration\nRebuild submission, validation, capture, and confirmation steps.",
-  layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-  graph: {
-    groups: [],
-    nodes: [
-      { id: "submit", type: "default", kind: "trigger", title: "Order submitted" },
-      { id: "validate", type: "default", kind: "condition", title: "Payment valid?" },
-      { id: "capture", type: "default", kind: "action", title: "Capture payment" },
-      { id: "confirmed", type: "default", kind: "result", title: "Order confirmed" },
-    ],
-    edges: [
-      { id: "submit-validate", type: "default", source: "submit", target: "validate" },
-      { id: "validate-capture", type: "default", source: "validate", target: "capture", label: "Yes" },
-      { id: "capture-confirmed", type: "default", source: "capture", target: "confirmed" },
-    ],
+  diagram: {
+    layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+    graph: {
+      groups: [],
+      nodes: [
+        { id: "submit", type: "default", kind: "trigger", title: "Order submitted" },
+        { id: "validate", type: "default", kind: "condition", title: "Payment valid?" },
+        { id: "capture", type: "default", kind: "action", title: "Capture payment" },
+        { id: "confirmed", type: "default", kind: "result", title: "Order confirmed" },
+      ],
+      edges: [
+        { id: "submit-validate", type: "default", source: "submit", target: "validate" },
+        { id: "validate-capture", type: "default", source: "validate", target: "capture", label: "Yes" },
+        { id: "capture-confirmed", type: "default", source: "capture", target: "confirmed" },
+      ],
+    },
   },
 } as const;
 
@@ -90,10 +92,13 @@ describe("catalog parsing", () => {
       behaviors: [
         {
           ...validBehavior,
-          graph: {
-            ...validBehavior.graph,
-            nodes: [{ ...validBehavior.graph.nodes.at(0), type: "screen" }],
-            edges: [],
+          diagram: {
+            ...validBehavior.diagram,
+            graph: {
+              ...validBehavior.diagram.graph,
+              nodes: [{ ...validBehavior.diagram.graph.nodes.at(0), type: "screen" }],
+              edges: [],
+            },
           },
         },
       ],
@@ -103,9 +108,12 @@ describe("catalog parsing", () => {
       behaviors: [
         {
           ...validBehavior,
-          graph: {
-            ...validBehavior.graph,
-            edges: [{ ...validBehavior.graph.edges.at(0), type: "transition" }],
+          diagram: {
+            ...validBehavior.diagram,
+            graph: {
+              ...validBehavior.diagram.graph,
+              edges: [{ ...validBehavior.diagram.graph.edges.at(0), type: "transition" }],
+            },
           },
         },
       ],
@@ -121,10 +129,13 @@ describe("catalog parsing", () => {
       behaviors: [
         {
           ...validBehavior,
-          graph: {
-            ...validBehavior.graph,
-            nodes: [validBehavior.graph.nodes.at(0), validBehavior.graph.nodes.at(0)],
-            edges: [],
+          diagram: {
+            ...validBehavior.diagram,
+            graph: {
+              ...validBehavior.diagram.graph,
+              nodes: [validBehavior.diagram.graph.nodes.at(0), validBehavior.diagram.graph.nodes.at(0)],
+              edges: [],
+            },
           },
         },
       ],
@@ -134,9 +145,12 @@ describe("catalog parsing", () => {
       behaviors: [
         {
           ...validBehavior,
-          graph: {
-            ...validBehavior.graph,
-            edges: [{ id: "missing", type: "default", source: "submit", target: "missing-node" }],
+          diagram: {
+            ...validBehavior.diagram,
+            graph: {
+              ...validBehavior.diagram.graph,
+              edges: [{ id: "missing", type: "default", source: "submit", target: "missing-node" }],
+            },
           },
         },
       ],
@@ -160,11 +174,13 @@ describe("catalog parsing", () => {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
       },
     } as const;
 
@@ -181,29 +197,31 @@ describe("catalog parsing", () => {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [
-          {
-            id: "checkout-page",
-            type: "default",
-            kind: "component",
-            title: "Checkout page",
-            links: [{ href: "source:///src/checkout-page.tsx#L1-L20" }],
-          },
-          { id: "payment-client", type: "default", kind: "client", title: "Payment client" },
-        ],
-        edges: [
-          {
-            id: "uses-payment-client",
-            type: "default",
-            source: "checkout-page",
-            target: "payment-client",
-            label: "Uses payment client",
-            href: "https://example.com/payment-client",
-          },
-        ],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            {
+              id: "checkout-page",
+              type: "default",
+              kind: "component",
+              title: "Checkout page",
+              links: [{ href: "source:///src/checkout-page.tsx#L1-L20" }],
+            },
+            { id: "payment-client", type: "default", kind: "client", title: "Payment client" },
+          ],
+          edges: [
+            {
+              id: "uses-payment-client",
+              type: "default",
+              source: "checkout-page",
+              target: "payment-client",
+              label: "Uses payment client",
+              href: "https://example.com/payment-client",
+            },
+          ],
+        },
       },
     } as const;
 

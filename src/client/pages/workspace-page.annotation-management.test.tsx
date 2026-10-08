@@ -27,11 +27,13 @@ const catalog: CompanionCatalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" }],
+          edges: [],
+        },
       },
     },
   ],
@@ -43,11 +45,13 @@ const catalog: CompanionCatalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the catalog entry point.\n\n## Regeneration\nRebuild the catalog page boundary.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "catalog-page", kind: "component", title: "Catalog page" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "catalog-page", kind: "component", title: "Catalog page" }],
+          edges: [],
+        },
       },
     },
     {
@@ -57,11 +61,13 @@ const catalog: CompanionCatalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
       },
     },
   ],

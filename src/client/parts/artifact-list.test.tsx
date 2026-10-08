@@ -10,11 +10,13 @@ function createDiagram(id: string, title: string): Artifact {
     title,
     generator: "built-in:freeform",
     instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} workflow.`,
-    layout: { id: "elk-layered" },
-    graph: {
-      groups: [],
-      nodes: [{ type: "default", id: `${id}-node`, kind: "step", title: `${title} step` }],
-      edges: [],
+    diagram: {
+      layout: { id: "elk-layered" },
+      graph: {
+        groups: [],
+        nodes: [{ type: "default", id: `${id}-node`, kind: "step", title: `${title} step` }],
+        edges: [],
+      },
     },
   };
 }

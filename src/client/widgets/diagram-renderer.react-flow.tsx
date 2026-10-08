@@ -128,7 +128,7 @@ function toLifelineNodeData(
   };
 }
 
-type MeasurableDiagramNode = Artifact["graph"]["nodes"][number] | ProjectedComponentStructureNode;
+type MeasurableDiagramNode = Artifact["diagram"]["graph"]["nodes"][number] | ProjectedComponentStructureNode;
 
 function toMeasurementNode(node: MeasurableDiagramNode, onOpenSource: (href: string) => void): DiagramReactFlowNode {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
@@ -192,10 +192,10 @@ function toMeasurementNode(node: MeasurableDiagramNode, onOpenSource: (href: str
 }
 
 export function buildDiagramMeasurementNodes(
-  diagram: Artifact,
+  artifact: Artifact,
   onOpenSource: (href: string) => void,
 ): DiagramReactFlowNode[] {
-  return diagram.graph.nodes.map((node) => toMeasurementNode(node, onOpenSource));
+  return artifact.diagram.graph.nodes.map((node) => toMeasurementNode(node, onOpenSource));
 }
 
 /** Measurement nodes for a projected component structure graph: cards, non-component cards, and decision diamonds. */
@@ -207,7 +207,9 @@ export function buildComponentStructureMeasurementNodes(
 }
 
 export function resolveDiagramNodeSizes(
-  diagram: Pick<Artifact, "graph"> | Readonly<{ nodes: ProjectedComponentStructureGraph["nodes"] }>,
+  source:
+    | Readonly<{ graph: { nodes: readonly { id: string }[] } }>
+    | Readonly<{ nodes: ProjectedComponentStructureGraph["nodes"] }>,
   nodes: readonly Pick<Node, "id" | "measured" | "type">[],
 ): DiagramNodeSizes {
   const measuredNodeSizes = Object.fromEntries(
@@ -221,7 +223,7 @@ export function resolveDiagramNodeSizes(
       return [node.id, DEFAULT_NODE_SIZE];
     }),
   );
-  const expectedIds = "graph" in diagram ? diagram.graph.nodes.map(({ id }) => id) : diagram.nodes.map(({ id }) => id);
+  const expectedIds = "graph" in source ? source.graph.nodes.map(({ id }) => id) : source.nodes.map(({ id }) => id);
   const missingId = expectedIds.find((id) => !measuredNodeSizes[id]);
   if (missingId != null) throw new Error(`React Flow did not measure diagram node: ${missingId}`);
 
@@ -316,12 +318,18 @@ function toDiagramReactFlowNodes(
 }
 
 export function buildDiagramReactFlowNodes(
-  diagram: Artifact,
+  artifact: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   nodesActivatable = false,
 ): DiagramReactFlowNode[] {
-  return toDiagramReactFlowNodes(diagram.graph.groups, diagram.graph.nodes, layout, onOpenSource, nodesActivatable);
+  return toDiagramReactFlowNodes(
+    artifact.diagram.graph.groups,
+    artifact.diagram.graph.nodes,
+    layout,
+    onOpenSource,
+    nodesActivatable,
+  );
 }
 
 /** Placed nodes for a projected component structure graph, including its decision diamonds and non-component cards. */

@@ -69,11 +69,11 @@ function overlappingPairs(
 
 async function focusedRoutes(focusId?: string) {
   const diagram = parseArtifact(diagramJson);
-  const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-  const layout = await layoutDependencyGraph(diagram.graph, sizes);
+  const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
   const projections = projectDependencyEdges(
-    diagram.graph,
+    diagram.diagram.graph,
     focusId ? { type: "group", id: focusId } : undefined,
   ).filter(
     (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
@@ -92,10 +92,10 @@ async function focusedRoutes(focusId?: string) {
 describe("dependency aggregate routes on the checked-in design", () => {
   it("does not wrap unrelated groups or travel beyond the destination to avoid other edges", async () => {
     const diagram = parseArtifact(diagramJson);
-    const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const bounds = getDependencyElementBounds(layout);
-    const projections = projectDependencyEdges(diagram.graph).filter(
+    const projections = projectDependencyEdges(diagram.diagram.graph).filter(
       (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
         projection.type === "aggregate",
     );
@@ -178,9 +178,9 @@ describe("dependency aggregate routes on the checked-in design", () => {
 
   it("keeps distinct aggregate edges on separate straight tracks", async () => {
     const diagram = parseArtifact(diagramJson);
-    const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
-    const projections = projectDependencyEdges(diagram.graph).filter(
+    const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const projections = projectDependencyEdges(diagram.diagram.graph).filter(
       (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
         projection.type === "aggregate",
     );
@@ -205,13 +205,13 @@ describe("dependency aggregate routes on the checked-in design", () => {
   // the generated tests.
   const boundaryDiagram = parseArtifact(diagramJson);
   const sharedLayout = layoutDependencyGraph(
-    boundaryDiagram.graph,
-    Object.fromEntries(boundaryDiagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),
+    boundaryDiagram.diagram.graph,
+    Object.fromEntries(boundaryDiagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),
   );
-  for (const { id: groupId, title } of boundaryDiagram.graph.groups) {
+  for (const { id: groupId, title } of boundaryDiagram.diagram.graph.groups) {
     it(`keeps ${title}'s focused boundary edges on separate tracks`, async () => {
       const layout = await sharedLayout;
-      const projections = projectDependencyEdges(boundaryDiagram.graph, { type: "group", id: groupId }).filter(
+      const projections = projectDependencyEdges(boundaryDiagram.diagram.graph, { type: "group", id: groupId }).filter(
         (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
           projection.type === "aggregate",
       );

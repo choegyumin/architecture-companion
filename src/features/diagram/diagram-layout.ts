@@ -1,11 +1,6 @@
 import z from "zod";
 
-import type {
-  ComponentStructureArtifact,
-  DependencyGraphArtifact,
-  ElkLayeredArtifact,
-  SequenceArtifact,
-} from "@/features/artifact/artifact";
+import type { DependencyGraphDiagram, Diagram, ElkLayeredDiagram, SequenceDiagram } from "@/features/artifact/artifact";
 import {
   componentStructureDiagramLayoutConfigSchema,
   layoutComponentStructureDiagram,
@@ -33,33 +28,26 @@ export const diagramLayoutConfigSchema = z.discriminatedUnion("id", [
 ]);
 export type DiagramLayoutConfig = z.infer<typeof diagramLayoutConfigSchema>;
 
-/** A layout paired with the graph contract it stores - comparing `layout.id` narrows the graph. */
-export type DiagramLayoutInput =
-  | Pick<ElkLayeredArtifact, "graph" | "layout">
-  | Pick<SequenceArtifact, "graph" | "layout">
-  | Pick<DependencyGraphArtifact, "graph" | "layout">
-  | Pick<ComponentStructureArtifact, "graph" | "layout">;
-
-// Layout ids sit one level below the member root, so plain `switch` cannot
-// discriminate the pairing; these guards carry the comparison instead.
-function isElkLayeredInput(diagram: DiagramLayoutInput): diagram is Pick<ElkLayeredArtifact, "graph" | "layout"> {
+// Layout ids sit one level below the diagram pair's root, so plain `switch`
+// cannot discriminate the pairing; these guards carry the comparison instead.
+function isElkLayeredDiagramInput(diagram: Diagram): diagram is ElkLayeredDiagram {
   return diagram.layout.id === "elk-layered";
 }
 
-function isSequenceInput(diagram: DiagramLayoutInput): diagram is Pick<SequenceArtifact, "graph" | "layout"> {
+function isSequenceDiagramInput(diagram: Diagram): diagram is SequenceDiagram {
   return diagram.layout.id === "sequence";
 }
 
-function isDependencyGraphInput(
-  diagram: DiagramLayoutInput,
-): diagram is Pick<DependencyGraphArtifact, "graph" | "layout"> {
+function isDependencyGraphDiagramInput(diagram: Diagram): diagram is DependencyGraphDiagram {
   return diagram.layout.id === "dependency-graph";
 }
 
-export function layoutDiagram(diagram: DiagramLayoutInput, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {
-  if (isElkLayeredInput(diagram)) return layoutElkLayeredDiagram(diagram.graph, nodeSizes, diagram.layout.options);
-  if (isSequenceInput(diagram)) return layoutSequenceDiagram(diagram.graph, nodeSizes);
-  if (isDependencyGraphInput(diagram)) return layoutDependencyGraph(diagram.graph, nodeSizes);
+export function layoutDiagram(diagram: Diagram, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {
+  if (isElkLayeredDiagramInput(diagram)) {
+    return layoutElkLayeredDiagram(diagram.graph, nodeSizes, diagram.layout.options);
+  }
+  if (isSequenceDiagramInput(diagram)) return layoutSequenceDiagram(diagram.graph, nodeSizes);
+  if (isDependencyGraphDiagramInput(diagram)) return layoutDependencyGraph(diagram.graph, nodeSizes);
   // Decision nodes and split segments are display projections, so the stored
   // graph is projected before the layout places it.
   return layoutComponentStructureDiagram(projectDecisionNodes(diagram.graph), nodeSizes, diagram.layout.options);

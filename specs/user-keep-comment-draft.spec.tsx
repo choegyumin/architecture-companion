@@ -25,11 +25,13 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          edges: [],
+        },
       },
     },
   ],

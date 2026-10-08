@@ -27,11 +27,13 @@ function catalog(title: string): CompanionCatalog {
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-        layout: { id: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
-          edges: [],
+        diagram: {
+          layout: { id: "elk-layered" },
+          graph: {
+            groups: [],
+            nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+            edges: [],
+          },
         },
       },
     ],

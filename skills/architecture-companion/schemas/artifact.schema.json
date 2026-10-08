@@ -1,265 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "./artifact.schema.json",
-  "anyOf": [
-    {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/ArtifactId"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
-        },
-        "updatedAt": {
-          "$ref": "#/$defs/UpdatedAt"
-        },
-        "vcs": {
-          "$ref": "#/$defs/Vcs"
-        },
-        "generator": {
-          "$ref": "#/$defs/Generator"
-        },
-        "instructions": {
-          "type": "string",
-          "minLength": 1
-        },
-        "links": {
-          "$ref": "#/$defs/Links"
-        },
-        "layout": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "elk-layered"
-            },
-            "options": {
-              "type": "object",
-              "properties": {
-                "nudgeObstacleNodes": {
-                  "type": "boolean"
-                },
-                "bezierEdges": {
-                  "type": "boolean"
-                },
-                "elk": {
-                  "$ref": "#/$defs/ElkOptions"
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "graph": {
-          "$ref": "#/$defs/DiagramGraph"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "updatedAt",
-        "generator",
-        "instructions",
-        "layout",
-        "graph"
-      ],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/ArtifactId"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
-        },
-        "updatedAt": {
-          "$ref": "#/$defs/UpdatedAt"
-        },
-        "vcs": {
-          "$ref": "#/$defs/Vcs"
-        },
-        "generator": {
-          "$ref": "#/$defs/Generator"
-        },
-        "instructions": {
-          "type": "string",
-          "minLength": 1
-        },
-        "links": {
-          "$ref": "#/$defs/Links"
-        },
-        "layout": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "sequence"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "graph": {
-          "$ref": "#/$defs/SequenceGraph"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "updatedAt",
-        "generator",
-        "instructions",
-        "layout",
-        "graph"
-      ],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/ArtifactId"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
-        },
-        "updatedAt": {
-          "$ref": "#/$defs/UpdatedAt"
-        },
-        "vcs": {
-          "$ref": "#/$defs/Vcs"
-        },
-        "generator": {
-          "$ref": "#/$defs/Generator"
-        },
-        "instructions": {
-          "type": "string",
-          "minLength": 1
-        },
-        "links": {
-          "$ref": "#/$defs/Links"
-        },
-        "layout": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "dependency-graph"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "graph": {
-          "$ref": "#/$defs/DependencyGraph"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "updatedAt",
-        "generator",
-        "instructions",
-        "layout",
-        "graph"
-      ],
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/ArtifactId"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
-        },
-        "updatedAt": {
-          "$ref": "#/$defs/UpdatedAt"
-        },
-        "vcs": {
-          "$ref": "#/$defs/Vcs"
-        },
-        "generator": {
-          "$ref": "#/$defs/Generator"
-        },
-        "instructions": {
-          "type": "string",
-          "minLength": 1
-        },
-        "links": {
-          "$ref": "#/$defs/Links"
-        },
-        "layout": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "component-structure"
-            },
-            "options": {
-              "type": "object",
-              "properties": {
-                "nudgeObstacleNodes": {
-                  "type": "boolean"
-                },
-                "bezierEdges": {
-                  "type": "boolean"
-                },
-                "elk": {
-                  "$ref": "#/$defs/ElkOptions"
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "graph": {
-          "$ref": "#/$defs/ComponentStructureGraph"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "updatedAt",
-        "generator",
-        "instructions",
-        "layout",
-        "graph"
-      ],
-      "additionalProperties": false
-    }
-  ],
-  "$defs": {
-    "ArtifactId": {
+  "type": "object",
+  "properties": {
+    "id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "UpdatedAt": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updatedAt": {
       "type": "string",
       "format": "date-time",
       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
     },
-    "Vcs": {
+    "vcs": {
       "type": "object",
       "properties": {
         "revision": {
@@ -276,17 +33,170 @@
       ],
       "additionalProperties": false
     },
-    "Generator": {
+    "generator": {
       "type": "string",
       "pattern": "^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
-    "Links": {
+    "instructions": {
+      "type": "string",
+      "minLength": 1
+    },
+    "links": {
       "readOnly": true,
       "type": "array",
       "items": {
         "$ref": "#/$defs/Link"
       }
     },
+    "diagram": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "elk-layered"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "nudgeObstacleNodes": {
+                      "type": "boolean"
+                    },
+                    "bezierEdges": {
+                      "type": "boolean"
+                    },
+                    "elk": {
+                      "$ref": "#/$defs/ElkOptions"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/DiagramGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "sequence"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/SequenceGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "dependency-graph"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/DependencyGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "component-structure"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "nudgeObstacleNodes": {
+                      "type": "boolean"
+                    },
+                    "bezierEdges": {
+                      "type": "boolean"
+                    },
+                    "elk": {
+                      "$ref": "#/$defs/ElkOptions"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/ComponentStructureGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "updatedAt",
+    "generator",
+    "instructions",
+    "diagram"
+  ],
+  "additionalProperties": false,
+  "$defs": {
     "Link": {
       "type": "object",
       "properties": {

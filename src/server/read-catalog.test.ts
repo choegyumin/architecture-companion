@@ -11,11 +11,13 @@ const checkoutBehavior = {
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
-  layout: { id: "elk-layered" },
-  graph: {
-    groups: [],
-    nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
-    edges: [],
+  diagram: {
+    layout: { id: "elk-layered" },
+    graph: {
+      groups: [],
+      nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+      edges: [],
+    },
   },
 } as const;
 

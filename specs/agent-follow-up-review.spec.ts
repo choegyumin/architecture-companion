@@ -19,11 +19,13 @@ const catalog: CompanionCatalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          edges: [],
+        },
       },
     },
   ],
@@ -35,11 +37,13 @@ const catalog: CompanionCatalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
       },
     },
   ],
