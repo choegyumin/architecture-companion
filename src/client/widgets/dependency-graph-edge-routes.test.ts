@@ -162,11 +162,11 @@ function expectReadableRoutes(
 
 async function focusedAggregateRoutes(focusId: string) {
   const diagram = parseArtifact({ ...artifactJson, updatedAt: "2026-10-03T09:15:00.000Z" });
-  const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-  const layout = await layoutDependencyGraph(diagram.graph, sizes);
+  const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
   const bundles = collectVirtualBundles(layout, bounds) ?? new Map();
-  const projections = projectDependencyEdges(diagram.graph, { type: "group", id: focusId }).filter(
+  const projections = projectDependencyEdges(diagram.diagram.graph, { type: "group", id: focusId }).filter(
     (projection) => projection.type === "aggregate",
   );
   const routes = routeAggregateDependencyEdges(projections, layout);
@@ -498,7 +498,7 @@ describe("dependency edge routes", () => {
         sourceId: "group:directory:src/cli",
         targets: [
           "group:directory:src/server",
-          "group:directory:src/features/diagram-generator",
+          "group:directory:src/features/artifact-generator",
           "group:directory:src/shared/node",
         ],
       },
@@ -520,7 +520,7 @@ describe("dependency edge routes", () => {
     const annotationId = "group:directory:src/features/annotation";
     await expectFocusedRelations(annotationId, [
       [annotationId, "group:external-packages"],
-      [annotationId, "group:directory:src/features/artifact"],
+      [annotationId, "group:directory:src/features/catalog"],
     ]);
   });
 

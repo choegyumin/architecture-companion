@@ -5,6 +5,21 @@ import { BaseEdgeLabel, EDGE_LABEL_Z_INDEX } from "@/shared/react-flow/base-edge
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
+type RouteEdgeLabelAnchor = Readonly<{
+  /** Which edge of the label meets the anchor; labels grow away from it. */
+  anchorSide?: "top" | "bottom";
+  control: ReactNode;
+  position: XYPosition;
+}>;
+
+// The anchor pins the label's top edge (growing downstream), its bottom edge
+// (growing back toward the start), or its center.
+const ANCHOR_TRANSFORM = {
+  bottom: "translate(-50%, -100%)",
+  center: "translate(-50%, -50%)",
+  top: "translate(-50%, 0)",
+} as const;
+
 type RouteEdgeData = Readonly<{
   path: string;
   labelPosition: XYPosition;
@@ -12,6 +27,7 @@ type RouteEdgeData = Readonly<{
   href?: string;
   onLinkActivate?: LinkActivationHandler;
   labelAction?: Readonly<{ ariaLabel: string; onActivate: () => void }>;
+  labelControls?: readonly RouteEdgeLabelAnchor[];
 }>;
 
 export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
@@ -21,6 +37,7 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
 
   const labelStyle = {
     left: data.labelPosition.x,
+    opacity: style?.opacity,
     pointerEvents: "all" as const,
     top: data.labelPosition.y,
     transform: "translate(-50%, -50%)",
@@ -31,12 +48,31 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
       <span className="block text-[10px] font-semibold tracking-wide text-muted-foreground">{data.eyebrow}</span>
     ) : null;
 
+  const labelControls = data.labelControls ?? [];
+  const anchoredControls = labelControls.map(({ anchorSide, control, position }) => (
+    <div
+      className="nodrag nopan absolute flex w-max flex-col gap-2"
+      key={`${position.x},${position.y}`}
+      style={{
+        ...labelStyle,
+        left: position.x,
+        opacity: 1,
+        top: position.y,
+        transform: ANCHOR_TRANSFORM[anchorSide ?? "center"],
+      }}
+    >
+      {control}
+    </div>
+  ));
+
   return (
     <>
       <BaseEdge id={id} markerEnd={markerEnd} markerStart={markerStart} path={data.path} style={style} />
-      {data.eyebrow != null || label != null || data.href ? (
+      {data.eyebrow != null || label != null || data.href || anchoredControls.length > 0 ? (
         <EdgeLabelRenderer>
-          {data.labelAction ? (
+          {anchoredControls.length > 0 ? (
+            anchoredControls
+          ) : data.labelAction ? (
             <button
               aria-label={data.labelAction.ariaLabel}
               className="nodrag nopan absolute w-max cursor-pointer rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm hover:border-primary/60"

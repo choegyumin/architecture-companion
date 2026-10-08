@@ -22,11 +22,13 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout requested" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout requested" }],
+          edges: [],
+        },
       },
     },
     {
@@ -36,11 +38,13 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview order cancellation.\n\n## Regeneration\nRebuild the cancellation trigger from the order flow.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "cancel", kind: "trigger", title: "Cancellation requested" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "cancel", kind: "trigger", title: "Cancellation requested" }],
+          edges: [],
+        },
       },
     },
   ],
@@ -52,11 +56,13 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
       },
     },
     {
@@ -66,20 +72,22 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview product browsing.\n\n## Regeneration\nRebuild the page boundary from src/catalog-page.ts.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [
-          {
-            type: "default",
-            id: "catalog-page",
-            kind: "component",
-            title: "Catalog page",
-            details: ["Browse products"],
-            links: [{ href: "source:///src/catalog-page.ts" }],
-          },
-        ],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            {
+              type: "default",
+              id: "catalog-page",
+              kind: "component",
+              title: "Catalog page",
+              details: ["Browse products"],
+              links: [{ href: "source:///src/catalog-page.ts" }],
+            },
+          ],
+          edges: [],
+        },
       },
     },
   ],

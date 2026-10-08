@@ -276499,6 +276499,31 @@ var diagramIdSchema = external_exports.string().min(1);
 var diagramLinkSchema = external_exports.object({
   text: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1)
+}).strict().meta({ id: "Link" });
+var diagramRouteRequirementSchema = external_exports.object({ controlId: diagramIdSchema, value: external_exports.string().min(1) }).strict();
+var diagramRouteRequirementRuleSchema = external_exports.array(diagramRouteRequirementSchema);
+var diagramRouteRequirementRulesetSchema = external_exports.array(diagramRouteRequirementRuleSchema).min(1).meta({ id: "RouteRequirementRuleset" });
+var diagramControlBaseShape = {
+  id: diagramIdSchema,
+  owner: diagramIdSchema,
+  label: external_exports.string().min(1),
+  dependsOn: diagramRouteRequirementRulesetSchema
+};
+var diagramControlSchema = external_exports.discriminatedUnion("kind", [
+  external_exports.object({ ...diagramControlBaseShape, kind: external_exports.literal("conditional") }).strict(),
+  external_exports.object({
+    ...diagramControlBaseShape,
+    kind: external_exports.literal("branch"),
+    cases: external_exports.array(external_exports.object({ id: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
+    /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels. */
+    polarityPair: external_exports.literal(true).optional()
+  }).strict()
+]);
+var diagramComponentMetadataSchema = external_exports.object({
+  definitionId: diagramIdSchema,
+  origins: external_exports.array(
+    external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), prop: external_exports.string().min(1) }).strict()
+  )
 }).strict();
 var diagramNodeBaseShape = {
   id: diagramIdSchema,
@@ -276512,7 +276537,7 @@ var defaultDiagramNodeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   type: external_exports.literal("default"),
   links: external_exports.array(diagramLinkSchema).optional()
-}).strict();
+}).strict().meta({ id: "DefaultNode" });
 var activationEndpointSchema = external_exports.object({
   messageId: diagramIdSchema,
   endpoint: external_exports.enum(["source", "target"])
@@ -276528,7 +276553,7 @@ var lifelineDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("lifeline"),
   links: external_exports.array(diagramLinkSchema).optional(),
   activations: external_exports.array(activationSchema)
-}).strict();
+}).strict().meta({ id: "LifelineNode" });
 var fragmentBranchSchema = external_exports.object({
   id: diagramIdSchema,
   guard: external_exports.string().min(1),
@@ -276541,7 +276566,7 @@ var fragmentDiagramNodeSchema = external_exports.object({
   type: external_exports.literal("fragment"),
   operator: external_exports.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
   branches: external_exports.array(fragmentBranchSchema).min(1)
-}).strict();
+}).strict().meta({ id: "FragmentNode" });
 var diagramNodeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
   lifelineDiagramNodeSchema,
@@ -276555,7 +276580,14 @@ var defaultDiagramEdgeSchema = external_exports.object({
   kind: external_exports.string().min(1).optional(),
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional()
-}).strict();
+}).strict().meta({ id: "DefaultEdge" });
+var controlDiagramEdgeSchema = external_exports.object({
+  id: diagramIdSchema,
+  type: external_exports.literal("control"),
+  source: diagramIdSchema,
+  target: diagramIdSchema,
+  activeWhen: diagramRouteRequirementRulesetSchema
+}).strict().meta({ id: "ControlEdge" });
 var messageDiagramEdgeSchema = external_exports.object({
   id: diagramIdSchema,
   type: external_exports.literal("message"),
@@ -276565,19 +276597,344 @@ var messageDiagramEdgeSchema = external_exports.object({
   label: external_exports.string().min(1).optional(),
   href: external_exports.string().min(1).optional(),
   messageType: external_exports.enum(["sync", "async", "return"]).default("sync")
-}).strict();
-var diagramEdgeSchema = external_exports.discriminatedUnion("type", [defaultDiagramEdgeSchema, messageDiagramEdgeSchema]);
+}).strict().meta({ id: "MessageEdge" });
+var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
+  defaultDiagramEdgeSchema,
+  controlDiagramEdgeSchema,
+  messageDiagramEdgeSchema
+]);
 var diagramGroupSchema = external_exports.object({
   id: diagramIdSchema,
   title: external_exports.string().min(1),
   description: external_exports.string().min(1).optional(),
   parentId: diagramIdSchema.optional()
-}).strict();
-var diagramGraphSchema = external_exports.object({
+}).strict().meta({ id: "Group" });
+function validateGraphIntegrity(graph) {
+  const issues = [];
+  const graphElements = [
+    ...graph.groups.map((element, index) => ({ element, path: ["groups", index, "id"] })),
+    ...graph.nodes.map((element, index) => ({ element, path: ["nodes", index, "id"] })),
+    ...graph.edges.map((element, index) => ({ element, path: ["edges", index, "id"] }))
+  ];
+  graphElements.forEach(({ element, path: path2 }, index) => {
+    if (graphElements.findIndex(({ element: candidate }) => candidate.id === element.id) !== index) {
+      issues.push({ code: "custom", path: [...path2], message: `Duplicate diagram element ID: ${element.id}` });
+    }
+  });
+  const groupIds = new Set(graph.groups.map(({ id }) => id));
+  const nodeById = new Map(graph.nodes.map((node2) => [node2.id, node2]));
+  const groupById = Object.fromEntries(graph.groups.map((group) => [group.id, group]));
+  graph.groups.forEach((group, index) => {
+    if (group.parentId && !groupIds.has(group.parentId)) {
+      issues.push({
+        code: "custom",
+        path: ["groups", index, "parentId"],
+        message: `Diagram group ${group.id} has unknown parent ${group.parentId}`
+      });
+    }
+  });
+  const containsGroupCycle = (groupId, ancestors) => {
+    const group = groupById[groupId];
+    if (!group?.parentId) return false;
+    if (ancestors.includes(group.parentId)) return true;
+    return containsGroupCycle(group.parentId, [...ancestors, group.parentId]);
+  };
+  if (graph.groups.some(({ id }) => containsGroupCycle(id, [id]))) {
+    issues.push({ code: "custom", path: ["groups"], message: "Diagram group hierarchy contains a cycle" });
+  }
+  graph.nodes.forEach((node2, index) => {
+    if (node2.groupId && !groupIds.has(node2.groupId)) {
+      issues.push({
+        code: "custom",
+        path: ["nodes", index, "groupId"],
+        message: `Diagram node ${node2.id} belongs to unknown group ${node2.groupId}`
+      });
+    }
+  });
+  graph.edges.forEach((edge, index) => {
+    const source = nodeById.get(edge.source);
+    const target = nodeById.get(edge.target);
+    if (!source) {
+      issues.push({
+        code: "custom",
+        path: ["edges", index, "source"],
+        message: `Diagram edge ${edge.id} sources unknown node ${edge.source}`
+      });
+    }
+    if (!target) {
+      issues.push({
+        code: "custom",
+        path: ["edges", index, "target"],
+        message: `Diagram edge ${edge.id} targets unknown node ${edge.target}`
+      });
+    }
+    if (edge.type === "message") {
+      if (source?.type !== "lifeline") {
+        issues.push({
+          code: "custom",
+          path: ["edges", index, "source"],
+          message: `Message edge ${edge.id} source must be a lifeline`
+        });
+      }
+      if (target?.type !== "lifeline") {
+        issues.push({
+          code: "custom",
+          path: ["edges", index, "target"],
+          message: `Message edge ${edge.id} target must be a lifeline`
+        });
+      }
+    }
+  });
+  return issues;
+}
+var graphBaseShape = {
   groups: external_exports.array(diagramGroupSchema).readonly(),
   nodes: external_exports.array(diagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(diagramEdgeSchema).readonly()
+};
+var diagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
+  for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
+}).meta({ id: "DiagramGraph" });
+function validateSequenceGraph(graph) {
+  const issues = [];
+  const messageEdges = graph.edges.filter((edge) => edge.type === "message");
+  const messageById = new Map(messageEdges.map((edge) => [edge.id, edge]));
+  const messageIndexes = new Map(messageEdges.map((edge, index) => [edge.id, index]));
+  graph.nodes.forEach((node2, index) => {
+    if (node2.type === "lifeline") {
+      const activationIds = /* @__PURE__ */ new Set();
+      node2.activations.forEach((activation, activationIndex) => {
+        if (activationIds.has(activation.id)) {
+          issues.push({
+            code: "custom",
+            path: ["nodes", index, "activations", activationIndex, "id"],
+            message: `Duplicate activation ID: ${activation.id}`
+          });
+        }
+        activationIds.add(activation.id);
+        for (const [boundaryName, boundary] of [
+          ["startsAt", activation.startsAt],
+          ["endsAt", activation.endsAt]
+        ]) {
+          const message = messageById.get(boundary.messageId);
+          if (!message) {
+            issues.push({
+              code: "custom",
+              path: ["nodes", index, "activations", activationIndex, boundaryName, "messageId"],
+              message: `Activation ${activation.id} references unknown message ${boundary.messageId}`
+            });
+            continue;
+          }
+          const endpointNodeId = boundary.endpoint === "source" ? message.source : message.target;
+          if (endpointNodeId !== node2.id) {
+            issues.push({
+              code: "custom",
+              path: ["nodes", index, "activations", activationIndex, boundaryName],
+              message: `Activation ${activation.id} ${boundaryName} does not belong to lifeline ${node2.id}`
+            });
+          }
+        }
+        const startIndex = messageIndexes.get(activation.startsAt.messageId);
+        const endIndex = messageIndexes.get(activation.endsAt.messageId);
+        if (startIndex !== void 0 && endIndex !== void 0 && startIndex > endIndex) {
+          issues.push({
+            code: "custom",
+            path: ["nodes", index, "activations", activationIndex],
+            message: `Activation ${activation.id} ends before it starts`
+          });
+        }
+      });
+    }
+    if (node2.type === "fragment") {
+      const branchIds = /* @__PURE__ */ new Set();
+      node2.branches.forEach((branch, branchIndex) => {
+        if (branchIds.has(branch.id)) {
+          issues.push({
+            code: "custom",
+            path: ["nodes", index, "branches", branchIndex, "id"],
+            message: `Duplicate fragment branch ID: ${branch.id}`
+          });
+        }
+        branchIds.add(branch.id);
+        const startIndex = messageIndexes.get(branch.startMessageId);
+        const endIndex = messageIndexes.get(branch.endMessageId);
+        if (startIndex === void 0 || endIndex === void 0) {
+          if (startIndex === void 0) {
+            issues.push({
+              code: "custom",
+              path: ["nodes", index, "branches", branchIndex, "startMessageId"],
+              message: `Fragment branch ${branch.id} references unknown message ${branch.startMessageId}`
+            });
+          }
+          if (endIndex === void 0) {
+            issues.push({
+              code: "custom",
+              path: ["nodes", index, "branches", branchIndex, "endMessageId"],
+              message: `Fragment branch ${branch.id} references unknown message ${branch.endMessageId}`
+            });
+          }
+        } else if (startIndex > endIndex) {
+          issues.push({
+            code: "custom",
+            path: ["nodes", index, "branches", branchIndex],
+            message: `Fragment branch ${branch.id} ends before it starts`
+          });
+        }
+      });
+    }
+  });
+  return issues;
+}
+var sequenceDiagramGraphSchema = external_exports.object({
+  ...graphBaseShape,
+  nodes: external_exports.array(external_exports.discriminatedUnion("type", [lifelineDiagramNodeSchema, fragmentDiagramNodeSchema])).min(1).readonly(),
+  edges: external_exports.array(messageDiagramEdgeSchema).readonly()
+}).strict().superRefine((graph, context) => {
+  const issues = [
+    ...validateGraphIntegrity(graph),
+    ...validateSequenceGraph(graph),
+    ...graph.groups.length > 0 ? [{ code: "custom", path: ["groups"], message: "Sequence layout does not support diagram groups" }] : [],
+    ...!graph.nodes.some((node2) => node2.type === "lifeline") ? [{ code: "custom", path: ["nodes"], message: "Sequence layout requires at least one lifeline" }] : []
+  ];
+  for (const issue2 of issues) context.addIssue(issue2);
+}).meta({ id: "SequenceGraph" });
+var dependencyDiagramGraphSchema = external_exports.object({
+  ...graphBaseShape,
+  nodes: external_exports.array(defaultDiagramNodeSchema).min(1).readonly(),
+  edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
+}).strict().superRefine((graph, context) => {
+  for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
+}).meta({ id: "DependencyGraph" });
+var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
+  component: diagramComponentMetadataSchema.optional()
+});
+var componentStructureAdditionalSchema = external_exports.object({
+  roots: external_exports.array(diagramIdSchema).min(1).readonly(),
+  controls: external_exports.array(diagramControlSchema).readonly()
 }).strict();
+function validateComponentStructureGraph(graph) {
+  const issues = [];
+  const { roots, controls } = graph.additional;
+  const controlsById = new Map(controls.map((control) => [control.id, control]));
+  const nodeIds = new Set(graph.nodes.map((node2) => node2.id));
+  const rootIds = /* @__PURE__ */ new Set();
+  roots.forEach((root, index) => {
+    if (!nodeIds.has(root) || rootIds.has(root)) {
+      issues.push({
+        code: "custom",
+        path: ["additional", "roots", index],
+        message: `${nodeIds.has(root) ? "Duplicate" : "Unknown"} component root: ${root}`
+      });
+    }
+    rootIds.add(root);
+  });
+  const controlIds = /* @__PURE__ */ new Set();
+  controls.forEach((control, index) => {
+    if (controlIds.has(control.id)) {
+      issues.push({
+        code: "custom",
+        path: ["additional", "controls", index, "id"],
+        message: `Duplicate component control: ${control.id}`
+      });
+    }
+    controlIds.add(control.id);
+    if (!nodeIds.has(control.owner)) {
+      issues.push({
+        code: "custom",
+        path: ["additional", "controls", index, "owner"],
+        message: `Unknown component control owner: ${control.owner}`
+      });
+    }
+    if (control.kind === "branch") {
+      const caseIds = /* @__PURE__ */ new Set();
+      control.cases.forEach((branchCase, caseIndex) => {
+        if (caseIds.has(branchCase.id)) {
+          issues.push({
+            code: "custom",
+            path: ["additional", "controls", index, "cases", caseIndex, "id"],
+            message: `Duplicate component control case: ${branchCase.id}`
+          });
+        }
+        caseIds.add(branchCase.id);
+      });
+    }
+  });
+  const validateRuleset = (ruleset, issuePath) => {
+    ruleset.forEach((rule, ruleIndex) => {
+      const values = /* @__PURE__ */ new Map();
+      rule.forEach((requirement, requirementIndex) => {
+        const previous = values.get(requirement.controlId);
+        if (previous !== void 0 && previous !== requirement.value) {
+          issues.push({
+            code: "custom",
+            path: [...issuePath, ruleIndex, requirementIndex],
+            message: `Contradictory rule for control: ${requirement.controlId}`
+          });
+        }
+        values.set(requirement.controlId, requirement.value);
+        const control = controlsById.get(requirement.controlId);
+        if (!control) {
+          issues.push({
+            code: "custom",
+            path: [...issuePath, ruleIndex, requirementIndex, "controlId"],
+            message: `Unknown component control: ${requirement.controlId}`
+          });
+        } else if (control.kind === "conditional" ? requirement.value !== "on" && requirement.value !== "off" : !control.cases.some((branchCase) => branchCase.id === requirement.value)) {
+          issues.push({
+            code: "custom",
+            path: [...issuePath, ruleIndex, requirementIndex, "value"],
+            message: `Invalid value for component control ${requirement.controlId}: ${requirement.value}`
+          });
+        }
+      });
+    });
+  };
+  graph.edges.forEach((edge, index) => {
+    if (edge.type === "control") validateRuleset(edge.activeWhen, ["edges", index, "activeWhen"]);
+  });
+  controls.forEach((control, index) => {
+    validateRuleset(control.dependsOn, ["additional", "controls", index, "dependsOn"]);
+  });
+  const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.target));
+  graph.nodes.forEach((node2, index) => {
+    if (!targetsWithIncoming.has(node2.id) && !rootIds.has(node2.id)) {
+      issues.push({
+        code: "custom",
+        path: ["nodes", index, "id"],
+        message: `Component node without incoming edges must be a declared root: ${node2.id}`
+      });
+    }
+  });
+  const visited = /* @__PURE__ */ new Set();
+  const visiting = /* @__PURE__ */ new Set();
+  const hasCycle = (id) => {
+    if (visiting.has(id)) return true;
+    if (visited.has(id)) return false;
+    visiting.add(id);
+    for (const path2 of controlsById.get(id)?.dependsOn ?? []) {
+      for (const condition of path2) if (hasCycle(condition.controlId)) return true;
+    }
+    visiting.delete(id);
+    visited.add(id);
+    return false;
+  };
+  if ([...controlsById.keys()].some(hasCycle)) {
+    issues.push({
+      code: "custom",
+      path: ["additional", "controls"],
+      message: "Component control prerequisites contain a cycle"
+    });
+  }
+  return issues;
+}
+var componentStructureDiagramGraphSchema = external_exports.object({
+  ...graphBaseShape,
+  nodes: external_exports.array(componentStructureDiagramNodeSchema).min(1).readonly(),
+  edges: external_exports.array(external_exports.discriminatedUnion("type", [defaultDiagramEdgeSchema, controlDiagramEdgeSchema])).readonly(),
+  additional: componentStructureAdditionalSchema
+}).strict().superRefine((graph, context) => {
+  for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
+}).meta({ id: "ComponentStructureGraph" });
 
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";

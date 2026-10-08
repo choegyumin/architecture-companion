@@ -1,55 +1,31 @@
-import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import z from "zod";
 
-import type { DiagramGraph, DiagramGroup } from "@/features/diagram/diagram-graph";
+import {
+  centerOf,
+  clipSegment,
+  ELK_ROOT_ID,
+  elkOptionMapSchema,
+  expanded,
+  layoutWithElkCore,
+  lerp,
+  type Plane,
+  planeFor,
+  type Rect,
+  resolveElkLayeredOptions,
+  resolveGroupOrigins,
+  shiftRect,
+  toElkChildrenTree,
+  toElkViewportPolicy,
+  toNodeRects,
+  toPlainElkNode,
+} from "@/features/diagram/_layout/elk-core";
+import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 import type {
   DiagramLayout,
   DiagramLayoutEdge,
-  DiagramLayoutGroup,
   DiagramLayoutNode,
-  DiagramLayoutPoint,
   DiagramNodeSizes,
-  DiagramViewFramingOptions,
 } from "@/features/diagram/diagram-spatial";
-import { getOrThrow } from "@/shared/universal/get-or-throw";
-
-const DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"] as const;
-const EDGE_ROUTINGS = ["ORTHOGONAL", "POLY_LINE", "SPLINES"] as const;
-const NODE_PLACEMENT_STRATEGIES = ["BRANDES_KOEPF", "LINEAR_SEGMENTS", "SIMPLE", "MIN_WIDTH", "INTERACTIVE"] as const;
-
-// Verified options are declared by their ELK id minus the leading "elk.";
-// everything else must arrive as a raw `_.`-prefixed full id that is passed
-// through verbatim and unverified.
-const VERIFIED_ELK_OPTION_KEYS = ["direction", "layered.edgeRouting", "layered.nodePlacement.strategy"] as const;
-const DESIGN_OWNED_ELK_OPTION = /^elk\.(padding$|spacing\.|layered\.spacing\.)/;
-
-const elkOptionMapSchema = z
-  .object({
-    direction: z.enum(DIRECTIONS).optional(),
-    "layered.edgeRouting": z.enum(EDGE_ROUTINGS).optional(),
-    "layered.nodePlacement.strategy": z.enum(NODE_PLACEMENT_STRATEGIES).optional(),
-  })
-  .catchall(z.string())
-  .superRefine((options, ctx) => {
-    for (const key of Object.keys(options)) {
-      if ((VERIFIED_ELK_OPTION_KEYS as readonly string[]).includes(key)) continue;
-      if (!key.startsWith("_.")) {
-        ctx.addIssue({
-          code: "custom",
-          path: [key],
-          message: "Unverified elk options must use the raw `_.` prefix with the full option id.",
-        });
-        continue;
-      }
-      if (DESIGN_OWNED_ELK_OPTION.test(`elk.${key.slice(2)}`)) {
-        ctx.addIssue({
-          code: "custom",
-          path: [key],
-          message: "Padding and spacing options are design-owned and cannot be set.",
-        });
-      }
-    }
-  });
 
 export const elkLayeredDiagramLayoutConfigSchema = z
   .object({
@@ -66,221 +42,6 @@ export const elkLayeredDiagramLayoutConfigSchema = z
   .strict();
 export type ElkLayeredDiagramLayoutConfig = z.infer<typeof elkLayeredDiagramLayoutConfigSchema>;
 
-const ROOT_ID = "architecture-companion-layout-root";
-const GROUP_PADDING = { top: 96, right: 32, bottom: 32, left: 32 } as const;
-// ELK returns 0x0 for children-less groups, and a 0x0 node permanently stalls React Flow's queued fitView.
-// Reserve the header chrome plus one default card width (288) so empty groups render and siblings keep clear.
-const EMPTY_GROUP_SIZE = {
-  width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
-  height: GROUP_PADDING.top + GROUP_PADDING.bottom,
-} as const;
-
-type ElkLayeredDiagramLayoutElkOptions = NonNullable<NonNullable<ElkLayeredDiagramLayoutConfig["options"]>["elk"]>;
-type ElkLayeredDiagramLayoutDirection = NonNullable<ElkLayeredDiagramLayoutElkOptions["direction"]>;
-type ElkLayeredDiagramLayoutEdgeRouting = NonNullable<ElkLayeredDiagramLayoutElkOptions["layered.edgeRouting"]>;
-
-function toPadding({ top, right, bottom, left }: typeof GROUP_PADDING): string {
-  return `[top=${top},right=${right},bottom=${bottom},left=${left}]`;
-}
-
-// Resolves the elk option map into the root layoutOptions: verified keys keep
-// their validated values, `_.` raw keys reassemble into full ELK ids
-// ("_.layered.thoroughness" → "elk.layered.thoroughness"), and a raw key that
-// targets a verified option is dropped — the verified value wins.
-function toResolvedElkOptions(map: ElkLayeredDiagramLayoutElkOptions | undefined): Readonly<{
-  direction: ElkLayeredDiagramLayoutDirection;
-  edgeRouting: ElkLayeredDiagramLayoutEdgeRouting;
-  layoutOptions: Record<string, string>;
-}> {
-  const raw = new Map<string, string>();
-  for (const [key, value] of Object.entries(map ?? {})) {
-    if (key.startsWith("_.")) raw.set(`elk.${key.slice(2)}`, value);
-  }
-  const resolve = <T extends string>(verified: T | undefined, id: string, allowed: readonly T[], fallback: T): T => {
-    if (verified !== undefined) {
-      raw.delete(id);
-      return verified;
-    }
-    const value = raw.get(id);
-    raw.delete(id);
-    if (value !== undefined && (allowed as readonly string[]).includes(value)) return value as T;
-    return fallback;
-  };
-  const direction = resolve(map?.direction, "elk.direction", DIRECTIONS, "RIGHT");
-  const edgeRouting = resolve(map?.["layered.edgeRouting"], "elk.layered.edgeRouting", EDGE_ROUTINGS, "ORTHOGONAL");
-  // The default BRANDES_KOEPF aligns the deepest vertical spine to keep it straight,
-  // which roots trees at a side edge. LINEAR_SEGMENTS balances layers instead.
-  const nodePlacementStrategy = resolve(
-    map?.["layered.nodePlacement.strategy"],
-    "elk.layered.nodePlacement.strategy",
-    NODE_PLACEMENT_STRATEGIES,
-    "LINEAR_SEGMENTS",
-  );
-  return {
-    direction,
-    edgeRouting,
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.direction": direction,
-      "elk.layered.edgeRouting": edgeRouting,
-      "elk.layered.nodePlacement.strategy": nodePlacementStrategy,
-      // hierarchyHandling stays a plain default: SEPARATE_CHILDREN leaves
-      // cross-hierarchy edges unrouted, so overriding it is at the author's risk.
-      "elk.hierarchyHandling": "INCLUDE_CHILDREN",
-      // Design-owned spacing; the schema blocks `_.` overrides for these ids.
-      "elk.spacing.nodeNode": "112",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "176",
-      ...Object.fromEntries(raw),
-    },
-  };
-}
-
-function toElkGroup(
-  group: DiagramGroup,
-  diagram: DiagramGraph,
-  nodeSizes: DiagramNodeSizes,
-  direction: ElkLayeredDiagramLayoutDirection,
-): ElkNode {
-  const children = [
-    ...diagram.groups
-      .filter(({ parentId }) => parentId === group.id)
-      .map((child) => toElkGroup(child, diagram, nodeSizes, direction)),
-    ...diagram.nodes
-      .filter(({ groupId }) => groupId === group.id)
-      .map((node) => ({
-        id: node.id,
-        ...getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
-      })),
-  ];
-  return {
-    id: group.id,
-    ...(children.length === 0 ? EMPTY_GROUP_SIZE : {}),
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.direction": direction,
-      "elk.padding": toPadding(GROUP_PADDING),
-      "elk.spacing.nodeNode": "48",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "80",
-    },
-    children,
-  };
-}
-
-function toElkInput(
-  diagram: DiagramGraph,
-  nodeSizes: DiagramNodeSizes,
-  direction: ElkLayeredDiagramLayoutDirection,
-  layoutOptions: Record<string, string>,
-): ElkNode {
-  return {
-    id: ROOT_ID,
-    layoutOptions,
-    children: [
-      ...diagram.groups
-        .filter(({ parentId }) => !parentId)
-        .map((group) => toElkGroup(group, diagram, nodeSizes, direction)),
-      ...diagram.nodes
-        .filter(({ groupId }) => !groupId)
-        .map((node) => ({
-          id: node.id,
-          ...getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
-        })),
-    ],
-    edges: diagram.edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
-  };
-}
-
-type CollectedElements = Readonly<{
-  nodes: readonly DiagramLayoutNode[];
-  groups: readonly DiagramLayoutGroup[];
-  groupOrigins: Readonly<Record<string, DiagramLayoutPoint>>;
-}>;
-
-function collectElements(
-  parent: ElkNode,
-  groupIds: ReadonlySet<string>,
-  parentId: string | undefined,
-  parentOrigin: DiagramLayoutPoint,
-): CollectedElements {
-  return (parent.children ?? []).reduce<CollectedElements>(
-    (collected, child) => {
-      const position = { x: child.x ?? 0, y: child.y ?? 0 };
-      const element = {
-        id: child.id,
-        ...(parentId ? { parentId } : {}),
-        position,
-        size: { width: child.width ?? 0, height: child.height ?? 0 },
-      };
-
-      if (!groupIds.has(child.id)) {
-        return { ...collected, nodes: [...collected.nodes, element] };
-      }
-
-      const absoluteOrigin = { x: parentOrigin.x + position.x, y: parentOrigin.y + position.y };
-      const descendants = collectElements(child, groupIds, child.id, absoluteOrigin);
-
-      return {
-        nodes: [...collected.nodes, ...descendants.nodes],
-        groups: [...collected.groups, element, ...descendants.groups],
-        groupOrigins: {
-          ...collected.groupOrigins,
-          [child.id]: absoluteOrigin,
-          ...descendants.groupOrigins,
-        },
-      };
-    },
-    { nodes: [], groups: [], groupOrigins: {} },
-  );
-}
-
-type CollectedElkEdge = Readonly<{ edge: ElkExtendedEdge; containerId: string }>;
-
-function collectElkEdges(parent: ElkNode): readonly CollectedElkEdge[] {
-  return [
-    ...(parent.edges ?? []).map((edge) => ({ edge, containerId: edge.container ?? parent.id })),
-    ...(parent.children ?? []).flatMap(collectElkEdges),
-  ];
-}
-
-function toDiagramLayoutEdge(
-  { edge, containerId }: CollectedElkEdge,
-  groupOrigins: CollectedElements["groupOrigins"],
-  edgeRouting: ElkLayeredDiagramLayoutEdgeRouting,
-): DiagramLayoutEdge {
-  const section = edge.sections?.at(0);
-  if (!section) throw new Error(`ELK result is missing an edge path: ${edge.id}`);
-
-  const offset = containerId === ROOT_ID ? { x: 0, y: 0 } : groupOrigins[containerId];
-  if (!offset) throw new Error(`ELK result references an unknown edge container: ${containerId}`);
-
-  const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(({ x, y }) => ({
-    x: x + offset.x,
-    y: y + offset.y,
-  }));
-
-  // elkjs emits the same polyline skeleton for every edgeRouting value; SPLINES asks
-  // the renderer to smooth that skeleton into a spline instead of drawing corners.
-  return { id: edge.id, points, ...(edgeRouting === "SPLINES" ? { routing: "spline" as const } : {}) };
-}
-
-function toViewportPolicy(
-  diagram: DiagramGraph,
-  direction: ElkLayeredDiagramLayoutDirection,
-): DiagramViewFramingOptions {
-  const targetIds = new Set(diagram.edges.map(({ target }) => target));
-  const roots = diagram.nodes.filter(({ id }) => !targetIds.has(id));
-  const root = roots.length === 1 ? roots.at(0) : undefined;
-  if (!root) return { mode: "fit" };
-
-  const isVertical = direction === "UP" || direction === "DOWN";
-  return {
-    mode: "node",
-    nodeId: root.id,
-    x: isVertical ? "center" : "clamp",
-    y: isVertical ? "clamp" : "center",
-  };
-}
-
 // Opt-in straight-line edge routing for layered diagrams: every resolvable edge
 // becomes a single source-border to target-border segment, and obstacle nodes
 // blocking another edge's sightline are nudged aside along the cross axis to
@@ -290,104 +51,6 @@ function toViewportPolicy(
 const OBSTACLE_MARGIN = 16;
 const CLEARANCE = 40;
 const GROUP_CLEARANCE = 16;
-
-type Rect = Readonly<{ id: string; min: DiagramLayoutPoint; max: DiagramLayoutPoint }>;
-
-// Direction-aware plane: primary = flow axis, secondary = spread axis.
-type Plane = Readonly<{
-  primary: (point: DiagramLayoutPoint) => number;
-  secondary: (point: DiagramLayoutPoint) => number;
-  point: (primary: number, secondary: number) => DiagramLayoutPoint;
-}>;
-
-function planeFor(direction: ElkLayeredDiagramLayoutDirection): Plane {
-  return direction === "LEFT" || direction === "RIGHT"
-    ? { primary: ({ x }) => x, secondary: ({ y }) => y, point: (x, y) => ({ x, y }) }
-    : { primary: ({ y }) => y, secondary: ({ x }) => x, point: (x, y) => ({ x: y, y: x }) };
-}
-
-function centerOf(rect: Rect): DiagramLayoutPoint {
-  return { x: (rect.min.x + rect.max.x) / 2, y: (rect.min.y + rect.max.y) / 2 };
-}
-
-function expanded(rect: Rect, margin: number): Rect {
-  return {
-    id: rect.id,
-    min: { x: rect.min.x - margin, y: rect.min.y - margin },
-    max: { x: rect.max.x + margin, y: rect.max.y + margin },
-  };
-}
-
-function lerp(a: DiagramLayoutPoint, b: DiagramLayoutPoint, t: number): DiagramLayoutPoint {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-}
-
-function clipSegment(a: DiagramLayoutPoint, b: DiagramLayoutPoint, rect: Rect): [number, number] | null {
-  let t0 = 0;
-  let t1 = 1;
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const edges = [
-    { p: -dx, q: a.x - rect.min.x },
-    { p: dx, q: rect.max.x - a.x },
-    { p: -dy, q: a.y - rect.min.y },
-    { p: dy, q: rect.max.y - a.y },
-  ];
-  for (const { p, q } of edges) {
-    if (p === 0) {
-      if (q < 0) return null;
-      continue;
-    }
-    const r = q / p;
-    if (p < 0) {
-      if (r > t1) return null;
-      if (r > t0) t0 = r;
-    } else {
-      if (r < t0) return null;
-      if (r < t1) t1 = r;
-    }
-  }
-  return [t0, t1];
-}
-
-function resolveGroupOrigins(groups: readonly DiagramLayoutGroup[]): Map<string, DiagramLayoutPoint> {
-  const origins = new Map<string, DiagramLayoutPoint>();
-  const resolve = (group: DiagramLayoutGroup): DiagramLayoutPoint => {
-    const known = origins.get(group.id);
-    if (known) return known;
-    const parent = group.parentId ? groups.find(({ id }) => id === group.parentId) : undefined;
-    const parentOrigin = parent ? resolve(parent) : { x: 0, y: 0 };
-    const origin = { x: parentOrigin.x + group.position.x, y: parentOrigin.y + group.position.y };
-    origins.set(group.id, origin);
-    return origin;
-  };
-  groups.forEach(resolve);
-  return origins;
-}
-
-function shiftRect(rect: Rect, plane: Plane, delta: number): Rect {
-  const shift = plane.point(0, delta);
-  return {
-    id: rect.id,
-    min: { x: rect.min.x + shift.x, y: rect.min.y + shift.y },
-    max: { x: rect.max.x + shift.x, y: rect.max.y + shift.y },
-  };
-}
-
-function toNodeRects(layout: DiagramLayout): ReadonlyMap<string, Rect> {
-  const groupOrigins = resolveGroupOrigins(layout.groups);
-  const rects = new Map<string, Rect>();
-  for (const node of layout.nodes) {
-    const parentOrigin = node.parentId ? (groupOrigins.get(node.parentId) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
-    const origin = { x: parentOrigin.x + node.position.x, y: parentOrigin.y + node.position.y };
-    rects.set(node.id, {
-      id: node.id,
-      min: origin,
-      max: { x: origin.x + node.size.width, y: origin.y + node.size.height },
-    });
-  }
-  return rects;
-}
 
 function toStraightEdges(
   graph: DiagramGraph,
@@ -415,9 +78,9 @@ function toStraightEdges(
 export function straightenLayeredEdges(
   graph: DiagramGraph,
   layout: DiagramLayout,
-  direction: ElkLayeredDiagramLayoutDirection,
+  direction: ReturnType<typeof resolveElkLayeredOptions>["direction"],
 ): DiagramLayout {
-  const plane = planeFor(direction);
+  const plane: Plane = planeFor(direction);
   const groupOrigins = resolveGroupOrigins(layout.groups);
   const groupRects = new Map<string, Rect>();
   for (const group of layout.groups) {
@@ -431,7 +94,7 @@ export function straightenLayeredEdges(
 
   const nodeParents = new Map(layout.nodes.map(({ id, parentId }) => [id, parentId]));
   // A mutable copy: nudging shifts obstacle rects as later sightlines are tested.
-  const rects = new Map(toNodeRects(layout));
+  const rects = new Map(toNodeRects(layout.nodes, layout.groups));
 
   const shifted = new Map<string, number>();
   for (const edge of graph.edges) {
@@ -497,28 +160,24 @@ export async function layoutElkLayeredDiagram(
   nodeSizes: DiagramNodeSizes,
   options?: ElkLayeredDiagramLayoutConfig["options"],
 ): Promise<DiagramLayout> {
-  const resolved = toResolvedElkOptions(options?.elk);
-  const { default: ELK } = await import("elkjs/lib/elk.bundled.js");
-  const output = await new ELK().layout(toElkInput(diagram, nodeSizes, resolved.direction, resolved.layoutOptions));
-  const groupIds = new Set(diagram.groups.map(({ id }) => id));
-  const elements = collectElements(output, groupIds, undefined, { x: 0, y: 0 });
-  const outputNodeIds = new Set(elements.nodes.map(({ id }) => id));
-  const outputGroupIds = new Set(elements.groups.map(({ id }) => id));
-
-  diagram.nodes.forEach(({ id }) => {
-    if (!outputNodeIds.has(id)) throw new Error(`ELK result is missing a node: ${id}`);
-  });
-  diagram.groups.forEach(({ id }) => {
-    if (!outputGroupIds.has(id)) throw new Error(`ELK result is missing a group: ${id}`);
-  });
+  const resolved = resolveElkLayeredOptions(options?.elk);
+  const placed = await layoutWithElkCore(
+    {
+      id: ELK_ROOT_ID,
+      layoutOptions: resolved.layoutOptions,
+      children: toElkChildrenTree(diagram, resolved.direction, (node) => toPlainElkNode(node, nodeSizes)),
+      edges: diagram.edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
+    },
+    {
+      nodeIds: diagram.nodes.map(({ id }) => id),
+      groupIds: diagram.groups.map(({ id }) => id),
+      edgeRouting: resolved.edgeRouting,
+    },
+  );
 
   const layout: DiagramLayout = {
-    nodes: elements.nodes,
-    groups: elements.groups,
-    edges: collectElkEdges(output).map((edge) =>
-      toDiagramLayoutEdge(edge, elements.groupOrigins, resolved.edgeRouting),
-    ),
-    initialView: toViewportPolicy(diagram, resolved.direction),
+    ...placed,
+    initialView: toElkViewportPolicy(diagram.nodes, diagram.edges, resolved.direction),
   };
   if (options?.nudgeObstacleNodes === true) {
     const straightened = straightenLayeredEdges(diagram, layout, resolved.direction);
@@ -527,7 +186,10 @@ export async function layoutElkLayeredDiagram(
   if (options?.bezierEdges === true) {
     // Border-to-border segments without obstacle nudging; the renderer sways
     // each two-point edge into a natural bezier and smooths any leftover route.
-    return toBezierRoutedLayout({ ...layout, edges: toStraightEdges(diagram, layout, toNodeRects(layout)) });
+    return toBezierRoutedLayout({
+      ...layout,
+      edges: toStraightEdges(diagram, layout, toNodeRects(layout.nodes, layout.groups)),
+    });
   }
   return layout;
 }

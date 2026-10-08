@@ -12,24 +12,27 @@ import {
 } from "@/client/widgets/diagram-renderer.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
+import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
 
 export type DiagramRendererProps = Readonly<{
-  ariaLabel?: string;
   annotations: AnnotationCanvasController;
-  diagram: Artifact;
-  onOpenSource: (href: string) => void;
+  artifact: Artifact;
+  ariaLabel?: string;
   commentEnabled?: boolean;
+  onOpenSource: (href: string) => void;
 }>;
 
 type DiagramRendererBaseProps = DiagramRendererProps &
   Readonly<{
-    calculateLayout: (diagram: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
+    calculateLayout: (artifact: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
     children?: ReactNode;
+    /** Renderers whose measured nodes differ from the stored graph (projections) supply their own. */
+    buildMeasurementNodes?: (artifact: Artifact, onOpenSource: (href: string) => void) => DiagramReactFlowNode[];
     buildRenderModel: (
-      diagram: Artifact,
+      artifact: Artifact,
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => DiagramReactFlowRenderModel;
@@ -52,28 +55,33 @@ function DiagramRendererContent({
   ariaLabel,
   annotations,
   children,
-  diagram,
+  artifact,
   onOpenSource,
   calculateLayout,
+  buildMeasurementNodes = buildDiagramMeasurementNodes,
   buildRenderModel,
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
 }: DiagramContentProps) {
-  const measurementNodes = useMemo(() => buildDiagramMeasurementNodes(diagram, onOpenSource), [diagram, onOpenSource]);
+  const measurementNodes = useMemo(
+    () => buildMeasurementNodes(artifact, onOpenSource),
+    [artifact, onOpenSource, buildMeasurementNodes],
+  );
   const searchLabels = useMemo(
-    () => new Map([...diagram.graph.nodes, ...diagram.graph.groups].map(({ id, title }) => [id, title])),
-    [diagram],
+    () =>
+      new Map([...artifact.diagram.graph.nodes, ...artifact.diagram.graph.groups].map(({ id, title }) => [id, title])),
+    [artifact],
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
-  const latestLayoutInputs = useRef({ diagram, getNodes, calculateLayout });
+  const latestLayoutInputs = useRef({ artifact, getNodes, calculateLayout });
 
   useEffect(() => {
-    latestLayoutInputs.current = { diagram, getNodes, calculateLayout };
-  }, [diagram, getNodes, calculateLayout]);
+    latestLayoutInputs.current = { artifact, getNodes, calculateLayout };
+  }, [artifact, getNodes, calculateLayout]);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,10 +91,10 @@ function DiagramRendererContent({
     const runLayout = () => {
       if (cancelled || hasStartedLayout.current) return;
       hasStartedLayout.current = true;
-      const { diagram, getNodes, calculateLayout } = latestLayoutInputs.current;
+      const { artifact, getNodes, calculateLayout } = latestLayoutInputs.current;
       let measuredNodeSizes: ReturnType<typeof resolveDiagramNodeSizes>;
       try {
-        measuredNodeSizes = resolveDiagramNodeSizes(diagram, getNodes());
+        measuredNodeSizes = resolveDiagramNodeSizes(artifact.diagram, getNodes());
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Diagram measurement failed.";
         setState({ status: "error", message });
@@ -94,7 +102,7 @@ function DiagramRendererContent({
       }
 
       setState({ status: "layouting" });
-      void calculateLayout(diagram, measuredNodeSizes)
+      void calculateLayout(artifact, measuredNodeSizes)
         .then((layout) => {
           if (!cancelled) setState({ status: "ready", layout });
         })
@@ -118,14 +126,14 @@ function DiagramRendererContent({
   const rendered = useMemo(() => {
     if (state.status !== "ready") return undefined;
     try {
-      return { status: "ready", model: buildRenderModel(diagram, state.layout, onOpenSource) } as const;
+      return { status: "ready", model: buildRenderModel(artifact, state.layout, onOpenSource) } as const;
     } catch (error: unknown) {
       return {
         status: "error",
         message: error instanceof Error ? error.message : "Diagram rendering failed.",
       } as const;
     }
-  }, [state, diagram, onOpenSource, buildRenderModel]);
+  }, [state, artifact, onOpenSource, buildRenderModel]);
 
   useLayoutEffect(() => {
     if (rendered?.status === "ready") setNodes([...rendered.model.nodes]);
@@ -134,18 +142,18 @@ function DiagramRendererContent({
   return (
     <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
       <ul aria-label="Diagram elements and connections" className="sr-only">
-        {diagram.graph.nodes.map((node) => (
+        {artifact.diagram.graph.nodes.map((node) => (
           <li key={node.id}>
             {node.kind}: {node.title}
           </li>
         ))}
-        {diagram.graph.edges.map((edge) => (
+        {artifact.diagram.graph.edges.map((edge) => (
           <li key={edge.id}>
             {edge.source} to {edge.target}
-            {edge.label ? (
+            {diagramEdgeDisplay(edge).label ? (
               <>
                 {": "}
-                <span>{edge.label}</span>
+                <span>{diagramEdgeDisplay(edge).label}</span>
               </>
             ) : null}
           </li>
@@ -178,7 +186,7 @@ function DiagramRendererContent({
         initialView={state.status === "ready" ? state.layout.initialView : undefined}
       >
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
-        <DiagramLinksPanel links={diagram.links ?? []} onOpenSource={onOpenSource} />
+        <DiagramLinksPanel links={artifact.links ?? []} onOpenSource={onOpenSource} />
       </DiagramCanvas>
       {children}
       {state.status === "measuring" || state.status === "layouting" ? (
@@ -202,24 +210,26 @@ export function DiagramRendererBase({
   ariaLabel,
   annotations,
   children,
-  diagram,
+  artifact,
   onOpenSource,
   calculateLayout,
+  buildMeasurementNodes,
   buildRenderModel,
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
 }: DiagramRendererBaseProps) {
-  const measurementKey = JSON.stringify(diagram);
+  const measurementKey = JSON.stringify(artifact);
 
   return (
     <ReactFlowProvider key={measurementKey}>
       <DiagramRendererContent
-        ariaLabel={ariaLabel ?? `${diagram.title} diagram`}
+        ariaLabel={ariaLabel ?? `${artifact.title} diagram`}
         annotations={annotations}
-        diagram={diagram}
+        artifact={artifact}
         onOpenSource={onOpenSource}
         calculateLayout={calculateLayout}
+        buildMeasurementNodes={buildMeasurementNodes}
         buildRenderModel={buildRenderModel}
         onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}

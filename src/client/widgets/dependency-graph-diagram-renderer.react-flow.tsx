@@ -17,6 +17,7 @@ import {
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
 import { type DependencyFocus, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
+import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
@@ -28,22 +29,22 @@ type DependencyRenderOptions = Readonly<{
 }>;
 
 export function buildDependencyGraphDiagramReactFlowRenderModel(
-  diagram: Artifact,
+  artifact: Artifact,
   layout: DiagramLayout,
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},
 ): DiagramReactFlowRenderModel {
-  const nodes = buildDiagramReactFlowNodes(diagram, layout, onOpenSource, options.nodesActivatable);
+  const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
   const cards = layout.nodes.map(({ id }) => ({
     id,
     bounds: getOrThrow(bounds.get(id), `Missing dependency node bounds: ${id}`),
   }));
-  const edgesById = new Map(diagram.graph.edges.map((edge) => [edge.id, edge]));
+  const edgesById = new Map(artifact.diagram.graph.edges.map((edge) => [edge.id, edge]));
   const placementById = new Map(layout.edges.map((placement) => [placement.id, placement]));
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeTargets = new Map<string, AnnotationTarget>();
-  const projections = projectDependencyEdges(diagram.graph, options.focus);
+  const projections = projectDependencyEdges(artifact.diagram.graph, options.focus);
   const bundles = [...(collectVirtualBundles(layout, bounds) ?? [])];
   const groupIds = new Set([...layout.groups.map(({ id }) => id), ...bundles.map(([, { id }]) => id)]);
   const hasGroupEndpoint = (sourceId: string, targetId: string) => groupIds.has(sourceId) || groupIds.has(targetId);
@@ -95,16 +96,17 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
         getOrThrow(bounds.get(edge.target), `Missing dependency target: ${edge.target}`),
         cards.filter(({ id }) => id !== edge.source && id !== edge.target).map(({ bounds }) => bounds),
       );
+      const display = diagramEdgeDisplay(edge);
       return {
         ...common,
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        ...(edge.label ? { label: edge.label } : {}),
+        ...(display.label ? { label: display.label } : {}),
         data: {
           ...route,
-          ...(edge.kind ? { eyebrow: edge.kind } : {}),
-          ...(edge.href ? { href: edge.href } : {}),
+          ...(display.kind ? { eyebrow: display.kind } : {}),
+          ...(display.href ? { href: display.href } : {}),
           onLinkActivate,
         },
       };

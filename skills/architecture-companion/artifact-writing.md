@@ -1,6 +1,6 @@
 # Artifact authoring rules
 
-These authoring rules apply to all generators. See [`schemas/artifact.schema.json`](schemas/artifact.schema.json) and its referenced schemas for JSON structure and constraints. Follow the `GENERATOR.md` of the generator selected after discovery for diagram-specific construction and execution instructions.
+These authoring rules apply to all generators. See [`schemas/artifact.schema.json`](schemas/artifact.schema.json) for JSON structure and constraints. Follow the `GENERATOR.md` of the generator selected after discovery for diagram-specific construction and execution instructions.
 
 ## Review questions and evidence
 

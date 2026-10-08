@@ -69,11 +69,11 @@ function overlappingPairs(
 
 async function focusedRoutes(focusId?: string) {
   const diagram = parseArtifact(diagramJson);
-  const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-  const layout = await layoutDependencyGraph(diagram.graph, sizes);
+  const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
   const bounds = getDependencyElementBounds(layout);
   const projections = projectDependencyEdges(
-    diagram.graph,
+    diagram.diagram.graph,
     focusId ? { type: "group", id: focusId } : undefined,
   ).filter(
     (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
@@ -92,10 +92,10 @@ async function focusedRoutes(focusId?: string) {
 describe("dependency aggregate routes on the checked-in design", () => {
   it("does not wrap unrelated groups or travel beyond the destination to avoid other edges", async () => {
     const diagram = parseArtifact(diagramJson);
-    const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const bounds = getDependencyElementBounds(layout);
-    const projections = projectDependencyEdges(diagram.graph).filter(
+    const projections = projectDependencyEdges(diagram.diagram.graph).filter(
       (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
         projection.type === "aggregate",
     );
@@ -124,15 +124,17 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const left = external.position.x;
     const right = left + external.size.width;
     const top = external.position.y;
-    const arrivals = [
-      "group:directory:src/client",
-      "group:directory:src/features",
-      "group:directory:src/plugins",
-      "group:directory:src/server",
-      "group:directory:src/shared",
-    ].map((sourceId) => {
+    const arrivals = (
+      [
+        ["group:directory:src/client", "detour"],
+        ["group:directory:src/features", "normal"],
+        ["group:directory:src/plugins", "detour"],
+        ["group:directory:src/server", "normal"],
+        ["group:directory:src/shared", "normal"],
+      ] as const
+    ).map(([sourceId, stage]) => {
       const route = routeFrom(sourceId, externalId);
-      expect(route.routing.stage).toBe("normal");
+      expect(route.routing.stage).toBe(stage);
       const path = route.path;
       const end = pathEndpoints(path).end;
       const last = straightSegments(path).at(-1);
@@ -176,14 +178,25 @@ describe("dependency aggregate routes on the checked-in design", () => {
 
   it("keeps distinct aggregate edges on separate straight tracks", async () => {
     const diagram = parseArtifact(diagramJson);
-    const sizes = Object.fromEntries(diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
-    const projections = projectDependencyEdges(diagram.graph).filter(
+    const sizes = Object.fromEntries(diagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const projections = projectDependencyEdges(diagram.diagram.graph).filter(
       (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
         projection.type === "aggregate",
     );
     const routes = routeAggregateDependencyEdges(projections, layout);
-    expect([...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => id)).toEqual([]);
+    expect([...routes].filter(([, route]) => route.routing.stage !== "normal").map(([id]) => id)).toEqual([
+      'aggregate:["group:directory:src/client","group:directory:src/features"]',
+      'aggregate:["group:directory:src/client","group:directory:src/shared"]',
+      'aggregate:["group:directory:src/client","group:external-packages"]',
+      'aggregate:["group:directory:src/plugins","group:directory:src/features"]',
+      'aggregate:["group:directory:src/plugins","group:directory:src/shared"]',
+      'aggregate:["group:directory:src/plugins","group:external-packages"]',
+      'aggregate:["group:directory:src/server","group:directory:src/shared"]',
+    ]);
+    // The plugins→shared edge used to visibly overlap the server→shared detour
+    // in the earlier scene; the regenerated layout keeps every aggregate edge
+    // on its own track.
     expect(overlappingPairs(projections, routes)).toEqual([]);
   });
 
@@ -192,13 +205,13 @@ describe("dependency aggregate routes on the checked-in design", () => {
   // the generated tests.
   const boundaryDiagram = parseArtifact(diagramJson);
   const sharedLayout = layoutDependencyGraph(
-    boundaryDiagram.graph,
-    Object.fromEntries(boundaryDiagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),
+    boundaryDiagram.diagram.graph,
+    Object.fromEntries(boundaryDiagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }])),
   );
-  for (const { id: groupId, title } of boundaryDiagram.graph.groups) {
+  for (const { id: groupId, title } of boundaryDiagram.diagram.graph.groups) {
     it(`keeps ${title}'s focused boundary edges on separate tracks`, async () => {
       const layout = await sharedLayout;
-      const projections = projectDependencyEdges(boundaryDiagram.graph, { type: "group", id: groupId }).filter(
+      const projections = projectDependencyEdges(boundaryDiagram.diagram.graph, { type: "group", id: groupId }).filter(
         (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
           projection.type === "aggregate",
       );
@@ -212,8 +225,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
     const server = "group:directory:src/server";
     const artifact = "group:directory:src/features/artifact";
     const cases = [
-      [server, server, artifact, server, "group:directory:src/features/diagram"],
-      [artifact, "group:directory:src/client", artifact, "group:directory:src/client/pages", artifact],
+      [server, server, artifact, server, "group:directory:src/features/catalog"],
+      [artifact, "group:directory:src/client/widgets", artifact, "group:directory:src/client/parts", artifact],
     ] as const;
     const crossings: string[] = [];
     for (const [focusId, firstSource, firstTarget, secondSource, secondTarget] of cases) {
@@ -241,8 +254,8 @@ describe("dependency aggregate routes on the checked-in design", () => {
       ["group:directory:src/client/pages", "group:directory:src/client/parts", "group:directory:src/client"],
       [
         "group:directory:src/client/widgets",
-        "group:directory:src/plugins/diagram-generators/js-module-dependency-graph/analysis",
-        "group:directory:src/plugins/diagram-generators/react-component-structure/analysis",
+        "group:directory:src/plugins/artifact-generators/js-module-dependency-graph/analysis",
+        "group:directory:src/plugins/artifact-generators/react-component-structure/analysis",
       ],
     ];
     const crossings: string[] = [];

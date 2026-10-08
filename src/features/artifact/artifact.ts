@@ -4,290 +4,135 @@ import {
   type ArtifactGeneratorReference,
   artifactGeneratorReferenceSchema,
 } from "@/features/artifact-generator/artifact-generator-reference";
-import { diagramGraphSchema, diagramLinkSchema } from "@/features/diagram/diagram-graph";
-import { diagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
+import { componentStructureDiagramLayoutConfigSchema } from "@/features/diagram/_layout/component-structure-diagram-layout";
+import { dependencyGraphLayoutConfigSchema } from "@/features/diagram/_layout/dependency-graph-layout";
+import { elkLayeredDiagramLayoutConfigSchema } from "@/features/diagram/_layout/elk-layered-diagram-layout";
+import { sequenceDiagramLayoutConfigSchema } from "@/features/diagram/_layout/sequence-diagram-layout";
+import {
+  componentStructureDiagramGraphSchema,
+  dependencyDiagramGraphSchema,
+  diagramGraphSchema,
+  diagramLinkSchema,
+  sequenceDiagramGraphSchema,
+} from "@/features/diagram/diagram-graph";
 
 export const artifactIdSchema = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
 
+// The envelope holds an artifact's authoring and regeneration context; the
+// varying part is the single `diagram` field below, so every envelope field
+// is declared once.
+const artifactBaseShape = {
+  id: artifactIdSchema,
+  title: z.string().min(1),
+  updatedAt: z.string().datetime(),
+  vcs: z
+    .object({
+      revision: z.string().min(1),
+      divergesFromRevision: z.boolean(),
+    })
+    .strict()
+    .optional(),
+  generator: artifactGeneratorReferenceSchema,
+  instructions: z.string().min(1),
+  links: z.array(diagramLinkSchema).readonly().optional(),
+};
+
+// One layout-graph pair: the layout decides which graph contract applies, and
+// each member carries both, so comparing `layout.id` narrows the graph type.
+// zod cannot discriminate on the nested `layout.id` path, so this is a plain
+// union - a failure reports issues from every member instead of one.
+const diagramMemberSchema = <Layout extends z.ZodTypeAny, Graph extends z.ZodTypeAny>(layout: Layout, graph: Graph) =>
+  z.object({ layout, graph }).strict();
+
+export const elkLayeredDiagramSchema = diagramMemberSchema(elkLayeredDiagramLayoutConfigSchema, diagramGraphSchema);
+export const sequenceDiagramSchema = diagramMemberSchema(sequenceDiagramLayoutConfigSchema, sequenceDiagramGraphSchema);
+export const dependencyGraphDiagramSchema = diagramMemberSchema(
+  dependencyGraphLayoutConfigSchema,
+  dependencyDiagramGraphSchema,
+);
+export const componentStructureDiagramSchema = diagramMemberSchema(
+  componentStructureDiagramLayoutConfigSchema,
+  componentStructureDiagramGraphSchema,
+);
+
+export type ElkLayeredDiagram = z.infer<typeof elkLayeredDiagramSchema>;
+export type SequenceDiagram = z.infer<typeof sequenceDiagramSchema>;
+export type DependencyGraphDiagram = z.infer<typeof dependencyGraphDiagramSchema>;
+export type ComponentStructureDiagram = z.infer<typeof componentStructureDiagramSchema>;
+export type Diagram = z.infer<typeof diagramSchema>;
+
+export const diagramSchema = z.union([
+  elkLayeredDiagramSchema,
+  sequenceDiagramSchema,
+  dependencyGraphDiagramSchema,
+  componentStructureDiagramSchema,
+]);
+
 export const artifactSchema = z
   .object({
-    id: artifactIdSchema,
-    title: z.string().min(1),
-    updatedAt: z.string().datetime(),
-    vcs: z
-      .object({
-        revision: z.string().min(1),
-        divergesFromRevision: z.boolean(),
-      })
-      .strict()
-      .optional(),
-    generator: artifactGeneratorReferenceSchema,
-    instructions: z.string().min(1),
-    layout: diagramLayoutConfigSchema,
-    links: z.array(diagramLinkSchema).readonly().optional(),
-    graph: diagramGraphSchema,
+    ...artifactBaseShape,
+    diagram: diagramSchema,
   })
-  .strict()
-  .superRefine((diagram, context) => {
-    if (diagram.layout.id === "sequence" && diagram.graph.groups.length > 0) {
-      context.addIssue({
-        code: "custom",
-        path: ["graph", "groups"],
-        message: "Sequence layout does not support diagram groups",
-      });
-    }
-    if (diagram.layout.id === "sequence" && !diagram.graph.nodes.some((node) => node.type === "lifeline")) {
-      context.addIssue({
-        code: "custom",
-        path: ["graph", "nodes"],
-        message: "Sequence layout requires at least one lifeline",
-      });
-    }
-    if (diagram.layout.id === "sequence") {
-      diagram.graph.nodes.forEach((node, index) => {
-        if (node.type !== "lifeline" && node.type !== "fragment") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "nodes", index, "type"],
-            message: "Sequence layout supports only lifeline and fragment nodes",
-          });
-        }
-      });
-      diagram.graph.edges.forEach((edge, index) => {
-        if (edge.type !== "message") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "edges", index, "type"],
-            message: "Sequence layout supports only message edges",
-          });
-        }
-      });
-    }
-
-    if (diagram.layout.id === "dependency-graph") {
-      diagram.graph.nodes.forEach((node, index) => {
-        if (node.type !== "default") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "nodes", index, "type"],
-            message: "Dependency graph layout supports only default nodes",
-          });
-        }
-      });
-      diagram.graph.edges.forEach((edge, index) => {
-        if (edge.type !== "default") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "edges", index, "type"],
-            message: "Dependency graph layout supports only default edges",
-          });
-        }
-      });
-    }
-
-    const graphElements = [
-      ...diagram.graph.groups.map((element, index) => ({
-        element,
-        path: ["graph", "groups", index, "id"] as const,
-      })),
-      ...diagram.graph.nodes.map((element, index) => ({
-        element,
-        path: ["graph", "nodes", index, "id"] as const,
-      })),
-      ...diagram.graph.edges.map((element, index) => ({
-        element,
-        path: ["graph", "edges", index, "id"] as const,
-      })),
-    ];
-    graphElements.forEach(({ element, path }, index) => {
-      if (graphElements.findIndex(({ element: candidate }) => candidate.id === element.id) !== index) {
-        context.addIssue({
-          code: "custom",
-          path: [...path],
-          message: `Duplicate diagram element ID: ${element.id}`,
-        });
-      }
-    });
-
-    const groupIds = new Set(diagram.graph.groups.map(({ id }) => id));
-    const nodeById = new Map(diagram.graph.nodes.map((node) => [node.id, node]));
-    const groupById = Object.fromEntries(diagram.graph.groups.map((group) => [group.id, group]));
-    const messageEdges = diagram.graph.edges.filter((edge) => edge.type === "message");
-    const messageById = new Map(messageEdges.map((edge) => [edge.id, edge]));
-    const messageIndexes = new Map(messageEdges.map((edge, index) => [edge.id, index]));
-
-    diagram.graph.groups.forEach((group, index) => {
-      if (group.parentId && !groupIds.has(group.parentId)) {
-        context.addIssue({
-          code: "custom",
-          path: ["graph", "groups", index, "parentId"],
-          message: `Diagram group ${group.id} has unknown parent ${group.parentId}`,
-        });
-      }
-    });
-
-    const containsGroupCycle = (groupId: string, ancestors: readonly string[]): boolean => {
-      const group = groupById[groupId];
-      if (!group?.parentId) return false;
-      if (ancestors.includes(group.parentId)) return true;
-      return containsGroupCycle(group.parentId, [...ancestors, group.parentId]);
-    };
-
-    if (diagram.graph.groups.some(({ id }) => containsGroupCycle(id, [id]))) {
-      context.addIssue({
-        code: "custom",
-        path: ["graph", "groups"],
-        message: "Diagram group hierarchy contains a cycle",
-      });
-    }
-
-    diagram.graph.nodes.forEach((node, index) => {
-      if (node.groupId && !groupIds.has(node.groupId)) {
-        context.addIssue({
-          code: "custom",
-          path: ["graph", "nodes", index, "groupId"],
-          message: `Diagram node ${node.id} belongs to unknown group ${node.groupId}`,
-        });
-      }
-
-      if (node.type === "lifeline") {
-        const activationIds = new Set<string>();
-        node.activations.forEach((activation, activationIndex) => {
-          if (activationIds.has(activation.id)) {
-            context.addIssue({
-              code: "custom",
-              path: ["graph", "nodes", index, "activations", activationIndex, "id"],
-              message: `Duplicate activation ID: ${activation.id}`,
-            });
-          }
-          activationIds.add(activation.id);
-
-          for (const [boundaryName, boundary] of [
-            ["startsAt", activation.startsAt],
-            ["endsAt", activation.endsAt],
-          ] as const) {
-            const message = messageById.get(boundary.messageId);
-            if (!message) {
-              context.addIssue({
-                code: "custom",
-                path: ["graph", "nodes", index, "activations", activationIndex, boundaryName, "messageId"],
-                message: `Activation ${activation.id} references unknown message ${boundary.messageId}`,
-              });
-              continue;
-            }
-
-            const endpointNodeId = boundary.endpoint === "source" ? message.source : message.target;
-            if (endpointNodeId !== node.id) {
-              context.addIssue({
-                code: "custom",
-                path: ["graph", "nodes", index, "activations", activationIndex, boundaryName],
-                message: `Activation ${activation.id} ${boundaryName} does not belong to lifeline ${node.id}`,
-              });
-            }
-          }
-
-          const startIndex = messageIndexes.get(activation.startsAt.messageId);
-          const endIndex = messageIndexes.get(activation.endsAt.messageId);
-          if (startIndex !== undefined && endIndex !== undefined && startIndex > endIndex) {
-            context.addIssue({
-              code: "custom",
-              path: ["graph", "nodes", index, "activations", activationIndex],
-              message: `Activation ${activation.id} ends before it starts`,
-            });
-          }
-        });
-      }
-
-      if (node.type === "fragment") {
-        const branchIds = new Set<string>();
-        node.branches.forEach((branch, branchIndex) => {
-          if (branchIds.has(branch.id)) {
-            context.addIssue({
-              code: "custom",
-              path: ["graph", "nodes", index, "branches", branchIndex, "id"],
-              message: `Duplicate fragment branch ID: ${branch.id}`,
-            });
-          }
-          branchIds.add(branch.id);
-
-          const startIndex = messageIndexes.get(branch.startMessageId);
-          const endIndex = messageIndexes.get(branch.endMessageId);
-          if (startIndex === undefined || endIndex === undefined) {
-            if (startIndex === undefined) {
-              context.addIssue({
-                code: "custom",
-                path: ["graph", "nodes", index, "branches", branchIndex, "startMessageId"],
-                message: `Fragment branch ${branch.id} references unknown message ${branch.startMessageId}`,
-              });
-            }
-            if (endIndex === undefined) {
-              context.addIssue({
-                code: "custom",
-                path: ["graph", "nodes", index, "branches", branchIndex, "endMessageId"],
-                message: `Fragment branch ${branch.id} references unknown message ${branch.endMessageId}`,
-              });
-            }
-          } else if (startIndex > endIndex) {
-            context.addIssue({
-              code: "custom",
-              path: ["graph", "nodes", index, "branches", branchIndex],
-              message: `Fragment branch ${branch.id} ends before it starts`,
-            });
-          }
-        });
-      }
-    });
-
-    diagram.graph.edges.forEach((edge, index) => {
-      const source = nodeById.get(edge.source);
-      const target = nodeById.get(edge.target);
-      if (!source) {
-        context.addIssue({
-          code: "custom",
-          path: ["graph", "edges", index, "source"],
-          message: `Diagram edge ${edge.id} sources unknown node ${edge.source}`,
-        });
-      }
-      if (!target) {
-        context.addIssue({
-          code: "custom",
-          path: ["graph", "edges", index, "target"],
-          message: `Diagram edge ${edge.id} targets unknown node ${edge.target}`,
-        });
-      }
-      if (edge.type === "message") {
-        if (source?.type !== "lifeline") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "edges", index, "source"],
-            message: `Message edge ${edge.id} source must be a lifeline`,
-          });
-        }
-        if (target?.type !== "lifeline") {
-          context.addIssue({
-            code: "custom",
-            path: ["graph", "edges", index, "target"],
-            message: `Message edge ${edge.id} target must be a lifeline`,
-          });
-        }
-      }
-    });
-  });
+  .strict();
 
 type ParsedArtifact = z.infer<typeof artifactSchema>;
 export type Artifact = Omit<ParsedArtifact, "generator"> & {
   generator: ArtifactGeneratorReference;
 };
 
-export function parseArtifact(input: unknown): Artifact {
-  const result = artifactSchema.safeParse(input);
+// Layout ids sit inside the `diagram` pair, so plain comparisons do not
+// narrow the artifact's diagram union; these guards carry the pairing instead.
+export function isElkLayeredArtifact(artifact: Artifact): artifact is Artifact & { diagram: ElkLayeredDiagram } {
+  return artifact.diagram.layout.id === "elk-layered";
+}
 
-  if (!result.success) {
-    const messages = result.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid artifact: ${messages}`, { cause: result.error });
+export function isComponentStructureArtifact(
+  artifact: Artifact,
+): artifact is Artifact & { diagram: ComponentStructureDiagram } {
+  return artifact.diagram.layout.id === "component-structure";
+}
+
+// zod cannot discriminate on the nested `layout.id` path, and a plain union
+// reports only "Invalid input" on failure. Parsing dispatches on the layout
+// id first so failures carry the matching member's specific issues; the full
+// schema still runs afterwards to report envelope problems under their own
+// paths.
+const diagramMembersByLayoutId = {
+  "elk-layered": elkLayeredDiagramSchema,
+  sequence: sequenceDiagramSchema,
+  "dependency-graph": dependencyGraphDiagramSchema,
+  "component-structure": componentStructureDiagramSchema,
+} as const;
+
+function toIssueMessages(error: z.ZodError): string {
+  return error.issues
+    .map(({ message, path }) => (path.length > 0 ? `${path.join(".")}: ${message}` : message))
+    .join("; ");
+}
+
+export function parseArtifact(input: unknown): Artifact {
+  const layout = (input as { diagram?: { layout?: { id?: unknown } } } | null)?.diagram?.layout;
+  if (layout != null && typeof layout === "object" && typeof layout.id === "string") {
+    const member = diagramMembersByLayoutId[layout.id as keyof typeof diagramMembersByLayoutId];
+    // An unknown layout id has no member to report against; name it directly.
+    if (member === undefined) {
+      throw new Error(`Invalid artifact: diagram.layout.id: Unsupported layout configuration: ${layout.id}`);
+    }
+    const diagram = (input as { diagram?: unknown }).diagram;
+    const diagramResult = member.safeParse(diagram);
+    if (!diagramResult.success) {
+      const issues = new z.ZodError(
+        diagramResult.error.issues.map((issue) => ({ ...issue, path: ["diagram", ...issue.path] })),
+      );
+      throw new Error(`Invalid artifact: ${toIssueMessages(issues)}`, { cause: issues });
+    }
   }
 
+  const result = artifactSchema.safeParse(input);
+  if (!result.success) {
+    throw new Error(`Invalid artifact: ${toIssueMessages(result.error)}`, { cause: result.error });
+  }
   return result.data as Artifact;
 }

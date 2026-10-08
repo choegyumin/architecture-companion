@@ -13,20 +13,22 @@ const sequenceDiagram = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview participant interactions.\n\n## Regeneration\nRebuild lifelines and messages from the interaction flow.",
-  layout: { id: "sequence" },
-  graph: {
-    groups: [],
-    nodes: [
-      {
-        id: "participant",
-        type: "lifeline",
-        kind: "participant",
-        title: "Participant",
-        links: [{ href: "source:///src/participant.ts" }],
-        activations: [],
-      },
-    ],
-    edges: [],
+  diagram: {
+    layout: { id: "sequence" },
+    graph: {
+      groups: [],
+      nodes: [
+        {
+          id: "participant",
+          type: "lifeline",
+          kind: "participant",
+          title: "Participant",
+          links: [{ href: "source:///src/participant.ts" }],
+          activations: [],
+        },
+      ],
+      edges: [],
+    },
   },
 } satisfies Artifact;
 
@@ -34,32 +36,35 @@ describe("diagram renderer React Flow adapter", () => {
   it("converts default artifact elements to the generic React Flow contract", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        ...sequenceDiagram.graph,
-        groups: [{ id: "group", title: "Group", description: "Boundary" }],
-        nodes: [
-          {
-            id: "step",
-            type: "default",
-            kind: "action",
-            title: "Review",
-            description: "Inspect the change",
-            details: ["Read the diff"],
-            groupId: "group",
-            links: [{ href: "source:///src/review.ts", text: "Review source" }],
-          },
-        ],
-        edges: [
-          {
-            id: "next",
-            type: "default",
-            source: "step",
-            target: "step",
-            kind: "result",
-            label: "Continue",
-            href: "https://example.com/review",
-          },
-        ],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          ...sequenceDiagram.diagram.graph,
+          groups: [{ id: "group", title: "Group", description: "Boundary" }],
+          nodes: [
+            {
+              id: "step",
+              type: "default",
+              kind: "action",
+              title: "Review",
+              description: "Inspect the change",
+              details: ["Read the diff"],
+              groupId: "group",
+              links: [{ href: "source:///src/review.ts", text: "Review source" }],
+            },
+          ],
+          edges: [
+            {
+              id: "next",
+              type: "default",
+              source: "step",
+              target: "step",
+              kind: "result",
+              label: "Continue",
+              href: "https://example.com/review",
+            },
+          ],
+        },
       },
     } satisfies Artifact;
     const layout = {
@@ -131,10 +136,13 @@ describe("diagram renderer React Flow adapter", () => {
   it("omits the card eyebrow when a default node has no kind", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        groups: [],
-        nodes: [{ id: "component", type: "default", title: "Component" }],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ id: "component", type: "default", title: "Component" }],
+          edges: [],
+        },
       },
     } satisfies Artifact;
 
@@ -144,24 +152,27 @@ describe("diagram renderer React Flow adapter", () => {
     expect(measurementNode?.data).not.toHaveProperty("eyebrow");
   });
 
-  it("keeps direct render edges unlabeled", () => {
+  it("keeps inline render edges unlabeled", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        groups: [],
-        nodes: [
-          { id: "parent", type: "default", kind: "React component", title: "Parent", links: [] },
-          { id: "child", type: "default", kind: "React component", title: "Child", links: [] },
-        ],
-        edges: [
-          {
-            id: "render",
-            type: "default",
-            source: "parent",
-            target: "child",
-            kind: "direct-render",
-          },
-        ],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            { id: "parent", type: "default", kind: "React component", title: "Parent", links: [] },
+            { id: "child", type: "default", kind: "React component", title: "Child", links: [] },
+          ],
+          edges: [
+            {
+              id: "render",
+              type: "default",
+              source: "parent",
+              target: "child",
+              kind: "inline-render",
+            },
+          ],
+        },
       },
     } satisfies Artifact;
     const layout = {
@@ -191,22 +202,25 @@ describe("diagram renderer React Flow adapter", () => {
   it("preserves case-sensitive prop names in relationship kinds", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        groups: [],
-        nodes: [
-          { id: "renderer", type: "default", kind: "React component", title: "Renderer" },
-          { id: "content", type: "default", kind: "React component", title: "Content" },
-        ],
-        edges: [
-          {
-            id: "render",
-            type: "default",
-            source: "renderer",
-            target: "content",
-            kind: "RENDER (fooBar)",
-            label: "from App",
-          },
-        ],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            { id: "renderer", type: "default", kind: "React component", title: "Renderer" },
+            { id: "content", type: "default", kind: "React component", title: "Content" },
+          ],
+          edges: [
+            {
+              id: "render",
+              type: "default",
+              source: "renderer",
+              target: "content",
+              kind: "RENDER (fooBar)",
+              label: "from App",
+            },
+          ],
+        },
       },
     } satisfies Artifact;
     const layout = {
@@ -246,7 +260,9 @@ describe("diagram renderer React Flow adapter", () => {
     const [lifeline] = buildDiagramMeasurementNodes(sequenceDiagram, vi.fn());
     if (!lifeline) throw new Error("Expected a measurement node.");
 
-    expect(resolveDiagramNodeSizes(sequenceDiagram, [{ ...lifeline, measured: { height: 320, width: 240 } }])).toEqual({
+    expect(
+      resolveDiagramNodeSizes(sequenceDiagram.diagram, [{ ...lifeline, measured: { height: 320, width: 240 } }]),
+    ).toEqual({
       participant: { height: 320, width: 240 },
     });
   });
@@ -254,25 +270,28 @@ describe("diagram renderer React Flow adapter", () => {
   it("uses renderer sizes for node types that are not measured", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        ...sequenceDiagram.graph,
-        nodes: [
-          { id: "default", type: "default", kind: "step", title: "Default" },
-          { id: "lifeline", type: "lifeline", kind: "participant", title: "Lifeline", activations: [] },
-          {
-            id: "fragment",
-            type: "fragment",
-            kind: "phase",
-            title: "Fragment",
-            operator: "opt",
-            branches: [],
-          },
-        ],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          ...sequenceDiagram.diagram.graph,
+          nodes: [
+            { id: "default", type: "default", kind: "step", title: "Default" },
+            { id: "lifeline", type: "lifeline", kind: "participant", title: "Lifeline", activations: [] },
+            {
+              id: "fragment",
+              type: "fragment",
+              kind: "phase",
+              title: "Fragment",
+              operator: "opt",
+              branches: [],
+            },
+          ],
+        },
       },
     } satisfies Artifact;
     const nodes = buildDiagramMeasurementNodes(diagram, vi.fn());
 
-    expect(resolveDiagramNodeSizes(diagram, nodes)).toEqual({
+    expect(resolveDiagramNodeSizes(diagram.diagram, nodes)).toEqual({
       default: { height: 144, width: 288 },
       lifeline: { height: 160, width: 224 },
       fragment: { height: 160, width: 448 },
@@ -280,7 +299,7 @@ describe("diagram renderer React Flow adapter", () => {
   });
 
   it("rejects a diagram node without a React Flow measurement node", () => {
-    expect(() => resolveDiagramNodeSizes(sequenceDiagram, [])).toThrow(
+    expect(() => resolveDiagramNodeSizes(sequenceDiagram.diagram, [])).toThrow(
       "React Flow did not measure diagram node: participant",
     );
   });
@@ -288,41 +307,44 @@ describe("diagram renderer React Flow adapter", () => {
   it("renders sequence message direction and type with UML edge notation", () => {
     const diagram = {
       ...sequenceDiagram,
-      graph: {
-        ...sequenceDiagram.graph,
-        nodes: [
-          {
-            id: "client",
-            type: "lifeline",
-            kind: "participant",
-            title: "Client",
-            links: [],
-            activations: [],
-          },
-          {
-            id: "server",
-            type: "lifeline",
-            kind: "participant",
-            title: "Server",
-            links: [],
-            activations: [],
-          },
-        ],
-        edges: [
-          { id: "sync", type: "message", source: "client", target: "server", messageType: "sync" },
-          { id: "async", type: "message", source: "client", target: "server", messageType: "async" },
-          { id: "return", type: "message", source: "server", target: "client", messageType: "return" },
-        ],
+      diagram: {
+        ...sequenceDiagram.diagram,
+        graph: {
+          ...sequenceDiagram.diagram.graph,
+          nodes: [
+            {
+              id: "client",
+              type: "lifeline",
+              kind: "participant",
+              title: "Client",
+              links: [],
+              activations: [],
+            },
+            {
+              id: "server",
+              type: "lifeline",
+              kind: "participant",
+              title: "Server",
+              links: [],
+              activations: [],
+            },
+          ],
+          edges: [
+            { id: "sync", type: "message", source: "client", target: "server", messageType: "sync" },
+            { id: "async", type: "message", source: "client", target: "server", messageType: "async" },
+            { id: "return", type: "message", source: "server", target: "client", messageType: "return" },
+          ],
+        },
       },
     } satisfies Artifact;
     const layout = {
-      nodes: diagram.graph.nodes.map(({ id }, index) => ({
+      nodes: diagram.diagram.graph.nodes.map(({ id }, index) => ({
         id,
         position: { x: index * 300, y: 0 },
         size: { width: 224, height: 400 },
       })),
       groups: [],
-      edges: diagram.graph.edges.map(({ id }, index) => ({
+      edges: diagram.diagram.graph.edges.map(({ id }, index) => ({
         id,
         points: [
           { x: 112, y: 200 + index * 72 },
@@ -351,7 +373,7 @@ describe("diagram renderer React Flow adapter", () => {
     });
 
     const elkEdges = buildElkLayeredDiagramReactFlowRenderModel(
-      { ...diagram, layout: { id: "elk-layered" } },
+      { ...diagram, diagram: { ...diagram.diagram, layout: { id: "elk-layered" } } },
       layout,
       vi.fn(),
     ).edges;

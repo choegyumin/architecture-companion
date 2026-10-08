@@ -21,21 +21,23 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the trigger and confirmation from src/workflow.ts.",
-      layout: { id: "elk-layered" },
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
-      graph: {
-        groups: [],
-        nodes: [
-          {
-            type: "default",
-            id: "submit",
-            kind: "trigger",
-            title: "Checkout requested",
-            links: [{ href: "source:///src/workflow.ts" }],
-          },
-          { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
-        ],
-        edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            {
+              type: "default",
+              id: "submit",
+              kind: "trigger",
+              title: "Checkout requested",
+              links: [{ href: "source:///src/workflow.ts" }],
+            },
+            { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
+          ],
+          edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+        },
       },
     },
   ],
@@ -47,21 +49,23 @@ const catalog = {
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts and its tests.",
-      layout: { id: "elk-layered" },
-      graph: {
-        groups: [],
-        nodes: [
-          {
-            type: "default",
-            id: "checkout-page",
-            kind: "component",
-            title: "Checkout page",
-            description: "Coordinates checkout",
-            details: ["Submit the order"],
-            links: [{ href: "source:///src/checkout-page.ts" }, { href: "source:///src/checkout-page.test.ts" }],
-          },
-        ],
-        edges: [],
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [
+            {
+              type: "default",
+              id: "checkout-page",
+              kind: "component",
+              title: "Checkout page",
+              description: "Coordinates checkout",
+              details: ["Submit the order"],
+              links: [{ href: "source:///src/checkout-page.ts" }, { href: "source:///src/checkout-page.test.ts" }],
+            },
+          ],
+          edges: [],
+        },
       },
     },
   ],

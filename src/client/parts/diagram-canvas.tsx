@@ -21,6 +21,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -30,6 +31,14 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
+import { DecisionNode, type DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
+import {
+  defaultEdgeHighlight,
+  EDGE_HIGHLIGHT_CLASS,
+  type EdgeHighlightOrigin,
+  resetEdgeHighlight,
+  subscribeEdgeHighlight,
+} from "@/shared/react-flow/edge-highlight";
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
@@ -43,7 +52,8 @@ export type DiagramReactFlowNode =
   | LabeledGroupReactFlowNode
   | LifelineReactFlowNode
   | FragmentReactFlowNode
-  | BoundingGroupReactFlowNode;
+  | BoundingGroupReactFlowNode
+  | DecisionReactFlowNode;
 export type DiagramReactFlowEdge = RouteReactFlowEdge | MessageReactFlowEdge;
 
 type NodeRendererRegistry<NodeType extends Node> = {
@@ -55,6 +65,7 @@ type EdgeRendererRegistry<EdgeType extends Edge> = {
 
 const diagramNodeTypes = {
   card: CardNode,
+  decision: DecisionNode,
   "labeled-group": LabeledGroupNode,
   fragment: FragmentNode,
   lifeline: LifelineNode,
@@ -78,6 +89,12 @@ type DiagramCanvasProps = Readonly<{
   onNodeActivate?: (nodeId: string) => void;
   onPaneActivate?: () => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
+  /**
+   * Maps a highlight origin to the edges it lights. Unset defaults to the
+   * origin's own route (node origins light nothing); a renderer that tracks
+   * its own graph can widen the highlight to a whole path.
+   */
+  resolveEdgeHighlight?: (origin: EdgeHighlightOrigin) => ReadonlySet<string>;
   initialView?: DiagramViewFramingOptions;
 }>;
 
@@ -92,10 +109,12 @@ export function DiagramCanvas({
   onNodeActivate,
   onPaneActivate,
   onNodesChange,
+  resolveEdgeHighlight,
   initialView,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<DiagramReactFlowNode, DiagramReactFlowEdge>>();
+  const [highlightOrigin, setHighlightOrigin] = useState<EdgeHighlightOrigin | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isMacOS = platform.os.mac;
@@ -121,6 +140,35 @@ export function DiagramCanvas({
       searchInputRef.current?.focus();
     });
   }, [isMacOS, searchEnabled]);
+
+  // Labels report highlights through the module-level channel; the canvas
+  // decides which edges light. Dropping the held origin on unmount keeps a
+  // vanished label from lighting edges in the next mounted diagram.
+  useEffect(() => {
+    const unsubscribe = subscribeEdgeHighlight(setHighlightOrigin);
+    return () => {
+      unsubscribe();
+      resetEdgeHighlight();
+    };
+  }, []);
+  const highlightedEdges = useMemo(
+    () =>
+      highlightOrigin == null
+        ? null
+        : (resolveEdgeHighlight?.(highlightOrigin) ?? defaultEdgeHighlight(highlightOrigin)),
+    [highlightOrigin, resolveEdgeHighlight],
+  );
+  const highlightStampedEdges = useMemo(() => {
+    if (highlightedEdges == null || highlightedEdges.size === 0) return edges;
+    return edges.map((edge) =>
+      highlightedEdges.has(edge.id)
+        ? {
+            ...edge,
+            className: edge.className == null ? EDGE_HIGHLIGHT_CLASS : `${edge.className} ${EDGE_HIGHLIGHT_CLASS}`,
+          }
+        : edge,
+    );
+  }, [edges, highlightedEdges]);
 
   const fitView = useCallback(async () => {
     if (!flowInstance || !initialView || !canvasRef.current) return;
@@ -192,7 +240,7 @@ export function DiagramCanvas({
         className={className}
         colorMode={resolvedTheme}
         style={{ "--xy-background-color": "var(--surface)" } as CSSProperties}
-        edges={edges}
+        edges={highlightStampedEdges}
         edgesFocusable={false}
         edgeTypes={diagramEdgeTypes}
         elementsSelectable={false}

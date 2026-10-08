@@ -1,45 +1,21 @@
 import { z } from "zod";
 
 import { artifactSchema } from "@/features/artifact/artifact";
-import { diagramGraphSchema } from "@/features/diagram/diagram-graph";
 
-export const generatedSchemaFileNames = ["diagram-graph.schema.json", "artifact.schema.json"] as const;
+export const generatedSchemaFileNames = ["artifact.schema.json"] as const;
 
 type GeneratedSchemaFileName = (typeof generatedSchemaFileNames)[number];
-type SchemaId = "Artifact" | "DiagramGraph";
 
-type SchemaDefinition = Readonly<{
-  fileName: GeneratedSchemaFileName;
-  id: SchemaId;
-  schema: z.ZodType;
-}>;
-
-const schemaDefinitions: readonly SchemaDefinition[] = [
-  { id: "DiagramGraph", fileName: "diagram-graph.schema.json", schema: diagramGraphSchema },
-  { id: "Artifact", fileName: "artifact.schema.json", schema: artifactSchema },
-];
-
-function resolveSchemaUri(id: string): string {
-  const definition = schemaDefinitions.find((candidate) => candidate.id === id);
-  if (!definition) throw new Error(`Unknown schema ID: ${id}`);
-  return `./${definition.fileName}`;
-}
-
+// One schema document holds the whole artifact contract: every union member
+// and every shared subschema the `.meta({ id })` calls name, rendered once in
+// `$defs` and referenced, instead of one inline copy per union member. The
+// single-root form emits no `$id`, so the file identity is stamped here.
 export function generateSchemaSources(): Readonly<Record<GeneratedSchemaFileName, string>> {
-  const registry = z.registry<{ id: string }>();
-  schemaDefinitions.forEach(({ id, schema }) => registry.add(schema, { id }));
-
-  const { schemas } = z.toJSONSchema(registry, {
+  const { $schema, ...schema } = z.toJSONSchema(artifactSchema, {
     target: "draft-2020-12",
     io: "input",
-    uri: resolveSchemaUri,
-  });
-
-  return Object.fromEntries(
-    schemaDefinitions.map(({ fileName, id }) => {
-      const schema = schemas[id];
-      if (!schema) throw new Error(`Zod did not generate schema: ${id}`);
-      return [fileName, `${JSON.stringify(schema, null, 2)}\n`];
-    }),
-  ) as Record<GeneratedSchemaFileName, string>;
+    reused: "inline",
+  }) as Record<string, unknown>;
+  const document = { $schema, $id: "./artifact.schema.json", ...schema };
+  return { "artifact.schema.json": `${JSON.stringify(document, null, 2)}\n` };
 }

@@ -41,119 +41,144 @@
       "type": "string",
       "minLength": 1
     },
-    "layout": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "elk-layered"
-            },
-            "options": {
-              "type": "object",
-              "properties": {
-                "nudgeObstacleNodes": {
-                  "type": "boolean"
-                },
-                "bezierEdges": {
-                  "type": "boolean"
-                },
-                "elk": {
-                  "type": "object",
-                  "properties": {
-                    "direction": {
-                      "type": "string",
-                      "enum": [
-                        "UP",
-                        "DOWN",
-                        "LEFT",
-                        "RIGHT"
-                      ]
-                    },
-                    "layered.edgeRouting": {
-                      "type": "string",
-                      "enum": [
-                        "ORTHOGONAL",
-                        "POLY_LINE",
-                        "SPLINES"
-                      ]
-                    },
-                    "layered.nodePlacement.strategy": {
-                      "type": "string",
-                      "enum": [
-                        "BRANDES_KOEPF",
-                        "LINEAR_SEGMENTS",
-                        "SIMPLE",
-                        "MIN_WIDTH",
-                        "INTERACTIVE"
-                      ]
-                    }
-                  },
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "sequence"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "const": "dependency-graph"
-            }
-          },
-          "required": [
-            "id"
-          ],
-          "additionalProperties": false
-        }
-      ]
-    },
     "links": {
       "readOnly": true,
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string",
-            "minLength": 1
-          },
-          "href": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "href"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/Link"
       }
     },
-    "graph": {
-      "$ref": "./diagram-graph.schema.json"
+    "diagram": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "elk-layered"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "nudgeObstacleNodes": {
+                      "type": "boolean"
+                    },
+                    "bezierEdges": {
+                      "type": "boolean"
+                    },
+                    "elk": {
+                      "$ref": "#/$defs/ElkOptions"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/DiagramGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "sequence"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/SequenceGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "dependency-graph"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/DependencyGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "const": "component-structure"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "elk": {
+                      "$ref": "#/$defs/ElkOptions"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/ComponentStructureGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   },
   "required": [
@@ -162,8 +187,851 @@
     "updatedAt",
     "generator",
     "instructions",
-    "layout",
-    "graph"
+    "diagram"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "Link": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "href"
+      ],
+      "additionalProperties": false
+    },
+    "ElkOptions": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "UP",
+            "DOWN",
+            "LEFT",
+            "RIGHT"
+          ]
+        },
+        "layered.edgeRouting": {
+          "type": "string",
+          "enum": [
+            "ORTHOGONAL",
+            "POLY_LINE",
+            "SPLINES"
+          ]
+        },
+        "layered.nodePlacement.strategy": {
+          "type": "string",
+          "enum": [
+            "BRANDES_KOEPF",
+            "LINEAR_SEGMENTS",
+            "SIMPLE",
+            "MIN_WIDTH",
+            "INTERACTIVE"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "DiagramGraph": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "nodes": {
+          "readOnly": true,
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultNode"
+              },
+              {
+                "$ref": "#/$defs/LifelineNode"
+              },
+              {
+                "$ref": "#/$defs/FragmentNode"
+              }
+            ]
+          }
+        },
+        "edges": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultEdge"
+              },
+              {
+                "$ref": "#/$defs/ControlEdge"
+              },
+              {
+                "$ref": "#/$defs/MessageEdge"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "groups",
+        "nodes",
+        "edges"
+      ],
+      "additionalProperties": false
+    },
+    "Group": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "DefaultNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "default"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Link"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "LifelineNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "lifeline"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Link"
+          }
+        },
+        "activations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "startsAt": {
+                "type": "object",
+                "properties": {
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endpoint": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "target"
+                    ]
+                  }
+                },
+                "required": [
+                  "messageId",
+                  "endpoint"
+                ],
+                "additionalProperties": false
+              },
+              "endsAt": {
+                "type": "object",
+                "properties": {
+                  "messageId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endpoint": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "target"
+                    ]
+                  }
+                },
+                "required": [
+                  "messageId",
+                  "endpoint"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "startsAt",
+              "endsAt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "type",
+        "activations"
+      ],
+      "additionalProperties": false
+    },
+    "FragmentNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "fragment"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "alt",
+            "opt",
+            "loop",
+            "par",
+            "break",
+            "critical",
+            "assert",
+            "neg"
+          ]
+        },
+        "branches": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "guard": {
+                "type": "string",
+                "minLength": 1
+              },
+              "startMessageId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "endMessageId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "guard",
+              "startMessageId",
+              "endMessageId"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "type",
+        "operator",
+        "branches"
+      ],
+      "additionalProperties": false
+    },
+    "DefaultEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "default"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "ControlEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "control"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activeWhen": {
+          "$ref": "#/$defs/RouteRequirementRuleset"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target",
+        "activeWhen"
+      ],
+      "additionalProperties": false
+    },
+    "RouteRequirementRuleset": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "controlId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "controlId",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "MessageEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "message"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messageType": {
+          "default": "sync",
+          "type": "string",
+          "enum": [
+            "sync",
+            "async",
+            "return"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "SequenceGraph": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "nodes": {
+          "readOnly": true,
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/LifelineNode"
+              },
+              {
+                "$ref": "#/$defs/FragmentNode"
+              }
+            ]
+          }
+        },
+        "edges": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MessageEdge"
+          }
+        }
+      },
+      "required": [
+        "groups",
+        "nodes",
+        "edges"
+      ],
+      "additionalProperties": false
+    },
+    "DependencyGraph": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "nodes": {
+          "readOnly": true,
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DefaultNode"
+          }
+        },
+        "edges": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DefaultEdge"
+          }
+        }
+      },
+      "required": [
+        "groups",
+        "nodes",
+        "edges"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentStructureGraph": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "nodes": {
+          "readOnly": true,
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "groupId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "const": "default"
+              },
+              "links": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Link"
+                }
+              },
+              "component": {
+                "type": "object",
+                "properties": {
+                  "definitionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "origins": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "supplierId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "supplierTitle": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "prop": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "supplierId",
+                        "supplierTitle",
+                        "prop"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "definitionId",
+                  "origins"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "edges": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultEdge"
+              },
+              {
+                "$ref": "#/$defs/ControlEdge"
+              }
+            ]
+          }
+        },
+        "additional": {
+          "type": "object",
+          "properties": {
+            "roots": {
+              "readOnly": true,
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "controls": {
+              "readOnly": true,
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "owner": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "dependsOn": {
+                        "$ref": "#/$defs/RouteRequirementRuleset"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "conditional"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "owner",
+                      "label",
+                      "dependsOn",
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "owner": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "dependsOn": {
+                        "$ref": "#/$defs/RouteRequirementRuleset"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "branch"
+                      },
+                      "cases": {
+                        "minItems": 2,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "label": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "polarityPair": {
+                        "type": "boolean",
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "owner",
+                      "label",
+                      "dependsOn",
+                      "kind",
+                      "cases"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "roots",
+            "controls"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "groups",
+        "nodes",
+        "edges",
+        "additional"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

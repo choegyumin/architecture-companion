@@ -20,11 +20,13 @@ function catalog(title: string): CompanionCatalog {
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-        graph: {
-          groups: [],
-          nodes: [{ type: "default", id: "submit", kind: "trigger", title }],
-          edges: [],
+        diagram: {
+          layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          graph: {
+            groups: [],
+            nodes: [{ type: "default", id: "submit", kind: "trigger", title }],
+            edges: [],
+          },
         },
         id: "checkout",
       },

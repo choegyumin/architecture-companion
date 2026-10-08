@@ -18,11 +18,13 @@ function behavior(title: string): CompanionCatalog["behaviors"][number] {
     generator: "built-in:freeform",
     instructions:
       "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-    layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-    graph: {
-      groups: [],
-      nodes: [{ id: "submit", type: "default", kind: "trigger", title }],
-      edges: [],
+    diagram: {
+      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+      graph: {
+        groups: [],
+        nodes: [{ id: "submit", type: "default", kind: "trigger", title }],
+        edges: [],
+      },
     },
   };
 }
@@ -215,7 +217,7 @@ describe("review updates", () => {
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
       expect(await readCatalog(scopePath)).toMatchObject({
         status: "valid",
-        catalog: { behaviors: [{ graph: { nodes: [{ title: "Checkout recovered" }] } }] },
+        catalog: { behaviors: [{ diagram: { graph: { nodes: [{ title: "Checkout recovered" }] } } }] },
       });
     } finally {
       await updates?.close();

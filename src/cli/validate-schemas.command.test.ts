@@ -13,11 +13,13 @@ const checkoutBehavior = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview order submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-  layout: { id: "elk-layered" },
-  graph: {
-    groups: [],
-    nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Submit order" }],
-    edges: [],
+  diagram: {
+    layout: { id: "elk-layered" },
+    graph: {
+      groups: [],
+      nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Submit order" }],
+      edges: [],
+    },
   },
 } as const;
 

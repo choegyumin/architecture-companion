@@ -120,8 +120,10 @@ describe("DataClient", () => {
       title,
       generator: "built-in:freeform",
       instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} diagram from its current workflow or component boundary.`,
-      layout: { id: "elk-layered" },
-      graph: { groups: [], nodes: [], edges: [] },
+      diagram: {
+        layout: { id: "elk-layered" },
+        graph: { groups: [], nodes: [{ id: "start", type: "default", title: "Start" }], edges: [] },
+      },
     });
     const fetcher: typeof fetch = vi.fn(
       async () =>

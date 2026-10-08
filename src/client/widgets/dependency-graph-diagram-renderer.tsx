@@ -11,30 +11,30 @@ import { Button } from "@/shared/react-ui/button";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/react-ui/item";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-function calculateLayout(diagram: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (diagram.layout.id !== "dependency-graph") throw new Error("Expected a dependency graph layout.");
-  return layoutDependencyGraph(diagram.graph, nodeSizes);
+function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
+  if (artifact.diagram.layout.id !== "dependency-graph") throw new Error("Expected a dependency graph layout.");
+  return layoutDependencyGraph(artifact.diagram.graph, nodeSizes);
 }
 
-function describeDependencyFocus(diagram: Artifact, focus: DependencyFocus): string {
+function describeDependencyFocus(artifact: Artifact, focus: DependencyFocus): string {
   if (focus.type !== "aggregate") {
     const element =
       focus.type === "node"
         ? getOrThrow(
-            diagram.graph.nodes.find((node) => node.id === focus.id),
+            artifact.diagram.graph.nodes.find((node) => node.id === focus.id),
             `Missing focused diagram node: ${focus.id}`,
           )
         : getOrThrow(
-            diagram.graph.groups.find((group) => group.id === focus.id),
+            artifact.diagram.graph.groups.find((group) => group.id === focus.id),
             `Missing focused diagram group: ${focus.id}`,
           );
     return `Focused on ${element.title}`;
   }
 
   const firstEdgeId = focus.edgeIds.at(0);
-  const nodesById = new Map(diagram.graph.nodes.map((node) => [node.id, node]));
+  const nodesById = new Map(artifact.diagram.graph.nodes.map((node) => [node.id, node]));
   const edge = getOrThrow(
-    diagram.graph.edges.find((candidate) => candidate.id === firstEdgeId),
+    artifact.diagram.graph.edges.find((candidate) => candidate.id === firstEdgeId),
     `Missing focused aggregate edge: ${firstEdgeId}`,
   );
   const source = getOrThrow(nodesById.get(edge.source), `Missing edge source: ${edge.source}`);
@@ -43,11 +43,11 @@ function describeDependencyFocus(diagram: Artifact, focus: DependencyFocus): str
 }
 
 function DependencyGraphFocusIndicator({
-  diagram,
+  artifact,
   focus,
   onClear,
 }: Readonly<{
-  diagram: Artifact;
+  artifact: Artifact;
   focus: DependencyFocus;
   onClear: () => void;
 }>) {
@@ -63,7 +63,7 @@ function DependencyGraphFocusIndicator({
         <Focus aria-hidden="true" />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle className="max-w-md">{describeDependencyFocus(diagram, focus)}</ItemTitle>
+        <ItemTitle className="max-w-md">{describeDependencyFocus(artifact, focus)}</ItemTitle>
       </ItemContent>
       <ItemActions>
         <Button aria-label="Clear focus" onClick={onClear} size="icon-sm" variant="ghost" className="-m-1.5 ml-0">
@@ -81,8 +81,8 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
     !props.annotations.isManaging &&
     !props.annotations.isPublishing;
   const buildRenderModel = useCallback(
-    (diagram: Artifact, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
-      buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, onOpenSource, {
+    (artifact: Artifact, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
+      buildDependencyGraphDiagramReactFlowRenderModel(artifact, layout, onOpenSource, {
         focus,
         nodesActivatable: canFocus,
         ...(canFocus
@@ -105,7 +105,7 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
       onPaneActivate={canFocus ? () => setFocus(undefined) : undefined}
     >
       {focus ? (
-        <DependencyGraphFocusIndicator diagram={props.diagram} focus={focus} onClear={() => setFocus(undefined)} />
+        <DependencyGraphFocusIndicator artifact={props.artifact} focus={focus} onClear={() => setFocus(undefined)} />
       ) : null}
     </DiagramRendererBase>
   );

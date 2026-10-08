@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import type { ComponentStructureDiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { executeReactComponentStructureCommand } from "./command";
 
@@ -108,12 +108,19 @@ describe("React component structure command", () => {
       });
 
       try {
-        const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
+        const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentStructureDiagramGraph;
         expect(outputs).toEqual([`${JSON.stringify({ graphPath: graphPath })}\n`]);
         expect(graph).toEqual({
           groups: [],
-          nodes: [expect.objectContaining({ type: "default", title: "App" })],
+          nodes: [
+            expect.objectContaining({
+              type: "default",
+              title: "App",
+              component: { definitionId: "component:src/app.tsx#App", origins: [] },
+            }),
+          ],
           edges: [],
+          additional: { roots: ["component:src/app.tsx#App"], controls: [] },
         });
         expect(graph.nodes.at(0)).not.toHaveProperty("kind");
       } finally {
@@ -150,7 +157,7 @@ describe("React component structure command", () => {
         );
 
         try {
-          const graph = JSON.parse(await readFile(graphPath, "utf8")) as DiagramGraph;
+          const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentStructureDiagramGraph;
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
         } finally {
           await rm(dirname(graphPath), { recursive: true });

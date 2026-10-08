@@ -15,22 +15,24 @@ const diagram = {
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
-  layout: { id: "dependency-graph" },
-  graph: {
-    groups: [
-      { id: "source", title: "Source" },
-      { id: "target", title: "Target" },
-    ],
-    nodes: [
-      { id: "one", type: "default", title: "One", groupId: "source" },
-      { id: "two", type: "default", title: "Two", groupId: "source" },
-      { id: "other", type: "default", title: "Other", groupId: "target" },
-    ],
-    edges: [
-      { id: "one-other", type: "default", source: "one", target: "other" },
-      { id: "two-other", type: "default", source: "two", target: "other" },
-      { id: "one-two", type: "default", source: "one", target: "two" },
-    ],
+  diagram: {
+    layout: { id: "dependency-graph" },
+    graph: {
+      groups: [
+        { id: "source", title: "Source" },
+        { id: "target", title: "Target" },
+      ],
+      nodes: [
+        { id: "one", type: "default", title: "One", groupId: "source" },
+        { id: "two", type: "default", title: "Two", groupId: "source" },
+        { id: "other", type: "default", title: "Other", groupId: "target" },
+      ],
+      edges: [
+        { id: "one-other", type: "default", source: "one", target: "other" },
+        { id: "two-other", type: "default", source: "two", target: "other" },
+        { id: "one-two", type: "default", source: "one", target: "two" },
+      ],
+    },
   },
 } satisfies Artifact;
 
@@ -74,27 +76,27 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
   DiagramRendererBase: ({
     buildRenderModel,
     children,
-    diagram,
+    artifact,
     onOpenSource,
     onGroupActivate,
     onNodeActivate,
     onPaneActivate,
   }: {
     buildRenderModel: (
-      diagram: Artifact,
+      artifact: Artifact,
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => ReturnType<
       typeof import("@/client/widgets/dependency-graph-diagram-renderer.react-flow").buildDependencyGraphDiagramReactFlowRenderModel
     >;
     children?: ReactNode;
-    diagram: Artifact;
+    artifact: Artifact;
     onOpenSource: (href: string) => void;
     onGroupActivate?: (id: string) => void;
     onNodeActivate?: (id: string) => void;
     onPaneActivate?: () => void;
   }) => {
-    const model = buildRenderModel(diagram, layout, onOpenSource);
+    const model = buildRenderModel(artifact, layout, onOpenSource);
     const group = model.nodes.find((node) => node.type === "labeled-group" && node.id === "source");
     const aggregate = model.edges.find((edge) => edge.type === "route" && edge.source === "source");
     return (
@@ -116,7 +118,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
 }));
 
 const annotations = { isCommentMode: false, isManaging: false, isPublishing: false } as AnnotationCanvasController;
-const props: DiagramRendererProps = { diagram, annotations, onOpenSource: vi.fn() };
+const props: DiagramRendererProps = { artifact: diagram, annotations, onOpenSource: vi.fn() };
 
 describe("dependency graph focus", () => {
   it("switches among group, node, aggregate, and no-focus projections without relayout", async () => {

@@ -9,23 +9,25 @@ const diagram = {
   title: "Dependencies",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",
-  layout: { id: "dependency-graph" },
-  graph: {
-    groups: [
-      { id: "app", title: "App" },
-      { id: "nested", title: "Nested", parentId: "app" },
-      { id: "library", title: "Library" },
-    ],
-    nodes: [
-      { id: "a", type: "default", title: "A", groupId: "app" },
-      { id: "b", type: "default", title: "B", groupId: "nested" },
-      { id: "c", type: "default", title: "C", groupId: "library" },
-    ],
-    edges: [
-      { id: "a-c", type: "default", source: "a", target: "c", label: "Uses C" },
-      { id: "b-c", type: "default", source: "b", target: "c" },
-      { id: "b-a", type: "default", source: "b", target: "a" },
-    ],
+  diagram: {
+    layout: { id: "dependency-graph" },
+    graph: {
+      groups: [
+        { id: "app", title: "App" },
+        { id: "nested", title: "Nested", parentId: "app" },
+        { id: "library", title: "Library" },
+      ],
+      nodes: [
+        { id: "a", type: "default", title: "A", groupId: "app" },
+        { id: "b", type: "default", title: "B", groupId: "nested" },
+        { id: "c", type: "default", title: "C", groupId: "library" },
+      ],
+      edges: [
+        { id: "a-c", type: "default", source: "a", target: "c", label: "Uses C" },
+        { id: "b-c", type: "default", source: "b", target: "c" },
+        { id: "b-a", type: "default", source: "b", target: "a" },
+      ],
+    },
   },
 } satisfies Artifact;
 
@@ -37,7 +39,7 @@ const sizes = {
 
 describe("dependency graph React Flow adapter", () => {
   it("renders directed aggregates with original membership, shape focus and comment snapshots", async () => {
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const onAggregateActivate = vi.fn();
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
       onAggregateActivate,
@@ -79,7 +81,7 @@ describe("dependency graph React Flow adapter", () => {
   });
 
   it("renders an inert dashed bounding group for a mixed group's loose nodes between group and cards", async () => {
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const onAggregateActivate = vi.fn();
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), { onAggregateActivate });
     const bounding = model.nodes.find((node) => node.id === "bundle:app");
@@ -124,13 +126,16 @@ describe("dependency graph React Flow adapter", () => {
   it("keeps bundle endpoints distinct from artifact node and edge IDs", async () => {
     const colliding = {
       ...diagram,
-      graph: {
-        ...diagram.graph,
-        nodes: [...diagram.graph.nodes, { id: "bundle:app", type: "default", title: "Root file" }],
-        edges: [...diagram.graph.edges, { id: "bundle:app:", type: "default", source: "a", target: "b" }],
+      diagram: {
+        ...diagram.diagram,
+        graph: {
+          ...diagram.diagram.graph,
+          nodes: [...diagram.diagram.graph.nodes, { id: "bundle:app", type: "default", title: "Root file" }],
+          edges: [...diagram.diagram.graph.edges, { id: "bundle:app:", type: "default", source: "a", target: "b" }],
+        },
       },
     } satisfies Artifact;
-    const layout = await layoutDependencyGraph(colliding.graph, { ...sizes, "bundle:app": sizes.a });
+    const layout = await layoutDependencyGraph(colliding.diagram.graph, { ...sizes, "bundle:app": sizes.a });
     const model = buildDependencyGraphDiagramReactFlowRenderModel(colliding, layout, vi.fn());
     expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("card");
     expect(model.nodes.find(({ id }) => id === "bundle:app::")?.type).toBe("bounding-group");
@@ -140,7 +145,7 @@ describe("dependency graph React Flow adapter", () => {
   });
 
   it("renders only selected original edges and preserves their individual targets", async () => {
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
       focus: { type: "aggregate", edgeIds: ["b-c", "a-c"] },
     });
@@ -152,7 +157,7 @@ describe("dependency graph React Flow adapter", () => {
   });
 
   it("routes original and aggregate relations by their rendered endpoints during group focus", async () => {
-    const layout = await layoutDependencyGraph(diagram.graph, sizes);
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
       focus: { type: "group", id: "app" },
     });
@@ -167,12 +172,15 @@ describe("dependency graph React Flow adapter", () => {
   it("routes a focused group's boundary to direct sibling nodes in both directions", async () => {
     const withSibling = {
       ...diagram,
-      graph: {
-        ...diagram.graph,
-        edges: [...diagram.graph.edges, { id: "a-b", type: "default", source: "a", target: "b" }],
+      diagram: {
+        ...diagram.diagram,
+        graph: {
+          ...diagram.diagram.graph,
+          edges: [...diagram.diagram.graph.edges, { id: "a-b", type: "default", source: "a", target: "b" }],
+        },
       },
     } satisfies Artifact;
-    const layout = await layoutDependencyGraph(withSibling.graph, sizes);
+    const layout = await layoutDependencyGraph(withSibling.diagram.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(withSibling, layout, vi.fn(), {
       focus: { type: "group", id: "nested" },
     });
@@ -191,17 +199,20 @@ describe("dependency graph React Flow adapter", () => {
   it("uses separate orthogonal group–node routes for both directions", async () => {
     const withRoot = {
       ...diagram,
-      graph: {
-        ...diagram.graph,
-        nodes: [...diagram.graph.nodes, { id: "root", type: "default", title: "Root" }],
-        edges: [
-          ...diagram.graph.edges,
-          { id: "a-root", type: "default", source: "a", target: "root" },
-          { id: "root-a", type: "default", source: "root", target: "a" },
-        ],
+      diagram: {
+        ...diagram.diagram,
+        graph: {
+          ...diagram.diagram.graph,
+          nodes: [...diagram.diagram.graph.nodes, { id: "root", type: "default", title: "Root" }],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { id: "a-root", type: "default", source: "a", target: "root" },
+            { id: "root-a", type: "default", source: "root", target: "a" },
+          ],
+        },
       },
     } satisfies Artifact;
-    const layout = await layoutDependencyGraph(withRoot.graph, { ...sizes, root: sizes.a });
+    const layout = await layoutDependencyGraph(withRoot.diagram.graph, { ...sizes, root: sizes.a });
     const model = buildDependencyGraphDiagramReactFlowRenderModel(withRoot, layout, vi.fn());
     const forward = model.edges.find((edge) => edge.source === "app" && edge.target === "root");
     const reverse = model.edges.find((edge) => edge.source === "root" && edge.target === "app");
@@ -215,21 +226,24 @@ describe("dependency graph React Flow adapter", () => {
   it("uses F curves for node–node aggregates between ungrouped root nodes", async () => {
     const roots = {
       ...diagram,
-      graph: {
-        ...diagram.graph,
-        nodes: [
-          ...diagram.graph.nodes,
-          { id: "root-one", type: "default", title: "Root One" },
-          { id: "root-two", type: "default", title: "Root Two" },
-        ],
-        edges: [
-          ...diagram.graph.edges,
-          { id: "one-two", type: "default", source: "root-one", target: "root-two" },
-          { id: "two-one", type: "default", source: "root-two", target: "root-one" },
-        ],
+      diagram: {
+        ...diagram.diagram,
+        graph: {
+          ...diagram.diagram.graph,
+          nodes: [
+            ...diagram.diagram.graph.nodes,
+            { id: "root-one", type: "default", title: "Root One" },
+            { id: "root-two", type: "default", title: "Root Two" },
+          ],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { id: "one-two", type: "default", source: "root-one", target: "root-two" },
+            { id: "two-one", type: "default", source: "root-two", target: "root-one" },
+          ],
+        },
       },
     } satisfies Artifact;
-    const layout = await layoutDependencyGraph(roots.graph, {
+    const layout = await layoutDependencyGraph(roots.diagram.graph, {
       ...sizes,
       "root-one": sizes.a,
       "root-two": sizes.a,

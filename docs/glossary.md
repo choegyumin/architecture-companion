@@ -19,7 +19,7 @@ The complete collection of artifacts within a scope. Represented in code as `Com
 An individual output that combines a diagram with its authoring and regeneration context.
 
 **Product Behavior**:
-An artifact type that shows product behavior and journeys from the actors' perspective.
+An artifact type that shows product behavior and use cases from the actors' perspective.
 
 **Code Design**:
 An artifact type that describes code structure, responsibilities, dependencies, runtime interactions, data flow, and system boundaries.
@@ -81,8 +81,23 @@ The structure of elements and relationships that forms a diagram's content. It d
 **Layout**:
 The approach used to arrange graph elements and display their relationships in a diagram.
 
+**Route Requirement**:
+A value one control must hold for a path to apply: one `control=value` pair. The atomic unit of edge activation conditions (`activeWhen`) and control prerequisites (`dependsOn`). Represented in code as `DiagramRouteRequirement`.
+
+**Route Requirement Rule**:
+Route requirements joined by AND: the rule holds only when every requirement in it holds. Rendered as one unit on the edge label. Represented in code as `DiagramRouteRequirementRule`.
+
+**Route Requirement Ruleset**:
+Route Requirement Rules joined by OR, in no particular order: the ruleset holds when any one rule holds. The type of `activeWhen` and `dependsOn`. Represented in code as `DiagramRouteRequirementRuleset`.
+
 **Node**:
 A graph element representing a concept, participant, or control-flow region in a diagram.
+
+**Root Node**:
+A node with no incoming edge, where a diagram's content starts. In a component structure diagram, a root renders without any incoming rendering path.
+
+**Decision Node**:
+A diamond-shaped node where one path branches into alternatives; each outgoing path carries its own condition.
 
 **Group**:
 An area that organizes related nodes and nested groups into a hierarchy.
@@ -95,6 +110,18 @@ A graph element representing a relationship or interaction between two nodes.
 
 **Edge Set**:
 A collection of one or more edges treated as a single unit, for example when selecting them or attaching an annotation.
+
+**Control**:
+A decision that gates which paths apply. Branch controls choose exactly one of their cases; conditional controls toggle on or off. Controls may declare prerequisites on other controls (`dependsOn`). In a component structure diagram, controls come from component source and are stored in the graph's additional properties. Represented in code as `DiagramControl`.
+
+**Control case**:
+One of the values a branch control chooses between. Each case appears as one port on the corresponding decision node.
+
+**Guard**:
+A label stating the condition under which a path applies. On a sequence diagram it describes a fragment's branch; on a component structure diagram it is a Route Requirement Ruleset derived from the stored relationship's `activeWhen`.
+
+**Additional Graph Properties**:
+A graph's layout-specific extension properties. Which properties are valid is decided by the artifact's layout; for example, a component structure diagram stores its roots and controls here.
 
 #### Sequence Diagrams
 
@@ -116,10 +143,33 @@ A region of a sequence diagram that groups control flow such as alternatives, lo
 **Branch**:
 A span of messages within a fragment corresponding to a condition or alternative path.
 
-**Guard**:
-A description of the condition under which a fragment's branch applies.
+#### Component Structure Diagrams
 
-#### Dependency Graphs
+**Component Structure Diagram**:
+A code design diagram that shows the components of a component tree and the rendering paths through which they compose.
+
+**Composition**:
+An edge representing a parent component composing a child, whether through inline rendering, a node prop, a render prop, or a component prop. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
+
+**Rendering Path**:
+A conjunction of control choices under which a component renders. An edge applies when at least one of its rendering paths matches the current selection.
+
+**Decision Node**:
+In a component structure diagram, the projection of a branch control as a decision node, derived for display instead of stored in the graph. Its ports are the control's cases, and one outgoing path leaves through each port.
+
+**Component Origin**:
+The supplier and slot through which a merged component instance was composed, listed on the component's card.
+
+**Control Owner Component**:
+The component whose source defines a control. The owner's card displays the control as a switch or select.
+
+**Non-component Case/Node**:
+A branch case no rendering path requires, shown as its own node, derived for display instead of stored in the graph, so rendering nothing stays a selectable rendering path. Nodes are per case and never merged: each is an individual piece of markup at its own branch site, not a reused definition the way identical component internals are.
+
+#### Dependency Graph Diagrams
+
+**Dependency**:
+An edge representing a reference from one module to another, at runtime or type-only.
 
 **Aggregated Dependency Path**:
 A displayed path that groups dependency edges between the same visible endpoints, whether nodes or groups. The path is distinct from the individual underlying edges it represents.

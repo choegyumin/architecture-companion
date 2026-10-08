@@ -1,61 +1,53 @@
 import { z } from "zod";
 
-import { type Artifact, artifactSchema } from "@/features/artifact/artifact";
-import type { DefaultDiagramEdge, DefaultDiagramNode } from "@/features/diagram/diagram-graph";
+import { type Artifact, parseArtifact } from "@/features/artifact/artifact";
 
-export const companionCatalogSchema = z
+// Catalog artifacts parse through `parseArtifact`, which dispatches on the
+// layout id and reports the matching member's specific issues; a plain
+// `z.array(artifactSchema)` would flatten the union into "Invalid input".
+const companionCatalogShapeSchema = z
   .object({
-    behaviors: z.array(artifactSchema),
-    designs: z.array(artifactSchema),
+    behaviors: z.array(z.unknown()).readonly(),
+    designs: z.array(z.unknown()).readonly(),
   })
-  .strict()
-  .superRefine((catalog, context) => {
-    const behaviorIds = new Set<string>();
-    catalog.behaviors.forEach((artifact, index) => {
-      if (behaviorIds.has(artifact.id)) {
-        context.addIssue({
-          code: "custom",
-          path: ["behaviors", index, "id"],
-          message: `Duplicate behavior ID: ${artifact.id}`,
-        });
-      }
-      behaviorIds.add(artifact.id);
-    });
+  .strict();
 
-    const designIds = new Set<string>();
-    catalog.designs.forEach((artifact, index) => {
-      if (designIds.has(artifact.id)) {
-        context.addIssue({
-          code: "custom",
-          path: ["designs", index, "id"],
-          message: `Duplicate design ID: ${artifact.id}`,
-        });
-      }
-      designIds.add(artifact.id);
-    });
-  });
-
-type BehaviorRepresentation = Omit<Artifact, "graph"> & {
-  graph: Omit<Artifact["graph"], "nodes" | "edges"> & {
-    nodes: readonly DefaultDiagramNode[];
-    edges: readonly DefaultDiagramEdge[];
-  };
-};
-type DesignRepresentation = Artifact;
-
-type ParsedCompanionCatalog = z.infer<typeof companionCatalogSchema>;
-export type CompanionCatalog = Omit<ParsedCompanionCatalog, "behaviors" | "designs"> & {
-  behaviors: readonly BehaviorRepresentation[];
-  designs: readonly DesignRepresentation[];
-};
+export type CompanionCatalog = Readonly<{
+  behaviors: readonly Artifact[];
+  designs: readonly Artifact[];
+}>;
 
 export function parseCatalog(input: unknown): CompanionCatalog {
-  const result = companionCatalogSchema.safeParse(input);
-
-  if (!result.success) {
-    const messages = result.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid catalog: ${messages}`, { cause: result.error });
+  const shape = companionCatalogShapeSchema.safeParse(input);
+  if (!shape.success) {
+    const messages = shape.error.issues.map(({ message }) => message).join("; ");
+    throw new Error(`Invalid catalog: ${messages}`, { cause: shape.error });
   }
 
-  return result.data as CompanionCatalog;
+  let catalog: CompanionCatalog;
+  try {
+    catalog = {
+      behaviors: shape.data.behaviors.map(parseArtifact),
+      designs: shape.data.designs.map(parseArtifact),
+    };
+  } catch (error) {
+    throw new Error(`Invalid catalog: ${error instanceof Error ? error.message : "Unknown artifact shape"}`, {
+      cause: error,
+    });
+  }
+
+  const issues: string[] = [];
+  for (const [kind, artifacts] of [
+    ["behavior", catalog.behaviors],
+    ["design", catalog.designs],
+  ] as const) {
+    const ids = new Set<string>();
+    for (const artifact of artifacts) {
+      if (ids.has(artifact.id)) issues.push(`Duplicate ${kind} ID: ${artifact.id}`);
+      ids.add(artifact.id);
+    }
+  }
+  if (issues.length > 0) throw new Error(`Invalid catalog: ${issues.join("; ")}`);
+
+  return catalog;
 }

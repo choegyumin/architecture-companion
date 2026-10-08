@@ -8,98 +8,100 @@
   },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how a reviewer resolves external comment changes or deletions that conflict with a local edit.\n\n## Regeneration\nInspect src/server/review-updates.ts, src/client/pages/workspace-page.tsx, src/client/parts/annotation-layer.tsx, and specs/user-keep-comment-draft.spec.tsx. Reconstruct the product flow from external change detection through the local-edit conflict check and the available resolutions. Distinguish unrelated updates from conflicts, and distinguish changed comments from deleted comments when describing the reviewer's choices.",
-  "layout": {
-    "id": "elk-layered",
-    "options": {
-      "bezierEdges": true
-    }
-  },
   "links": [
     {
       "href": "source:///specs/user-keep-comment-draft.spec.tsx"
     }
   ],
-  "graph": {
-    "groups": [],
-    "nodes": [
-      {
-        "type": "default",
-        "id": "comments-detect-change",
-        "kind": "trigger",
-        "title": "External comment change detected",
-        "description": "The open review's comment file changes or is deleted outside the app.",
-        "links": [
-          {
-            "href": "source:///src/server/review-updates.ts"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "comments-has-local-edit",
-        "kind": "condition",
-        "title": "Does the external update conflict with the comment being edited?",
-        "description": "Workspace compares the currently edited comment with the external document; unrelated changes and unchanged comments do not create a conflict.",
-        "links": [
-          {
-            "href": "source:///src/client/pages/workspace-page.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "comments-reload-external",
-        "kind": "result",
-        "title": "Apply external comment changes",
-        "description": "When there is no conflict with a local edit, apply the latest comment content to the canvas."
-      },
-      {
-        "type": "default",
-        "id": "comments-show-conflict",
-        "kind": "action",
-        "title": "Show conflict options",
-        "description": "If the comment being edited changed, offer the external version or local draft; if it was deleted, offer to discard or restore the local draft.",
-        "links": [
-          {
-            "href": "source:///src/client/parts/annotation-layer.tsx"
-          }
-        ]
-      },
-      {
-        "type": "default",
-        "id": "comments-continue-review",
-        "kind": "result",
-        "title": "Continue the review with the chosen content",
-        "description": "Apply the resolution: use the external text or keep the local draft after a change; discard or restore the draft after deletion, then continue the review."
+  "diagram": {
+    "layout": {
+      "id": "elk-layered",
+      "options": {
+        "bezierEdges": true
       }
-    ],
-    "edges": [
-      {
-        "type": "default",
-        "id": "comments-detect-to-edit-check",
-        "source": "comments-detect-change",
-        "target": "comments-has-local-edit"
-      },
-      {
-        "type": "default",
-        "id": "comments-no-edit-to-reload",
-        "source": "comments-has-local-edit",
-        "target": "comments-reload-external",
-        "label": "No"
-      },
-      {
-        "type": "default",
-        "id": "comments-edit-to-conflict",
-        "source": "comments-has-local-edit",
-        "target": "comments-show-conflict",
-        "label": "Yes"
-      },
-      {
-        "type": "default",
-        "id": "comments-conflict-to-continue",
-        "source": "comments-show-conflict",
-        "target": "comments-continue-review"
-      }
-    ]
+    },
+    "graph": {
+      "groups": [],
+      "nodes": [
+        {
+          "type": "default",
+          "id": "comments-detect-change",
+          "kind": "trigger",
+          "title": "External comment change detected",
+          "description": "The open review's comment file changes or is deleted outside the app.",
+          "links": [
+            {
+              "href": "source:///src/server/review-updates.ts"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "comments-has-local-edit",
+          "kind": "condition",
+          "title": "Does the external update conflict with the comment being edited?",
+          "description": "Workspace compares the currently edited comment with the external document; unrelated changes and unchanged comments do not create a conflict.",
+          "links": [
+            {
+              "href": "source:///src/client/pages/workspace-page.tsx"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "comments-reload-external",
+          "kind": "result",
+          "title": "Apply external comment changes",
+          "description": "When there is no conflict with a local edit, apply the latest comment content to the canvas."
+        },
+        {
+          "type": "default",
+          "id": "comments-show-conflict",
+          "kind": "action",
+          "title": "Show conflict options",
+          "description": "If the comment being edited changed, offer the external version or local draft; if it was deleted, offer to discard or restore the local draft.",
+          "links": [
+            {
+              "href": "source:///src/client/parts/annotation-layer.tsx"
+            }
+          ]
+        },
+        {
+          "type": "default",
+          "id": "comments-continue-review",
+          "kind": "result",
+          "title": "Continue the review with the chosen content",
+          "description": "Apply the resolution: use the external text or keep the local draft after a change; discard or restore the draft after deletion, then continue the review."
+        }
+      ],
+      "edges": [
+        {
+          "type": "default",
+          "id": "comments-detect-to-edit-check",
+          "source": "comments-detect-change",
+          "target": "comments-has-local-edit"
+        },
+        {
+          "type": "default",
+          "id": "comments-no-edit-to-reload",
+          "source": "comments-has-local-edit",
+          "target": "comments-reload-external",
+          "label": "No"
+        },
+        {
+          "type": "default",
+          "id": "comments-edit-to-conflict",
+          "source": "comments-has-local-edit",
+          "target": "comments-show-conflict",
+          "label": "Yes"
+        },
+        {
+          "type": "default",
+          "id": "comments-conflict-to-continue",
+          "source": "comments-show-conflict",
+          "target": "comments-continue-review"
+        }
+      ]
+    }
   }
 }

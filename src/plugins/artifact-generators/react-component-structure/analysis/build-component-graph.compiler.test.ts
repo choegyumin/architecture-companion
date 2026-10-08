@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 
 import { version as fallbackVersion } from "typescript/package.json";
 
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import type { ComponentStructureDiagramGraph } from "@/features/diagram/diagram-graph";
 
 import { buildComponentGraph } from "./build-component-graph";
 
@@ -50,12 +50,11 @@ async function withFixture(
   }
 }
 
-function edgeFacts(graph: DiagramGraph) {
+function edgeFacts(graph: ComponentStructureDiagramGraph) {
   const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
-  return graph.edges.map(({ source, target, kind }) => ({
+  return graph.edges.map(({ source, target }) => ({
     source: titlesById.get(source),
     target: titlesById.get(target),
-    kind,
   }));
 }
 
@@ -92,7 +91,7 @@ describe("React component structure compiler", () => {
   it("keeps flatMap rendering without a tsconfig", async () => {
     await withFixture({ "src/app.tsx": arraySource.replace(".map(", ".flatMap(") }, async (scopePath) => {
       const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns: ["App"] });
-      expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render" }]);
+      expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child" }]);
     });
   });
 
@@ -105,7 +104,7 @@ describe("React component structure compiler", () => {
         await withNpmFixture(scopePath, fallbackInstaller, async () => {
           const run = () => buildComponentGraph({ scopePath, sourcePaths: ["src"], rootPatterns: ["App"] });
           const [first, concurrent] = await Promise.all([run(), run()]);
-          expect(edgeFacts(first)).toEqual([{ source: "App", target: "Child", kind: "direct-render" }]);
+          expect(edgeFacts(first)).toEqual([{ source: "App", target: "Child" }]);
           expect(concurrent).toEqual(first);
           await writeFile(join(scopePath, "bin/npm-fixture.cjs"), `process.exit(1);`);
           expect(await run()).toEqual(first);
@@ -135,7 +134,7 @@ describe("React component structure compiler", () => {
 
           const options = { scopePath, sourcePaths: ["src"], rootPatterns: ["App"] };
           const graph = await buildComponentGraph(options);
-          expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child", kind: "direct-render" }]);
+          expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Child" }]);
 
           await writeFile(join(scopePath, "bin/npm-fixture.cjs"), `process.exit(1);`);
           expect(await buildComponentGraph(options)).toEqual(graph);
@@ -170,8 +169,8 @@ describe("React component structure compiler", () => {
         const results = await Promise.allSettled([run(), run()]);
         for (const result of results) {
           if (result.status === "rejected") throw result.reason;
-          expect(edgeFacts(JSON.parse(result.value.stdout) as DiagramGraph)).toEqual([
-            { source: "App", target: "Child", kind: "direct-render" },
+          expect(edgeFacts(JSON.parse(result.value.stdout) as ComponentStructureDiagramGraph)).toEqual([
+            { source: "App", target: "Child" },
           ]);
         }
       });
@@ -187,9 +186,7 @@ describe("React component structure compiler", () => {
         await expect(buildComponentGraph(options)).rejects.toThrow("Cannot install fallback TypeScript");
 
         await writeFile(join(scopePath, "bin/npm-fixture.cjs"), fallbackInstaller);
-        expect(edgeFacts(await buildComponentGraph(options))).toEqual([
-          { source: "App", target: "Child", kind: "direct-render" },
-        ]);
+        expect(edgeFacts(await buildComponentGraph(options))).toEqual([{ source: "App", target: "Child" }]);
       });
     });
   });
