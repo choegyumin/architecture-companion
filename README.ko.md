@@ -105,6 +105,8 @@ npx skills add choegyumin/architecture-companion
 
 <!-- TODO: '대부분의 다이어그램은 일회용입니다.' 항목에 Spotlight(가칭) 기능 추가 -->
 
+Architecture Companion의 설계 철학과 배경은 [philosophy.md](docs/philosophy.md)의 첫 섹션에 더 자세히 담아 두었습니다.
+
 ---
 
 ## 더 알아보기
@@ -113,3 +115,4 @@ npx skills add choegyumin/architecture-companion
 - [아키텍처와 의존성 경계](ARCHITECTURE.md)
 - [기여 지침](CONTRIBUTING.md)
 - [용어 사전](GLOSSARY.md)
+- [철학](docs/philosophy.md)
