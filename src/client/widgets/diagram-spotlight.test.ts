@@ -2,10 +2,12 @@ import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/
 import type { DiagramReactFlowRenderModel } from "@/client/widgets/diagram-renderer.react-flow";
 import {
   applySpotlight,
+  computeSpotlightFrame,
   SPOTLIGHT_DIMMED_CLASS_NAME,
   SPOTLIGHT_EMPHASIZED_CLASS_NAME,
 } from "@/client/widgets/diagram-spotlight";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 
 function cardNode(id: string): DiagramReactFlowNode {
@@ -137,5 +139,104 @@ describe("applySpotlight", () => {
       framedNodeIds: [],
       framedEdgeIds: [],
     });
+  });
+});
+
+function lifelineNode(id: string): DiagramReactFlowNode {
+  return {
+    id,
+    type: "lifeline",
+    position: { x: 0, y: 0 },
+    data: { node: { kind: "actor", title: id } },
+    selectable: false,
+  };
+}
+
+function fragmentNode(id: string): DiagramReactFlowNode {
+  return {
+    id,
+    type: "fragment",
+    position: { x: 0, y: 0 },
+    data: { node: { operator: "alt", branches: [] } },
+    selectable: false,
+  };
+}
+
+describe("computeSpotlightFrame", () => {
+  const sequenceLayout: DiagramLayout = {
+    nodes: [
+      { id: "user", position: { x: 40, y: 0 }, size: { width: 120, height: 2000 } },
+      { id: "server", position: { x: 400, y: 0 }, size: { width: 120, height: 2000 } },
+      { id: "retry", position: { x: 80, y: 300 }, size: { width: 320, height: 240 } },
+    ],
+    groups: [],
+    edges: [
+      {
+        id: "m1",
+        points: [
+          { x: 100, y: 400 },
+          { x: 460, y: 400 },
+        ],
+      },
+      {
+        id: "m2",
+        points: [
+          { x: 460, y: 500 },
+          { x: 100, y: 500 },
+        ],
+      },
+    ],
+    initialView: { mode: "fit" },
+  };
+
+  it("frames regular diagram nodes through fitView", () => {
+    const target = computeSpotlightFrame(
+      model([cardNode("cart"), cardNode("pay")]),
+      sequenceLayout,
+      ["cart", "pay"],
+      [],
+    );
+
+    expect(target).toEqual({ kind: "nodes", nodeIds: ["cart", "pay"] });
+  });
+
+  it("frames sequence message geometry as bounds so the viewport can zoom", () => {
+    const target = computeSpotlightFrame(
+      model([lifelineNode("user"), lifelineNode("server")]),
+      sequenceLayout,
+      ["user", "server"],
+      ["m1"],
+    );
+
+    // The lifeline columns keep the actor headers in view alongside the message.
+    expect(target).toEqual({ kind: "bounds", x: 40, y: 400, width: 480, height: 48 });
+  });
+
+  it("unions several messages and keeps real height for stacked ones", () => {
+    const target = computeSpotlightFrame(
+      model([lifelineNode("user"), lifelineNode("server")]),
+      sequenceLayout,
+      ["user", "server"],
+      ["m1", "m2"],
+    );
+
+    expect(target).toEqual({ kind: "bounds", x: 40, y: 400, width: 480, height: 100 });
+  });
+
+  it("includes fragment rectangles and lifeline columns without lifeline height", () => {
+    const target = computeSpotlightFrame(
+      model([lifelineNode("user"), fragmentNode("retry")]),
+      sequenceLayout,
+      ["user", "retry"],
+      [],
+    );
+
+    expect(target).toEqual({ kind: "bounds", x: 40, y: 300, width: 360, height: 240 });
+  });
+
+  it("falls back to node framing for a lifeline-only step", () => {
+    const target = computeSpotlightFrame(model([lifelineNode("user")]), sequenceLayout, ["user"], []);
+
+    expect(target).toEqual({ kind: "nodes", nodeIds: ["user"] });
   });
 });

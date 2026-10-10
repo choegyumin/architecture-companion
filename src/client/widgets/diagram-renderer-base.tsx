@@ -10,7 +10,7 @@ import {
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
-import { applySpotlight } from "@/client/widgets/diagram-spotlight";
+import { applySpotlight, computeSpotlightFrame } from "@/client/widgets/diagram-spotlight";
 import { type SpotlightController, SpotlightIndicator } from "@/client/widgets/spotlight-indicator";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
@@ -147,15 +147,19 @@ function DiagramRendererContent({
     [rendered, spotlight],
   );
   const displayModel = spotlit?.model ?? (rendered?.status === "ready" ? rendered.model : undefined);
+  const spotlightLayout = state.status === "ready" ? state.layout : undefined;
 
   // The canvas reframes whenever this object changes, so it is memoized to
   // keep identity churn in the workspace from re-triggering the framing.
   const spotlightFocusView = useMemo(
     () =>
-      spotlit && spotlight
-        ? { key: `${JSON.stringify(spotlight.spotlight)}:${spotlight.stepIndex}`, nodeIds: spotlit.framedNodeIds }
+      spotlit && spotlight && spotlightLayout
+        ? {
+            key: `${JSON.stringify(spotlight.spotlight)}:${spotlight.stepIndex}`,
+            target: computeSpotlightFrame(spotlit.model, spotlightLayout, spotlit.framedNodeIds, spotlit.framedEdgeIds),
+          }
         : undefined,
-    [spotlit, spotlight],
+    [spotlit, spotlight, spotlightLayout],
   );
 
   useLayoutEffect(() => {

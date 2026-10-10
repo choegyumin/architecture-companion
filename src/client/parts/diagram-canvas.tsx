@@ -26,7 +26,12 @@ import {
   useState,
 } from "react";
 
-import { DIAGRAM_FIT_VIEW_OPTIONS, DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
+import {
+  DIAGRAM_FIT_VIEW_OPTIONS,
+  DIAGRAM_MIN_ZOOM,
+  fitViewFraming,
+  focusBoundsFraming,
+} from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
@@ -78,7 +83,11 @@ const diagramEdgeTypes = {
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
 
-export type DiagramFocusView = Readonly<{ key: string; nodeIds: readonly string[] }>;
+export type DiagramFocusTarget =
+  | Readonly<{ kind: "nodes"; nodeIds: readonly string[] }>
+  | Readonly<{ kind: "bounds"; x: number; y: number; width: number; height: number }>;
+
+export type DiagramFocusView = Readonly<{ key: string; target: DiagramFocusTarget }>;
 
 type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
@@ -192,11 +201,15 @@ export function DiagramCanvas({
 
   const focusSpotlightView = useCallback(async () => {
     if (!flowInstance || !focusView || !canvasRef.current) return;
-    if (focusView.nodeIds.length > 0) {
+    if (focusView.target.kind === "bounds") {
+      await focusBoundsFraming(flowInstance, focusView.target, canvasRef.current);
+      return;
+    }
+    if (focusView.target.nodeIds.length > 0) {
       await flowInstance.fitView({
         ...DIAGRAM_FIT_VIEW_OPTIONS,
         duration: 500,
-        nodes: focusView.nodeIds.map((id) => ({ id })),
+        nodes: focusView.target.nodeIds.map((id) => ({ id })),
       });
       return;
     }
@@ -210,14 +223,17 @@ export function DiagramCanvas({
 
     // Framed nodes are unmeasured until React Flow's ResizeObserver runs, so a
     // spotlight present at mount would fit to nothing. Poll frames until the
-    // framed nodes have dimensions (or give up) before fitting. The parent
-    // memoizes the focus view, so this effect only re-runs for a new framing.
+    // framed nodes have dimensions (or give up) before fitting. Bounds
+    // framings come from the layout directly and need no measurement. The
+    // parent memoizes the focus view, so this effect only re-runs for a new
+    // framing.
     const waitForFramedNodes = () => {
       attempts += 1;
       const framedReady =
         flowInstance !== undefined &&
-        (focusView.nodeIds.length === 0 ||
-          focusView.nodeIds.every((id) => (flowInstance.getInternalNode(id)?.measured.width ?? 0) > 0));
+        (focusView.target.kind === "bounds" ||
+          focusView.target.nodeIds.length === 0 ||
+          focusView.target.nodeIds.every((id) => (flowInstance.getInternalNode(id)?.measured.width ?? 0) > 0));
       if (!framedReady && attempts < 90) {
         frame = requestAnimationFrame(waitForFramedNodes);
         return;

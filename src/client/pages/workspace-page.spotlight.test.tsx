@@ -79,9 +79,47 @@ const designSpotlight = {
   },
 };
 
-async function renderWorkspace() {
+const sequenceCatalog = {
+  behaviors: [
+    {
+      id: "review-session",
+      updatedAt: "2026-10-03T09:15:00.000Z",
+      title: "Review session",
+      generator: "built-in:freeform",
+      instructions: "## Purpose\nReview the review session flow.",
+      diagram: {
+        layout: { id: "sequence" },
+        graph: {
+          groups: [],
+          nodes: [
+            {
+              type: "lifeline",
+              id: "user",
+              kind: "actor",
+              title: "User",
+              links: [],
+              activations: [],
+            },
+            {
+              type: "lifeline",
+              id: "server",
+              kind: "participant",
+              title: "Server",
+              links: [],
+              activations: [],
+            },
+          ],
+          edges: [{ type: "message", id: "m1", source: "user", target: "server", label: "POST", messageType: "sync" }],
+        },
+      },
+    },
+  ],
+  designs: [],
+};
+
+async function renderWorkspace(catalogContents: typeof catalog | typeof sequenceCatalog = catalog) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-spotlight-page-"));
-  await writeCatalog(scopePath, catalog);
+  await writeCatalog(scopePath, catalogContents);
   const scope = await resolveCompanionScope(scopePath);
   const app: AppType = createApp(scope);
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
@@ -217,6 +255,29 @@ describe("workspace spotlight", () => {
       await waitFor(() => {
         expect(document.querySelector(".diagram-spotlight-emphasized")).not.toBeNull();
       });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("emphasizes a spotlighted sequence lifeline", async () => {
+    // happy-dom measures no real layout, so React Flow never renders edge
+    // elements there; edge emphasis is covered by the applySpotlight unit
+    // tests. This end-to-end case verifies the sequence pipeline itself.
+    const { app, cleanup } = await renderWorkspace(sequenceCatalog);
+
+    try {
+      await publishSpotlight(app, {
+        artifactId: "review-session",
+        diagram: { steps: [{ elements: [{ type: "node", id: "user" }], caption: "The user drives the session" }] },
+      });
+
+      expect(await screen.findByRole("button", { name: "Review session" })).toHaveAttribute("aria-current", "page");
+      await waitFor(() => {
+        expect(document.querySelector(".react-flow__node.diagram-spotlight-emphasized")?.textContent).toContain("User");
+      });
+      expect(document.querySelector(".react-flow__node.diagram-spotlight-dimmed")?.textContent).toContain("Server");
+      expect(screen.getByRole("status")).toHaveTextContent("The user drives the session");
     } finally {
       await cleanup();
     }
