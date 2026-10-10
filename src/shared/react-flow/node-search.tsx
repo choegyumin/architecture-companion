@@ -165,7 +165,7 @@ export function NodeSearch<NodeType extends Node = Node>({
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
-              close();
+              onChange("");
             } else if (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
               event.stopPropagation();
