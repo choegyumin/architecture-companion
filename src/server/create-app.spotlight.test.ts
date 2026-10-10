@@ -35,7 +35,7 @@ function catalog(): CompanionCatalog {
   };
 }
 
-function spotlight(elements: readonly ArtifactSpotlight["diagram"]["steps"][number]["elements"]): ArtifactSpotlight {
+function spotlight(elements: ArtifactSpotlight["diagram"]["steps"][number]["elements"]): ArtifactSpotlight {
   return { artifactId: "checkout", diagram: { steps: [{ elements: [...elements] }] } };
 }
 

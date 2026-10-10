@@ -78,10 +78,13 @@ const diagramEdgeTypes = {
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
 
+export type DiagramFocusView = Readonly<{ key: string; nodeIds: readonly string[] }>;
+
 type DiagramCanvasProps = Readonly<{
   children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
+  focusView?: DiagramFocusView;
   getNodeLabel?: (node: DiagramReactFlowNode) => string;
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
@@ -102,6 +105,7 @@ export function DiagramCanvas({
   children,
   className,
   edges,
+  focusView,
   getNodeLabel,
   nodes,
   onCanvasClick,
@@ -185,6 +189,45 @@ export function DiagramCanvas({
       cancelAnimationFrame(secondFrame);
     };
   }, [fitView]);
+
+  const focusSpotlightView = useCallback(async () => {
+    if (!flowInstance || !focusView || !canvasRef.current) return;
+    if (focusView.nodeIds.length > 0) {
+      await flowInstance.fitView({
+        ...DIAGRAM_FIT_VIEW_OPTIONS,
+        duration: 500,
+        nodes: focusView.nodeIds.map((id) => ({ id })),
+      });
+      return;
+    }
+    await fitView();
+  }, [flowInstance, focusView, fitView]);
+
+  useEffect(() => {
+    if (!focusView) return;
+    let frame = 0;
+    let attempts = 0;
+
+    // Framed nodes are unmeasured until React Flow's ResizeObserver runs, so a
+    // spotlight present at mount would fit to nothing. Poll frames until the
+    // framed nodes have dimensions (or give up) before fitting. The parent
+    // memoizes the focus view, so this effect only re-runs for a new framing.
+    const waitForFramedNodes = () => {
+      attempts += 1;
+      const framedReady =
+        flowInstance !== undefined &&
+        (focusView.nodeIds.length === 0 ||
+          focusView.nodeIds.every((id) => (flowInstance.getInternalNode(id)?.measured.width ?? 0) > 0));
+      if (!framedReady && attempts < 90) {
+        frame = requestAnimationFrame(waitForFramedNodes);
+        return;
+      }
+      void focusSpotlightView();
+    };
+
+    frame = requestAnimationFrame(waitForFramedNodes);
+    return () => cancelAnimationFrame(frame);
+  }, [focusView, focusSpotlightView, flowInstance]);
 
   function isInteractiveClick(event: MouseEvent): boolean {
     return event.target instanceof Element && Boolean(event.target.closest(interactiveElementSelector));

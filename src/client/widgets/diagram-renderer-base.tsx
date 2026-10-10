@@ -10,6 +10,8 @@ import {
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/widgets/diagram-renderer.react-flow";
+import { applySpotlight } from "@/client/widgets/diagram-spotlight";
+import { type SpotlightController, SpotlightIndicator } from "@/client/widgets/spotlight-indicator";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
 import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
@@ -23,6 +25,7 @@ export type DiagramRendererProps = Readonly<{
   ariaLabel?: string;
   commentEnabled?: boolean;
   onOpenSource: (href: string) => void;
+  spotlight?: SpotlightController;
 }>;
 
 type DiagramRendererBaseProps = DiagramRendererProps &
@@ -57,6 +60,7 @@ function DiagramRendererContent({
   children,
   artifact,
   onOpenSource,
+  spotlight,
   calculateLayout,
   buildMeasurementNodes = buildDiagramMeasurementNodes,
   buildRenderModel,
@@ -135,9 +139,28 @@ function DiagramRendererContent({
     }
   }, [state, artifact, onOpenSource, buildRenderModel]);
 
+  const spotlit = useMemo(
+    () =>
+      rendered?.status === "ready" && spotlight
+        ? applySpotlight(rendered.model, spotlight.spotlight, spotlight.stepIndex)
+        : undefined,
+    [rendered, spotlight],
+  );
+  const displayModel = spotlit?.model ?? (rendered?.status === "ready" ? rendered.model : undefined);
+
+  // The canvas reframes whenever this object changes, so it is memoized to
+  // keep identity churn in the workspace from re-triggering the framing.
+  const spotlightFocusView = useMemo(
+    () =>
+      spotlit && spotlight
+        ? { key: `${JSON.stringify(spotlight.spotlight)}:${spotlight.stepIndex}`, nodeIds: spotlit.framedNodeIds }
+        : undefined,
+    [spotlit, spotlight],
+  );
+
   useLayoutEffect(() => {
-    if (rendered?.status === "ready") setNodes([...rendered.model.nodes]);
-  }, [rendered, setNodes]);
+    if (displayModel) setNodes([...displayModel.nodes]);
+  }, [displayModel, setNodes]);
 
   return (
     <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
@@ -161,8 +184,9 @@ function DiagramRendererContent({
       </ul>
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
-        edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
-        getNodeLabel={rendered?.status === "ready" ? (node) => searchLabels.get(node.id) ?? "" : undefined}
+        edges={displayModel ? [...displayModel.edges] : []}
+        focusView={spotlightFocusView}
+        getNodeLabel={displayModel ? (node) => searchLabels.get(node.id) ?? "" : undefined}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
@@ -188,6 +212,7 @@ function DiagramRendererContent({
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
         <DiagramLinksPanel links={artifact.links ?? []} onOpenSource={onOpenSource} />
       </DiagramCanvas>
+      {spotlight ? <SpotlightIndicator {...spotlight} /> : null}
       {children}
       {state.status === "measuring" || state.status === "layouting" ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted-foreground">
@@ -212,6 +237,7 @@ export function DiagramRendererBase({
   children,
   artifact,
   onOpenSource,
+  spotlight,
   calculateLayout,
   buildMeasurementNodes,
   buildRenderModel,
@@ -228,6 +254,7 @@ export function DiagramRendererBase({
         annotations={annotations}
         artifact={artifact}
         onOpenSource={onOpenSource}
+        spotlight={spotlight}
         calculateLayout={calculateLayout}
         buildMeasurementNodes={buildMeasurementNodes}
         buildRenderModel={buildRenderModel}

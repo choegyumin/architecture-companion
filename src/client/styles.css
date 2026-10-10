@@ -150,6 +150,24 @@
     @apply opacity-100;
   }
 
+  .react-flow__node.diagram-spotlight-emphasized {
+    border-radius: 0.75rem;
+    box-shadow:
+      0 0 0 2px var(--primary),
+      0 0 0 6px color-mix(in oklab, var(--primary) 22%, transparent);
+    transition: box-shadow 200ms ease;
+  }
+
+  .react-flow__node.diagram-spotlight-dimmed {
+    opacity: 0.35;
+    transition: opacity 200ms ease;
+  }
+
+  .react-flow__edge.diagram-spotlight-dimmed {
+    opacity: 0.25;
+    transition: opacity 200ms ease;
+  }
+
   .react-flow__pane :where(.nodrag, .nopan) {
     @apply pointer-events-auto;
   }
