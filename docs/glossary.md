@@ -182,6 +182,9 @@ Examining diagrams alongside source evidence to assess product behavior or code 
 **Review Follow-up**:
 Work that responds to requests for explanations, changes, or further review based on an earlier review. Annotations and comments from the active revision provide context for interpreting those requests.
 
+**Spotlight**:
+An agent-published request that brings one artifact and specific diagram elements to the reviewer's attention. The Review UI opens the artifact once and presents the spotlight's steps: each step emphasizes its targeted elements, dims the rest, and frames them in the viewport. A spotlight reaches already-open browsers as a one-time event and stays with the reviewer until it is closed or replaced by a newer one. Represented in code as `ArtifactSpotlight`.
+
 **Annotation**:
 A review mark attached to a canvas position or diagram element. It consists of one anchor and one comment.
 
