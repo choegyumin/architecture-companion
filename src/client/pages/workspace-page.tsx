@@ -10,11 +10,13 @@ import type {
 } from "@/client/parts/annotation-layer";
 import { ArtifactList } from "@/client/parts/artifact-list";
 import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
+import type { SpotlightController } from "@/client/widgets/spotlight-indicator";
 import type { AnnotationAnchor, AnnotationDocument } from "@/features/annotation/annotation-document";
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
@@ -29,6 +31,16 @@ type ReviewBundle = Readonly<{
 
 type ReviewLoadMode = "initial" | "refresh";
 type ReviewView = "design" | "process";
+
+/**
+ * A received spotlight ping with the reviewer's current step. The switch to
+ * the spotlighted artifact happens once per ping; afterwards the reviewer
+ * browses freely until the spotlight is closed or replaced by a newer ping.
+ */
+type SpotlightState = Readonly<{
+  spotlight: ArtifactSpotlight;
+  stepIndex: number;
+}>;
 
 type ReviewState =
   | Readonly<{ status: "loading" }>
@@ -402,6 +414,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const [requestedReviewView, setRequestedReviewView] = useState<ReviewView>("process");
   const [activeProcessId, setActiveProcessId] = useState("");
   const [activeDesignId, setActiveDesignId] = useState("");
+  const [spotlightState, setSpotlightState] = useState<SpotlightState>();
   const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
   const pressedKeys = useRef<ReadonlySet<string>>(new Set());
@@ -514,6 +527,30 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   useEffect(() => addEventListener(document, "keyup", handleAnnotationModeKeyUp), [handleAnnotationModeKeyUp]);
   useEffect(() => addEventListener(globalThis.window, "blur", handleAnnotationModeBlur), [handleAnnotationModeBlur]);
 
+  // A spotlight ping switches to its artifact exactly once. The ping usually
+  // arrives after the catalog has loaded; one that races the initial load is
+  // held in the pending ref and followed when that load completes.
+  const latestReviewRef = useRef(state);
+  useEffect(() => {
+    latestReviewRef.current = state;
+  }, [state]);
+  const pendingSpotlightFollowRef = useRef<ArtifactSpotlight | undefined>(undefined);
+
+  const followSpotlight = useCallback(
+    (spotlight: ArtifactSpotlight, catalog: NonNullable<ReviewResponse["catalog"]>) => {
+      if (catalog.behaviors.some(({ id }) => id === spotlight.artifactId)) {
+        setRequestedReviewView("process");
+        setActiveProcessId(spotlight.artifactId);
+        return;
+      }
+      if (catalog.designs.some(({ id }) => id === spotlight.artifactId)) {
+        setRequestedReviewView("design");
+        setActiveDesignId(spotlight.artifactId);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     let latestRequest = 0;
@@ -529,6 +566,12 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
         dispatchAnnotation({ type: "annotations-refreshed", annotations: bundle.annotations });
         dispatchReview({ type: "load-succeeded", mode, bundle });
+
+        const pending = pendingSpotlightFollowRef.current;
+        if (pending && bundle.review.catalog) {
+          pendingSpotlightFollowRef.current = undefined;
+          followSpotlight(pending, bundle.review.catalog);
+        }
       } catch (error) {
         if (cancelled || request !== latestRequest) return;
 
@@ -546,6 +589,13 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         if (cancelled) return;
         dispatchReview({ type: "load-failed", mode: "refresh", message: error.message });
       },
+      (spotlight) => {
+        const review = latestReviewRef.current;
+        const catalog = review.status === "ready" ? review.review.catalog : null;
+        if (catalog) followSpotlight(spotlight, catalog);
+        else pendingSpotlightFollowRef.current = spotlight;
+        setSpotlightState({ spotlight, stepIndex: 0 });
+      },
     );
     void synchronizeReview("initial");
 
@@ -553,7 +603,17 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       cancelled = true;
       unsubscribe();
     };
-  }, [client]);
+  }, [client, followSpotlight]);
+
+  const changeSpotlightStep = useCallback((stepIndex: number) => {
+    setSpotlightState((current) => {
+      if (!current) return current;
+      const lastStepIndex = current.spotlight.diagram.steps.length - 1;
+      return { ...current, stepIndex: Math.min(Math.max(stepIndex, 0), lastStepIndex) };
+    });
+  }, []);
+
+  const closeSpotlight = useCallback(() => setSpotlightState(undefined), []);
 
   async function confirmAnnotationClose(): Promise<boolean> {
     if (!hasUnsavedAnnotationChanges(annotationState)) return true;
@@ -895,6 +955,17 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             onSelect: setActiveDesignId,
           }
         : undefined;
+  const activeSpotlight: SpotlightController | undefined =
+    spotlightState &&
+    activeDiagramCollection &&
+    spotlightState.spotlight.artifactId === activeDiagramCollection.activeDiagram.id
+      ? {
+          spotlight: spotlightState.spotlight,
+          stepIndex: spotlightState.stepIndex,
+          onStepChange: changeSpotlightStep,
+          onClose: closeSpotlight,
+        }
+      : undefined;
   const annotationController: AnnotationReviewController = {
     document: state.annotations,
     draft: annotationState.draft,
@@ -970,6 +1041,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                   artifact={activeDiagramCollection.activeDiagram}
                   commentEnabled={annotationState.isModeEnabled}
                   onOpenSource={openSource}
+                  spotlight={activeSpotlight}
                 />
               </div>
             </div>

@@ -8,6 +8,7 @@ import {
 } from "@/features/annotation/revision-annotations";
 import { parseCatalog } from "@/features/catalog/catalog";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import { type ArtifactSpotlight, parseArtifactSpotlight } from "@/features/spotlight/spotlight";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
 
@@ -109,7 +110,8 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
 
   async function consumeReviewEvents(
     signal: AbortSignal,
-    onUpdate: () => void,
+    onReview: () => void,
+    onSpotlight: (spotlight: ArtifactSpotlight) => void,
     onError?: (error: Error) => void,
   ): Promise<void> {
     try {
@@ -132,9 +134,29 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
 
         let boundary = buffer.indexOf("\n\n");
         while (boundary >= 0) {
-          const event = buffer.slice(0, boundary);
+          const rawEvent = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
-          if (event.split("\n").some((line) => line === "event: review")) onUpdate();
+
+          const eventName = rawEvent
+            .split("\n")
+            .find((line) => line.startsWith("event:"))
+            ?.slice("event:".length)
+            .trim();
+          if (eventName === "review") onReview();
+
+          if (eventName === "spotlight") {
+            const data = rawEvent
+              .split("\n")
+              .find((line) => line.startsWith("data:"))
+              ?.slice("data:".length)
+              .trim();
+            try {
+              if (data !== undefined) onSpotlight(parseArtifactSpotlight(JSON.parse(data)));
+            } catch {
+              // A malformed spotlight event must not break the review stream.
+            }
+          }
+
           boundary = buffer.indexOf("\n\n");
         }
 
@@ -185,9 +207,13 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
 
       return result;
     },
-    subscribeToReviewUpdates: (onUpdate: () => void, onError?: (error: Error) => void) => {
+    subscribeToReviewUpdates: (
+      onReview: () => void,
+      onError?: (error: Error) => void,
+      onSpotlight?: (spotlight: ArtifactSpotlight) => void,
+    ) => {
       const controller = new AbortController();
-      void consumeReviewEvents(controller.signal, onUpdate, onError);
+      void consumeReviewEvents(controller.signal, onReview, onSpotlight ?? (() => undefined), onError);
 
       return () => controller.abort();
     },
