@@ -150,6 +150,16 @@
     @apply opacity-100;
   }
 
+  .react-flow__node.is-search-match {
+    outline: var(--search-match-width) dashed var(--primary);
+    outline-offset: var(--search-outline-offset);
+  }
+
+  .react-flow__node.is-search-current {
+    outline-width: var(--search-current-width);
+    outline-style: solid;
+  }
+
   .react-flow__pane :where(.nodrag, .nopan) {
     @apply pointer-events-auto;
   }

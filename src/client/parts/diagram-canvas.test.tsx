@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
   return {
     platform: { os: { mac: false } },
     flowInstance: { screenToFlowPosition, fitView },
-    nodes: [] as { id: string; type: string; parentId?: string }[],
+    nodes: [] as { id: string; type: string; parentId?: string; className?: string }[],
     screenToFlowPosition,
     fitView,
   };
@@ -26,6 +26,7 @@ vi.mock("@xyflow/react", () => ({
   Controls: ({ children }: { children: ReactNode }) => <>{children}</>,
   Panel: ({ children }: { children: ReactNode }) => <>{children}</>,
   useReactFlow: () => ({ getNodes: () => mocks.nodes }),
+  useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
   ReactFlow: ({
     children,
     edges,
@@ -37,7 +38,7 @@ vi.mock("@xyflow/react", () => ({
   }: {
     children: ReactNode;
     edges: readonly { id: string }[];
-    nodes: readonly { id: string; type: string; parentId?: string }[];
+    nodes: readonly { id: string; type: string; parentId?: string; className?: string }[];
     onEdgeClick?: (event: MouseEvent<Element>, edge: { id: string }) => void;
     onInit: (instance: unknown) => void;
     onNodeClick?: (event: MouseEvent<Element>, node: { id: string; type: string }) => void;
@@ -47,10 +48,10 @@ vi.mock("@xyflow/react", () => ({
     useEffect(() => {
       onInit(mocks.flowInstance);
     }, [onInit]);
-    const renderNode = (node: { id: string; type: string; parentId?: string }): ReactNode => (
+    const renderNode = (node: { id: string; type: string; parentId?: string; className?: string }): ReactNode => (
       <span
         aria-label={`React Flow node ${node.id}`}
-        className="react-flow__node"
+        className={`react-flow__node ${node.className ?? ""}`}
         data-id={node.id}
         key={node.id}
         onClick={(event) => onNodeClick?.(event, node)}
@@ -219,21 +220,27 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).not.toHaveBeenCalled();
   });
 
-  it("searches visible nodes and groups, activates them, and fits the selected shape without selecting it", async () => {
+  it("highlights all matches without moving, then fits each node or group on the first and subsequent navigation gestures", async () => {
     const user = userEvent.setup();
     const onNodeActivate = vi.fn();
     const onGroupActivate = vi.fn();
     const labels = new Map([
-      ["file", "File"],
-      ["group", "Group"],
+      ["file", "Render"],
+      ["group", "Render"],
     ]);
     render(
       <DiagramCanvas
         edges={[]}
         getNodeLabel={(node) => labels.get(node.id) ?? ""}
         nodes={[
-          { id: "file", type: "card", position: { x: 0, y: 0 }, data: { label: "File" } },
-          { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Group" } },
+          {
+            id: "file",
+            type: "card",
+            className: "existing-class",
+            position: { x: 0, y: 0 },
+            data: { label: "Render" },
+          },
+          { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Render" } },
           { id: "bounding-group:group", type: "bounding-group", position: { x: 0, y: 0 }, data: {} },
         ]}
         onGroupActivate={onGroupActivate}
@@ -241,32 +248,66 @@ describe("diagram canvas", () => {
       />,
     );
     const input = await screen.findByRole("combobox", { name: "Search nodes" });
+    const file = screen.getByLabelText("React Flow node file");
+    const group = screen.getByLabelText("React Flow node group");
 
-    await user.type(input, "GROUP");
-    expect(screen.getByRole("option", { name: "Group" })).toBeInTheDocument();
-    await user.click(screen.getByRole("option", { name: "Group" }));
-    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
-    expect(mocks.fitView).toHaveBeenNthCalledWith(1, {
-      nodes: [{ id: "group" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
+    await user.type(input, "RENDER");
+    expect(screen.getAllByRole("option", { name: "Render" })).toHaveLength(2);
+    expect(file).toHaveClass("existing-class", "is-search-match");
+    expect(group).toHaveClass("is-search-match");
+    expect(file).not.toHaveClass("is-search-current");
+    expect(mocks.fitView).not.toHaveBeenCalled();
+    expect(onNodeActivate).not.toHaveBeenCalled();
+    expect(onGroupActivate).not.toHaveBeenCalled();
 
-    await user.type(input, "file{Enter}");
+    await user.keyboard("{Enter}");
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
-    expect(mocks.fitView).toHaveBeenNthCalledWith(2, {
+    expect(mocks.fitView).toHaveBeenLastCalledWith({
       nodes: [{ id: "file" }],
       minZoom: 0.01,
       maxZoom: 1,
       padding: "24px",
       duration: 500,
     });
+    expect(file).toHaveClass("is-search-current");
+    expect(group).not.toHaveClass("is-search-current");
+
+    await user.keyboard("{Enter}");
+    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({
+      nodes: [{ id: "group" }],
+      minZoom: 0.01,
+      maxZoom: 1,
+      padding: "24px",
+      duration: 500,
+    });
+    expect(group).toHaveClass("is-search-current");
+    expect(file).not.toHaveClass("is-search-current");
+    expect(input).toHaveValue("RENDER");
+
+    const [firstOption] = screen.getAllByRole("option", { name: "Render" });
+    await user.click(firstOption);
+    expect(mocks.fitView).toHaveBeenLastCalledWith({
+      nodes: [{ id: "file" }],
+      minZoom: 0.01,
+      maxZoom: 1,
+      padding: "24px",
+      duration: 500,
+    });
+    expect(screen.getByText("1/2")).toBeVisible();
+    expect(input).toHaveFocus();
     expect(mocks.nodes.every((node) => !("selected" in node))).toBe(true);
 
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(file).not.toHaveClass("is-search-match", "is-search-current");
+    expect(group).not.toHaveClass("is-search-match", "is-search-current");
+    expect(file).toHaveClass("existing-class");
+
+    await user.clear(input);
     await user.type(input, "bounding-group");
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(mocks.fitView).toHaveBeenCalledTimes(3);
   });
 
   it.each([

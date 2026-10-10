@@ -52,19 +52,97 @@ describe("NodeSearch", () => {
     expect(container.querySelector("svg")).not.toBeInTheDocument();
   });
 
-  it("searches data.label without regard to case and selects and fits the chosen node by default", async () => {
+  it("highlights search results without moving, then fits the first match on Enter without closing search", async () => {
     const user = userEvent.setup();
     render(<NodeSearch />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
 
-    await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "ALP");
+    await user.type(input, "ALP");
     expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Beta" })).not.toBeInTheDocument();
+    expect(mocks.fitView).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("option", { name: "Alpha" }));
-    expect(mocks.state.nodes.find((node) => node.id === "alpha")?.selected).toBe(true);
+    await user.keyboard("{Enter}");
     expect(mocks.fitView).toHaveBeenCalledExactlyOnceWith({ nodes: [alpha], duration: 500 });
-    expect(screen.getByRole("combobox", { name: "Search nodes" })).toHaveValue("");
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(input).toHaveValue("ALP");
+    expect(input).toHaveFocus();
+    expect(screen.getByRole("option", { name: "Alpha", selected: true })).toBeInTheDocument();
+    expect(screen.getByText("1/1")).toBeVisible();
+  });
+
+  it("cycles every matching node, including duplicate names, and keeps clicks and keyboard navigation in sync", async () => {
+    const user = userEvent.setup();
+    const first = { ...alpha, id: "render-first", data: { label: "Render" } };
+    const second = { ...beta, id: "render-second", data: { label: "Render" } };
+    const third = { ...alpha, id: "render-third", data: { label: "RenderPanel" } };
+    mocks.state.nodes = [first, second, third];
+    render(<NodeSearch />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+
+    await user.type(input, "render");
+    expect(screen.getByText("0/3")).toBeVisible();
+    expect(mocks.fitView).not.toHaveBeenCalled();
+
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [first], duration: 500 });
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [second], duration: 500 });
+    expect(screen.getByText("2/3")).toBeVisible();
+
+    await user.keyboard("{ArrowUp}{Shift>}{Enter}{/Shift}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
+    expect(screen.getByRole("option", { name: "RenderPanel", selected: true })).toBeVisible();
+
+    const [, secondOption] = screen.getAllByRole("option", { name: "Render" });
+    await user.click(secondOption);
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [second], duration: 500 });
+    expect(input).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
+
+    await user.click(screen.getByRole("button", { name: "Next match" }));
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [first], duration: 500 });
+    await user.click(screen.getByRole("button", { name: "Previous match" }));
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
+    expect(input).toHaveValue("render");
+    expect(input).toHaveFocus();
+  });
+
+  it("closes on blur or Escape, retains the query, and restarts navigation from the first match", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <NodeSearch />
+        <button type="button">Outside search</button>
+      </>,
+    );
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    await user.type(input, "a");
+    await user.keyboard("{Enter}{Enter}");
+    expect(screen.getByText("2/2")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Outside search" }));
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(input).toHaveValue("a");
+
+    await user.click(input);
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+    expect(screen.getByText("0/2")).toBeVisible();
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [alpha], duration: 500 });
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("a");
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [alpha], duration: 500 });
+    expect(screen.getByText("1/2")).toBeVisible();
+
+    await user.clear(input);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(input).toHaveValue("");
   });
 
   it("uses getNodeLabel for both default search and result text", async () => {
