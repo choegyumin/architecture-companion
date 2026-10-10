@@ -12,7 +12,7 @@ export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   startInputAddon?: ReactNode;
   endInputAddon?: ReactNode;
   onSearch?: (searchString: string) => NodeType[];
-  /** Visits a match without ending the search. Defaults to fitting the viewport to the node. */
+  /** Visits a match during navigation or confirmation. Defaults to fitting the viewport to the node. */
   onSelectNode?: (node: NodeType) => void;
   /** Visible matches and the visited match, for presentation without viewport movement. */
   onMatchesChange?: (nodes: readonly NodeType[], currentNode: NodeType | null) => void;
@@ -114,7 +114,6 @@ export function NodeSearch<NodeType extends Node = Node>({
   const visit = (index: number) => {
     const { node } = searchResults[index];
     setCurrentId(node.id);
-    changeOpen(true);
     if (onSelectNode) onSelectNode(node);
     else void fitView({ nodes: [node], duration: 500 });
   };
@@ -127,7 +126,14 @@ export function NodeSearch<NodeType extends Node = Node>({
           ? 0
           : searchResults.length - 1
         : (currentIndex + direction + searchResults.length) % searchResults.length;
+    changeOpen(true);
     visit(index);
+  };
+
+  const confirm = (index: number) => {
+    if (!isOpen || searchResults.length === 0) return;
+    visit(index);
+    close();
   };
 
   useEffect(() => {
@@ -166,10 +172,14 @@ export function NodeSearch<NodeType extends Node = Node>({
               event.preventDefault();
               event.stopPropagation();
               onChange("");
-            } else if (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp") {
+            } else if (event.key === "Enter") {
               event.preventDefault();
               event.stopPropagation();
-              step(event.key === "ArrowUp" || (event.key === "Enter" && event.shiftKey) ? -1 : 1);
+              confirm(currentIndex === -1 ? 0 : currentIndex);
+            } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              event.stopPropagation();
+              step(event.key === "ArrowUp" ? -1 : 1);
             }
           }}
           placeholder={placeholder}
@@ -189,7 +199,7 @@ export function NodeSearch<NodeType extends Node = Node>({
               disabled={searchResults.length === 0}
               onClick={() => step(-1)}
               onMouseDown={(event) => event.preventDefault()}
-              title="Previous match (Shift+Enter)"
+              title="Previous match (↑)"
               type="button"
             >
               <ChevronUp aria-hidden="true" className="size-4" />
@@ -200,7 +210,7 @@ export function NodeSearch<NodeType extends Node = Node>({
               disabled={searchResults.length === 0}
               onClick={() => step(1)}
               onMouseDown={(event) => event.preventDefault()}
-              title="Next match (Enter)"
+              title="Next match (↓)"
               type="button"
             >
               <ChevronDown aria-hidden="true" className="size-4" />
@@ -222,7 +232,7 @@ export function NodeSearch<NodeType extends Node = Node>({
                 )}
                 id={`${listId}-${index}`}
                 key={node.id}
-                onClick={() => visit(index)}
+                onClick={() => confirm(index)}
                 onMouseDown={(event) => event.preventDefault()}
                 ref={index === currentIndex ? currentOptionRef : undefined}
                 role="option"
