@@ -260,7 +260,7 @@ describe("diagram canvas", () => {
     expect(onNodeActivate).not.toHaveBeenCalled();
     expect(onGroupActivate).not.toHaveBeenCalled();
 
-    await user.keyboard("{Enter}");
+    await user.keyboard("{ArrowDown}");
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
     expect(mocks.fitView).toHaveBeenLastCalledWith({
       nodes: [{ id: "file" }],
@@ -272,7 +272,7 @@ describe("diagram canvas", () => {
     expect(file).toHaveClass("is-search-current");
     expect(group).not.toHaveClass("is-search-current");
 
-    await user.keyboard("{Enter}");
+    await user.keyboard("{ArrowDown}");
     expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
     expect(mocks.fitView).toHaveBeenLastCalledWith({
       nodes: [{ id: "group" }],
@@ -285,6 +285,22 @@ describe("diagram canvas", () => {
     expect(file).not.toHaveClass("is-search-current");
     expect(input).toHaveValue("RENDER");
 
+    await user.keyboard("{Enter}");
+    expect(mocks.fitView).toHaveBeenCalledTimes(3);
+    expect(mocks.fitView).toHaveBeenLastCalledWith({
+      nodes: [{ id: "group" }],
+      minZoom: 0.01,
+      maxZoom: 1,
+      padding: "24px",
+      duration: 500,
+    });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("RENDER");
+    expect(file).not.toHaveClass("is-search-match", "is-search-current");
+    expect(group).not.toHaveClass("is-search-match", "is-search-current");
+
+    await user.click(screen.getByRole("button", { name: "Fit View" }));
+    await user.click(input);
     const [firstOption] = screen.getAllByRole("option", { name: "Render" });
     await user.click(firstOption);
     expect(mocks.fitView).toHaveBeenLastCalledWith({
@@ -294,7 +310,8 @@ describe("diagram canvas", () => {
       padding: "24px",
       duration: 500,
     });
-    expect(screen.getByText("1/2")).toBeVisible();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("RENDER");
     expect(input).toHaveFocus();
     expect(mocks.nodes.every((node) => !("selected" in node))).toBe(true);
 
@@ -308,7 +325,7 @@ describe("diagram canvas", () => {
     await user.clear(input);
     await user.type(input, "bounding-group");
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
-    expect(mocks.fitView).toHaveBeenCalledTimes(3);
+    expect(mocks.fitView).toHaveBeenCalledTimes(4);
   });
 
   it.each([
