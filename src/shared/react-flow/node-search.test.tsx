@@ -108,7 +108,7 @@ describe("NodeSearch", () => {
     expect(input).toHaveFocus();
   });
 
-  it("closes on blur or Escape, retains the query, and restarts navigation from the first match", async () => {
+  it("retains the query on blur but clears the query and results on Escape", async () => {
     const user = userEvent.setup();
     render(
       <>
@@ -118,7 +118,7 @@ describe("NodeSearch", () => {
     );
     const input = screen.getByRole("combobox", { name: "Search nodes" });
     await user.type(input, "a");
-    await user.keyboard("{Enter}{Enter}");
+    await user.keyboard("{ArrowDown}{ArrowDown}");
     expect(screen.getByText("2/2")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Outside search" }));
@@ -129,19 +129,21 @@ describe("NodeSearch", () => {
     await user.click(input);
     expect(screen.getAllByRole("option")).toHaveLength(2);
     expect(screen.getByText("0/2")).toBeVisible();
-    await user.keyboard("{Enter}");
+    await user.keyboard("{ArrowDown}");
     expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [alpha], duration: 500 });
+    mocks.fitView.mockClear();
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(input).toHaveValue("a");
-    await user.keyboard("{Enter}");
-    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [alpha], duration: 500 });
-    expect(screen.getByText("1/2")).toBeVisible();
-
-    await user.clear(input);
+    expect(input).toHaveValue("");
+    expect(input).toHaveFocus();
+    await user.keyboard("{Enter}{ArrowDown}");
+    expect(mocks.fitView).not.toHaveBeenCalled();
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    await user.keyboard("{Enter}");
+
+    await user.click(screen.getByRole("button", { name: "Outside search" }));
+    await user.click(input);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveValue("");
   });
 

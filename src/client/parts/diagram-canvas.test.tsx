@@ -299,6 +299,7 @@ describe("diagram canvas", () => {
     expect(mocks.nodes.every((node) => !("selected" in node))).toBe(true);
 
     await user.keyboard("{Escape}");
+    expect(input).toHaveValue("");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(file).not.toHaveClass("is-search-match", "is-search-current");
     expect(group).not.toHaveClass("is-search-match", "is-search-current");
