@@ -4,6 +4,7 @@ import { validator } from "hono/validator";
 
 import { parseRevisionAnnotations, type RevisionAnnotations } from "@/features/annotation/revision-annotations";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import { parseArtifactSpotlight, validateSpotlightAgainstCatalog } from "@/features/spotlight/spotlight";
 import type { CompanionScope } from "@/server/companion-scope";
 import { createAnnotationEtag } from "@/server/create-annotation-etag";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
@@ -18,12 +19,15 @@ import { readActiveRevisionAnnotations } from "@/server/read-active-revision-ann
 import { readCatalog } from "@/server/read-catalog";
 import type { ReviewUpdates } from "@/server/review-updates";
 import { isSourceOpenRequestAllowed } from "@/server/source-open-request";
+import { createSpotlightBroadcasts, type SpotlightBroadcasts } from "@/server/spotlight-broadcasts";
+import { isSpotlightRequestAllowed } from "@/server/spotlight-request";
 import { openLocalPath } from "@/shared/node/open-local-path";
 
 type CreateAppDependencies = Readonly<{
   openPath?: OpenPath;
   reviewUpdates?: Pick<ReviewUpdates, "subscribe">;
   annotationRepository?: RevisionAnnotationRepository;
+  spotlightBroadcasts?: SpotlightBroadcasts;
 }>;
 
 const defaultOpenPath: OpenPath = async ({ path, line }) => {
@@ -62,6 +66,7 @@ export function createApp(scope: CompanionScope, dependencies: CreateAppDependen
   const openPath = dependencies.openPath ?? defaultOpenPath;
   const reviewUpdates = dependencies.reviewUpdates;
   const annotationRepository = dependencies.annotationRepository ?? createFileAnnotationRepository(scope.path);
+  const spotlightBroadcasts = dependencies.spotlightBroadcasts ?? createSpotlightBroadcasts();
 
   return new Hono()
     .get("/api/review", async (context) => {
@@ -92,23 +97,75 @@ export function createApp(scope: CompanionScope, dependencies: CreateAppDependen
       streamSSE(context, async (stream) => {
         let pendingWrite = Promise.resolve();
 
-        const publish = (data: unknown): void => {
+        const writeEvent = (event: string, data: unknown): void => {
           pendingWrite = pendingWrite.then(async () => {
-            await stream.writeSSE({ event: "review", data: JSON.stringify(data) });
+            await stream.writeSSE({ event, data: JSON.stringify(data) });
           });
         };
 
         await new Promise<void>((resolve) => {
-          const unsubscribe = reviewUpdates?.subscribe(publish) ?? (() => undefined);
+          const unsubscribeReview =
+            reviewUpdates?.subscribe((update) => writeEvent("review", update)) ?? (() => undefined);
+          const unsubscribeSpotlight = spotlightBroadcasts.subscribe((spotlight) => writeEvent("spotlight", spotlight));
 
           stream.onAbort(() => {
-            unsubscribe();
+            unsubscribeReview();
+            unsubscribeSpotlight();
             resolve();
           });
-          publish({ revision: 0 });
+          writeEvent("review", { revision: 0 });
         });
         await pendingWrite;
       }),
+    )
+    .post(
+      "/api/spotlight",
+      async (context, next) => {
+        const allowed = isSpotlightRequestAllowed({
+          origin: context.req.raw.headers.get("origin"),
+          requestOrigin: new URL(context.req.url).origin,
+          fetchSite: context.req.raw.headers.get("sec-fetch-site"),
+        });
+
+        if (!allowed) {
+          return context.json(
+            { error: { message: "Spotlight requests must come from local tooling or the companion page." } },
+            403,
+          );
+        }
+
+        await next();
+      },
+      validator("json", (input, context) => {
+        try {
+          return parseArtifactSpotlight(input);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Artifact spotlight is invalid.";
+          return context.json({ error: { message } }, 422);
+        }
+      }),
+      async (context) => {
+        const spotlight = context.req.valid("json");
+        const result = await readCatalog(scope.path);
+
+        if (result.status === "invalid") {
+          return context.json({ error: { message: result.message } }, 422);
+        }
+        if (result.status === "missing") {
+          return context.json(
+            { error: { message: "Catalog is unavailable. Spotlight has no artifact to address." } },
+            404,
+          );
+        }
+
+        const validation = validateSpotlightAgainstCatalog(result.catalog, spotlight);
+        if (validation.status === "invalid") {
+          return context.json({ error: { message: validation.message } }, 422);
+        }
+
+        spotlightBroadcasts.publish(spotlight);
+        return context.json({ spotlight }, 201);
+      },
     )
     .get("/api/annotations", async (context) => {
       const result = await readActiveRevisionAnnotations(scope.path, annotationRepository);
