@@ -74,3 +74,34 @@ export async function fitViewFraming<NodeType extends Node, EdgeType extends Edg
     zoom: viewport.zoom,
   });
 }
+
+/**
+ * Frames an arbitrary layout-coordinates rectangle, clamped to the same zoom
+ * range as a whole-diagram fit. React Flow's fitBounds cannot clamp zoom, so
+ * the viewport is computed directly.
+ */
+export async function focusBoundsFraming<NodeType extends Node, EdgeType extends Edge>(
+  instance: ReactFlowInstance<NodeType, EdgeType>,
+  bounds: Readonly<{ x: number; y: number; width: number; height: number }>,
+  viewportElement: HTMLElement,
+): Promise<void> {
+  if (viewportElement.clientWidth === 0 || viewportElement.clientHeight === 0) return;
+
+  const boundsWidth = Math.max(bounds.width, 1);
+  const boundsHeight = Math.max(bounds.height, 1);
+  const availableWidth = viewportElement.clientWidth - ROOT_VIEWPORT_PADDING * 2;
+  const availableHeight = viewportElement.clientHeight - ROOT_VIEWPORT_PADDING * 2;
+  const zoom = Math.min(
+    Math.max(Math.min(availableWidth / boundsWidth, availableHeight / boundsHeight), DIAGRAM_MIN_ZOOM),
+    DIAGRAM_FIT_VIEW_OPTIONS.maxZoom,
+  );
+
+  await instance.setViewport(
+    {
+      x: viewportElement.clientWidth / 2 - (bounds.x + boundsWidth / 2) * zoom,
+      y: viewportElement.clientHeight / 2 - (bounds.y + boundsHeight / 2) * zoom,
+      zoom,
+    },
+    { duration: 500 },
+  );
+}

@@ -1,12 +1,16 @@
-import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
+import type { DiagramFocusTarget, DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { DiagramReactFlowRenderModel } from "@/client/widgets/diagram-renderer.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 
 export const SPOTLIGHT_EMPHASIZED_CLASS_NAME = "diagram-spotlight-emphasized";
 export const SPOTLIGHT_DIMMED_CLASS_NAME = "diagram-spotlight-dimmed";
 const SPOTLIGHT_STROKE = "var(--primary)";
 const SPOTLIGHT_DIMMED_OPACITY = 0.25;
+// A single message is a thin horizontal strip; give it at least one row of
+// height so its step still reads as an area rather than a line.
+const MIN_FRAME_HEIGHT = 48;
 
 export type SpotlightRenderResult = Readonly<{
   model: DiagramReactFlowRenderModel;
@@ -129,4 +133,76 @@ export function applySpotlight(
   });
 
   return { model: { ...model, nodes, edges }, framedNodeIds: [...framedNodeIds], framedEdgeIds: [...addressedEdgeIds] };
+}
+
+/**
+ * Decides how the viewport should frame a spotlight step. Lifelines span the
+ * whole diagram height, so fitting their node bounds only pans; when a step
+ * touches lifelines, the frame is computed from the message geometry and the
+ * non-lifeline nodes instead, which lets the viewport zoom in.
+ */
+export function computeSpotlightFrame(
+  model: DiagramReactFlowRenderModel,
+  layout: DiagramLayout,
+  framedNodeIds: readonly string[],
+  framedEdgeIds: readonly string[],
+): DiagramFocusTarget {
+  const framedRenderNodes = model.nodes.filter((node) => framedNodeIds.includes(node.id));
+  if (!framedRenderNodes.some((node) => node.type === "lifeline")) {
+    return { kind: "nodes", nodeIds: [...framedNodeIds] };
+  }
+
+  const layoutNodesById = new Map(layout.nodes.map((node) => [node.id, node]));
+  const layoutEdgesById = new Map(layout.edges.map((edge) => [edge.id, edge]));
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  let hasHeight = false;
+
+  const extendX = (x: number): void => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+  };
+  const extendY = (y: number): void => {
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  };
+
+  for (const edgeId of framedEdgeIds) {
+    const edge = layoutEdgesById.get(edgeId);
+    if (!edge) continue;
+    for (const point of edge.points) {
+      extendX(point.x);
+      extendY(point.y);
+      hasHeight = true;
+    }
+  }
+
+  for (let index = 0; index < framedRenderNodes.length; index += 1) {
+    const renderNode = framedRenderNodes[index];
+    const layoutNode = layoutNodesById.get(renderNode.id);
+    if (!layoutNode) continue;
+    if (renderNode.type === "lifeline") {
+      // Only the lifeline's column matters; its height is the whole diagram.
+      extendX(layoutNode.position.x);
+      extendX(layoutNode.position.x + layoutNode.size.width);
+      continue;
+    }
+    extendX(layoutNode.position.x);
+    extendX(layoutNode.position.x + layoutNode.size.width);
+    extendY(layoutNode.position.y);
+    extendY(layoutNode.position.y + layoutNode.size.height);
+    hasHeight = true;
+  }
+
+  if (!hasHeight) return { kind: "nodes", nodeIds: [...framedNodeIds] };
+
+  return {
+    kind: "bounds",
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: Math.max(maxY - minY, MIN_FRAME_HEIGHT),
+  };
 }
