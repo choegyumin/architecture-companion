@@ -12,6 +12,7 @@ import {
   Panel,
   ReactFlow,
   type ReactFlowInstance,
+  useViewport,
 } from "@xyflow/react";
 import { Maximize } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ import {
 import { DIAGRAM_FIT_VIEW_OPTIONS, DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
+import { cn } from "@/shared/react/class-name";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
 import { DecisionNode, type DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
@@ -113,6 +115,11 @@ export function DiagramCanvas({
   initialView,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
+  const { zoom } = useViewport();
+  const [searchMatches, setSearchMatches] = useState<{ ids: ReadonlySet<string>; currentId: string | null }>({
+    ids: new Set(),
+    currentId: null,
+  });
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<DiagramReactFlowNode, DiagramReactFlowEdge>>();
   const [highlightOrigin, setHighlightOrigin] = useState<EdgeHighlightOrigin | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -169,6 +176,28 @@ export function DiagramCanvas({
         : edge,
     );
   }, [edges, highlightedEdges]);
+
+  const handleSearchMatchesChange = useCallback(
+    (matches: readonly DiagramReactFlowNode[], currentNode: DiagramReactFlowNode | null) => {
+      setSearchMatches({ ids: new Set(matches.map((node) => node.id)), currentId: currentNode?.id ?? null });
+    },
+    [],
+  );
+  const searchStampedNodes = useMemo(() => {
+    if (!searchEnabled || searchMatches.ids.size === 0) return nodes;
+    return nodes.map((node) =>
+      searchMatches.ids.has(node.id)
+        ? {
+            ...node,
+            className: cn(
+              node.className,
+              "is-search-match",
+              node.id === searchMatches.currentId && "is-search-current",
+            ),
+          }
+        : node,
+    );
+  }, [nodes, searchEnabled, searchMatches]);
 
   const fitView = useCallback(async () => {
     if (!flowInstance || !initialView || !canvasRef.current) return;
@@ -239,13 +268,20 @@ export function DiagramCanvas({
       <ReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>
         className={className}
         colorMode={resolvedTheme}
-        style={{ "--xy-background-color": "var(--surface)" } as CSSProperties}
+        style={
+          {
+            "--xy-background-color": "var(--surface)",
+            "--search-match-width": `${2 / zoom}px`,
+            "--search-current-width": `${4 / zoom}px`,
+            "--search-outline-offset": `${3 / zoom}px`,
+          } as CSSProperties
+        }
         edges={highlightStampedEdges}
         edgesFocusable={false}
         edgeTypes={diagramEdgeTypes}
         elementsSelectable={false}
         minZoom={DIAGRAM_MIN_ZOOM}
-        nodes={nodes}
+        nodes={searchStampedNodes}
         nodesConnectable={false}
         nodesDraggable={false}
         nodesFocusable={false}
@@ -272,6 +308,7 @@ export function DiagramCanvas({
               getNodeLabel={getNodeLabel}
               inputRef={searchInputRef}
               onSelectNode={handleSearchSelect}
+              onMatchesChange={handleSearchMatchesChange}
               endInputAddon={
                 <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">{isMacOS ? "⌘K" : "Ctrl+K"}</kbd>
               }
