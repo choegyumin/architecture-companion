@@ -1,7 +1,16 @@
-import { parseCatalog } from "@/features/catalog/catalog";
+import { catalogConfigSchema, parseCatalog } from "@/features/catalog/catalog";
+
+it("parses artifact discovery patterns independently from placement instructions", () => {
+  const config = {
+    artifactPatterns: ["src/**/*.review.json"],
+    placementInstructions: "Keep artifacts beside their feature.",
+  };
+  expect(catalogConfigSchema.parse(config)).toEqual(config);
+});
 
 const validBehavior = {
-  artifactId: "checkout",
+  artifactId: "src/checkout/checkout.archcomp.json",
+  kind: "behavior",
   title: "Checkout workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -38,6 +47,37 @@ const validArtifact = {
 } as const;
 
 describe("catalog parsing", () => {
+  it.each([
+    "/checkout.json",
+    "../checkout.json",
+    "src/../checkout.json",
+    "src\\checkout.json",
+    "C:/checkout.json",
+    "src//checkout.json",
+  ])("rejects an artifact path outside the normalized scope-relative contract: %s", (id) => {
+    expect(() => parseCatalog({ behaviors: [{ ...validBehavior, id }], designs: [] })).toThrow("Invalid catalog");
+  });
+
+  it("allows the same filename in different directories", () => {
+    const catalog = {
+      behaviors: [validBehavior, { ...validBehavior, artifactId: "src/account/checkout.archcomp.json" }],
+      designs: [],
+    };
+    expect(parseCatalog(catalog)).toEqual(catalog);
+  });
+
+  it("rejects a kind that disagrees with its collection", () => {
+    expect(() => parseCatalog({ behaviors: [], designs: [validBehavior] })).toThrow(
+      "Artifact kind does not match design collection",
+    );
+  });
+
+  it("rejects the same path across collections", () => {
+    expect(() => parseCatalog({ behaviors: [validBehavior], designs: [{ ...validBehavior, kind: "design" }] })).toThrow(
+      "Duplicate artifact path: src/checkout/checkout.archcomp.json",
+    );
+  });
+
   it("preserves a valid diagram catalog", () => {
     expect(parseCatalog(validArtifact)).toEqual(validArtifact);
   });
@@ -47,7 +87,10 @@ describe("catalog parsing", () => {
     { revision: "6d8c2d3b21d2647166542072ba757b1b57d496cf", divergesFromRevision: true },
   ])("preserves authoring metadata in behaviors and designs: $revision", (vcs) => {
     const diagram = { ...validBehavior, vcs };
-    const catalog = { behaviors: [diagram], designs: [diagram] };
+    const catalog = {
+      behaviors: [diagram],
+      designs: [{ ...diagram, kind: "design", artifactId: "src/checkout/design.archcomp.json" }],
+    };
 
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
@@ -168,13 +211,14 @@ describe("catalog parsing", () => {
 
   it("rejects duplicate behavior IDs", () => {
     expect(() => parseCatalog({ ...validArtifact, behaviors: [validBehavior, validBehavior] })).toThrow(
-      "Duplicate behavior ID: checkout",
+      "Duplicate artifact path: src/checkout/checkout.archcomp.json",
     );
   });
 
   it("rejects duplicate design IDs", () => {
     const diagram = {
-      artifactId: "structure",
+      artifactId: "src/checkout/structure.archcomp.json",
+      kind: "design",
       title: "Structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",
@@ -191,13 +235,14 @@ describe("catalog parsing", () => {
     } as const;
 
     expect(() => parseCatalog({ ...validArtifact, designs: [diagram, diagram] })).toThrow(
-      "Duplicate design ID: structure",
+      "Duplicate artifact path: src/checkout/structure.archcomp.json",
     );
   });
 
   it("preserves direct node links and edge hrefs", () => {
     const diagram = {
-      artifactId: "structure",
+      artifactId: "src/checkout/structure.archcomp.json",
+      kind: "design",
       title: "Structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",

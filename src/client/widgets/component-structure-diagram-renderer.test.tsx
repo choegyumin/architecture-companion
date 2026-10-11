@@ -41,8 +41,7 @@ vi.mock("./diagram-renderer-base", () => ({
 }));
 
 function renderGate(polarityPair: true | undefined) {
-  const artifact = parseArtifact({
-    artifactId: "polarity",
+  const document = parseArtifact({
     title: "Polarity",
     generator: "built-in:freeform",
     updatedAt: "2026-10-12T00:00:00.000Z",
@@ -84,6 +83,7 @@ function renderGate(polarityPair: true | undefined) {
       },
     },
   });
+  const artifact = { ...document, artifactId: ".architecture-companion/artifacts/polarity.archcomp.json" };
   return render(
     <ComponentStructureDiagramRenderer
       artifact={artifact}

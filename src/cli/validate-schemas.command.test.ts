@@ -3,11 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  artifactId: "checkout",
+  kind: "behavior",
   title: "Checkout",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -81,7 +81,7 @@ describe("Catalog schema validation command", () => {
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Catalog is missing: .architecture-companion");
+      ).rejects.toThrow("Catalog is missing: no artifacts found in the configured paths");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
@@ -93,39 +93,36 @@ describe("Catalog schema validation command", () => {
     const outputs: string[] = [];
 
     try {
-      await mkdir(join(scopePath, BEHAVIORS_RELATIVE_PATH), { recursive: true });
-      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid");
+      await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
+      await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "invalid.archcomp.json"), "{ invalid");
 
       await expect(
         executeValidateSchemasCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json");
+      ).rejects.toThrow("Catalog contains invalid JSON: .architecture-companion/artifacts/invalid.archcomp.json");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });
     }
   });
 
-  test("fails with a detailed error when the diagram file name does not match the diagram ID", async () => {
+  test("accepts an arbitrary artifact file name without a persisted ID", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-validation-"));
     const outputs: string[] = [];
 
     try {
-      await mkdir(join(scopePath, BEHAVIORS_RELATIVE_PATH), { recursive: true });
+      await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
       await writeFile(
-        join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"),
-        JSON.stringify({ ...checkoutBehavior, artifactId: "checkout-workflow" }),
+        join(scopePath, ARTIFACTS_RELATIVE_PATH, "order-flow.archcomp.json"),
+        JSON.stringify(checkoutBehavior),
       );
 
-      await expect(
-        executeValidateSchemasCommand([scopePath], {
-          writeStdout: (output) => outputs.push(output),
-        }),
-      ).rejects.toThrow(
-        "Artifact file name does not match the artifact ID: .architecture-companion/behaviors/checkout.json must be checkout-workflow.json",
-      );
-      expect(outputs).toEqual([]);
+      await executeValidateSchemasCommand([scopePath], {
+        writeStdout: (output) => outputs.push(output),
+      });
+
+      expect(outputs).toEqual(["Catalog is valid.\n"]);
     } finally {
       await rm(scopePath, { recursive: true });
     }

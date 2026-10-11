@@ -19,7 +19,8 @@ import { writeCatalog } from "@/server/write-catalog";
 const catalog = {
   behaviors: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -44,7 +45,7 @@ function annotations(body: string): AnnotationDocument {
       {
         id: "external-annotation",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 90 },
         },
         comment: {

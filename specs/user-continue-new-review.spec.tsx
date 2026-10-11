@@ -23,7 +23,8 @@ function catalog(nodeTitle: string): CompanionCatalog {
   return {
     behaviors: [
       {
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        kind: "behavior",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator: "built-in:freeform",
@@ -50,7 +51,10 @@ const initialComments: AnnotationDocument = {
   annotations: [
     {
       id: "annotation-initial",
-      anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 90 } },
+      anchor: {
+        canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        point: { x: 120, y: 90 },
+      },
       comment: {
         id: "comment-initial",
         author: { id: "reviewer-1", name: "Reviewer" },

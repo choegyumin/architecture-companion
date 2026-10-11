@@ -21,7 +21,8 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 const catalog: CompanionCatalog = {
   behaviors: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Workflow",
       generator: "built-in:freeform",
@@ -39,7 +40,8 @@ const catalog: CompanionCatalog = {
   ],
   designs: [
     {
-      artifactId: "catalog-structure",
+      artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
+      kind: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",
@@ -55,7 +57,8 @@ const catalog: CompanionCatalog = {
       },
     },
     {
-      artifactId: "checkout-structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      kind: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -79,7 +82,7 @@ function savedFeedbackDocument(body: string): AnnotationDocument {
       {
         id: "annotation-1",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 80 },
         },
         comment: {

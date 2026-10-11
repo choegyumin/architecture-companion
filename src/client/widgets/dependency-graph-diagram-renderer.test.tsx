@@ -9,7 +9,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const diagram = {
-  artifactId: "dependencies",
+  artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+  kind: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",

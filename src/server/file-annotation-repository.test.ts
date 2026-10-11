@@ -22,7 +22,10 @@ function document(body: string): AnnotationDocument {
     annotations: [
       {
         id: `annotation-${body}`,
-        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
+        anchor: {
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+          point: { x: 120, y: 80 },
+        },
         comment: {
           id: `comment-${body}`,
           author: { id: "reviewer", name: "Reviewer" },
@@ -73,7 +76,7 @@ const emptyDocument = {annotations: [] };
 const document = {
   annotations: [{
     id: \`annotation-\${body}\`,
-    anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
+    anchor: { canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json", point: { x: 120, y: 80 } },
     comment: {
       id: \`comment-\${body}\`,
       author: { id: "reviewer", name: "Reviewer" },

@@ -8,12 +8,13 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutDiagram = {
-  artifactId: "checkout-structure",
+  artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+  kind: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Checkout structure",
   generator: "built-in:freeform",
@@ -74,7 +75,8 @@ const checkoutDiagram = {
   },
 };
 const catalogDiagram = {
-  artifactId: "catalog-structure",
+  artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
+  kind: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Catalog structure",
   generator: "built-in:freeform",
@@ -115,7 +117,8 @@ const designArtifact = {
           edges: [{ type: "default", edgeId: "submit-confirmed", sourceNodeId: "submit", targetNodeId: "confirmed" }],
         },
       },
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
     },
   ],
@@ -125,7 +128,8 @@ const designArtifact = {
 const processArtifact = {
   behaviors: [
     {
-      artifactId: "invite-member",
+      artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
@@ -156,7 +160,8 @@ const processArtifact = {
       },
     },
     {
-      artifactId: "remove-member",
+      artifactId: ".architecture-companion/artifacts/remove-member.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Remove member",
       generator: "built-in:freeform",
@@ -281,7 +286,8 @@ describe("dependency graph review", () => {
       behaviors: [],
       designs: [
         {
-          artifactId: "dependencies",
+          artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+          kind: "design",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Dependencies",
           generator: "built-in:freeform",
@@ -329,7 +335,8 @@ describe("process (product workflow) review", () => {
     const sequenceArtifact = {
       behaviors: [
         {
-          artifactId: "request-response",
+          artifactId: ".architecture-companion/artifacts/request-response.archcomp.json",
+          kind: "behavior",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Request response",
           generator: "built-in:freeform",
@@ -377,11 +384,11 @@ describe("process (product workflow) review", () => {
 
   it("keeps the page running and shows an actionable invalid-catalog error", async () => {
     const { cleanup, scopePath } = await renderArtifact({ behaviors: [], designs: [] });
-    await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid json");
+    await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "invalid.archcomp.json"), "{ invalid json");
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        "Catalog contains invalid JSON: .architecture-companion/artifacts/invalid.archcomp.json",
       );
       expect(screen.getByText("Architecture Companion")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();

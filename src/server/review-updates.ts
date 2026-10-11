@@ -68,7 +68,7 @@ export async function createReviewUpdates(
   scopePath: string,
   options: ReviewUpdateOptions = {},
 ): Promise<ReviewUpdates> {
-  const pollIntervalMs = options.pollIntervalMs ?? 100;
+  const pollIntervalMs = options.pollIntervalMs ?? 1_000;
   let listeners: readonly ReviewUpdateListener[] = [];
   let revision = 0;
   let initialFiles: ReviewFiles | undefined;

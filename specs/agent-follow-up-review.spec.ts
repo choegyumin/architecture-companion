@@ -13,7 +13,8 @@ import { writeCatalog } from "@/server/write-catalog";
 const catalog: CompanionCatalog = {
   behaviors: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -31,7 +32,8 @@ const catalog: CompanionCatalog = {
   ],
   designs: [
     {
-      artifactId: "checkout-structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      kind: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -54,7 +56,10 @@ function reviewedComments(): AnnotationDocument {
     annotations: [
       {
         id: "annotation-workflow",
-        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 90 } },
+        anchor: {
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+          point: { x: 120, y: 90 },
+        },
         comment: {
           id: "comment-workflow",
           author: { id: "reviewer-1", name: "Reviewer" },
@@ -65,7 +70,7 @@ function reviewedComments(): AnnotationDocument {
       {
         id: "annotation-structure",
         anchor: {
-          canvasId: "design:checkout-structure",
+          canvasId: "design:.architecture-companion/artifacts/checkout-structure.archcomp.json",
           point: { x: 180, y: 120 },
           target: { type: "node", id: "checkout-page" },
         },

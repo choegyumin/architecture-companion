@@ -13,43 +13,49 @@ function catalog() {
   return {
     behaviors: [
       {
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        kind: "behavior",
         title: "Checkout workflow",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
-          edges: [],
+        diagram: {
+          layout: { layoutId: "elk-layered" },
+          graph: {
+            groups: [],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
+            edges: [],
+          },
         },
       },
     ],
     designs: [
       {
-        artifactId: "structure",
+        artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+        kind: "design",
         title: "Checkout structure",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout input ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts.",
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [
-            {
-              type: "default",
-              nodeId: "checkout-page",
-              kind: "component",
-              title: "Checkout page",
-              description: "Collect checkout input",
-              details: ["Submit checkout"],
-              links: [{ href: "source:///src/checkout-page.ts" }],
-            },
-          ],
-          edges: [],
+        diagram: {
+          layout: { layoutId: "elk-layered" },
+          graph: {
+            groups: [],
+            nodes: [
+              {
+                type: "default",
+                nodeId: "checkout-page",
+                kind: "component",
+                title: "Checkout page",
+                description: "Collect checkout input",
+                details: ["Submit checkout"],
+                links: [{ href: "source:///src/checkout-page.ts" }],
+              },
+            ],
+            edges: [],
+          },
         },
       },
     ],

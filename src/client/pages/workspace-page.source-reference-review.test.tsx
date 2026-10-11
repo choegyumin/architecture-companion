@@ -15,7 +15,8 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 const catalog = {
   behaviors: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -43,7 +44,8 @@ const catalog = {
   ],
   designs: [
     {
-      artifactId: "structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      kind: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",

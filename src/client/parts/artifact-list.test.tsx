@@ -5,7 +5,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 
 function createDiagram(id: string, title: string): Artifact {
   return {
-    artifactId: id,
+    artifactId: `.architecture-companion/artifacts/${id}.archcomp.json`,
+    kind: "design",
     updatedAt: "2026-10-03T09:15:00.000Z",
     title,
     generator: "built-in:freeform",
@@ -25,7 +26,7 @@ describe("artifact list", () => {
   it("shows artifacts in the given order and highlights the active item", () => {
     render(
       <ArtifactList
-        activeArtifactId="checkout"
+        activeArtifactId=".architecture-companion/artifacts/checkout.archcomp.json"
         artifacts={[
           createDiagram("checkout", "Checkout"),
           createDiagram("account", "Account"),

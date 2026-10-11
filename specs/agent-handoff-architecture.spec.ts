@@ -59,7 +59,8 @@ function reviewArtifact(generator: string) {
   return {
     behaviors: [
       {
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        kind: "behavior",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator,
@@ -132,7 +133,7 @@ describe("coding agent hands off a validated catalog as a review URL", () => {
 
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
-      ).rejects.toThrow("Catalog is missing: .architecture-companion/behaviors");
+      ).rejects.toThrow("Catalog is missing: no artifacts found in the configured paths");
 
       await writeCatalog(scopePath, reviewArtifact("Invalid_ID"));
       await expect(
