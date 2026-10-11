@@ -33,10 +33,10 @@ describe("generateSchemaSources", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
       type: "object",
-      required: ["artifactId", "title", "updatedAt", "generator", "instructions", "diagram"],
+      required: ["kind", "title", "updatedAt", "generator", "instructions", "diagram"],
       additionalProperties: false,
       properties: {
-        artifactId: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
+        kind: { type: "string", enum: ["behavior", "design"] },
         updatedAt: { type: "string", format: "date-time" },
         generator: {
           type: "string",
@@ -97,6 +97,20 @@ describe("generateSchemaSources", () => {
       "dependency-graph": "DependencyGraph",
       "elk-layered": "DiagramGraph",
       sequence: "SequenceGraph",
+    });
+  });
+
+  it("publishes configuration defaults independently from placement instructions", () => {
+    const schema = parseJsonObject(generateSchemaSources()["config.schema.json"]);
+    expect(schema).toMatchObject({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      $id: "./config.schema.json",
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        artifactPatterns: { type: "array", default: ["**/*.archcomp.json"], items: { type: "string", minLength: 1 } },
+        placementInstructions: { type: "string", minLength: 1 },
+      },
     });
   });
 
