@@ -1,9 +1,9 @@
 {
   "id": "react-admin-demo-component-structure",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-08T05:58:02.761Z",
+  "updatedAt": "2026-10-11T21:22:01.972Z",
   "generator": "built-in:react-component-structure",
-  "instructions": "## Purpose\n\nExamine how the react-admin e-commerce demo composes its admin UI: which pages and field components each resource page renders, how values flow to external react-admin and MUI boundaries, and where the same local component is supplied from several origins.\n\n## Regeneration\n\nClone https://github.com/marmelab/react-admin.git, then from its root:\n\n```sh\nyarn install\nyarn workspace ra-core build && yarn workspace ra-ui-materialui build && yarn workspace react-admin build\nnode \"<generator-directory>/run.js\" \\\n  --base \"examples/demo\" \\\n  --root \"ProductList\" \\\n  \"src\"\n```\n\nThe workspace builds produce the package type declarations the analysis needs; without them react-admin resolves through unbuilt symlinks and every boundary is omitted.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files. Components loaded through `React.lazy` dynamic imports are not traced.",
+  "instructions": "## Purpose\n\nExamine how the react-admin e-commerce demo composes its admin UI: which pages and field components each resource page renders, how values flow to external react-admin and MUI boundaries, and where the same local component is supplied from several origins.\n\n## Regeneration\n\nClone https://github.com/marmelab/react-admin.git, then from its root:\n\n```sh\ngit checkout eec76175e77e1a47a7ec6471346c4f2fbdb940a1\nyarn install --immutable\nyarn workspace ra-language-english build && yarn workspace ra-language-french build && yarn workspace ra-i18n-polyglot build && yarn workspace ra-core build && yarn workspace ra-ui-materialui build && yarn workspace react-admin build\nnode \"<generator-directory>/run.js\" \\\n  --base \"examples/demo\" \\\n  --root \"ProductList\" \\\n  \"src\"\n```\n\nThe workspace builds produce the package type declarations the analysis needs; without them react-admin resolves through unbuilt symlinks and every boundary is omitted.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files. Components loaded through `React.lazy` dynamic imports are not traced.",
   "diagram": {
     "layout": {
       "id": "component-structure",
@@ -608,37 +608,89 @@
           "type": "default",
           "id": "edge:000dc9300abcf95b",
           "source": "external:react-admin#TopToolbar",
-          "target": "external:react-admin#SortButton"
+          "target": "external:react-admin#SortButton",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ListActions",
+                "supplierTitle": "ListActions",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:05219f5310276b05",
           "source": "external:@mui/material#Box@7b7af872956b3a73",
-          "target": "external:react-admin#Pagination"
+          "target": "external:react-admin#Pagination",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:0c46ad0698adacf6",
           "source": "external:react-admin#FilterList@8ea379382de41c15",
-          "target": "external:@mui/icons-material#SvgIcon"
+          "target": "external:@mui/icons-material#SvgIcon",
+          "composition": {
+            "kind": "node-prop",
+            "input": "icon",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "icon"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:117152ea527be8c9",
           "source": "external:react-admin#TopToolbar",
-          "target": "external:react-admin#ExportButton"
+          "target": "external:react-admin#ExportButton",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ListActions",
+                "supplierTitle": "ListActions",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:14c95a38b0a34e29",
           "source": "component:src/products/ProductList.tsx#ProductList",
-          "target": "external:react-admin#ListBase"
+          "target": "external:react-admin#ListBase",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "control",
           "id": "edge:16ad164dd821ab8c",
           "source": "component:src/products/GridList.tsx#GridList",
           "target": "component:src/products/GridList.tsx#LoadingGridList",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          },
           "activeWhen": [
             [
               {
@@ -652,13 +704,28 @@
           "type": "default",
           "id": "edge:191b3f9e1d97b292",
           "source": "external:react-admin#ListBase",
-          "target": "external:@mui/material#Box@279a7f8e5f737c85"
+          "target": "external:@mui/material#Box@279a7f8e5f737c85",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "control",
           "id": "edge:1a5979ca1900fe6f",
           "source": "component:src/products/GridList.tsx#GridList",
           "target": "component:src/products/GridList.tsx#LoadedGridList",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          },
           "activeWhen": [
             [
               {
@@ -672,91 +739,235 @@
           "type": "default",
           "id": "edge:27926dbb952e4f15",
           "source": "external:react-admin#ListBase",
-          "target": "component:src/products/ProductList.tsx#ProductTitle"
+          "target": "component:src/products/ProductList.tsx#ProductTitle",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:2ba693b3ceb0760c",
           "source": "external:@mui/material#CardContent",
-          "target": "external:react-admin#FilterList@8ea379382de41c15"
+          "target": "external:react-admin#FilterList@8ea379382de41c15",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:2e756ae2ad563ea3",
           "source": "component:src/products/ProductList.tsx#ProductTitle",
-          "target": "external:react-admin#Title"
+          "target": "external:react-admin#Title",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "default",
           "id": "edge:3fd1d81daaa31f92",
           "source": "component:src/products/ProductList.tsx#ListActions",
-          "target": "external:react-admin#TopToolbar"
+          "target": "external:react-admin#TopToolbar",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "default",
           "id": "edge:4359d12aad15c477",
           "source": "external:react-admin#ReferenceInput",
-          "target": "external:react-admin#SelectInput"
+          "target": "external:react-admin#SelectInput",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:43915c81d7ed2742",
           "source": "external:react-admin#FilterContext.Provider",
-          "target": "component:src/products/ProductList.tsx#QuickFilter"
+          "target": "component:src/products/ProductList.tsx#QuickFilter",
+          "composition": {
+            "kind": "node-prop",
+            "input": "value",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "value"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:599beb8a414fcdac",
           "source": "external:@mui/material#CardContent",
-          "target": "external:react-admin#SavedQueriesList"
+          "target": "external:react-admin#SavedQueriesList",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:60581617f113b3dd",
           "source": "external:@mui/material#Card",
-          "target": "external:@mui/material#CardContent"
+          "target": "external:@mui/material#CardContent",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:6739994b4962f928",
           "source": "external:@mui/material#CardContent",
-          "target": "external:react-admin#FilterLiveSearch"
+          "target": "external:react-admin#FilterLiveSearch",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:6e7a8a8e0d829d7c",
           "source": "external:@mui/material#ImageListItem",
-          "target": "external:@mui/material#ImageListItemBar"
+          "target": "external:@mui/material#ImageListItemBar",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+                "supplierTitle": "LoadedGridList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:9281e7d096eb9cff",
           "source": "external:react-admin#FilterList@48e14f7cbe5ab410",
-          "target": "external:react-admin#FilterListItem"
+          "target": "external:react-admin#FilterListItem",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:94dd18a37ade33a6",
           "source": "component:src/products/GridList.tsx#LoadingGridList",
-          "target": "external:@mui/material#ImageList@839bb7c57256ad1f"
+          "target": "external:@mui/material#ImageList@839bb7c57256ad1f",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "default",
           "id": "edge:95bd97c51b1108a3",
           "source": "external:@mui/material#Box@279a7f8e5f737c85",
-          "target": "external:@mui/material#Box@7b7af872956b3a73"
+          "target": "external:@mui/material#Box@7b7af872956b3a73",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:a216513bf259877a",
           "source": "external:@mui/material#CardContent",
-          "target": "external:react-admin#FilterList@48e14f7cbe5ab410"
+          "target": "external:react-admin#FilterList@48e14f7cbe5ab410",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "control",
           "id": "edge:a29ff8ecbdc4f9bf",
           "source": "external:react-admin#FilterContext.Provider",
           "target": "external:@mui/material#Box@bcde6a36b212f16c",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          },
           "activeWhen": [
             [
               {
@@ -770,19 +981,52 @@
           "type": "default",
           "id": "edge:a3ec8367d3ad8656",
           "source": "external:@mui/material#Box@7b7af872956b3a73",
-          "target": "component:src/products/GridList.tsx#GridList"
+          "target": "component:src/products/GridList.tsx#GridList",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:a5cf8ab13e7ae6bf",
           "source": "external:react-admin#FilterContext.Provider",
-          "target": "external:react-admin#ReferenceInput"
+          "target": "external:react-admin#ReferenceInput",
+          "composition": {
+            "kind": "node-prop",
+            "input": "value",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "value"
+              }
+            ]
+          }
         },
         {
           "type": "control",
           "id": "edge:aa6d3de4b4319366",
           "source": "external:react-admin#FilterList@8ea379382de41c15",
           "target": "external:react-admin#FilterListItem",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "children"
+              }
+            ]
+          },
           "activeWhen": [
             [
               {
@@ -796,49 +1040,130 @@
           "type": "default",
           "id": "edge:c0137afca62f1b81",
           "source": "external:react-admin#FilterContext.Provider",
-          "target": "external:react-admin#NumberInput"
+          "target": "external:react-admin#NumberInput",
+          "composition": {
+            "kind": "node-prop",
+            "input": "value",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "value"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:c7a666955e2ffbe2",
           "source": "external:@mui/material#Box@279a7f8e5f737c85",
-          "target": "component:src/products/Aside.tsx#Aside"
+          "target": "component:src/products/Aside.tsx#Aside",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:c9fd653a57f51fc1",
           "source": "external:react-admin#TopToolbar",
-          "target": "external:react-admin#CreateButton"
+          "target": "external:react-admin#CreateButton",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ListActions",
+                "supplierTitle": "ListActions",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:cebf5daead085206",
           "source": "external:@mui/material#ImageListItemBar",
-          "target": "external:react-admin#NumberField"
+          "target": "external:react-admin#NumberField",
+          "composition": {
+            "kind": "node-prop",
+            "input": "subtitle",
+            "origins": [
+              {
+                "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+                "supplierTitle": "LoadedGridList",
+                "input": "subtitle"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:cee7715fdcd8c942",
           "source": "external:react-admin#FilterContext.Provider",
-          "target": "external:react-admin#SearchInput"
+          "target": "external:react-admin#SearchInput",
+          "composition": {
+            "kind": "node-prop",
+            "input": "value",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "value"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:d5701405ff63d794",
           "source": "external:@mui/material#ImageList@f64470edd6394224",
-          "target": "external:@mui/material#ImageListItem"
+          "target": "external:@mui/material#ImageListItem",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+                "supplierTitle": "LoadedGridList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:da89c077f9c97c05",
           "source": "external:react-admin#ListBase",
-          "target": "external:react-admin#FilterContext.Provider"
+          "target": "external:react-admin#FilterContext.Provider",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "control",
           "id": "edge:db5c317424d7b5f9",
           "source": "component:src/products/GridList.tsx#LoadedGridList",
           "target": "external:@mui/material#ImageList@f64470edd6394224",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          },
           "activeWhen": [
             [
               {
@@ -852,37 +1177,89 @@
           "type": "default",
           "id": "edge:e24796e92b2d6981",
           "source": "external:react-admin#FilterList@48e14f7cbe5ab410",
-          "target": "external:@mui/icons-material#SvgIcon"
+          "target": "external:@mui/icons-material#SvgIcon",
+          "composition": {
+            "kind": "node-prop",
+            "input": "icon",
+            "origins": [
+              {
+                "supplierId": "component:src/products/Aside.tsx#Aside",
+                "supplierTitle": "Aside",
+                "input": "icon"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:e3ba3780f78e2145",
           "source": "external:@mui/material#Box@bcde6a36b212f16c",
-          "target": "external:react-admin#FilterForm"
+          "target": "external:react-admin#FilterForm",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:e5b52a332330ea2d",
           "source": "component:src/products/ProductList.tsx#QuickFilter",
-          "target": "external:@mui/material#Chip"
+          "target": "external:@mui/material#Chip",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "default",
           "id": "edge:e92c3e70486ebcc9",
           "source": "external:react-admin#FilterContext.Provider",
-          "target": "component:src/products/ProductList.tsx#ListActions"
+          "target": "component:src/products/ProductList.tsx#ListActions",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ProductList",
+                "supplierTitle": "ProductList",
+                "input": "children"
+              }
+            ]
+          }
         },
         {
           "type": "default",
           "id": "edge:ec7b6d85d6645243",
           "source": "component:src/products/Aside.tsx#Aside",
-          "target": "external:@mui/material#Card"
+          "target": "external:@mui/material#Card",
+          "composition": {
+            "kind": "inline-render",
+            "origins": []
+          }
         },
         {
           "type": "control",
           "id": "edge:ef54d98da51f4809",
           "source": "external:react-admin#TopToolbar",
           "target": "external:react-admin#FilterButton",
+          "composition": {
+            "kind": "node-prop",
+            "input": "children",
+            "origins": [
+              {
+                "supplierId": "component:src/products/ProductList.tsx#ListActions",
+                "supplierTitle": "ListActions",
+                "input": "children"
+              }
+            ]
+          },
           "activeWhen": [
             [
               {
@@ -896,7 +1273,18 @@
           "type": "default",
           "id": "edge:fc1430c62afd34ee",
           "source": "external:@mui/material#ImageListItem",
-          "target": "external:react-router-dom#Link"
+          "target": "external:react-router-dom#Link",
+          "composition": {
+            "kind": "component-prop",
+            "input": "component",
+            "origins": [
+              {
+                "supplierId": "component:src/products/GridList.tsx#LoadedGridList",
+                "supplierTitle": "LoadedGridList",
+                "input": "component"
+              }
+            ]
+          }
         }
       ],
       "additional": {
