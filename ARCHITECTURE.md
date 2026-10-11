@@ -98,3 +98,9 @@ flowchart TB
 - `pages` and `widgets` may execute operations exposed by `data-client.ts`. The caller coordinates screen state and UI flow based on the results. In contrast, `parts` and `features` must not import `data-client.ts` directly. When domain contracts are needed, use the schemas and types in `features`.
 - `plugins` contains source packages for generators that agents discover, select, and use. Each generator declares its identifier, description, and usage instructions in `GENERATOR.md` and may also provide code for source analysis, graph generation, and CLI execution. Neither `client` nor `server` imports and executes this code. Agents follow the instructions and run generator commands as needed. Generator code is bundled separately from the client and server.
 - Detailed import permissions are defined in `boundaryLayers` in `oxlint.config.ts` and enforced by `eslint-plugin-boundaries` through Oxlint.
+
+### Test Placement
+
+- `src/` — tests that target a single source file. They live next to the source file, share its name, and use the `.test` suffix: `<source>.test.ts`. They may be split into several files by the concern they verify: `<source>.<concern>.test.ts`.
+- `tests/` — scene tests that no single source file describes. They use dot-free kebab-case names with the `.test` suffix: `scene-test-name.test.ts`.
+- `specs/` — user journey tests. They use kebab-case names with the `.spec` suffix: `user-journey-name.spec.ts`.

@@ -7,7 +7,7 @@
 
 ## Dogfooding
 
-This repository dogfoods its own tool. The root `.architecture-companion/` artifacts are this repository's own review material and double as test fixtures, and `showcases/.architecture-companion/` holds the artifacts of sample projects that demonstrate generated diagrams. When the schema of the artifact storage contract changes, both sets of artifacts must be updated. Commit updated artifacts separately from the changes that caused them: commit the other changes first and the artifacts after, so the artifacts record the correct Git Revision. Run the dogfooding artifacts with `pnpm dev` and the showcases with `pnpm dev showcases`.
+This repository dogfoods its own tool. The root `.architecture-companion/` artifacts are this repository's own review material, and `showcases/.architecture-companion/` holds the artifacts of sample projects that demonstrate generated diagrams and serve as the pinned test fixtures. When the schema of the artifact storage contract changes, both sets of artifacts must be updated. Commit updated artifacts separately from the changes that caused them: commit the other changes first and the artifacts after, so the artifacts record the correct Git Revision. Run the dogfooding artifacts with `pnpm dev` and the showcases with `pnpm dev showcases`.
 
 ## Skill Distribution
 
