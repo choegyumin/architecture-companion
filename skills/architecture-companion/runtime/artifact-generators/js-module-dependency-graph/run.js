@@ -276808,6 +276808,15 @@ var dependencyDiagramGraphSchema = external_exports.object({
 var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
   component: diagramComponentMetadataSchema.optional()
 });
+var componentCompositionSchema = external_exports.object({
+  kind: external_exports.string().min(1),
+  input: external_exports.string().min(1).optional(),
+  origins: external_exports.array(
+    external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), input: external_exports.string().min(1) }).strict()
+  )
+}).strict().meta({ id: "ComponentComposition" });
+var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ composition: componentCompositionSchema.optional() }).meta({ id: "ComponentStructureDefaultEdge" });
+var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ composition: componentCompositionSchema.optional() }).meta({ id: "ComponentStructureControlEdge" });
 var componentStructureAdditionalSchema = external_exports.object({
   roots: external_exports.array(diagramIdSchema).min(1).readonly(),
   controls: external_exports.array(diagramControlSchema).readonly()
@@ -276930,7 +276939,7 @@ function validateComponentStructureGraph(graph) {
 var componentStructureDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
   nodes: external_exports.array(componentStructureDiagramNodeSchema).min(1).readonly(),
-  edges: external_exports.array(external_exports.discriminatedUnion("type", [defaultDiagramEdgeSchema, controlDiagramEdgeSchema])).readonly(),
+  edges: external_exports.array(external_exports.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema])).readonly(),
   additional: componentStructureAdditionalSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);

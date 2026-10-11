@@ -898,10 +898,10 @@
           "items": {
             "oneOf": [
               {
-                "$ref": "#/$defs/DefaultEdge"
+                "$ref": "#/$defs/ComponentStructureDefaultEdge"
               },
               {
-                "$ref": "#/$defs/ControlEdge"
+                "$ref": "#/$defs/ComponentStructureControlEdge"
               }
             ]
           }
@@ -1030,6 +1030,128 @@
         "nodes",
         "edges",
         "additional"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentStructureDefaultEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "default"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "minLength": 1
+        },
+        "composition": {
+          "$ref": "#/$defs/ComponentComposition"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentComposition": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "supplierId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supplierTitle": {
+                "type": "string",
+                "minLength": 1
+              },
+              "input": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "supplierId",
+              "supplierTitle",
+              "input"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "origins"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentStructureControlEdge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "control"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activeWhen": {
+          "$ref": "#/$defs/RouteRequirementRuleset"
+        },
+        "composition": {
+          "$ref": "#/$defs/ComponentComposition"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target",
+        "activeWhen"
       ],
       "additionalProperties": false
     }

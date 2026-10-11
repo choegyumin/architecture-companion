@@ -6335,13 +6335,16 @@ function createComponentGraphBuilder(ts) {
   }
   function createGraph(definitions, instances, relationships, controls, roots) {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
+    function compositionOrigins(relationship) {
+      return relationship.kind === "inline-render" ? [] : relationship.origins.map(({ supplierId, prop }) => ({
+        supplierId,
+        supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
+        input: prop
+      }));
+    }
     function componentMetadata(id, definitionId) {
       const origins = relationships.flatMap(
-        (relationship) => relationship.target === id && relationship.kind !== "inline-render" ? relationship.origins.map(({ supplierId, prop }) => ({
-          supplierId,
-          supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
-          prop
-        })) : []
+        (relationship) => relationship.target === id ? compositionOrigins(relationship).map(({ input, ...origin }) => ({ ...origin, prop: input })) : []
       );
       return {
         definitionId,
@@ -6375,7 +6378,12 @@ function createComponentGraphBuilder(ts) {
       id: edgeId(relationship),
       source: relationship.source,
       target: relationship.target,
-      activeWhen: relationship.ruleset
+      activeWhen: relationship.ruleset,
+      composition: {
+        kind: relationship.kind,
+        ...relationship.kind === "inline-render" ? {} : { input: relationship.propName },
+        origins: compositionOrigins(relationship)
+      }
     })).toSorted((left, right) => left.id.localeCompare(right.id));
     const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
     return { groups: [], nodes, edges, roots, controls };
@@ -6419,7 +6427,8 @@ function createComponentGraphBuilder(ts) {
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
         const ruleset = edge.activeWhen ?? [[]];
-        return ruleset.length === 1 && ruleset.at(0)?.length === 0 ? { type: "default", id: edge.id, source: edge.source, target: edge.target } : { type: "control", id: edge.id, source: edge.source, target: edge.target, activeWhen: ruleset };
+        const relationship = { id: edge.id, source: edge.source, target: edge.target, composition: edge.composition };
+        return ruleset.length === 1 && ruleset.at(0)?.length === 0 ? { type: "default", ...relationship } : { type: "control", ...relationship, activeWhen: ruleset };
       }),
       additional: { roots: graph.roots, controls: graph.controls }
     };
@@ -6867,7 +6876,7 @@ function createComponentGraphBuilder(ts) {
       const refined = /* @__PURE__ */ new Map();
       for (const node of graph.nodes) {
         const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
-          const { id, source: _source, target, ...metadata } = edge;
+          const { id, source: _source, target, composition: _composition, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id);
           const suppliers = relationship.kind === "inline-render" ? [] : relationship.supplierInstanceIds.map((instanceId) => classes.get(instanceId) ?? instanceId).toSorted();
           return JSON.stringify([
@@ -6950,6 +6959,17 @@ function createComponentGraphBuilder(ts) {
         id,
         source,
         target,
+        composition: {
+          ...edge.composition,
+          origins: [
+            ...new Map(
+              [...existing?.composition.origins ?? [], ...edge.composition.origins].map((origin) => [
+                JSON.stringify([origin.supplierId, origin.input]),
+                origin
+              ])
+            ).values()
+          ]
+        },
         ...edge.type === "default" ? { activeWhen: unionRulesets(existing?.type === "default" ? existing.activeWhen ?? [] : [], ruleset) } : {}
       });
     }

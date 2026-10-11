@@ -66,7 +66,7 @@ On success, the command creates a graph file in the operating system's temporary
 { "graphPath": "/temporary/path/graph.json" }
 ```
 
-This file contains only a candidate `Artifact.graph` with `groups`, `nodes`, `edges`, and the graph's additional properties (`roots` and `controls`). It is not a complete Architecture Companion artifact; do not copy it as a standalone artifact file. Preserve the additional properties when integrating the graph so the component structure renderer can display origins and rendering controls.
+This file contains only a candidate `Artifact.diagram.graph` with `groups`, `nodes`, `edges`, and the graph's additional properties (`roots` and `controls`). It is not a complete Architecture Companion artifact; do not copy it as a standalone artifact file. Preserve the additional properties when integrating the graph so the component structure renderer can display origins and rendering controls.
 
 ## Interpretation and integration
 
@@ -74,16 +74,18 @@ Each node represents a component definition in one verified composition context.
 
 Named local components use the definition identifier `component:<scope-relative-file>#<name>`. Anonymous default components use a distinct `#default` identifier while retaining a display title derived from the file. When only one context remains for a definition, its node retains that definition identifier. Multiple contexts retain representative usage identities, which can add an `@<hash>` suffix derived from scope-relative usage paths. All nodes share the same category, so `kind` is omitted. External boundaries are identified by their package-boundary descriptions.
 
-Node titles retain the original component name, never the instance hash or a serial number. Each node's `component.definitionId` identifies the definition, and `component.origins` records every verified `{ supplierId, supplierTitle, prop }` pair. The origin `prop` is the original supplied prop, not a downstream renamed consumer prop: supplying `Wrapper.header` and forwarding it to `Inner.children` retains the supplier's `header` origin while the edge kind uses `children`. Merging nodes unions these pairs without mixing one supplier with another supplier's prop. Supplier IDs identify definitions, including suppliers outside a focused graph; they are not necessarily visible node IDs.
+Node titles retain the original component name, never the instance hash or a serial number. Each node's `component.definitionId` identifies the definition, and `component.origins` records every verified `{ supplierId, supplierTitle, prop }` pair. The origin `prop` is the original supplied prop, not a downstream renamed consumer prop: supplying `Wrapper.header` and forwarding it to `Inner.children` retains the supplier's `header` origin while the edge's `composition.input` uses `children`. Merging nodes unions these pairs without mixing one supplier with another supplier's prop. Supplier IDs identify definitions, including suppliers outside a focused graph; they are not necessarily visible node IDs.
 
-Relationships are displayed as follows:
+Every relationship records a `composition` object on its stored edge, whether the edge is an unconditional `default` or a gated `control`:
 
-- Inline rendering: no visible relationship label.
-- Node prop, including `children`: `kind` is `NODE (<renderer prop name>)`; `label` is `from <supplier>`.
-- Render prop: `kind` is `RENDER (<invoker prop name>)`; `label` is `from <supplier>`.
-- Component prop: `kind` is `COMPONENT (<renderer prop name>)`; `label` is `from <supplier>`.
+- Inline rendering: `kind: "inline-render"`, no `input`, and `origins: []`.
+- Node prop, including `children`: `kind: "node-prop"`.
+- Render prop: `kind: "render-prop"`.
+- Component prop: `kind: "component-prop"`.
 
-The visual parent of a supplied value is its verified local renderer or invoker. The label names the component definition that created the supplied target. Local prop forwarding is traced through verified named aliases and static prop objects. `kind` uses the prop name of the final visible renderer or invoker with its original casing, while `label` retains the original supplier. Supplier names are sorted and combined only when analysis verifies them for the same relationship within one usage context. Different supplier contexts are not merged merely because their target definitions match.
+For supplied relationships, `composition.input` names the final visible renderer's or invoker's prop with its original casing. `composition.origins` records the original `{ supplierId, supplierTitle, input }` pairs belonging to that relationship. The origin input can differ from the consumer input after forwarding. These are structured storage fields, not the general edge's display `kind` or `label`. The shared contract accepts other nonempty composition kinds for other generators; the four values above describe this React generator. Older graphs may omit `composition`; absence does not imply inline rendering.
+
+The visual parent of a supplied value is its verified local renderer or invoker. Local prop forwarding is traced through verified named aliases and static prop objects. Supplier IDs identify the definitions that created the supplied values, including suppliers outside a focused graph. Equivalent merged relationships union their original supplier-input pairs without changing the existing context comparison. Different supplier contexts are not merged merely because their target definitions match. Node `component.origins` remains the aggregate used on component cards; the component structure renderer does not add a separate composition label to the edge.
 
 External component boundaries remain visible and connected, but package implementations are not expanded. External provenance is traced through immutable `const` aliases and named, default, and star re-exports in local barrel modules to the canonical package export. Mutable aliases remain unresolved. External boundaries excluded by component filters follow the same rules as hidden local boundaries.
 
