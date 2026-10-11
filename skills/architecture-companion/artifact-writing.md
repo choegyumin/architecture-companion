@@ -94,6 +94,12 @@ For the `component-structure` layout, both `default` and `control` edges may rec
 
 Preserve this metadata from generator output instead of reconstructing it from edge IDs or a target node's aggregated origins. A direct composition can have no input and an empty origins array. Older artifacts may omit the object; absence means the metadata was not recorded, not that the relationship was direct. These fields are not separate visible edge labels in the component structure renderer. Node `component.origins` remains the aggregate displayed on component cards.
 
+### Component structure polarity pairs
+
+A branch marked `polarityPair: true` represents one subject and its complement, not merely any two alternatives. Store its two cases in `[ON, OFF]` order after polarity calculation. Preserve case IDs and all `activeWhen`/`dependsOn` references when ordering: a source-negated gate can have `false` as its ON case. The viewer reads this stored result without inferring polarity from labels or IDs. Keep ordinary branch case order and conditional `on`/`off` semantics unchanged.
+
+Generators implemented in this repository reuse `src/features/diagram/control-polarity.ts` for the calculation. Its `!`-notation label helpers are display rules, not arbitrary-language parsers. Other source notations can supply explicit case polarity, unchanged case labels, and a subject label to `calculatePolarityPair`; source-language interpretation remains the generator's responsibility.
+
 ## Evidence links
 
 Attach evidence close to the concept it supports. Use the diagram's `links` for evidence about the diagram as a whole, a node's `links` where supported for node evidence, and an edge's `href` for evidence about a relationship or interaction.

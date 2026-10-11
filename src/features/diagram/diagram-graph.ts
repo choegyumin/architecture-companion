@@ -51,7 +51,7 @@ export const diagramControlSchema = z.discriminatedUnion("kind", [
       ...diagramControlBaseShape,
       kind: z.literal("branch"),
       cases: z.array(z.object({ id: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
-      /** Present when the cases are one boolean subject and its negation (a boolean gate): consumers read the switch shape from this flag instead of parsing labels. */
+      /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
       polarityPair: z.literal(true).optional(),
     })
     .strict(),

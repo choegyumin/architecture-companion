@@ -1,10 +1,50 @@
 import {
   calculateConditionPolarityPair,
   calculatePolarityPair,
+  getPolarityPairCases,
   negateLabel,
   normalizedLabel,
   positiveLabel,
 } from "./control-polarity";
+
+describe("getPolarityPairCases", () => {
+  const branch = {
+    id: "gate",
+    owner: "root",
+    kind: "branch" as const,
+    dependsOn: [[]],
+    ...calculateConditionPolarityPair("!ready"),
+  };
+
+  it("reads the stored result without interpreting labels or source truth IDs", () => {
+    expect(getPolarityPairCases(branch)).toEqual({
+      onCase: { id: "false", label: "ready" },
+      offCase: { id: "true", label: "!ready" },
+    });
+    expect(
+      getPolarityPairCases({
+        ...branch,
+        cases: [
+          { id: "a", label: "!opaque" },
+          { id: "b", label: "opaque" },
+        ],
+      }),
+    ).toEqual({
+      onCase: { id: "a", label: "!opaque" },
+      offCase: { id: "b", label: "opaque" },
+    });
+  });
+
+  it("does not infer a switch from two cases or a flag on a non-pair", () => {
+    expect(getPolarityPairCases({ ...branch, polarityPair: undefined })).toBeUndefined();
+    expect(
+      getPolarityPairCases({ ...branch, cases: [...branch.cases, { id: "other", label: "Other" }] }),
+    ).toBeUndefined();
+    expect(
+      getPolarityPairCases({ id: "gate", owner: "root", kind: "conditional", label: "!ready", dependsOn: [[]] }),
+    ).toBeUndefined();
+  });
+});
 
 describe("calculateConditionPolarityPair", () => {
   it.each([

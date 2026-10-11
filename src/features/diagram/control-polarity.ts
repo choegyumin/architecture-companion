@@ -3,6 +3,14 @@ import type { DiagramControl } from "./diagram-graph";
 type BranchCase = Extract<DiagramControl, { kind: "branch" }>["cases"][number];
 type PolarityCase = Readonly<BranchCase & { positive: boolean }>;
 
+// Stored pair order carries the calculation result. Consumers read it without
+// parsing labels or confusing source case IDs (such as true/false) with ON/OFF.
+export function getPolarityPairCases(control: DiagramControl): { onCase: BranchCase; offCase: BranchCase } | undefined {
+  if (control.kind !== "branch" || control.polarityPair !== true || control.cases.length !== 2) return undefined;
+  const [onCase, offCase] = control.cases;
+  return { onCase: onCase!, offCase: offCase! };
+}
+
 // These display rules use ! notation, not a source-language parser. Generators
 // interpret their own syntax and can supply explicit polarity and labels instead.
 export function normalizedLabel(label: string): string {

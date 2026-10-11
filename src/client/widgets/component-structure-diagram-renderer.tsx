@@ -7,7 +7,6 @@ import {
   componentPathEmphasis,
   type ComponentSelection,
   initialComponentSelection,
-  isPolarityPairBranch,
   selectComponentPath,
   selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
@@ -27,6 +26,7 @@ import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk
 import type { Artifact } from "@/features/artifact/artifact";
 import { isComponentStructureArtifact } from "@/features/artifact/artifact";
 import { layoutComponentStructureDiagram } from "@/features/diagram/_layout/component-structure-diagram-layout";
+import { getPolarityPairCases } from "@/features/diagram/control-polarity";
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
@@ -183,8 +183,9 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                   className="nodrag nopan mt-3 flex max-w-full flex-col gap-1.5"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  {ownedControls.map((control) =>
-                    control.kind === "branch" && !isPolarityPairBranch(control) ? (
+                  {ownedControls.map((control) => {
+                    const pair = getPolarityPairCases(control);
+                    return control.kind === "branch" && !pair ? (
                       <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
                         <span className="truncate">{control.label}</span>
                         <Select
@@ -218,23 +219,17 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                       <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
                         <span className="truncate">{control.label}</span>
                         <Switch
-                          checked={
-                            control.kind === "branch"
-                              ? selected[control.id] === control.cases.at(0)?.id
-                              : selected[control.id] === "on"
-                          }
+                          checked={selected[control.id] === (pair?.onCase.id ?? "on")}
                           onCheckedChange={(checked) => {
-                            if (control.kind !== "branch") {
-                              onControlSelect(control.id, checked ? "on" : "off");
-                              return;
-                            }
-                            const caseId = (checked ? control.cases.at(0) : control.cases.at(1))?.id;
-                            if (caseId != null) onControlSelect(control.id, caseId);
+                            onControlSelect(
+                              control.id,
+                              checked ? (pair?.onCase.id ?? "on") : (pair?.offCase.id ?? "off"),
+                            );
                           }}
                         />
                       </label>
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               ) : undefined,
           },

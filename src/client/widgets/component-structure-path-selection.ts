@@ -1,3 +1,4 @@
+import { getPolarityPairCases } from "@/features/diagram/control-polarity";
 import type {
   ProjectedComponentStructureEdge,
   ProjectedComponentStructureGraph,
@@ -104,15 +105,6 @@ function compareMetrics(left: ReturnType<typeof routeMetrics>, right: ReturnType
     right.depth - left.depth ||
     (left.edgeId < right.edgeId ? -1 : left.edgeId > right.edgeId ? 1 : 0)
   );
-}
-
-// A branch the generator marked as a boolean gate: its two cases are one
-// subject and its negation, so from the owner's seat it is one on/off gate —
-// the first case on, its complement off. The data stays a branch (its arms
-// still split by case) — only the owning card's field renders a switch for
-// it. The flag carries what label parsing used to infer.
-export function isPolarityPairBranch(control: DiagramControl): boolean {
-  return control.kind === "branch" && control.polarityPair === true && control.cases.length === 2;
 }
 
 function componentRulesetHolds(
@@ -306,8 +298,10 @@ function settleFallenBranchSwitches(
   const afterEmphasis = componentPathEmphasis(graph, after);
   let next = after;
   for (const control of graph.controls) {
-    if (control.id === clickedId || control.kind !== "branch" || !isPolarityPairBranch(control)) continue;
-    const offCase = control.cases.at(1)!.id;
+    if (control.id === clickedId) continue;
+    const pair = getPolarityPairCases(control);
+    if (!pair) continue;
+    const offCase = pair.offCase.id;
     if (next[control.id] === offCase) continue;
     if (beforeEmphasis.nodes.has(control.id) && !afterEmphasis.nodes.has(control.id)) {
       next = { ...next, [control.id]: offCase };
