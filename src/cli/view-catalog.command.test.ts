@@ -29,15 +29,15 @@ it("prints null when there is no catalog", async () => {
 
 it("prints discovered artifact paths and content as one JSON line", async () => {
   const artifact = {
-    id: "src/checkout.archcomp.json",
+    artifactId: "src/checkout.archcomp.json",
     kind: "behavior",
     title: "Checkout",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",
     instructions: "Review checkout behavior.",
     diagram: {
-      layout: { id: "elk-layered" },
-      graph: { groups: [], nodes: [{ id: "checkout", type: "default", title: "Checkout" }], edges: [] },
+      layout: { layoutId: "elk-layered" },
+      graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
     },
   };
   await writeCatalog(scopePath, { behaviors: [artifact], designs: [] });
@@ -48,7 +48,7 @@ it("prints discovered artifact paths and content as one JSON line", async () => 
 
 it("rejects invalid artifacts without printing a misleading empty catalog", async () => {
   await writeCatalog(scopePath, {
-    behaviors: [{ id: ".architecture-companion/artifacts/invalid.archcomp.json", title: "Incomplete" }],
+    behaviors: [{ artifactId: ".architecture-companion/artifacts/invalid.archcomp.json", title: "Incomplete" }],
     designs: [],
   });
   await expect(executeViewCatalogCommand([scopePath], options)).rejects.toThrow("Catalog is invalid");

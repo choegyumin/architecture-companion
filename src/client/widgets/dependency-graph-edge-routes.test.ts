@@ -18,7 +18,7 @@ import { type DependencyEdgeProjection, projectDependencyEdges } from "@/feature
 import type { DiagramLayout, DiagramLayoutGroup } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-import artifactJson from "../../../showcases/.architecture-companion/designs/dependency-cruiser-dependency-graph.json";
+import artifactJson from "../../../showcases/.architecture-companion/artifacts/dependency-cruiser-dependency-graph.json";
 
 const source = { position: { x: 0, y: 0 }, size: { width: 100, height: 60 } };
 const target = { position: { x: 0, y: 220 }, size: { width: 100, height: 60 } };
