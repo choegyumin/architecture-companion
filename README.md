@@ -63,13 +63,15 @@ Diagrams are grounded in your code and help you understand it visually. You can 
 
 ### 3. Reuse diagrams in later work
 
-Diagrams are saved as artifacts in your project's `.architecture-companion/` directory. You can reopen saved artifacts for review, or ask your agent to regenerate them after the source changes, preserving the same purpose and criteria.
+Diagrams are saved as JSON artifacts beside the source they explain or in `.architecture-companion/artifacts/`. You can reopen saved artifacts for review, or ask your agent to regenerate them after the source changes, preserving the same purpose and criteria.
+
+`.architecture-companion/config.json` defines discovery globs in `artifactPatterns` (initial default: `["**/*.archcomp.json"]`) and can record natural-language `placementInstructions` for your agent. Filenames do not have to match the source or include an artifact kind. Each artifact declares its `kind` in JSON and is identified by its path relative to the scope.
 
 ```text
 ❯ /architecture-companion Regenerate the artifacts from the current source code.
 ```
 
-If you do not want to commit the artifacts, add `.architecture-companion/` to `.gitignore`.
+Commit and ignore policies are your choice. Discovery respects `.gitignore` for co-located artifacts; JSON files under `.architecture-companion/artifacts/` are always discovered, even if that directory is ignored or excluded by the configured globs.
 
 <br><br>
 

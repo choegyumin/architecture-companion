@@ -23,9 +23,33 @@ For follow-up requests after a Review UI review, start with **Review follow-up**
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
+## Configuration and placement
+
+`<scope>/.architecture-companion/config.json` contains the file-discovery settings and optional natural-language placement instructions. Discovery rules identify existing artifacts; placement instructions guide the agent's authoring decisions. Neither determines whether the user commits the files.
+
+When first creating this file, start with:
+
+```json
+{
+  "artifactPatterns": ["**/*.archcomp.json"]
+}
+```
+
+The suffix is a default, not a filename restriction. Users can change `artifactPatterns` to any scope-relative file globs. JSON artifacts under `.architecture-companion/artifacts/` are always discovered independently of these patterns and `.gitignore`. Other matches respect `.gitignore`. Use the same scope for configuration, discovery, review, and source links.
+
+Before authoring, read existing configuration and artifacts and any user-supplied placement rules. When configuration, placement rules, and artifacts are all absent, ask where to place the first artifact unless the user has already specified a location. Otherwise, infer a suitable location from the current request, saved `placementInstructions`, and existing conventions; do not ask for every artifact. Create the initial configuration during authoring after resolving placement, not merely when viewing or validating a catalog. Do not overwrite existing settings.
+
+Ask whether to save a placement rule in `placementInstructions` only when there is a reason to make it persistent, such as an explicit ongoing instruction ("from now on") or establishing the initial project convention. Apply one-time placement requests without automatically saving them or routinely asking to save them. After an approved rule is recorded, follow it without repeating the confirmation. Distinguish this project-level placement guidance from each artifact's regeneration `instructions`.
+
 ## Artifact authoring
 
-1. Read any existing diagram files in `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` first. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated diagrams and existing IDs for concepts that retain their meaning.
+1. Discover the existing catalog using the command below and read the corresponding artifact files first. The returned artifact `id` is its scope-relative file path, not a field stored in the JSON. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated artifacts and graph element IDs for concepts that retain their meaning.
+
+   ```sh
+   node "<AC>/runtime/cli/view-catalog.js" "<scope>"
+   ```
+
+   The command prints the complete catalog as JSON, or `null` when no catalog exists. If validation fails, inspect and fix the reported files when the request permits it; do not treat a failed discovery as an empty catalog.
 
 2. Read `<AC>/schemas/artifact.schema.json` to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
 
@@ -59,7 +83,7 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
 ## Start the Review UI
 
-1. Check that `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` contain at least one diagram JSON file between them. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+1. Check the discovered catalog with `view-catalog.js` and confirm that `behaviors` and `designs` contain at least one artifact between them. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
 
    Reuse the latest validation result if the current catalog has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid catalog.
 

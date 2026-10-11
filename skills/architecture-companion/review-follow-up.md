@@ -16,8 +16,10 @@ If retrieval fails but the request can be handled using only the user's message 
 
 Each Annotation has one `comment`. Use `anchor.canvasId` to find the diagram in the active catalog.
 
-- Product Behavior canvas: `behavior:<behavior-id>`
-- Code Design canvas: `design:<design-id>`
+- Product Behavior canvas: `behavior:<scope-relative-artifact-path>`
+- Code Design canvas: `design:<scope-relative-artifact-path>`
+
+The path identifies the artifact file, using forward slashes. It is not a stored JSON field and remains relative to the scope, not to the artifact's directory. Use `view-catalog.js` to locate the artifact. Moving or renaming a file changes its identity; do not transfer earlier Annotations by guesswork.
 
 An Annotation attached to a selected element has an `anchor.target`. Resolve the target according to the selection type:
 

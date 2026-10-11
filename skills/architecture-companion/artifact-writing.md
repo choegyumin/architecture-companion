@@ -13,14 +13,15 @@ Each diagram should answer one central review question. Avoid repeating the same
 
 ## File organization and preserving existing artifacts
 
-A catalog is the complete set of artifacts. Each artifact contains one diagram and is stored in its own JSON file.
+A catalog is the complete set of artifacts within a scope. Each artifact contains one diagram and is stored in its own JSON file. Set `kind` to `behavior` for Product Behavior or `design` for Code Design, regardless of where the file is placed.
 
-- Product Behavior: `<scope>/.architecture-companion/behaviors/<artifactId>.json`
-- Code Design: `<scope>/.architecture-companion/designs/<artifactId>.json`
+Artifacts may live beside the source they explain or in `<scope>/.architecture-companion/artifacts/`. Both locations can coexist. Follow the current request, the placement instructions in `<scope>/.architecture-companion/config.json`, and existing project conventions when choosing a location. A configured scan pattern does not require co-location or central placement.
 
-The filename must match the diagram's `artifactId`. To remove a diagram, delete its file. Save complete diagrams, not merge directives or partial patches.
+Choose a filename that describes the artifact's purpose. It need not match a source filename or encode its kind. The default scan pattern is `**/*.archcomp.json`, but the user may configure other glob patterns. JSON files in `.architecture-companion/artifacts/` are always discovered, even when excluded by the configured patterns or `.gitignore`; other artifacts follow the configured patterns and `.gitignore`.
 
-Preserve diagrams unrelated to the request. Keep existing IDs for diagrams and graph elements whose concepts retain their meaning; do not reuse an ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own.
+An artifact's identity is its scope-relative file path, using forward slashes. Do not store an `artifactId` in the JSON. Moving or renaming the file changes its identity. To remove an artifact, delete its file. Save complete artifacts, not merge directives or partial patches.
+
+Preserve artifacts unrelated to the request. Keep existing IDs for graph elements whose concepts retain their meaning; do not reuse an element ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own. Commit and ignore policies belong to the user; do not decide them on the user's behalf.
 
 Architecture Companion calculates coordinates and dimensions, so do not store them in the artifact.
 
