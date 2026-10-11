@@ -773,6 +773,26 @@ describe("component rendering controls", () => {
       export function App() { return <><Wrapper header={<Leaf />} /><Wrapper footer={<Leaf />} /><Other /></>; }
     `);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
+    const leafEdges = graph.edges.filter(({ target }) => target === leaf.id);
+    expect(leafEdges).toHaveLength(2);
+    expect(leafEdges.map(({ composition }) => composition)).toEqual(
+      expect.arrayContaining([
+        {
+          kind: "node-prop",
+          input: "children",
+          origins: expect.arrayContaining([
+            { supplierId: "component:app.tsx#App", supplierTitle: "App", input: "header" },
+            { supplierId: "component:app.tsx#App", supplierTitle: "App", input: "footer" },
+          ]),
+        },
+        {
+          kind: "node-prop",
+          input: "children",
+          origins: [{ supplierId: "component:app.tsx#Other", supplierTitle: "Other", input: "header" }],
+        },
+      ]),
+    );
+    expect(leafEdges.flatMap(({ composition }) => composition!.origins)).toHaveLength(3);
     expect(leaf.type === "default" && leaf.component!.origins).toHaveLength(3);
     expect(leaf.type === "default" && leaf.component!.origins).toEqual(
       expect.arrayContaining([
@@ -820,7 +840,15 @@ describe("component rendering controls", () => {
     const [visible] = graph.additional.controls;
     expect(graph.additional.roots).toEqual([shell.id]);
     expect(graph.additional.controls).toMatchObject([{ owner: shell.id, label: "visible", dependsOn: [[]] }]);
-    expect(edgeTo(graph, "Leaf")).toMatchObject({ activeWhen: [[{ controlId: visible!.id, value: "on" }]] });
+    expect(edgeTo(graph, "Leaf")).toMatchObject({
+      activeWhen: [[{ controlId: visible!.id, value: "on" }]],
+      composition: {
+        kind: "node-prop",
+        input: "children",
+        origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", input: "children" }],
+      },
+    });
+    expect(graph.nodes.some(({ id }) => id === "component:app.tsx#App")).toBe(false);
     expect(graph.nodes.find(({ title }) => title === "Leaf")).toMatchObject({
       component: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", prop: "children" }] },
     });
@@ -901,6 +929,19 @@ describe("component rendering controls", () => {
     });
   });
 
+  it.each([
+    ["<Child />", "default"],
+    ["ready && <Child />", "control"],
+  ])("preserves direct composition metadata for %s", async (expression, type) => {
+    const graph = await graphFor(`
+      function Child() { return <span />; }
+      export function App({ ready }) { return ${expression}; }
+    `);
+    const edge = edgeTo(graph, "Child");
+    expect(edge.type).toBe(type);
+    expect(edge.composition).toEqual({ kind: "inline-render", origins: [] });
+  });
+
   it("combines supplier and consumer controls for children, node, render and component props", async () => {
     const graph = await graphFor(`
       function Child() { return <span />; }
@@ -921,13 +962,19 @@ describe("component rendering controls", () => {
     // one owner, one operand, one switch over it.
     expect(controls).toHaveLength(2);
     const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
-    for (const [title, prop] of [
-      ["Child", "children"],
-      ["Panel", "panel"],
-      ["Rendered", "render"],
-      ["Widget", "component"],
+    for (const [title, prop, kind] of [
+      ["Child", "children", "node-prop"],
+      ["Panel", "panel", "node-prop"],
+      ["Rendered", "render", "render-prop"],
+      ["Widget", "component", "component-prop"],
     ]) {
       const edge = edgeTo(graph, title!);
+      expect(edge.type).toBe("control");
+      expect(edge.composition).toEqual({
+        kind,
+        input: prop,
+        origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", input: prop }],
+      });
       const target = nodes.get(edge.target)!;
       expect(target.type === "default" && target.component!.origins).toContainEqual(expect.objectContaining({ prop }));
       const ruleset = edge.type === "control" ? edge.activeWhen : [[]];

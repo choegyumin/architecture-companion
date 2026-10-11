@@ -229,6 +229,19 @@ describe("React component structure generator", () => {
         const compositions = renderers.map(({ id }) => {
           const edges = graph.edges.filter(({ source }) => source === id);
           expect(edges).toHaveLength(3);
+          expect(edges.map(({ composition }) => composition)).toEqual(
+            expect.arrayContaining(
+              [
+                ["node-prop", "panel"],
+                ["render-prop", "render"],
+                ["component-prop", "component"],
+              ].map(([kind, input]) => ({
+                kind,
+                input,
+                origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input }],
+              })),
+            ),
+          );
           for (const edge of edges) {
             expect(originProps(graph, edge.target)).toEqual(["App:component", "App:panel", "App:render"]);
           }
@@ -238,6 +251,12 @@ describe("React component structure generator", () => {
           ["Left", "Left", "Left"],
           ["Right", "Right", "Right"],
         ]);
+        const inlineEdges = graph.edges.filter(({ source }) => !renderers.some(({ id }) => id === source));
+        expect(inlineEdges.length).toBeGreaterThan(0);
+        for (const edge of inlineEdges) {
+          expect(edge.type).toBe("default");
+          expect(edge.composition).toEqual({ kind: "inline-render", origins: [] });
+        }
       },
     );
   });

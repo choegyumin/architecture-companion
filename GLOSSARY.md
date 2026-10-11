@@ -149,7 +149,7 @@ A span of messages within a fragment corresponding to a condition or alternative
 A code design diagram that shows the components of a component tree and the rendering paths through which they compose.
 
 **Composition**:
-An edge representing a parent component composing a child, whether through inline rendering, a node prop, a render prop, or a component prop. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
+An edge representing a parent component composing a child, directly or through an input such as a prop or slot. A component structure edge may store `composition` metadata: its `kind`, consumer-side `input`, and original supplier-input `origins`. The consumer input and original supplier input can differ after forwarding. Composition kinds are not restricted to one framework. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
 
 **Rendering Path**:
 A conjunction of control choices under which a component renders. An edge applies when at least one of its rendering paths matches the current selection.
@@ -158,7 +158,7 @@ A conjunction of control choices under which a component renders. An edge applie
 In a component structure diagram, the projection of a branch control as a decision node, derived for display instead of stored in the graph. Its ports are the control's cases, and one outgoing path leaves through each port.
 
 **Component Origin**:
-The supplier and slot through which a merged component instance was composed, listed on the component's card.
+The original supplier and input through which a component was supplied. Per-edge `composition.origins` preserves the relationship's supplier definition IDs, titles, and original input names. Node `component.origins` aggregates these origins for the component's card, using the existing `prop` field for input names. Supplier definition IDs are not necessarily visible node instance IDs.
 
 **Control Owner Component**:
 The component whose source defines a control. The owner's card displays the control as a switch or select.

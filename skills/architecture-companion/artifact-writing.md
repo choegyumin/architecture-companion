@@ -88,6 +88,12 @@ Not every field allowed by the schema is displayed. Put explanations needed for 
 | `default` edge  | `kind`, `label`                           | Convey the relationship's meaning through the displayed fields. |
 | `message` edge  | `label`                                   |                                                                 |
 
+### Component structure relationships
+
+For the `component-structure` layout, both `default` and `control` edges may record structured `composition` metadata. Its `kind` is a nonempty string, not a framework-specific enum. Optional `input` names the consumer's prop or slot; required `origins` contains the original `{ supplierId, supplierTitle, input }` pairs for that edge. Supplier IDs identify definitions and need not appear among the visible nodes. Keep the consumer input separate from the original supplier input when forwarding renames it.
+
+Preserve this metadata from generator output instead of reconstructing it from edge IDs or a target node's aggregated origins. A direct composition can have no input and an empty origins array. Older artifacts may omit the object; absence means the metadata was not recorded, not that the relationship was direct. These fields are not separate visible edge labels in the component structure renderer. Node `component.origins` remains the aggregate displayed on component cards.
+
 ## Evidence links
 
 Attach evidence close to the concept it supports. Use the diagram's `links` for evidence about the diagram as a whole, a node's `links` where supported for node evidence, and an edge's `href` for evidence about a relationship or interaction.

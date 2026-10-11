@@ -497,7 +497,15 @@ async function verifyInstalledReactComponentGenerator(
 
   type InstalledGraph = Readonly<{
     additional: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
-    edges: ReadonlyArray<{ source: string; target: string }>;
+    edges: ReadonlyArray<{
+      source: string;
+      target: string;
+      composition?: {
+        kind: string;
+        input?: string;
+        origins: ReadonlyArray<{ supplierId: string; supplierTitle: string; input: string }>;
+      };
+    }>;
     groups: readonly unknown[];
     nodes: ReadonlyArray<{
       id: string;
@@ -537,8 +545,7 @@ async function verifyInstalledReactComponentGenerator(
       .map((edge) => ({
         source: nodesById.get(edge.source)?.title,
         target: nodesById.get(edge.target)?.title,
-        // Edges carry no labels: supplied slots record their prop on the
-        // target's component origins.
+        // Card origins remain an aggregate alongside per-edge composition metadata.
         supplies: (nodesById.get(edge.target)?.component?.origins ?? []).map(({ prop }) => prop).toSorted(),
       }))
       .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
@@ -555,6 +562,19 @@ async function verifyInstalledReactComponentGenerator(
     { source: "Layout", target: "Content", supplies: ["children"] },
     { source: "Layout", target: "Header", supplies: [] },
   ]);
+  const contentId = graph.nodes.find(({ title }) => title === "Content")!.id;
+  for (const edge of graph.edges) {
+    assert.deepEqual(
+      edge.composition,
+      edge.target === contentId
+        ? {
+            kind: "node-prop",
+            input: "children",
+            origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input: "children" }],
+          }
+        : { kind: "inline-render", origins: [] },
+    );
+  }
 
   const externalAliasGraph = await generateGraph([], "external-src");
   assert.deepEqual(

@@ -7,6 +7,7 @@ import micromatch from "micromatch";
 import type ts from "typescript";
 
 import type {
+  ComponentComposition,
   ComponentStructureDiagramGraph,
   ComponentStructureDiagramNode,
   DiagramControl,
@@ -44,6 +45,7 @@ type BuilderEdge = Readonly<{
   source: string;
   target: string;
   activeWhen?: DiagramRouteRequirementRuleset;
+  composition: ComponentComposition;
 }>;
 
 export type ComponentGraphOptions = Readonly<{
@@ -3144,14 +3146,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     roots: string[],
   ): BuilderGraph {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
+    function compositionOrigins(relationship: Relationship): ComponentComposition["origins"] {
+      return relationship.kind === "inline-render"
+        ? []
+        : relationship.origins.map(({ supplierId, prop }) => ({
+            supplierId,
+            supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
+            input: prop,
+          }));
+    }
     function componentMetadata(id: string, definitionId: string): ComponentStructureDiagramNode["component"] {
       const origins = relationships.flatMap((relationship) =>
-        relationship.target === id && relationship.kind !== "inline-render"
-          ? relationship.origins.map(({ supplierId, prop }) => ({
-              supplierId,
-              supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
-              prop,
-            }))
+        relationship.target === id
+          ? compositionOrigins(relationship).map(({ input, ...origin }) => ({ ...origin, prop: input }))
           : [],
       );
       return {
@@ -3194,6 +3201,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         source: relationship.source,
         target: relationship.target,
         activeWhen: relationship.ruleset,
+        composition: {
+          kind: relationship.kind,
+          ...(relationship.kind === "inline-render" ? {} : { input: relationship.propName }),
+          origins: compositionOrigins(relationship),
+        },
       }))
       .toSorted((left, right) => left.id.localeCompare(right.id));
     const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
@@ -3250,9 +3262,10 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
         const ruleset = edge.activeWhen ?? [[]];
+        const relationship = { id: edge.id, source: edge.source, target: edge.target, composition: edge.composition };
         return ruleset.length === 1 && ruleset.at(0)?.length === 0
-          ? { type: "default", id: edge.id, source: edge.source, target: edge.target }
-          : { type: "control", id: edge.id, source: edge.source, target: edge.target, activeWhen: ruleset };
+          ? { type: "default", ...relationship }
+          : { type: "control", ...relationship, activeWhen: ruleset };
       }),
       additional: { roots: graph.roots, controls: graph.controls },
     };
@@ -3842,7 +3855,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const refined = new Map<string, string>();
       for (const node of graph.nodes) {
         const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
-          const { id, source: _source, target, ...metadata } = edge;
+          // Stored provenance must not split otherwise equivalent usage contexts.
+          const { id, source: _source, target, composition: _composition, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id)!;
           // Suppliers compare by their usage classes, not their definition
           // ids: a receiver merges only with usages whose supplied content
@@ -3939,6 +3953,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         id,
         source,
         target,
+        composition: {
+          ...edge.composition,
+          origins: [
+            ...new Map(
+              [...(existing?.composition.origins ?? []), ...edge.composition.origins].map((origin) => [
+                JSON.stringify([origin.supplierId, origin.input]),
+                origin,
+              ]),
+            ).values(),
+          ],
+        },
         ...(edge.type === "default"
           ? { activeWhen: unionRulesets(existing?.type === "default" ? (existing.activeWhen ?? []) : [], ruleset) }
           : {}),
