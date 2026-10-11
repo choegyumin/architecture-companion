@@ -268,6 +268,8 @@ export function DiagramCanvas({
       <ReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>
         className={className}
         colorMode={resolvedTheme}
+        // The useViewport subscription re-renders this tree on every pan/zoom
+        // frame — accepted so CSS can scale the search outlines with zoom.
         style={
           {
             "--xy-background-color": "var(--surface)",
