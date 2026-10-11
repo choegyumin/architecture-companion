@@ -1,13 +1,10 @@
 <h1 align="center" className="text-center" style="text-align: center;">
-  <!-- TODO: 로고 -->
   Architecture Companion
 </h1>
 
 <p align="center" className="text-center" style="text-align: center;">
   대화형 다이어그램으로 에이전트와 함께 코드를 설계하고 리뷰하세요. Claude Code, Codex, OpenCode — 어떤 코딩 하네스에서든 동작합니다.
 </p>
-
-<!-- TODO: 히어로 이미지 -->
 
 <p align="center" className="text-center" style="text-align: center;">
   <a href="README.md">English</a> · <strong>한국어</strong>
@@ -57,10 +54,6 @@ npx skills add choegyumin/architecture-companion
   작업을 시작합니다.
 ```
 
-<!-- TODO: 스크린샷 -->
-
-<!-- TODO: 데모 URL -->
-
 ### 3. 다음 작업에서도 이어서 사용하기
 
 다이어그램은 아티팩트 형태로 프로젝트의 `.architecture-companion/`에 저장됩니다. 저장된 아티팩트를 다시 열어 검토하거나, 소스가 바뀐 뒤 같은 목적과 기준으로 갱신하도록 요청할 수 있습니다.
@@ -88,8 +81,6 @@ npx skills add choegyumin/architecture-companion
 | 모듈 의존성 그래프 (JS/TS) | 폴더를 계층으로 묶어, 파일 간 의존 관계와 외부 패키지 참조를 보여 줍니다. Focus 기능으로 관심 있는 파일·폴더·의존 경로의 세부 의존 관계를 확인할 수 있습니다. | 예        |
 | 컴포넌트 렌더 트리 (React) | 컴포넌트가 어떤 컴포넌트가 렌더링하는지 보여 줍니다. 분기·조건을 전환하며 렌더링되는 컴포넌트가 어떻게 달라지는지 확인할 수 있습니다.                         | 예        |
 
-<!-- TODO: 유즈 케이스 다이어그램 지원 추가 -->
-
 ---
 
 ## 왜 Architecture Companion인가?
@@ -102,8 +93,6 @@ npx skills add choegyumin/architecture-companion
 - **다이어그램 단위 추상화는 맥락을 끊습니다.** C4 모델처럼 다이어그램마다 한 계층 레벨씩 보여주는 방식에서는, 상위 레벨을 표현하면 내부 요소 사이의 관계를 볼 수 없고, 하위 레벨만 표현하면 상위 형제 요소와의 관계를 볼 수 없습니다. Architecture Companion은 다이어그램을 추상화하는 대신, 하나의 다이어그램 안에서 상호작용으로 표현할 정보를 바꿔 인지부하를 줄입니다.
 - **대부분의 다이어그램은 일회용입니다.** 다이어그램은 이해를 돕는 그림이며, 지금도 적극적으로 쓰입니다. 그러나 이해하고 나면 그 역할이 끝납니다. Architecture Companion은 Annotation 등의 기능으로 그림에 의견을 남기고 작업으로 이어 가서, 이해를 넘어 AI와의 협업을 지원합니다.
 - **범용 도구는 의존 그래프에 머뭅니다.** 코드를 분석해 그리는 도구도 대부분 파일·모듈의 의존과 참조 관계까지만 표현합니다. Architecture Companion은 컴포넌트 렌더 트리처럼 질문의 종류에 맞는 분석과 시각적 표현을 제공합니다.
-
-<!-- TODO: '대부분의 다이어그램은 일회용입니다.' 항목에 Spotlight(가칭) 기능 추가 -->
 
 Architecture Companion의 설계 철학과 배경은 [philosophy.md](docs/philosophy.md)의 첫 섹션에 더 자세히 담아 두었습니다.
 
