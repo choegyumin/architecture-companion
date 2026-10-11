@@ -34,7 +34,13 @@ const expectedTopLevelEntries = [
   "schemas",
 ] as const;
 const expectedRuntimeEntries = ["artifact-generators", "cli", "client"] as const;
-const expectedCliFiles = ["serve.js", "validate-schemas.js", "view-annotations.js", "view-generators.js"] as const;
+const expectedCliFiles = [
+  "serve.js",
+  "validate-schemas.js",
+  "view-annotations.js",
+  "view-catalog.js",
+  "view-generators.js",
+] as const;
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repositoryRoot = packageRoot;
 const skillSourceRoot = join(packageRoot, "skills", "architecture-companion");
@@ -684,14 +690,38 @@ async function verifyInstalledAnnotationEntry(
   assertSuccessfulCompletion(result, scriptPath);
 }
 
+async function verifyInstalledCatalogEntry(
+  skillRoot: string,
+  scopePath: string,
+  environment: NodeJS.ProcessEnv,
+): Promise<void> {
+  const relativePath = "src/checkout.archcomp.json";
+  const artifact = {
+    kind: "behavior",
+    title: "Checkout",
+    updatedAt: "2026-10-03T09:15:00.000Z",
+    generator: "built-in:freeform",
+    instructions: "Review checkout behavior.",
+    diagram: {
+      layout: { id: "elk-layered" },
+      graph: { groups: [], nodes: [{ id: "checkout", type: "default", title: "Checkout" }], edges: [] },
+    },
+  };
+  await writeFixtureFile(scopePath, relativePath, JSON.stringify(artifact));
+  const scriptPath = join(skillRoot, "runtime", "cli", "view-catalog.js");
+  const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
+  assertSuccessfulCompletion(result, scriptPath);
+  assert.deepEqual(JSON.parse(result.stdout), { behaviors: [{ ...artifact, id: relativePath }], designs: [] });
+  await rm(join(scopePath, relativePath));
+}
+
 async function verifyInstalledValidationEntry(
   skillRoot: string,
   scopePath: string,
   environment: NodeJS.ProcessEnv,
 ): Promise<void> {
   const artifactDirectory = join(scopePath, ".architecture-companion");
-  await mkdir(join(artifactDirectory, "behaviors"), { recursive: true });
-  await mkdir(join(artifactDirectory, "designs"), { recursive: true });
+  await mkdir(join(artifactDirectory, "artifacts"), { recursive: true });
 
   const scriptPath = join(skillRoot, "runtime", "cli", "validate-schemas.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
@@ -768,6 +798,7 @@ try {
   await verifyInstalledReactComponentGenerator(skillRoot, scopePath, environment);
   await verifyInstalledJsModuleDependencyGenerator(skillRoot, scopePath, environment);
   await verifyInstalledAnnotationEntry(skillRoot, scopePath, environment);
+  await verifyInstalledCatalogEntry(skillRoot, scopePath, environment);
   await verifyInstalledValidationEntry(skillRoot, scopePath, environment);
   serverProcess = startInstalledServer(skillRoot, scopePath, environment, spawnGuardPath);
   await verifyInstalledClient(await serverProcess.url, spawnGuardReadyPath, openerMarkerPath);

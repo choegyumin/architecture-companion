@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import { artifactSchema } from "@/features/artifact/artifact";
+import { catalogConfigSchema } from "@/features/catalog/catalog";
 
-export const generatedSchemaFileNames = ["artifact.schema.json"] as const;
+export const generatedSchemaFileNames = ["artifact.schema.json", "config.schema.json"] as const;
 
 type GeneratedSchemaFileName = (typeof generatedSchemaFileNames)[number];
 
@@ -11,11 +12,18 @@ type GeneratedSchemaFileName = (typeof generatedSchemaFileNames)[number];
 // `$defs` and referenced, instead of one inline copy per union member. The
 // single-root form emits no `$id`, so the file identity is stamped here.
 export function generateSchemaSources(): Readonly<Record<GeneratedSchemaFileName, string>> {
-  const { $schema, ...schema } = z.toJSONSchema(artifactSchema, {
-    target: "draft-2020-12",
-    io: "input",
-    reused: "inline",
-  }) as Record<string, unknown>;
-  const document = { $schema, $id: "./artifact.schema.json", ...schema };
-  return { "artifact.schema.json": `${JSON.stringify(document, null, 2)}\n` };
+  return Object.fromEntries(
+    [
+      ["artifact.schema.json", artifactSchema],
+      ["config.schema.json", catalogConfigSchema],
+    ].map(([fileName, source]) => {
+      const { $schema, ...schema } = z.toJSONSchema(source as z.ZodType, {
+        target: "draft-2020-12",
+        io: "input",
+        reused: "inline",
+      }) as Record<string, unknown>;
+      const document = { $schema, $id: `./${fileName}`, ...schema };
+      return [fileName, `${JSON.stringify(document, null, 2)}\n`];
+    }),
+  ) as Record<GeneratedSchemaFileName, string>;
 }
