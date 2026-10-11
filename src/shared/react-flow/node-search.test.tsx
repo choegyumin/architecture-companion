@@ -52,19 +52,116 @@ describe("NodeSearch", () => {
     expect(container.querySelector("svg")).not.toBeInTheDocument();
   });
 
-  it("searches data.label without regard to case and selects and fits the chosen node by default", async () => {
+  it("fits the first match on Enter and closes the list while retaining the query", async () => {
     const user = userEvent.setup();
     render(<NodeSearch />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
 
-    await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "ALP");
+    await user.type(input, "ALP");
     expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Beta" })).not.toBeInTheDocument();
+    expect(mocks.fitView).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("option", { name: "Alpha" }));
-    expect(mocks.state.nodes.find((node) => node.id === "alpha")?.selected).toBe(true);
+    await user.keyboard("{Enter}");
     expect(mocks.fitView).toHaveBeenCalledExactlyOnceWith({ nodes: [alpha], duration: 500 });
-    expect(screen.getByRole("combobox", { name: "Search nodes" })).toHaveValue("");
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(input).toHaveValue("ALP");
+    expect(input).toHaveFocus();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("cycles matching nodes, including duplicate names, with arrows and buttons without closing search", async () => {
+    const user = userEvent.setup();
+    const first = { ...alpha, id: "render-first", data: { label: "Render" } };
+    const second = { ...beta, id: "render-second", data: { label: "Render" } };
+    const third = { ...alpha, id: "render-third", data: { label: "RenderPanel" } };
+    mocks.state.nodes = [first, second, third];
+    render(<NodeSearch />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+
+    await user.type(input, "render");
+    expect(screen.getByText("0/3")).toBeVisible();
+    expect(mocks.fitView).not.toHaveBeenCalled();
+
+    await user.keyboard("{ArrowDown}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [first], duration: 500 });
+    await user.keyboard("{ArrowDown}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [second], duration: 500 });
+    expect(screen.getByText("2/3")).toBeVisible();
+
+    await user.keyboard("{ArrowUp}{ArrowUp}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
+    expect(screen.getByRole("option", { name: "RenderPanel" })).toHaveAttribute("data-highlighted");
+
+    // The open combobox keeps only the input and popup in the accessibility
+    // tree, so the step buttons are located by their tooltip titles.
+    await user.click(screen.getByTitle("Next match (↓)"));
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [first], duration: 500 });
+    await user.click(screen.getByTitle("Previous match (↑)"));
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
+    expect(input).toHaveValue("render");
+    expect(input).toHaveFocus();
+  });
+
+  it.each(["{Enter}", "{Shift>}{Enter}{/Shift}"])(
+    "confirms the current match with %s instead of cycling",
+    async (key) => {
+      const user = userEvent.setup();
+      render(<NodeSearch />);
+      const input = screen.getByRole("combobox", { name: "Search nodes" });
+      await user.type(input, "a");
+      await user.keyboard("{ArrowDown}{ArrowDown}");
+      expect(screen.getByRole("option", { name: "Beta" })).toHaveAttribute("data-highlighted");
+      mocks.fitView.mockClear();
+
+      await user.keyboard(key);
+      expect(mocks.fitView).toHaveBeenCalledExactlyOnceWith({ nodes: [beta], duration: 500 });
+      expect(input).toHaveValue("a");
+      expect(input).toHaveFocus();
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      await user.keyboard("{Enter}");
+      expect(mocks.fitView).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("retains the query on blur but clears the query and results on Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <NodeSearch />
+        <button type="button">Outside search</button>
+      </>,
+    );
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    await user.type(input, "a");
+    await user.keyboard("{ArrowDown}{ArrowDown}");
+    expect(screen.getByText("2/2")).toBeVisible();
+
+    // The open combobox hides outside content from the accessibility tree, so locate the button by text.
+    await user.click(screen.getByText("Outside search"));
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(input).toHaveValue("a");
+
+    await user.click(input);
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+    expect(screen.getByText("0/2")).toBeVisible();
+    await user.keyboard("{ArrowDown}");
+    expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [alpha], duration: 500 });
+    mocks.fitView.mockClear();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("");
+    expect(input).toHaveFocus();
+    await user.keyboard("{Enter}{ArrowDown}");
+    expect(mocks.fitView).not.toHaveBeenCalled();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+    await user.click(screen.getByText("Outside search"));
+    await user.click(input);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("");
   });
 
   it("uses getNodeLabel for both default search and result text", async () => {
@@ -98,6 +195,9 @@ describe("NodeSearch", () => {
     await user.click(screen.getByRole("option", { name: "Result: READABLE TITLE" }));
 
     expect(onSelectNode).toHaveBeenCalledExactlyOnceWith("Readable title");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Search nodes" })).toHaveValue("unrelated");
+    expect(screen.getByRole("combobox", { name: "Search nodes" })).toHaveFocus();
     expect(mocks.setNodes).not.toHaveBeenCalled();
     expect(mocks.fitView).not.toHaveBeenCalled();
   });
