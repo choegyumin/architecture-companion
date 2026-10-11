@@ -16,7 +16,8 @@ const requirementText = (controls: readonly DiagramControl[], controlId: string,
   if (control.kind === "branch") {
     return control.cases.find((branchCase) => branchCase.id === value)?.label ?? value;
   }
-  return control.label;
+  // Negate the entire label without interpreting the generator's expression syntax.
+  return value === "off" ? `!(${control.label})` : control.label;
 };
 
 const ruleText = (controls: readonly DiagramControl[], rule: DiagramRouteRequirementRule): string =>
