@@ -91,11 +91,13 @@ describe("NodeSearch", () => {
 
     await user.keyboard("{ArrowUp}{ArrowUp}");
     expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
-    expect(screen.getByRole("option", { name: "RenderPanel", selected: true })).toBeVisible();
+    expect(screen.getByRole("option", { name: "RenderPanel" })).toHaveAttribute("data-highlighted");
 
-    await user.click(screen.getByRole("button", { name: "Next match" }));
+    // The open combobox keeps only the input and popup in the accessibility
+    // tree, so the step buttons are located by their tooltip titles.
+    await user.click(screen.getByTitle("Next match (↓)"));
     expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [first], duration: 500 });
-    await user.click(screen.getByRole("button", { name: "Previous match" }));
+    await user.click(screen.getByTitle("Previous match (↑)"));
     expect(mocks.fitView).toHaveBeenLastCalledWith({ nodes: [third], duration: 500 });
     expect(input).toHaveValue("render");
     expect(input).toHaveFocus();
@@ -109,7 +111,7 @@ describe("NodeSearch", () => {
       const input = screen.getByRole("combobox", { name: "Search nodes" });
       await user.type(input, "a");
       await user.keyboard("{ArrowDown}{ArrowDown}");
-      expect(screen.getByRole("option", { name: "Beta", selected: true })).toBeVisible();
+      expect(screen.getByRole("option", { name: "Beta" })).toHaveAttribute("data-highlighted");
       mocks.fitView.mockClear();
 
       await user.keyboard(key);
@@ -135,7 +137,8 @@ describe("NodeSearch", () => {
     await user.keyboard("{ArrowDown}{ArrowDown}");
     expect(screen.getByText("2/2")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Outside search" }));
+    // The open combobox hides outside content from the accessibility tree, so locate the button by text.
+    await user.click(screen.getByText("Outside search"));
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveAttribute("aria-expanded", "false");
     expect(input).toHaveValue("a");
@@ -155,7 +158,7 @@ describe("NodeSearch", () => {
     expect(mocks.fitView).not.toHaveBeenCalled();
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Outside search" }));
+    await user.click(screen.getByText("Outside search"));
     await user.click(input);
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveValue("");

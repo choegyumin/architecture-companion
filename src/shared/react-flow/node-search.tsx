@@ -1,8 +1,26 @@
 import { type Node, useReactFlow } from "@xyflow/react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import { type ReactNode, type Ref, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type Ref,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { cn } from "@/shared/react/class-name";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxInputGroup,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxPositioner,
+} from "@/shared/react-ui/combobox";
 
 export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   className?: string;
@@ -44,8 +62,9 @@ export function NodeSearch<NodeType extends Node = Node>({
   const [searchString, setSearchString] = useState("");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const hasWarnedInvalidLabel = useRef(false);
-  const currentOptionRef = useRef<HTMLLIElement>(null);
-  const listId = useId();
+  const arrowKeyRef = useRef<"ArrowDown" | "ArrowUp" | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inputElementRef = useRef<HTMLInputElement>(null);
   const { getNodes, fitView } = useReactFlow<NodeType>();
   const isOpen = (open ?? internalOpen) && Boolean(searchString);
   const currentIndex = searchResults.findIndex(({ node }) => node.id === currentId);
@@ -64,7 +83,7 @@ export function NodeSearch<NodeType extends Node = Node>({
     [onOpenChange, open],
   );
 
-  const onChange = useCallback(
+  const changeSearchString = useCallback(
     (value: string) => {
       if (!value) {
         setSearchString("");
@@ -110,83 +129,101 @@ export function NodeSearch<NodeType extends Node = Node>({
     changeOpen(false);
   };
 
-  // Every navigation gesture uses this path, including the first Enter and list clicks.
-  const visit = (index: number) => {
-    const { node } = searchResults[index];
+  // Every navigation gesture uses this path: arrow keys, pointer highlighting, buttons, Enter, and clicks.
+  const visit = (node: NodeType) => {
     setCurrentId(node.id);
     if (onSelectNode) onSelectNode(node);
     else void fitView({ nodes: [node], duration: 500 });
   };
 
-  const step = (direction: 1 | -1) => {
-    if (searchResults.length === 0) return;
-    const index =
-      currentIndex === -1
-        ? direction === 1
-          ? 0
-          : searchResults.length - 1
-        : (currentIndex + direction + searchResults.length) % searchResults.length;
-    changeOpen(true);
-    visit(index);
-  };
-
   const confirm = (index: number) => {
     if (!isOpen || searchResults.length === 0) return;
-    visit(index);
+    visit(searchResults[index].node);
     close();
   };
 
-  useEffect(() => {
-    currentOptionRef.current?.scrollIntoView?.({ block: "nearest" });
-  }, [currentId]);
+  // Expose the input element to the caller's ref without hand-merging refs
+  // (React itself assigns it through useImperativeHandle).
+  useImperativeHandle(inputRef, () => inputElementRef.current as HTMLInputElement, []);
+
+  // The combobox owns keyboard traversal; move its highlight by dispatching the arrow key it listens for.
+  const stepHighlight = (key: "ArrowDown" | "ArrowUp") => {
+    // Set the direction first: the dispatch is processed synchronously, before
+    // the keydown bubbles back through this component's own handler.
+    arrowKeyRef.current = key;
+    inputElementRef.current?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  };
 
   return (
-    <div
-      className={cn(
-        "w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md",
-        className,
-      )}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) close();
+    <Combobox<SearchResult<NodeType>>
+      filter={null}
+      highlightItemOnHover={false}
+      inputValue={searchString}
+      itemToStringLabel={({ label }) => label}
+      onInputValueChange={(value, details) => {
+        // Only typing changes the query: pressing a match syncs the input to the
+        // item label ("item-press" / "none"), which must not replace the query.
+        if (details.reason === "input-change") changeSearchString(value);
       }}
+      onItemHighlighted={(result, details) => {
+        if (!result) {
+          // Wrapping passes through an unhighlighted gap; re-issuing the arrow
+          // lands directly on the wrapped match.
+          if (details.reason === "keyboard" && arrowKeyRef.current) stepHighlight(arrowKeyRef.current);
+          return;
+        }
+        // Programmatic changes (list refresh) must not move the viewport; user navigation must.
+        if (details.reason === "none") return;
+        visit(result.node);
+      }}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) changeOpen(true);
+        else close();
+      }}
+      open={isOpen}
     >
-      <div className="flex h-10 items-center gap-2 px-3">
+      {/* The input group keeps the whole row — including the step buttons —
+          inside the combobox's trigger area, so pressing a button never reads
+          as an outside press that closes the popup. */}
+      <ComboboxInputGroup
+        className={cn(
+          "flex h-10 w-[min(28rem,calc(100vw-2rem))] items-center gap-2 rounded-lg border bg-popover px-3 text-popover-foreground shadow-md",
+          className,
+        )}
+        ref={cardRef}
+      >
         {startInputAddon != null ? (
           <div className="flex shrink-0 items-center text-muted-foreground">{startInputAddon}</div>
         ) : null}
-        <input
-          aria-activedescendant={isOpen && currentIndex !== -1 ? `${listId}-${currentIndex}` : undefined}
-          aria-autocomplete="list"
-          aria-controls={isOpen ? listId : undefined}
-          aria-expanded={isOpen}
+        <ComboboxInput
           aria-label="Search nodes"
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          onChange={(event) => onChange(event.target.value)}
-          onFocus={() => {
-            if (searchString) onChange(searchString);
-            else changeOpen(true);
-          }}
           onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              arrowKeyRef.current = event.key;
+              return;
+            }
+            if (event.nativeEvent.isComposing || event.ctrlKey || event.metaKey || event.altKey) {
+              if (event.key === "Enter") event.preventDefault();
+              return;
+            }
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
-              onChange("");
+              changeSearchString("");
             } else if (event.key === "Enter") {
-              event.preventDefault();
-              event.stopPropagation();
-              confirm(currentIndex === -1 ? 0 : currentIndex);
-            } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-              event.preventDefault();
-              event.stopPropagation();
-              step(event.key === "ArrowUp" ? -1 : 1);
+              // A plain Enter with a highlighted match presses it through the
+              // combobox (single confirm path via the item's onClick). The two
+              // cases the combobox ignores are confirmed here instead.
+              if (currentIndex === -1 || event.shiftKey) {
+                event.preventDefault();
+                event.stopPropagation();
+                confirm(currentIndex === -1 ? 0 : currentIndex);
+              }
             }
           }}
           placeholder={placeholder}
-          ref={inputRef}
-          role="combobox"
+          ref={inputElementRef}
           type="text"
-          value={searchString}
         />
         {isOpen ? (
           <>
@@ -197,7 +234,7 @@ export function NodeSearch<NodeType extends Node = Node>({
               aria-label="Previous match"
               className="rounded-sm p-1 hover:bg-accent disabled:opacity-40"
               disabled={searchResults.length === 0}
-              onClick={() => step(-1)}
+              onClick={() => stepHighlight("ArrowUp")}
               onMouseDown={(event) => event.preventDefault()}
               title="Previous match (↑)"
               type="button"
@@ -208,7 +245,7 @@ export function NodeSearch<NodeType extends Node = Node>({
               aria-label="Next match"
               className="rounded-sm p-1 hover:bg-accent disabled:opacity-40"
               disabled={searchResults.length === 0}
-              onClick={() => step(1)}
+              onClick={() => stepHighlight("ArrowDown")}
               onMouseDown={(event) => event.preventDefault()}
               title="Next match (↓)"
               type="button"
@@ -219,33 +256,21 @@ export function NodeSearch<NodeType extends Node = Node>({
         ) : endInputAddon != null ? (
           <div className="flex shrink-0 items-center text-muted-foreground">{endInputAddon}</div>
         ) : null}
-      </div>
-      {isOpen ? (
-        <>
-          <ul aria-label="Nodes" className="max-h-64 overflow-y-auto border-t p-1" id={listId} role="listbox">
-            {searchResults.map(({ node, label }, index) => (
-              <li
-                aria-selected={index === currentIndex}
-                className={cn(
-                  "cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
-                  index === currentIndex && "bg-accent text-accent-foreground",
-                )}
-                id={`${listId}-${index}`}
-                key={node.id}
-                onClick={() => confirm(index)}
-                onMouseDown={(event) => event.preventDefault()}
-                ref={index === currentIndex ? currentOptionRef : undefined}
-                role="option"
-              >
-                {label}
-              </li>
+      </ComboboxInputGroup>
+      <ComboboxPositioner anchor={cardRef}>
+        <ComboboxPopup>
+          <ComboboxList>
+            {searchResults.map((result, index) => (
+              <ComboboxItem key={result.node.id} onClick={() => confirm(index)} value={result}>
+                {result.label}
+              </ComboboxItem>
             ))}
-          </ul>
+          </ComboboxList>
           {searchResults.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No results found.</p>
           ) : null}
-        </>
-      ) : null}
-    </div>
+        </ComboboxPopup>
+      </ComboboxPositioner>
+    </Combobox>
   );
 }
