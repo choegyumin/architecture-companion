@@ -151,13 +151,14 @@
   }
 
   .react-flow__node.is-search-match {
-    outline: var(--search-match-width) dashed var(--primary);
+    border-radius: calc(var(--radius) * 1.4);
+    outline: var(--search-match-width) solid color-mix(in oklab, var(--primary) 35%, transparent);
     outline-offset: var(--search-outline-offset);
   }
 
   .react-flow__node.is-search-current {
     outline-width: var(--search-current-width);
-    outline-style: solid;
+    outline-color: color-mix(in oklab, var(--primary) 70%, transparent);
   }
 
   .react-flow__pane :where(.nodrag, .nopan) {
