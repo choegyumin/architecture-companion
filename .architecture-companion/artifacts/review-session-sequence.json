@@ -1,13 +1,13 @@
 {
-  "artifactId": "review-session-sequence",
+  "kind": "design",
   "title": "Review session sequence",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-11T22:20:39.828Z",
   "vcs": {
-    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",
-  "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-artifact.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer-base.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
+  "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-catalog.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
   "diagram": {
     "layout": {
       "layoutId": "sequence"
@@ -129,7 +129,7 @@
               "href": "source:///src/client/pages/workspace-page.tsx"
             },
             {
-              "href": "source:///src/client/parts/diagram-list.tsx"
+              "href": "source:///src/client/parts/artifact-list.tsx"
             }
           ],
           "type": "lifeline",
@@ -256,7 +256,7 @@
           "title": "Filesystem",
           "links": [
             {
-              "href": "source:///src/server/read-artifact.ts"
+              "href": "source:///src/server/read-catalog.ts"
             }
           ],
           "type": "lifeline",
@@ -408,8 +408,8 @@
           "type": "message",
           "sourceNodeId": "cli",
           "targetNodeId": "cli",
-          "label": "resolveConsumerScope()",
-          "href": "source:///src/server/resolve-consumer-scope.ts",
+          "label": "resolveCompanionScopePath()",
+          "href": "source:///src/server/resolve-companion-scope.ts",
           "messageType": "sync"
         },
         {
@@ -490,7 +490,7 @@
           "type": "message",
           "sourceNodeId": "server",
           "targetNodeId": "filesystem",
-          "label": "Read behavior and design diagram files",
+          "label": "Read config and discovered JSON artifact files",
           "messageType": "sync"
         },
         {
@@ -586,7 +586,7 @@
           "type": "message",
           "sourceNodeId": "renderer",
           "targetNodeId": "layout",
-          "label": "calculateLayout(diagram, measuredNodeSizes)",
+          "label": "Calculate layout from graph and measured node sizes",
           "messageType": "sync"
         },
         {

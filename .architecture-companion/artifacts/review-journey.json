@@ -1,9 +1,9 @@
 {
-  "artifactId": "review-journey",
+  "kind": "behavior",
   "title": "Architecture review journey",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-11T22:20:39.828Z",
   "vcs": {
-    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",

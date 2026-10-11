@@ -1,7 +1,7 @@
 {
-  "artifactId": "react-data-table-component-structure",
+  "kind": "design",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-12T13:19:55.400Z",
+  "updatedAt": "2026-10-11T21:44:47.751Z",
   "generator": "built-in:react-component-structure",
   "instructions": "## Purpose\n\nExamine how react-data-table-component assembles its table: DataTableInner provides every context and renders the responsive wrapper chain down to Table, Head, and Body, while feature components (ColumnFilter, ContextMenu, ExpanderButton, Pagination) receive values through supplied props instead of direct imports.\n\n## Regeneration\n\nClone https://github.com/jbetancur/react-data-table-component.git, then from its root:\n\n```sh\ngit checkout 05d75a4992136645d698c87ef27e50653e2b1779\nnpm ci --ignore-scripts\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --root \"DataTableInner\" \\\n  \"src\"\n```\n\nOnly the dependency install is needed; the analysis reads the library sources directly, not the built dist. The root is DataTableInner, the implementation behind the React.forwardRef export, because the wrapper itself resolves to a React API boundary rather than a component definition.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files.",
   "diagram": {

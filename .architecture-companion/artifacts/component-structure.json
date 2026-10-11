@@ -1,9 +1,9 @@
 {
-  "artifactId": "component-structure",
+  "kind": "design",
   "title": "Component structure",
-  "updatedAt": "2026-10-12T13:19:50.420Z",
+  "updatedAt": "2026-10-11T22:20:39.828Z",
   "vcs": {
-    "revision": "481afc50265a555e5feb52f99ba26ce625c52d40",
+    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
