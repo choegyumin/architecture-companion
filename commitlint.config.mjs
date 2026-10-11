@@ -34,7 +34,7 @@ const config = {
         "ci", // Changes to our CI configuration files and scripts (examples: GitHub Actions)
         "deps", // Changes external dependencies (examples: package.json dependencies)
         "dist", // `skills/architecture-companion/`
-        "artifacts", // `.architecture-companion/` (Dogfooding)
+        "artifacts", // `.architecture-companion/`, `showcases/.architecture-companion/` (Dogfooding & Showcases)
       ],
     ],
     "body-max-line-length": [2, "always", 120],
