@@ -466,28 +466,31 @@ describe("component rendering controls", () => {
     expect(edgeTo(graph, "Narrow")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!roomy" }]] });
   });
 
-  it("pairs comparison gates through operator inversion", async () => {
-    const graph = await graphFor(`
+  it.each(["{count > 0 && <Filled />}{count <= 0 && <Empty />}", "{count <= 0 && <Empty />}{count > 0 && <Filled />}"])(
+    "pairs comparison gates through operator inversion: %s",
+    async (body) => {
+      const graph = await graphFor(`
       function Empty() { return <span />; }
       function Filled() { return <aside />; }
-      export function App({ count }) { return <>{count > 0 && <Filled />}{count <= 0 && <Empty />}</>; }
+      export function App({ count }) { return <>${body}</>; }
     `);
-    const [count] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
-    expect(count).toMatchObject({
-      kind: "branch",
-      label: "count > 0",
-      // One predicate and its complement over the same threshold — a
-      // two-value subject, so it renders as a switch like any boolean gate.
-      polarityPair: true,
-      cases: [
-        { id: "count > 0", label: "count > 0" },
-        { id: "count <= 0", label: "count <= 0" },
-      ],
-    });
-    expect(edgeTo(graph, "Filled")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count > 0" }]] });
-    expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count <= 0" }]] });
-  });
+      const [count] = graph.additional.controls;
+      expect(graph.additional.controls).toHaveLength(1);
+      expect(count).toMatchObject({
+        kind: "branch",
+        label: "count > 0",
+        // One predicate and its complement over the same threshold — a
+        // two-value subject, so it renders as a switch like any boolean gate.
+        polarityPair: true,
+        cases: [
+          { id: "count > 0", label: "count > 0" },
+          { id: "count <= 0", label: "count <= 0" },
+        ],
+      });
+      expect(edgeTo(graph, "Filled")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count > 0" }]] });
+      expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count <= 0" }]] });
+    },
+  );
 
   it("enumerates equality gates over one subject as branch cases", async () => {
     const graph = await graphFor(`
@@ -689,12 +692,15 @@ describe("component rendering controls", () => {
     });
   });
 
-  it("leads a gate written negated with its positive case", async () => {
+  it.each([
+    { condition: "!catalog", onLabel: "catalog" },
+    { condition: "!(catalog)", onLabel: "(catalog)" },
+  ])("leads $condition with its positive case without renaming its source values", async ({ condition, onLabel }) => {
     const graph = await graphFor(`
       function First() { return <span />; }
       function Second() { return <aside />; }
       export function App({ catalog }) {
-        if (!catalog) return <First />;
+        if (${condition}) return <First />;
         return <Second />;
       }
     `);
@@ -706,10 +712,44 @@ describe("component rendering controls", () => {
       label: "catalog",
       polarityPair: true,
       cases: [
+        { id: "false", label: onLabel },
+        { id: "true", label: condition },
+      ],
+      dependsOn: [[]],
+    });
+    expect(edgeTo(graph, "First")).toMatchObject({
+      activeWhen: [[{ controlId: catalog.id, value: "true" }]],
+      composition: { kind: "inline-render", origins: [] },
+    });
+    expect(edgeTo(graph, "Second")).toMatchObject({
+      activeWhen: [[{ controlId: catalog.id, value: "false" }]],
+      composition: { kind: "inline-render", origins: [] },
+    });
+  });
+
+  it("keeps a reordered native pair separate from a sibling conditional over its subject", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      function Extra() { return <footer />; }
+      export function App({ catalog }) {
+        return <>{!catalog ? <First /> : <Second />}{catalog && <Extra />}</>;
+      }
+    `);
+    expect(graph.additional.controls).toHaveLength(2);
+    const branch = graph.additional.controls.find((control) => control.kind === "branch")!;
+    const conditional = graph.additional.controls.find((control) => control.kind === "conditional")!;
+    expect(branch).toMatchObject({
+      label: "catalog",
+      cases: [
         { id: "false", label: "catalog" },
         { id: "true", label: "!catalog" },
       ],
     });
+    expect(conditional).toMatchObject({ label: "catalog", dependsOn: [[]] });
+    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: branch.id, value: "true" }]]);
+    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: branch.id, value: "false" }]]);
+    expect(edgeActiveWhen(graph, "Extra")).toEqual([[{ controlId: conditional.id, value: "on" }]]);
   });
 
   it("expands a negated discriminant gate over the values it still allows", async () => {
