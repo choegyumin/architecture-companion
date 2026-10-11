@@ -1,4 +1,8 @@
-import { parseArtifact } from "@/features/artifact/artifact";
+import { z } from "zod";
+
+import { artifactSchema, parseArtifact } from "@/features/artifact/artifact";
+import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
+import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 const validDiagram = {
   id: "checkout-structure",
@@ -62,6 +66,111 @@ const validSequenceDiagram = {
     },
   },
 } as const;
+
+const validComponentDiagram = {
+  ...validDiagram,
+  diagram: {
+    layout: { id: "component-structure" },
+    graph: {
+      ...validDiagram.diagram.graph,
+      edges: [
+        { id: "inline", type: "default", source: "checkout-page", target: "payment-client" },
+        {
+          id: "conditional",
+          type: "control",
+          source: "checkout-page",
+          target: "payment-client",
+          activeWhen: [[{ controlId: "ready", value: "on" }]],
+        },
+      ],
+      additional: {
+        roots: ["checkout-page"],
+        controls: [{ id: "ready", owner: "checkout-page", kind: "conditional", label: "ready", dependsOn: [[]] }],
+      },
+    },
+  },
+} as const;
+
+const composition = {
+  kind: "slot",
+  input: "children",
+  origins: [
+    { supplierId: "outside:App", supplierTitle: "App", input: "header" },
+    { supplierId: "outside:Other", supplierTitle: "Other", input: "footer" },
+  ],
+};
+
+describe("component composition metadata", () => {
+  it("keeps legacy component graphs valid without inferring composition metadata", () => {
+    expect(parseArtifact(validComponentDiagram)).toEqual(validComponentDiagram);
+  });
+
+  it("preserves per-edge kind, consumer input, and original supplier-input pairs through JSON", () => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition })),
+    };
+    const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
+
+    expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
+    expect(projectDecisionNodes(componentStructureDiagramGraphSchema.parse(graph))).toEqual(
+      projectDecisionNodes(componentStructureDiagramGraphSchema.parse(validComponentDiagram.diagram.graph)),
+    );
+  });
+
+  it("allows direct composition without consumer input or supplier origins", () => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({
+        ...edge,
+        composition: { kind: "inline-render", origins: [] },
+      })),
+    };
+
+    expect(componentStructureDiagramGraphSchema.parse(graph)).toEqual(graph);
+  });
+
+  it.each([
+    { ...composition, kind: "" },
+    { ...composition, input: "" },
+    { kind: "slot" },
+    { ...composition, unexpected: true },
+    { ...composition, origins: [{ ...composition.origins.at(0), supplierId: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), supplierTitle: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), input: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), prop: "header" }] },
+  ])("rejects malformed composition metadata: %j", (invalid) => {
+    for (const edge of validComponentDiagram.diagram.graph.edges) {
+      const graph = { ...validComponentDiagram.diagram.graph, edges: [{ ...edge, composition: invalid }] };
+      expect(() =>
+        parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+      ).toThrow("Invalid artifact");
+    }
+  });
+
+  it.each(["elk-layered", "dependency-graph"])("does not widen the %s edge contract", (id) => {
+    const graph = {
+      ...validDiagram.diagram.graph,
+      edges: validDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition })),
+    };
+
+    expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow("Invalid artifact");
+  });
+
+  it("emits distinct component edge definitions without changing generic edges", () => {
+    const schema = z.toJSONSchema(artifactSchema, { target: "draft-2020-12", io: "input", reused: "inline" });
+
+    expect(schema.$defs).toMatchObject({
+      ComponentComposition: { type: "object", required: ["kind", "origins"], additionalProperties: false },
+      ComponentStructureDefaultEdge: { properties: { composition: { $ref: "#/$defs/ComponentComposition" } } },
+      ComponentStructureControlEdge: { properties: { composition: { $ref: "#/$defs/ComponentComposition" } } },
+    });
+    expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureDefaultEdge");
+    expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureControlEdge");
+    expect(schema.$defs?.DefaultEdge.properties).not.toHaveProperty("composition");
+    expect(schema.$defs?.ControlEdge.properties).not.toHaveProperty("composition");
+  });
+});
 
 describe("artifact parsing", () => {
   it("preserves the common diagram contract", () => {

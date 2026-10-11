@@ -472,6 +472,26 @@ export const componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.exte
 });
 export type ComponentStructureDiagramNode = z.infer<typeof componentStructureDiagramNodeSchema>;
 
+/** A stored composition, with the consumer input separate from the original suppliers' inputs. */
+export const componentCompositionSchema = z
+  .object({
+    kind: z.string().min(1),
+    input: z.string().min(1).optional(),
+    origins: z.array(
+      z.object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), input: z.string().min(1) }).strict(),
+    ),
+  })
+  .strict()
+  .meta({ id: "ComponentComposition" });
+export type ComponentComposition = z.infer<typeof componentCompositionSchema>;
+
+const componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema
+  .extend({ composition: componentCompositionSchema.optional() })
+  .meta({ id: "ComponentStructureDefaultEdge" });
+const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
+  .extend({ composition: componentCompositionSchema.optional() })
+  .meta({ id: "ComponentStructureControlEdge" });
+
 /** Additional graph properties a component structure diagram stores: its roots and controls. */
 export const componentStructureAdditionalSchema = z
   .object({
@@ -612,7 +632,9 @@ export const componentStructureDiagramGraphSchema = z
   .object({
     ...graphBaseShape,
     nodes: z.array(componentStructureDiagramNodeSchema).min(1).readonly(),
-    edges: z.array(z.discriminatedUnion("type", [defaultDiagramEdgeSchema, controlDiagramEdgeSchema])).readonly(),
+    edges: z
+      .array(z.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema]))
+      .readonly(),
     additional: componentStructureAdditionalSchema,
   })
   .strict()
