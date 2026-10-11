@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Viewport } from "@xyflow/react";
 import type { ComponentProps, MouseEvent, ReactNode } from "react";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,10 +9,24 @@ import { DiagramCanvas } from "@/client/parts/diagram-canvas";
 
 const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
-  const fitView = vi.fn();
+  const viewport = { x: 0, y: 0, zoom: 1 };
+  const fitView = vi.fn(async () => {
+    Object.assign(viewport, { x: 24, y: 24, zoom: 0.1 });
+    return true;
+  });
   return {
     platform: { os: { mac: false } },
-    flowInstance: { screenToFlowPosition, fitView },
+    flowInstance: {
+      screenToFlowPosition,
+      fitView,
+      getViewport: () => ({ ...viewport }),
+      getNodes: () => [],
+      getNodesBounds: () => ({ x: 0, y: 0, width: 2000, height: 3000 }),
+      setViewport: async (next: Viewport) => {
+        Object.assign(viewport, next);
+        return true;
+      },
+    },
     nodes: [] as { id: string; type: string; parentId?: string; className?: string }[],
     screenToFlowPosition,
     fitView,
@@ -81,10 +96,45 @@ vi.mock("@xyflow/react", () => ({
 }));
 
 describe("diagram canvas", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mocks.platform.os.mac = false;
     mocks.screenToFlowPosition.mockClear();
     mocks.fitView.mockClear();
+    await mocks.flowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
+  });
+
+  it("keeps the spotlight frame through initial layout and dismissal until the user requests Fit View", async () => {
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame"] });
+    try {
+      const initialView = { mode: "fit" } as const;
+      const { rerender } = render(
+        <DiagramCanvas
+          edges={[]}
+          nodes={[]}
+          initialView={initialView}
+          focusView={{ key: "first-step", target: { kind: "bounds", x: 100, y: 600, width: 200, height: 48 } }}
+        />,
+      );
+      Object.defineProperties(screen.getByRole("group", { name: "Artifact canvas" }), {
+        clientWidth: { value: 800 },
+        clientHeight: { value: 600 },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(1000));
+
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 200, y: -324, zoom: 1 });
+
+      rerender(<DiagramCanvas edges={[]} nodes={[]} initialView={initialView} />);
+      await act(() => vi.advanceTimersByTimeAsync(1000));
+
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 200, y: -324, zoom: 1 });
+
+      fireEvent.click(screen.getByRole("button", { name: "Fit View" }));
+      await act(async () => undefined);
+
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 24, y: 24, zoom: 0.1 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("converts canvas clicks to flow coordinates and forwards them", async () => {

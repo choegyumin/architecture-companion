@@ -217,10 +217,19 @@ export function DiagramCanvas({
     await fitViewFraming(flowInstance, initialView, canvasRef.current);
   }, [flowInstance, initialView]);
 
+  const latestFocusView = useRef(focusView);
+  useEffect(() => {
+    latestFocusView.current = focusView;
+  }, [focusView]);
+
   useEffect(() => {
     let secondFrame = 0;
     const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(() => void fitView());
+      secondFrame = requestAnimationFrame(() => {
+        // A spotlight takes precedence over the pending initial fit. Read the
+        // latest target without scheduling another fit when the spotlight closes.
+        if (!latestFocusView.current) void fitView();
+      });
     });
     return () => {
       cancelAnimationFrame(firstFrame);
