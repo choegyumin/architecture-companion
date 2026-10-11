@@ -271,9 +271,7 @@ export function DiagramCanvas({
         style={
           {
             "--xy-background-color": "var(--surface)",
-            "--search-match-width": `${1 / zoom}px`,
-            "--search-current-width": `${2 / zoom}px`,
-            "--search-outline-offset": `${2 / zoom}px`,
+            "--react-flow-viewport-zoom": zoom,
           } as CSSProperties
         }
         edges={highlightStampedEdges}

@@ -152,12 +152,12 @@
 
   .react-flow__node.is-search-match {
     border-radius: calc(var(--radius) * 1.4);
-    outline: var(--search-match-width) solid color-mix(in oklab, var(--primary) 35%, transparent);
-    outline-offset: var(--search-outline-offset);
+    outline: calc(1px / var(--react-flow-viewport-zoom)) solid color-mix(in oklab, var(--primary) 35%, transparent);
+    outline-offset: calc(2px / var(--react-flow-viewport-zoom));
   }
 
   .react-flow__node.is-search-current {
-    outline-width: var(--search-current-width);
+    outline-width: calc(2px / var(--react-flow-viewport-zoom));
     outline-color: color-mix(in oklab, var(--primary) 70%, transparent);
   }
 
