@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center" className="text-center" style="text-align: center;">
-  Use interactive diagrams to design and review code with your agent. Works in any coding harness, including Claude Code, Codex, and OpenCode.
+  Use interactive diagrams to design and review code with your agent. Claude Code, Codex, OpenCode — it works in any coding harness.
 </p>
 
 <!-- TODO: Hero image -->
@@ -13,7 +13,7 @@
   <strong>English</strong> · <a href="README.ko.md">한국어</a>
 </p>
 
----
+<br><br>
 
 ## Quick Start
 
@@ -71,6 +71,8 @@ Diagrams are saved as artifacts in your project's `.architecture-companion/` dir
 
 If you do not want to commit the artifacts, add `.architecture-companion/` to `.gitignore`.
 
+<br><br>
+
 ## What Architecture Companion Can Do
 
 Design, review, and feedback all happen within a single diagram.
@@ -90,7 +92,7 @@ You can also create diagrams tailored to specific questions. Diagrams based on s
 
 <!-- TODO: Add support for use case diagrams -->
 
----
+<br><br>
 
 ## Why Architecture Companion?
 
@@ -107,7 +109,7 @@ Diagrams are one of the best tools for understanding code. But you can already g
 
 The first section of [philosophy.md](docs/philosophy.md) explains Architecture Companion's design philosophy and background in more detail.
 
----
+<br><br>
 
 ## Learn More
 

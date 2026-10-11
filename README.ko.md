@@ -10,7 +10,7 @@
   <a href="README.md">English</a> · <strong>한국어</strong>
 </p>
 
----
+<br><br>
 
 ## 빠른 시작
 
@@ -81,7 +81,7 @@ npx skills add choegyumin/architecture-companion
 | 모듈 의존성 그래프 (JS/TS) | 폴더를 계층으로 묶어, 파일 간 의존 관계와 외부 패키지 참조를 보여 줍니다. Focus 기능으로 관심 있는 파일·폴더·의존 경로의 세부 의존 관계를 확인할 수 있습니다. | 예        |
 | 컴포넌트 렌더 트리 (React) | 컴포넌트가 어떤 컴포넌트가 렌더링하는지 보여 줍니다. 분기·조건을 전환하며 렌더링되는 컴포넌트가 어떻게 달라지는지 확인할 수 있습니다.                         | 예        |
 
----
+<br><br>
 
 ## 왜 Architecture Companion인가?
 
@@ -96,7 +96,7 @@ npx skills add choegyumin/architecture-companion
 
 Architecture Companion의 설계 철학과 배경은 [philosophy.md](docs/philosophy.md)의 첫 섹션에 더 자세히 담아 두었습니다.
 
----
+<br><br>
 
 ## 더 알아보기
 
