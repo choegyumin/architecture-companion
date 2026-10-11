@@ -6,6 +6,12 @@ import ignore from "ignore";
 import micromatch from "micromatch";
 import type ts from "typescript";
 
+import {
+  calculateConditionPolarityPair,
+  calculatePolarityPair,
+  negateLabel,
+  normalizedLabel,
+} from "@/features/diagram/control-polarity";
 import type {
   ComponentComposition,
   ComponentStructureDiagramGraph,
@@ -2148,57 +2154,6 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     polarityPair?: true;
   }>;
 
-  // Display-only label normalization: control identity stays the node
-  // (file/pos), so rewriting text never merges or splits controls. Double
-  // negation folds (`!(!x)` → `x`), a negation wraps only when precedence
-  // demands it, and the positive form strips every negation.
-  const normalizedLabel = (label: string): string => {
-    let text = label.trim();
-    for (;;) {
-      if (text.startsWith("!(") && text.endsWith(")")) {
-        const inner = text.slice(2, -1).trim();
-        // Only a double negation folds; `!(a || b)` keeps its negation.
-        if (!inner.startsWith("!") || inner.length === 1) return text;
-        text = normalizedLabel(inner.slice(1).trim());
-        continue;
-      }
-      if (text.startsWith("!!")) {
-        text = text.slice(2).trim();
-        continue;
-      }
-      return text;
-    }
-  };
-  const negateLabel = (label: string): string => {
-    const text = normalizedLabel(label);
-    if (text.startsWith("!") && !text.startsWith("!=")) return normalizedLabel(text.slice(1).trim());
-    return /[<>=+\-*%&|?]|\s/.test(text) ? `!(${text})` : `!${text}`;
-  };
-  const positiveLabel = (label: string): string => {
-    let text = normalizedLabel(label);
-    for (;;) {
-      if (text.startsWith("!(") && text.endsWith(")")) {
-        text = normalizedLabel(text.slice(2, -1).trim());
-        continue;
-      }
-      if (text.startsWith("!") && !text.startsWith("!=") && text.length > 1) {
-        text = normalizedLabel(text.slice(1).trim());
-        continue;
-      }
-      return text;
-    }
-  };
-
-  // A polarity pair's on slot (cases.at(0)) must be the case its label names
-  // — the positive form — so a gate written negated (`if (!x)`) still leads
-  // with the positive case. Ids stay semantic: "true" is the gate as written
-  // regardless of slot.
-  const polarityPairCases = (label: string): { id: string; label: string }[] => {
-    const trueCase = { id: "true", label };
-    const falseCase = { id: "false", label: negateLabel(label) };
-    return normalizedLabel(label) === positiveLabel(label) ? [trueCase, falseCase] : [falseCase, trueCase];
-  };
-
   type ConditionLiteral = Readonly<{ expression: ts.Expression; positive: boolean }>;
   const MAX_DECOMPOSED_CLAUSES = 8;
   const MAX_DECOMPOSED_LITERALS = 8;
@@ -2355,18 +2310,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
       }
       const label = normalizedLabel(unwrapped.condition.getText());
+      const pair = emptyTrue || emptyFalse ? undefined : calculateConditionPolarityPair(label);
       const select = controlRuleset(
         unwrapped,
         ownerId,
-        emptyTrue ? negateLabel(label) : emptyFalse ? label : positiveLabel(label),
+        pair?.label ?? (emptyTrue ? negateLabel(label) : label),
         ruleset,
         context,
-        emptyTrue || emptyFalse
-          ? undefined
-          : {
-              cases: polarityPairCases(label),
-              polarityPair: true,
-            },
+        pair,
       );
       if (!emptyTrue) visit(unwrapped.whenTrue, select(emptyFalse ? "on" : "true"));
       if (!emptyFalse) visit(unwrapped.whenFalse, select(emptyTrue ? "on" : "false"));
@@ -2446,17 +2397,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         ruleset,
         context,
         hasLeftOutput
-          ? {
-              // The decision is the left operand's truthiness (`??`: null or
-              // not) — a two-value subject, so it renders as a switch over it,
-              // same as any other boolean gate. What each arm renders is the
-              // graph's business: the arm edges already point at their nodes.
+          ? calculatePolarityPair({
+              // The source operator defines the complement: nullish absence
+              // is not logical negation. Both keep the left operand as subject.
+              subjectLabel: label,
               cases: [
-                { id: "left", label },
-                { id: "right", label: nullish ? `${label} == null` : negateLabel(label) },
+                { id: "left", label, positive: true },
+                { id: "right", label: nullish ? `${label} == null` : negateLabel(label), positive: false },
               ],
-              polarityPair: true,
-            }
+            })
           : undefined,
       );
       if (hasLeftOutput) visit(unwrapped.left, select("left"));
@@ -2567,18 +2516,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             }
           }
           const label = normalizedLabel(statement.expression.getText());
+          const pair = trueOutput && falseOutput ? calculateConditionPolarityPair(label) : undefined;
           const select = controlRuleset(
             statement,
             ownerId,
-            trueOutput && falseOutput ? positiveLabel(label) : trueOutput ? label : negateLabel(label),
+            pair?.label ?? (trueOutput ? label : negateLabel(label)),
             next,
             context,
-            trueOutput && falseOutput
-              ? {
-                  cases: polarityPairCases(label),
-                  polarityPair: true,
-                }
-              : undefined,
+            pair,
           );
           const thenFlow = walk(
             statementsOf(statement.thenStatement),
@@ -3673,32 +3618,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               positive: !polarity.positive,
             });
         }
-        // The switch's on position (cases.at(0)) must be the case its label
-        // names — the positive form — so a group whose first member is a
-        // negated gate still leads with the positive case. Non-polarity groups
-        // (discriminant enumerations) keep member order.
-        const ordered = [...casesByKey.values()];
-        const positiveCase = ordered.find(({ positive }) => positive);
-        if (ordered.length === 2 && positiveCase && ordered.at(0) !== positiveCase) ordered.reverse();
-        const cases = ordered.map(({ id, label }) => ({ id, label }));
-        const positiveText = positiveCase?.label ?? ordered.at(0)!.label;
+        // Each group has at most the predicate and its complement. A lone
+        // polarity stays conditional; shared calculation orders a full pair.
+        const [first, second] = casesByKey.values();
         controls.set(control.id, {
           id: control.id,
           owner: control.owner,
-          // A two-case group is a switch over one two-value subject, so its
-          // label is the positive form; a lone member stays a conditional and
-          // keeps its own polarity — its label names the condition that turns
-          // it on. Comparison groups qualify too: they pair one predicate with
-          // its complement over the same threshold, which never overlaps —
-          // overlapping thresholds keep separate groups.
-          ...(cases.length >= 2
-            ? {
-                kind: "branch" as const,
-                label: positiveLabel(positiveText),
-                cases,
-                polarityPair: true as const,
-              }
-            : { kind: "conditional" as const, label: positiveText }),
+          ...(second
+            ? { kind: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
+            : { kind: "conditional" as const, label: first!.label }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
         });
         continue;
