@@ -60,7 +60,7 @@ function reviewArtifact(generator: string) {
     artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-        kind: "behavior",
+        type: "behavior",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator,

@@ -9,7 +9,7 @@ import {
 } from "@/features/diagram/diagram-graph";
 
 const validDiagram = {
-  kind: "design",
+  type: "design",
   title: "Checkout structure",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -544,8 +544,8 @@ describe("component composition metadata", () => {
 });
 
 describe("artifact parsing", () => {
-  it.each([undefined, "", "other", 42])("rejects a missing or unsupported artifact kind: %j", (kind) => {
-    expect(() => parseArtifact({ ...validDiagram, kind })).toThrow("Invalid artifact");
+  it.each([undefined, "", "other", 42])("rejects a missing or unsupported artifact type: %j", (type) => {
+    expect(() => parseArtifact({ ...validDiagram, type })).toThrow("Invalid artifact");
   });
 
   it("rejects a stored artifact ID because identity comes from the file path", () => {

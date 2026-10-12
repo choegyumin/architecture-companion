@@ -16,7 +16,7 @@ const catalog: CompanionCatalog = {
   artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
-      kind: "design",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -33,7 +33,7 @@ const catalog: CompanionCatalog = {
     },
     {
       artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-      kind: "behavior",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",

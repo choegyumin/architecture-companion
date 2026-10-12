@@ -30,7 +30,7 @@ it("prints null when there is no catalog", async () => {
 it("prints discovered artifact paths and content as one JSON line", async () => {
   const artifact = {
     artifactId: "src/checkout.archcomp.json",
-    kind: "behavior",
+    type: "behavior",
     title: "Checkout",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",

@@ -33,10 +33,10 @@ describe("generateSchemaSources", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
       type: "object",
-      required: ["kind", "title", "updatedAt", "generator", "instructions", "diagram"],
+      required: ["type", "title", "updatedAt", "generator", "instructions", "diagram"],
       additionalProperties: false,
       properties: {
-        kind: { type: "string", enum: ["behavior", "design"] },
+        type: { type: "string", enum: ["behavior", "design"] },
         updatedAt: { type: "string", format: "date-time" },
         generator: {
           type: "string",

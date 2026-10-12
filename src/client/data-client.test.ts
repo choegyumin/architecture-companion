@@ -117,9 +117,9 @@ describe("DataClient", () => {
   });
 
   it("sorts the diagrams of a Review response by title", async () => {
-    const diagram = (kind: "behavior" | "design", id: string, title: string) => ({
+    const diagram = (type: "behavior" | "design", id: string, title: string) => ({
       artifactId: id,
-      kind,
+      type,
       updatedAt: "2026-10-03T09:15:00.000Z",
       title,
       generator: "built-in:freeform",

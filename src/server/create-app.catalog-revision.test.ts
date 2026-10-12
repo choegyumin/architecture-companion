@@ -26,7 +26,7 @@ function catalog(title: string) {
           },
         },
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-        kind: "behavior",
+        type: "behavior",
       },
     ],
   };

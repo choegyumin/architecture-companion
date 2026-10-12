@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 
 const checkoutBehavior = {
-  kind: "behavior",
+  type: "behavior",
   title: "Checkout workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -53,7 +53,7 @@ describe("catalog reading", () => {
     await save("visible.archcomp.json");
     await save("ignored/hidden.archcomp.json");
     await save("src/hidden.archcomp.json");
-    await save(`${ARTIFACTS_RELATIVE_PATH}/nested/central.json`, { ...checkoutBehavior, kind: "design" });
+    await save(`${ARTIFACTS_RELATIVE_PATH}/nested/central.json`, { ...checkoutBehavior, type: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
@@ -73,7 +73,7 @@ describe("catalog reading", () => {
     await save("src/checkout.review.json");
     await save("src/excluded/hidden.review.json");
     await save("src/not-selected.archcomp.json");
-    await save(`${ARTIFACTS_RELATIVE_PATH}/central.json`, { ...checkoutBehavior, kind: "design" });
+    await save(`${ARTIFACTS_RELATIVE_PATH}/central.json`, { ...checkoutBehavior, type: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
@@ -138,29 +138,29 @@ describe("catalog reading", () => {
     });
   });
 
-  it("reads both artifact kinds from one central directory", async () => {
+  it("reads both artifact types from one central directory", async () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/workflow.json`);
-    await save(`${ARTIFACTS_RELATIVE_PATH}/structure.json`, { ...checkoutBehavior, kind: "design" });
+    await save(`${ARTIFACTS_RELATIVE_PATH}/structure.json`, { ...checkoutBehavior, type: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
         artifacts: [
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/structure.json`, kind: "design" },
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/workflow.json`, kind: "behavior" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/structure.json`, type: "design" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/workflow.json`, type: "behavior" },
         ],
       },
     });
   });
 
-  it("sorts the catalog by artifact path regardless of kind", async () => {
+  it("sorts the catalog by artifact path regardless of type", async () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/zoom.json`);
-    await save(`${ARTIFACTS_RELATIVE_PATH}/alpha.json`, { ...checkoutBehavior, kind: "design" });
+    await save(`${ARTIFACTS_RELATIVE_PATH}/alpha.json`, { ...checkoutBehavior, type: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
         artifacts: [
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/alpha.json`, kind: "design" },
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/zoom.json`, kind: "behavior" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/alpha.json`, type: "design" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/zoom.json`, type: "behavior" },
         ],
       },
     });
@@ -173,12 +173,12 @@ describe("catalog reading", () => {
   });
 
   it("reports invalid JSON and invalid artifact data with their paths", async () => {
-    await save(`${ARTIFACTS_RELATIVE_PATH}/bad-kind.json`, { ...checkoutBehavior, kind: "other" });
+    await save(`${ARTIFACTS_RELATIVE_PATH}/bad-type.json`, { ...checkoutBehavior, type: "other" });
     await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "bad-json.json"), "{ partial");
     const result = await readCatalog(scopePath);
     expect(result.status).toBe("invalid");
     if (result.status !== "invalid") throw new Error("Expected invalid catalog");
     expect(result.message).toContain(`Catalog contains invalid JSON: ${ARTIFACTS_RELATIVE_PATH}/bad-json.json`);
-    expect(result.message).toContain(`Catalog is invalid: ${ARTIFACTS_RELATIVE_PATH}/bad-kind.json`);
+    expect(result.message).toContain(`Catalog is invalid: ${ARTIFACTS_RELATIVE_PATH}/bad-type.json`);
   });
 });

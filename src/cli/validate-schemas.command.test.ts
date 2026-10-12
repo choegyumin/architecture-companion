@@ -7,7 +7,7 @@ import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  kind: "behavior",
+  type: "behavior",
   title: "Checkout",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",

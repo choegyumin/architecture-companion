@@ -14,7 +14,7 @@ function catalog() {
     artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-        kind: "behavior",
+        type: "behavior",
         title: "Checkout workflow",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
@@ -31,7 +31,7 @@ function catalog() {
       },
       {
         artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
-        kind: "design",
+        type: "design",
         title: "Checkout structure",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",

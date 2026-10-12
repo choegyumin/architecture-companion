@@ -10,7 +10,7 @@ import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
   artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-  kind: "behavior",
+  type: "behavior",
   title: "Workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",

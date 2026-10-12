@@ -863,8 +863,8 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   const { catalog } = state.review;
-  const behaviors = catalog.artifacts.filter(({ kind }) => kind === "behavior");
-  const designs = catalog.artifacts.filter(({ kind }) => kind === "design");
+  const behaviors = catalog.artifacts.filter(({ type }) => type === "behavior");
+  const designs = catalog.artifacts.filter(({ type }) => type === "design");
   const activeProcess = behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? behaviors.at(0);
   const activeDesign = designs.find(({ artifactId }) => artifactId === activeDesignId) ?? designs.at(0);
   const activeReviewView: ReviewView | null =

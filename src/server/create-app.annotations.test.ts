@@ -22,7 +22,7 @@ function catalog(title: string): CompanionCatalog {
     artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-        kind: "behavior",
+        type: "behavior",
         title,
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",

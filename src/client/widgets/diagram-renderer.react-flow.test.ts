@@ -8,7 +8,7 @@ import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const sequenceDiagram = {
   artifactId: ".architecture-companion/artifacts/sequence.archcomp.json",
-  kind: "behavior",
+  type: "behavior",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Sequence",
   generator: "built-in:freeform",

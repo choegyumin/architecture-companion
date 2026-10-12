@@ -6,7 +6,7 @@ import type { Artifact } from "@/features/artifact/artifact";
 function createDiagram(id: string, title: string): Artifact {
   return {
     artifactId: `.architecture-companion/artifacts/${id}.archcomp.json`,
-    kind: "design",
+    type: "design",
     updatedAt: "2026-10-03T09:15:00.000Z",
     title,
     generator: "built-in:freeform",

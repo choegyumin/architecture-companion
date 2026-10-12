@@ -17,7 +17,7 @@ vi.mock("@/client/widgets/sequence-diagram-renderer", () => ({
 const annotations = {} as AnnotationCanvasController;
 const diagram = {
   artifactId: ".architecture-companion/artifacts/example.archcomp.json",
-  kind: "design",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Example",
   generator: "built-in:freeform",

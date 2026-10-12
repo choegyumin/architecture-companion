@@ -5,7 +5,7 @@ import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-gra
 
 const diagram = {
   artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
-  kind: "design",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",

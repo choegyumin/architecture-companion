@@ -33,7 +33,7 @@ export const artifactIdSchema = z
 // varying part is the single `diagram` field below, so every envelope field
 // is declared once.
 const artifactBaseShape = {
-  kind: z.enum(["behavior", "design"]),
+  type: z.enum(["behavior", "design"]),
   title: z.string().min(1),
   updatedAt: z.string().datetime(),
   vcs: z

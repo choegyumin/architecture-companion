@@ -1,5 +1,5 @@
 {
-  "kind": "design",
+  "type": "design",
   "title": "Module Dependency Graph — Dependency Cruiser",
   "updatedAt": "2026-10-11T21:44:47.751Z",
   "generator": "built-in:js-module-dependency-graph",

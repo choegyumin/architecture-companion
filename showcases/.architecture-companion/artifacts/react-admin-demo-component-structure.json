@@ -1,5 +1,5 @@
 {
-  "kind": "design",
+  "type": "design",
   "title": "Component Structure — react-admin demo",
   "updatedAt": "2026-10-11T21:44:47.751Z",
   "generator": "built-in:react-component-structure",

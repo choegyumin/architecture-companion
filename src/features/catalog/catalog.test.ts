@@ -10,7 +10,7 @@ it("parses artifact discovery patterns independently from placement instructions
 
 const validBehavior = {
   artifactId: "src/checkout/checkout.archcomp.json",
-  kind: "behavior",
+  type: "behavior",
   title: "Checkout workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -62,15 +62,15 @@ describe("catalog parsing", () => {
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
 
-  it("preserves artifact kinds and order in a single catalog collection", () => {
+  it("preserves artifact types and order in a single catalog collection", () => {
     const catalog = {
-      artifacts: [{ ...validBehavior, kind: "design", artifactId: "src/checkout/design.archcomp.json" }, validBehavior],
+      artifacts: [{ ...validBehavior, type: "design", artifactId: "src/checkout/design.archcomp.json" }, validBehavior],
     };
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
 
-  it("rejects the same path for different artifact kinds", () => {
-    expect(() => parseCatalog({ artifacts: [validBehavior, { ...validBehavior, kind: "design" }] })).toThrow(
+  it("rejects the same path for different artifact types", () => {
+    expect(() => parseCatalog({ artifacts: [validBehavior, { ...validBehavior, type: "design" }] })).toThrow(
       "Duplicate artifact path: src/checkout/checkout.archcomp.json",
     );
   });
@@ -85,7 +85,7 @@ describe("catalog parsing", () => {
   ])("preserves authoring metadata in artifacts: $revision", (vcs) => {
     const diagram = { ...validBehavior, vcs };
     const catalog = {
-      artifacts: [diagram, { ...diagram, kind: "design", artifactId: "src/checkout/design.archcomp.json" }],
+      artifacts: [diagram, { ...diagram, type: "design", artifactId: "src/checkout/design.archcomp.json" }],
     };
 
     expect(parseCatalog(catalog)).toEqual(catalog);
@@ -205,8 +205,8 @@ describe("catalog parsing", () => {
     expect(() => parseCatalog(danglingEdge)).toThrow("Diagram edge missing targets unknown node missing-node");
   });
 
-  it.each(["behavior", "design"])("rejects duplicate artifact paths for %s", (kind) => {
-    const artifact = { ...validBehavior, kind };
+  it.each(["behavior", "design"])("rejects duplicate artifact paths for %s", (type) => {
+    const artifact = { ...validBehavior, type };
     expect(() => parseCatalog({ artifacts: [artifact, artifact] })).toThrow(
       "Duplicate artifact path: src/checkout/checkout.archcomp.json",
     );
@@ -215,7 +215,7 @@ describe("catalog parsing", () => {
   it("preserves direct node links and edge hrefs", () => {
     const diagram = {
       artifactId: "src/checkout/structure.archcomp.json",
-      kind: "design",
+      type: "design",
       title: "Structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",

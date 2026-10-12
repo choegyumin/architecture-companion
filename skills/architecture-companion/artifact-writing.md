@@ -13,11 +13,11 @@ Each diagram should answer one central review question. Avoid repeating the same
 
 ## File organization and preserving existing artifacts
 
-A catalog is the complete set of artifacts within a scope. Each artifact contains one diagram and is stored in its own JSON file. Set `kind` to `behavior` for Product Behavior or `design` for Code Design, regardless of where the file is placed.
+A catalog is the complete set of artifacts within a scope. Each artifact contains one diagram and is stored in its own JSON file. Set `type` to `behavior` for Product Behavior or `design` for Code Design, regardless of where the file is placed.
 
 Artifacts may live beside the source they explain or in `<scope>/.architecture-companion/artifacts/`. Both locations can coexist. Follow the current request, the placement instructions in `<scope>/.architecture-companion/config.json`, and existing project conventions when choosing a location. A configured scan pattern does not require co-location or central placement.
 
-Choose a filename that describes the artifact's purpose. It need not match a source filename or encode its kind. The default scan pattern is `**/*.archcomp.json`, but the user may configure other glob patterns. JSON files in `.architecture-companion/artifacts/` are always discovered, even when excluded by the configured patterns or `.gitignore`; other artifacts follow the configured patterns and `.gitignore`.
+Choose a filename that describes the artifact's purpose. It need not match a source filename or encode its type. The default scan pattern is `**/*.archcomp.json`, but the user may configure other glob patterns. JSON files in `.architecture-companion/artifacts/` are always discovered, even when excluded by the configured patterns or `.gitignore`; other artifacts follow the configured patterns and `.gitignore`.
 
 An artifact's identity is its scope-relative file path, using forward slashes. Do not store an `artifactId` in the JSON. Moving or renaming the file changes its identity. To remove an artifact, delete its file. Save complete artifacts, not merge directives or partial patches.
 

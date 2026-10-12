@@ -13,7 +13,7 @@ import { writeCatalog } from "@/server/write-catalog";
 function behavior(title: string): CompanionCatalog["artifacts"][number] {
   return {
     artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-    kind: "behavior",
+    type: "behavior",
     title: "Workflow",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",

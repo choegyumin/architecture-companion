@@ -14,7 +14,7 @@ import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutDiagram = {
   artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
-  kind: "design",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Checkout structure",
   generator: "built-in:freeform",
@@ -76,7 +76,7 @@ const checkoutDiagram = {
 };
 const catalogDiagram = {
   artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
-  kind: "design",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Catalog structure",
   generator: "built-in:freeform",
@@ -116,7 +116,7 @@ const checkoutWorkflow = {
     },
   },
   artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-  kind: "behavior",
+  type: "behavior",
   updatedAt: "2026-10-03T09:15:00.000Z",
 };
 const designArtifact = {
@@ -127,7 +127,7 @@ const processArtifact = {
   artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
-      kind: "behavior",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
@@ -159,7 +159,7 @@ const processArtifact = {
     },
     {
       artifactId: ".architecture-companion/artifacts/remove-member.archcomp.json",
-      kind: "behavior",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Remove member",
       generator: "built-in:freeform",
@@ -290,7 +290,7 @@ describe("dependency graph review", () => {
       artifacts: [
         {
           artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
-          kind: "design",
+          type: "design",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Dependencies",
           generator: "built-in:freeform",
@@ -339,7 +339,7 @@ describe("process (product workflow) review", () => {
       artifacts: [
         {
           artifactId: ".architecture-companion/artifacts/request-response.archcomp.json",
-          kind: "behavior",
+          type: "behavior",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Request response",
           generator: "built-in:freeform",

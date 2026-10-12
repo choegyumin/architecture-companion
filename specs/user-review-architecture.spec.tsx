@@ -17,7 +17,7 @@ const catalog = {
   artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-      kind: "behavior",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -34,7 +34,7 @@ const catalog = {
     },
     {
       artifactId: ".architecture-companion/artifacts/cancel-order.archcomp.json",
-      kind: "behavior",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Cancel order",
       generator: "built-in:freeform",
@@ -51,7 +51,7 @@ const catalog = {
     },
     {
       artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
-      kind: "design",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -68,7 +68,7 @@ const catalog = {
     },
     {
       artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
-      kind: "design",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",

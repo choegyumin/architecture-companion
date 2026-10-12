@@ -697,7 +697,7 @@ async function verifyInstalledCatalogEntry(
 ): Promise<void> {
   const relativePath = "src/checkout.archcomp.json";
   const artifact = {
-    kind: "behavior",
+    type: "behavior",
     title: "Checkout",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",
