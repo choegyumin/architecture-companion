@@ -26,7 +26,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -42,7 +41,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -78,7 +76,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -94,7 +91,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/App.tsx#App",
-                "supplierTitle": "App",
                 "slot": "list"
               }
             ]
@@ -110,7 +106,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -126,7 +121,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "value"
               }
             ]
@@ -142,7 +136,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "icon"
               }
             ]
@@ -158,7 +151,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -174,7 +166,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -190,7 +181,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -216,7 +206,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -262,7 +251,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                "supplierTitle": "LoadedGridList",
                 "slot": "children"
               }
             ]
@@ -278,7 +266,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                "supplierTitle": "LoadedGridList",
                 "slot": "children"
               }
             ]
@@ -294,7 +281,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                "supplierTitle": "ListActions",
                 "slot": "children"
               }
             ]
@@ -310,7 +296,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                "supplierTitle": "ListActions",
                 "slot": "children"
               }
             ]
@@ -326,7 +311,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                "supplierTitle": "ListActions",
                 "slot": "children"
               }
             ]
@@ -342,7 +326,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -358,7 +341,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -374,7 +356,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -390,7 +371,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -406,7 +386,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -422,7 +401,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -448,7 +426,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                "supplierTitle": "LoadedGridList",
                 "slot": "subtitle"
               }
             ]
@@ -464,7 +441,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "value"
               }
             ]
@@ -480,7 +456,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -496,7 +471,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "value"
               }
             ]
@@ -512,7 +486,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                "supplierTitle": "Aside",
                 "slot": "children"
               }
             ]
@@ -528,7 +501,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "value"
               }
             ]
@@ -544,7 +516,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                "supplierTitle": "ProductList",
                 "slot": "children"
               }
             ]
@@ -560,7 +531,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                "supplierTitle": "ListActions",
                 "slot": "children"
               }
             ]
@@ -596,7 +566,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                "supplierTitle": "LoadedGridList",
                 "slot": "component"
               }
             ]
@@ -616,7 +585,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                  "supplierTitle": "ListActions",
                   "slot": "children"
                 }
               ]
@@ -635,7 +603,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -654,7 +621,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "icon"
                 }
               ]
@@ -673,7 +639,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                  "supplierTitle": "ListActions",
                   "slot": "children"
                 }
               ]
@@ -712,7 +677,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -745,7 +709,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -764,7 +727,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -795,7 +757,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -814,7 +775,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "value"
                 }
               ]
@@ -833,7 +793,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -852,7 +811,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -871,7 +829,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -890,7 +847,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                  "supplierTitle": "LoadedGridList",
                   "slot": "children"
                 }
               ]
@@ -909,7 +865,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -934,7 +889,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -953,7 +907,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -972,7 +925,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -999,7 +951,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -1018,7 +969,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "value"
                 }
               ]
@@ -1037,7 +987,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "children"
                 }
               ]
@@ -1064,7 +1013,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "value"
                 }
               ]
@@ -1083,7 +1031,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -1102,7 +1049,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                  "supplierTitle": "ListActions",
                   "slot": "children"
                 }
               ]
@@ -1121,7 +1067,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                  "supplierTitle": "LoadedGridList",
                   "slot": "subtitle"
                 }
               ]
@@ -1140,7 +1085,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "value"
                 }
               ]
@@ -1159,7 +1103,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                  "supplierTitle": "LoadedGridList",
                   "slot": "children"
                 }
               ]
@@ -1178,7 +1121,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -1211,7 +1153,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/Aside.tsx#Aside",
-                  "supplierTitle": "Aside",
                   "slot": "icon"
                 }
               ]
@@ -1230,7 +1171,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -1255,7 +1195,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ProductList",
-                  "supplierTitle": "ProductList",
                   "slot": "children"
                 }
               ]
@@ -1280,7 +1219,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/ProductList.tsx#ListActions",
-                  "supplierTitle": "ListActions",
                   "slot": "children"
                 }
               ]
@@ -1307,7 +1245,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/products/GridList.tsx#LoadedGridList",
-                  "supplierTitle": "LoadedGridList",
                   "slot": "component"
                 }
               ]
@@ -1322,8 +1259,7 @@
             "controlId": "component:src/products/ProductList.tsx#ListActions:control:0",
             "ownerNodeId": "component:src/products/ProductList.tsx#ListActions",
             "type": "conditional",
-            "label": "isSmall",
-            "dependsOn": [[]]
+            "label": "isSmall"
           },
           {
             "controlId": "component:src/products/ProductList.tsx#ProductList:control:0",
@@ -1340,21 +1276,18 @@
                 "label": "!isSmall"
               }
             ],
-            "polarityPair": true,
-            "dependsOn": [[]]
+            "polarityPair": true
           },
           {
             "controlId": "component:src/products/Aside.tsx#Aside:control:0",
             "ownerNodeId": "component:src/products/Aside.tsx#Aside",
             "type": "conditional",
-            "label": "data",
-            "dependsOn": [[]]
+            "label": "data"
           },
           {
             "controlId": "component:src/products/GridList.tsx#GridList:control:0",
             "ownerNodeId": "component:src/products/GridList.tsx#GridList",
             "label": "isPending",
-            "dependsOn": [[]],
             "type": "branch",
             "cases": [
               {
@@ -1372,8 +1305,13 @@
             "controlId": "component:src/products/GridList.tsx#LoadedGridList:control:0",
             "ownerNodeId": "component:src/products/GridList.tsx#LoadedGridList",
             "type": "conditional",
-            "label": "data",
-            "dependsOn": [[]]
+            "label": "data"
+          }
+        ],
+        "auxiliaryDefinitions": [
+          {
+            "definitionId": "component:src/App.tsx#App",
+            "title": "App"
           }
         ]
       }

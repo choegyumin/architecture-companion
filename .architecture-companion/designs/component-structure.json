@@ -50,7 +50,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -71,7 +70,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -92,7 +90,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                "supplierTitle": "DiagramRendererContent",
                 "slot": "children"
               }
             ]
@@ -113,7 +110,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -194,7 +190,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                "supplierTitle": "DiagramRendererContent",
                 "slot": "children"
               }
             ]
@@ -230,7 +225,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-                "supplierTitle": "DiagramRendererBase",
                 "slot": "children"
               }
             ]
@@ -251,7 +245,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -302,12 +295,10 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-                "supplierTitle": "RouteEdge",
                 "slot": "children"
               },
               {
                 "supplierDefinitionId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-                "supplierTitle": "MessageEdge",
                 "slot": "children"
               }
             ]
@@ -328,7 +319,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                "supplierTitle": "DiagramRendererContent",
                 "slot": "children"
               }
             ]
@@ -349,7 +339,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -370,7 +359,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -391,7 +379,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -412,7 +399,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -433,7 +419,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -454,7 +439,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "nodeTypes"
               }
             ]
@@ -475,7 +459,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "edgeTypes"
               }
             ]
@@ -496,7 +479,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "children"
               }
             ]
@@ -517,7 +499,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "edgeTypes"
               }
             ]
@@ -538,12 +519,10 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               },
               {
                 "supplierDefinitionId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
-                "supplierTitle": "DiagramLinksPanel",
                 "slot": "children"
               }
             ]
@@ -564,7 +543,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -585,7 +563,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -621,7 +598,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -642,7 +618,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -663,7 +638,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                "supplierTitle": "ArtifactList",
                 "slot": "children"
               }
             ]
@@ -684,7 +658,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -705,7 +678,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -726,7 +698,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -747,7 +718,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                "supplierTitle": "ArtifactList",
                 "slot": "children"
               }
             ]
@@ -768,12 +738,10 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               },
               {
                 "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                "supplierTitle": "ArtifactList",
                 "slot": "children"
               }
             ]
@@ -809,7 +777,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                "supplierTitle": "NodeSearch",
                 "slot": "children"
               }
             ]
@@ -830,7 +797,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                "supplierTitle": "NodeSearch",
                 "slot": "children"
               }
             ]
@@ -851,7 +817,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                "supplierTitle": "NodeSearch",
                 "slot": "children"
               }
             ]
@@ -872,7 +837,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -893,7 +857,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -914,7 +877,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -935,7 +897,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -956,7 +917,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -977,7 +937,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -998,7 +957,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1019,7 +977,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1040,7 +997,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1061,7 +1017,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1082,7 +1037,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1133,7 +1087,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                "supplierTitle": "ArtifactList",
                 "slot": "children"
               }
             ]
@@ -1154,7 +1107,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                "supplierTitle": "ArtifactList",
                 "slot": "children"
               }
             ]
@@ -1220,7 +1172,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -1241,7 +1192,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -1262,7 +1212,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "navigation"
               }
             ]
@@ -1283,7 +1232,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "children"
               }
             ]
@@ -1304,7 +1252,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                "supplierTitle": "AnnotationLayer",
                 "slot": "children"
               }
             ]
@@ -1340,7 +1287,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                "supplierTitle": "WorkspacePage",
                 "slot": "actions"
               }
             ]
@@ -1356,7 +1302,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "children"
               }
             ]
@@ -1382,7 +1327,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "children"
               }
             ]
@@ -1398,7 +1342,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "children"
               }
             ]
@@ -1444,7 +1387,6 @@
             "origins": [
               {
                 "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                "supplierTitle": "DiagramCanvas",
                 "slot": "children"
               }
             ]
@@ -1504,7 +1446,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1523,7 +1464,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1542,7 +1482,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                  "supplierTitle": "NodeSearch",
                   "slot": "children"
                 }
               ]
@@ -1561,7 +1500,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -1594,7 +1532,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-                  "supplierTitle": "DiagramRendererBase",
                   "slot": "children"
                 }
               ]
@@ -1613,7 +1550,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -1632,7 +1568,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1669,7 +1604,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1688,7 +1622,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -1707,7 +1640,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "children"
                 }
               ]
@@ -1734,7 +1666,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "children"
                 }
               ]
@@ -1753,7 +1684,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -1816,7 +1746,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1841,7 +1770,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                  "supplierTitle": "ArtifactList",
                   "slot": "children"
                 }
               ]
@@ -1860,7 +1788,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1879,7 +1806,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -1898,7 +1824,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
-                  "supplierTitle": "DiagramLinksPanel",
                   "slot": "children"
                 }
               ]
@@ -1931,7 +1856,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2004,7 +1928,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2045,7 +1968,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "edgeTypes"
                 }
               ]
@@ -2064,7 +1986,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2117,7 +2038,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                  "supplierTitle": "NodeSearch",
                   "slot": "children"
                 }
               ]
@@ -2136,7 +2056,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "actions"
                 }
               ]
@@ -2155,7 +2074,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "actions"
                 }
               ]
@@ -2174,7 +2092,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2193,7 +2110,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2244,7 +2160,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2289,7 +2204,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "edgeTypes"
                 }
               ]
@@ -2308,7 +2222,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "children"
                 }
               ]
@@ -2333,7 +2246,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -2352,7 +2264,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2371,7 +2282,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2390,7 +2300,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -2409,7 +2318,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2428,7 +2336,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                  "supplierTitle": "DiagramRendererContent",
                   "slot": "children"
                 }
               ]
@@ -2447,7 +2354,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2484,7 +2390,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                  "supplierTitle": "ArtifactList",
                   "slot": "children"
                 }
               ]
@@ -2503,7 +2408,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2528,7 +2432,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                  "supplierTitle": "ArtifactList",
                   "slot": "children"
                 }
               ]
@@ -2561,7 +2464,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2580,7 +2482,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                  "supplierTitle": "ArtifactList",
                   "slot": "children"
                 }
               ]
@@ -2599,7 +2500,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2656,7 +2556,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2675,7 +2574,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/artifact-list.tsx#ArtifactList",
-                  "supplierTitle": "ArtifactList",
                   "slot": "children"
                 }
               ]
@@ -2694,7 +2592,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -2713,7 +2610,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
-                  "supplierTitle": "NodeSearch",
                   "slot": "children"
                 }
               ]
@@ -2752,7 +2648,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
-                  "supplierTitle": "RouteEdge",
                   "slot": "children"
                 }
               ]
@@ -2809,7 +2704,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                  "supplierTitle": "DiagramRendererContent",
                   "slot": "children"
                 }
               ]
@@ -2828,7 +2722,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
-                  "supplierTitle": "DiagramRendererContent",
                   "slot": "children"
                 }
               ]
@@ -2847,7 +2740,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "children"
                 }
               ]
@@ -2866,7 +2758,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -2885,7 +2776,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -2904,7 +2794,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2923,7 +2812,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "children"
                 }
               ]
@@ -2942,7 +2830,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -2973,7 +2860,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "navigation"
                 }
               ]
@@ -2992,7 +2878,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-                  "supplierTitle": "DiagramCanvas",
                   "slot": "nodeTypes"
                 }
               ]
@@ -3011,7 +2896,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -3044,7 +2928,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "navigation"
                 }
               ]
@@ -3103,7 +2986,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
-                  "supplierTitle": "MessageEdge",
                   "slot": "children"
                 }
               ]
@@ -3122,7 +3004,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -3141,7 +3022,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -3172,7 +3052,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
-                  "supplierTitle": "WorkspacePage",
                   "slot": "children"
                 }
               ]
@@ -3191,7 +3070,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -3216,7 +3094,6 @@
               "origins": [
                 {
                   "supplierDefinitionId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
-                  "supplierTitle": "AnnotationLayer",
                   "slot": "children"
                 }
               ]
@@ -3245,21 +3122,12 @@
                 "caseId": "otherwise",
                 "label": "otherwise"
               }
-            ],
-            "dependsOn": [[]]
+            ]
           },
           {
             "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:1",
             "ownerNodeId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
             "label": "state.review.catalog",
-            "dependsOn": [
-              [
-                {
-                  "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
-                  "value": "otherwise"
-                }
-              ]
-            ],
             "type": "branch",
             "cases": [
               {
@@ -3271,7 +3139,15 @@
                 "label": "!state.review.catalog"
               }
             ],
-            "polarityPair": true
+            "polarityPair": true,
+            "dependsOn": [
+              [
+                {
+                  "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:0",
+                  "value": "otherwise"
+                }
+              ]
+            ]
           },
           {
             "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:2",
@@ -3288,28 +3164,24 @@
                 "label": "!reviewErrorMessage"
               }
             ],
-            "polarityPair": true,
-            "dependsOn": [[]]
+            "polarityPair": true
           },
           {
             "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:3",
             "ownerNodeId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
             "type": "conditional",
-            "label": "activeDiagramCollection",
-            "dependsOn": [[]]
+            "label": "activeDiagramCollection"
           },
           {
             "controlId": "component:src/client/pages/workspace-page.tsx#WorkspacePage:control:4",
             "ownerNodeId": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
             "type": "conditional",
-            "label": "activeReviewView",
-            "dependsOn": [[]]
+            "label": "activeReviewView"
           },
           {
             "controlId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer:control:0",
             "ownerNodeId": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
             "label": "props.artifact.diagram.layout.id",
-            "dependsOn": [[]],
             "type": "branch",
             "cases": [
               {
@@ -3338,8 +3210,7 @@
             "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:0",
             "ownerNodeId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
             "type": "conditional",
-            "label": "data",
-            "dependsOn": [[]]
+            "label": "data"
           },
           {
             "controlId": "component:src/shared/react-flow/message-edge.tsx#MessageEdge:control:1",
@@ -3417,8 +3288,7 @@
             "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:0",
             "ownerNodeId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
             "type": "conditional",
-            "label": "data?.path",
-            "dependsOn": [[]]
+            "label": "data?.path"
           },
           {
             "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:1",
@@ -3435,8 +3305,7 @@
                 "label": "!(anchoredControls.length > 0)"
               }
             ],
-            "polarityPair": true,
-            "dependsOn": [[]]
+            "polarityPair": true
           },
           {
             "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:2",
@@ -3470,6 +3339,18 @@
             "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:4",
             "ownerNodeId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
             "label": "data.labelAction",
+            "type": "branch",
+            "cases": [
+              {
+                "caseId": "true",
+                "label": "data.labelAction"
+              },
+              {
+                "caseId": "false",
+                "label": "!data.labelAction"
+              }
+            ],
+            "polarityPair": true,
             "dependsOn": [
               [
                 {
@@ -3515,19 +3396,7 @@
                   "value": "!(anchoredControls.length > 0)"
                 }
               ]
-            ],
-            "type": "branch",
-            "cases": [
-              {
-                "caseId": "true",
-                "label": "data.labelAction"
-              },
-              {
-                "caseId": "false",
-                "label": "!data.labelAction"
-              }
-            ],
-            "polarityPair": true
+            ]
           },
           {
             "controlId": "component:src/shared/react-flow/route-edge.tsx#RouteEdge:control:5",
@@ -3667,50 +3536,43 @@
             "controlId": "component:src/shared/react-flow/card-node.tsx#CardNode:control:0",
             "ownerNodeId": "component:src/shared/react-flow/card-node.tsx#CardNode",
             "type": "conditional",
-            "label": "data.links?.length",
-            "dependsOn": [[]]
+            "label": "data.links?.length"
           },
           {
             "controlId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode:control:0",
             "ownerNodeId": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
             "type": "conditional",
-            "label": "data.links?.length",
-            "dependsOn": [[]]
+            "label": "data.links?.length"
           },
           {
             "controlId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas:control:0",
             "ownerNodeId": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
             "type": "conditional",
-            "label": "searchEnabled",
-            "dependsOn": [[]]
+            "label": "searchEnabled"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:0",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "editedAnnotation",
-            "dependsOn": [[]]
+            "label": "editedAnnotation"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:1",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "controller.edit",
-            "dependsOn": [[]]
+            "label": "controller.edit"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:2",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "controller.editError",
-            "dependsOn": [[]]
+            "label": "controller.editError"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:3",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "editConflictMessage",
-            "dependsOn": [[]]
+            "label": "editConflictMessage"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:4",
@@ -3730,22 +3592,19 @@
                 "caseId": "otherwise",
                 "label": "otherwise"
               }
-            ],
-            "dependsOn": [[]]
+            ]
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:5",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "draft",
-            "dependsOn": [[]]
+            "label": "draft"
           },
           {
             "controlId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer:control:6",
             "ownerNodeId": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
             "type": "conditional",
-            "label": "controller.error",
-            "dependsOn": [[]]
+            "label": "controller.error"
           },
           {
             "controlId": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel:control:0",
@@ -3761,8 +3620,7 @@
                 "caseId": "otherwise",
                 "label": "otherwise"
               }
-            ],
-            "dependsOn": [[]]
+            ]
           }
         ]
       }
