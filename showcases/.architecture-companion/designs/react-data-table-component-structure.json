@@ -1,7 +1,7 @@
 {
   "id": "react-data-table-component-structure",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-12T05:57:51.554Z",
+  "updatedAt": "2026-10-12T10:27:29.476Z",
   "generator": "built-in:react-component-structure",
   "instructions": "## Purpose\n\nExamine how react-data-table-component assembles its table: DataTableInner provides every context and renders the responsive wrapper chain down to Table, Head, and Body, while feature components (ColumnFilter, ContextMenu, ExpanderButton, Pagination) receive values through supplied props instead of direct imports.\n\n## Regeneration\n\nClone https://github.com/jbetancur/react-data-table-component.git, then from its root:\n\n```sh\ngit checkout 05d75a4992136645d698c87ef27e50653e2b1779\nnpm ci --ignore-scripts\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --root \"DataTableInner\" \\\n  \"src\"\n```\n\nOnly the dependency install is needed; the analysis reads the library sources directly, not the built dist. The root is DataTableInner, the implementation behind the React.forwardRef export, because the wrapper itself resolves to a React API boundary rather than a component definition.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files.",
   "diagram": {
@@ -21,7 +21,7 @@
           "id": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
           "title": "CellBase",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellBase",
             "origins": []
           }
@@ -31,13 +31,13 @@
           "id": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
           "title": "CellBase",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellBase",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
                 "supplierTitle": "DataTableHead",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -47,7 +47,7 @@
           "id": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
           "title": "CellBase",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellBase",
             "origins": []
           }
@@ -57,7 +57,7 @@
           "id": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
           "title": "CellBase",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellBase",
             "origins": []
           }
@@ -67,7 +67,7 @@
           "id": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
           "title": "CellExtended",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellExtended",
             "origins": []
           }
@@ -77,7 +77,7 @@
           "id": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
           "title": "CellExtended",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellExtended",
             "origins": []
           }
@@ -87,7 +87,7 @@
           "id": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
           "title": "CellExtended",
           "description": "src/components/Cell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Cell.tsx#CellExtended",
             "origins": []
           }
@@ -97,13 +97,13 @@
           "id": "component:src/components/CellEditor.tsx#CellEditor",
           "title": "CellEditor",
           "description": "src/components/CellEditor.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/CellEditor.tsx#CellEditor",
             "origins": [
               {
                 "supplierId": "component:src/components/TableCell.tsx#EditableCell",
                 "supplierTitle": "EditableCell",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -113,18 +113,18 @@
           "id": "component:src/components/Checkbox.tsx#Checkbox",
           "title": "Checkbox",
           "description": "src/components/Checkbox.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Checkbox.tsx#Checkbox",
             "origins": [
               {
                 "supplierId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
                 "supplierTitle": "TableCellCheckbox",
-                "prop": "children"
+                "slot": "children"
               },
               {
                 "supplierId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
                 "supplierTitle": "ColumnCheckbox",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -134,13 +134,13 @@
           "id": "component:src/components/ColumnFilter.tsx#ColumnFilter",
           "title": "ColumnFilter",
           "description": "src/components/ColumnFilter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ColumnFilter.tsx#ColumnFilter",
             "origins": [
               {
                 "supplierId": "component:src/components/TableCol.tsx#TableCol",
                 "supplierTitle": "TableCol",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -150,7 +150,7 @@
           "id": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
           "title": "ConditionLogicGroup",
           "description": "src/components/ColumnFilter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
             "origins": []
           }
@@ -160,7 +160,7 @@
           "id": "component:src/components/ColumnFilter.tsx#ConditionRow",
           "title": "ConditionRow",
           "description": "src/components/ColumnFilter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ColumnFilter.tsx#ConditionRow",
             "origins": []
           }
@@ -170,7 +170,7 @@
           "id": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
           "title": "SetFilterPanel",
           "description": "src/components/ColumnFilter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
             "origins": []
           }
@@ -180,7 +180,7 @@
           "id": "component:src/components/ContextMenu.tsx#ContextMenu",
           "title": "ContextMenu",
           "description": "src/components/ContextMenu.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ContextMenu.tsx#ContextMenu",
             "origins": []
           }
@@ -190,7 +190,7 @@
           "id": "component:src/components/DataTable.tsx#DataTableInner",
           "title": "DataTableInner",
           "description": "src/components/DataTable.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/DataTable.tsx#DataTableInner",
             "origins": []
           }
@@ -200,13 +200,13 @@
           "id": "component:src/components/DataTableBody.tsx#DataTableBody",
           "title": "DataTableBody",
           "description": "src/components/DataTableBody.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/DataTableBody.tsx#DataTableBody",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -216,7 +216,7 @@
           "id": "component:src/components/DataTableBody.tsx#SkeletonCell",
           "title": "SkeletonCell",
           "description": "src/components/DataTableBody.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/DataTableBody.tsx#SkeletonCell",
             "origins": []
           }
@@ -226,13 +226,13 @@
           "id": "component:src/components/DataTableBody.tsx#SkeletonRow",
           "title": "SkeletonRow",
           "description": "src/components/DataTableBody.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/DataTableBody.tsx#SkeletonRow",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
                 "supplierTitle": "DataTableBody",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -242,13 +242,13 @@
           "id": "component:src/components/DataTableHead.tsx#DataTableHead",
           "title": "DataTableHead",
           "description": "src/components/DataTableHead.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/DataTableHead.tsx#DataTableHead",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -258,13 +258,13 @@
           "id": "component:src/components/ExpanderButton.tsx#ExpanderButton",
           "title": "ExpanderButton",
           "description": "src/components/ExpanderButton.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ExpanderButton.tsx#ExpanderButton",
             "origins": [
               {
                 "supplierId": "component:src/components/TableCellExpander.tsx#CellExpander",
                 "supplierTitle": "CellExpander",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -274,7 +274,7 @@
           "id": "component:src/components/ExpanderRow.tsx#ExpanderRow",
           "title": "ExpanderRow",
           "description": "src/components/ExpanderRow.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ExpanderRow.tsx#ExpanderRow",
             "origins": []
           }
@@ -284,7 +284,7 @@
           "id": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
           "title": "NoDataWrapper",
           "description": "src/components/NoDataWrapper.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
             "origins": []
           }
@@ -294,13 +294,13 @@
           "id": "component:src/components/Pagination.tsx#Pagination",
           "title": "Pagination",
           "description": "src/components/Pagination.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Pagination.tsx#Pagination",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "Pagination"
+                "slot": "Pagination"
               }
             ]
           }
@@ -310,7 +310,7 @@
           "id": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
           "title": "PinnedScrollbar",
           "description": "src/components/PinnedScrollbar.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
             "origins": []
           }
@@ -320,7 +320,7 @@
           "id": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
           "title": "ResponsiveWrapper",
           "description": "src/components/ResponsiveWrapper.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
             "origins": []
           }
@@ -330,7 +330,7 @@
           "id": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
           "title": "RightPinSpacer",
           "description": "src/components/RightPinSpacer.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
             "origins": []
           }
@@ -340,7 +340,7 @@
           "id": "component:src/components/Select.tsx#Select",
           "title": "Select",
           "description": "src/components/Select.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Select.tsx#Select",
             "origins": []
           }
@@ -350,13 +350,13 @@
           "id": "component:src/components/Table.tsx#Table",
           "title": "Table",
           "description": "src/components/Table.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/Table.tsx#Table",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -366,7 +366,7 @@
           "id": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
           "title": "Body",
           "description": "src/components/TableBody.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableBody.tsx#Body",
             "origins": []
           }
@@ -376,7 +376,7 @@
           "id": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
           "title": "Body",
           "description": "src/components/TableBody.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableBody.tsx#Body",
             "origins": []
           }
@@ -386,7 +386,7 @@
           "id": "component:src/components/TableCell.tsx#Cell",
           "title": "Cell",
           "description": "src/components/TableCell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCell.tsx#Cell",
             "origins": []
           }
@@ -396,7 +396,7 @@
           "id": "component:src/components/TableCell.tsx#EditableCell",
           "title": "EditableCell",
           "description": "src/components/TableCell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCell.tsx#EditableCell",
             "origins": []
           }
@@ -406,7 +406,7 @@
           "id": "component:src/components/TableCell.tsx#PlainCell",
           "title": "PlainCell",
           "description": "src/components/TableCell.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCell.tsx#PlainCell",
             "origins": []
           }
@@ -416,7 +416,7 @@
           "id": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
           "title": "TableCellCheckbox",
           "description": "src/components/TableCellCheckbox.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
             "origins": []
           }
@@ -426,7 +426,7 @@
           "id": "component:src/components/TableCellExpander.tsx#CellExpander",
           "title": "CellExpander",
           "description": "src/components/TableCellExpander.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCellExpander.tsx#CellExpander",
             "origins": []
           }
@@ -436,13 +436,13 @@
           "id": "component:src/components/TableCol.tsx#TableCol",
           "title": "TableCol",
           "description": "src/components/TableCol.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableCol.tsx#TableCol",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
                 "supplierTitle": "DataTableHead",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -452,13 +452,13 @@
           "id": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
           "title": "ColumnCheckbox",
           "description": "src/components/TableColCheckbox.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
                 "supplierTitle": "DataTableHead",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -468,13 +468,13 @@
           "id": "component:src/components/TableColExpander.tsx#ColumnExpander",
           "title": "ColumnExpander",
           "description": "src/components/TableColExpander.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableColExpander.tsx#ColumnExpander",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
                 "supplierTitle": "DataTableHead",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -484,13 +484,13 @@
           "id": "component:src/components/TableFooter.tsx#TableFooter",
           "title": "TableFooter",
           "description": "src/components/TableFooter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableFooter.tsx#TableFooter",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -500,7 +500,7 @@
           "id": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
           "title": "Head",
           "description": "src/components/TableHead.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableHead.tsx#Head",
             "origins": []
           }
@@ -510,7 +510,7 @@
           "id": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
           "title": "Head",
           "description": "src/components/TableHead.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableHead.tsx#Head",
             "origins": []
           }
@@ -520,7 +520,7 @@
           "id": "component:src/components/TableHeader.tsx#Header",
           "title": "Header",
           "description": "src/components/TableHeader.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableHeader.tsx#Header",
             "origins": []
           }
@@ -530,13 +530,13 @@
           "id": "component:src/components/TableHeadRow.tsx#HeadRow",
           "title": "HeadRow",
           "description": "src/components/TableHeadRow.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableHeadRow.tsx#HeadRow",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
                 "supplierTitle": "DataTableHead",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -546,7 +546,7 @@
           "id": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
           "title": "TablePaginationFooter",
           "description": "src/components/TablePaginationFooter.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
             "origins": []
           }
@@ -556,13 +556,13 @@
           "id": "component:src/components/TableRow.tsx#Row",
           "title": "Row",
           "description": "src/components/TableRow.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableRow.tsx#Row",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
                 "supplierTitle": "DataTableBody",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -572,7 +572,7 @@
           "id": "component:src/components/TableSubheader.tsx#Subheader",
           "title": "Subheader",
           "description": "src/components/TableSubheader.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableSubheader.tsx#Subheader",
             "origins": []
           }
@@ -582,13 +582,13 @@
           "id": "component:src/components/TableWrapper.tsx#Wrapper",
           "title": "Wrapper",
           "description": "src/components/TableWrapper.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/components/TableWrapper.tsx#Wrapper",
             "origins": [
               {
                 "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
                 "supplierTitle": "DataTableInner",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -598,7 +598,7 @@
           "id": "component:src/icons/Dropdown.tsx#DropdownIcon",
           "title": "DropdownIcon",
           "description": "src/icons/Dropdown.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/icons/Dropdown.tsx#DropdownIcon",
             "origins": []
           }
@@ -608,7 +608,7 @@
           "id": "component:src/icons/FilterIcon.tsx#FilterIcon",
           "title": "FilterIcon",
           "description": "src/icons/FilterIcon.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/icons/FilterIcon.tsx#FilterIcon",
             "origins": []
           }
@@ -618,13 +618,13 @@
           "id": "component:src/icons/MenuIcon.tsx#MenuIcon",
           "title": "MenuIcon",
           "description": "src/icons/MenuIcon.tsx",
-          "component": {
+          "layoutContext": {
             "definitionId": "component:src/icons/MenuIcon.tsx#MenuIcon",
             "origins": [
               {
                 "supplierId": "component:src/components/TableCol.tsx#TableCol",
                 "supplierTitle": "TableCol",
-                "prop": "children"
+                "slot": "children"
               }
             ]
           }
@@ -642,16 +642,18 @@
           "id": "edge:03570acbee5e0588",
           "source": "component:src/components/TableHeadRow.tsx#HeadRow",
           "target": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -691,16 +693,18 @@
           "id": "edge:1238ccb72878870b",
           "source": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
           "target": "component:src/components/ExpanderButton.tsx#ExpanderButton",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableCellExpander.tsx#CellExpander",
-                "supplierTitle": "CellExpander",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableCellExpander.tsx#CellExpander",
+                  "supplierTitle": "CellExpander",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -750,16 +754,18 @@
           "id": "edge:2094b72f0974196b",
           "source": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
           "target": "component:src/components/Checkbox.tsx#Checkbox",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
-                "supplierTitle": "TableCellCheckbox",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
+                  "supplierTitle": "TableCellCheckbox",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -767,16 +773,18 @@
           "id": "edge:240d0a92f2528849",
           "source": "component:src/components/Table.tsx#Table",
           "target": "component:src/components/TableFooter.tsx#TableFooter",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -792,16 +800,18 @@
           "id": "edge:34c013b64f846454",
           "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
           "target": "component:src/components/TableColExpander.tsx#ColumnExpander",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -821,16 +831,18 @@
           "id": "edge:3a638ed29c5fd812",
           "source": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
           "target": "component:src/components/Pagination.tsx#Pagination",
-          "composition": {
-            "kind": "component-prop",
-            "input": "Pagination",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "Pagination"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "component",
+              "slot": "Pagination",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "Pagination"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -926,16 +938,18 @@
           "id": "edge:5860ac38a6bd6366",
           "source": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
           "target": "component:src/components/TableWrapper.tsx#Wrapper",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -943,16 +957,18 @@
           "id": "edge:590787d8cbebe038",
           "source": "component:src/components/TableHeadRow.tsx#HeadRow",
           "target": "component:src/components/TableColExpander.tsx#ColumnExpander",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -998,16 +1014,18 @@
           "id": "edge:5b761604ca52a137",
           "source": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
           "target": "component:src/components/TableRow.tsx#Row",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
-                "supplierTitle": "DataTableBody",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
+                  "supplierTitle": "DataTableBody",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1079,16 +1097,18 @@
           "id": "edge:82765d9040180b16",
           "source": "component:src/components/Table.tsx#Table",
           "target": "component:src/components/DataTableHead.tsx#DataTableHead",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1128,16 +1148,18 @@
           "id": "edge:958f0aa5a8188e5a",
           "source": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
           "target": "component:src/components/CellEditor.tsx#CellEditor",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableCell.tsx#EditableCell",
-                "supplierTitle": "EditableCell",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableCell.tsx#EditableCell",
+                  "supplierTitle": "EditableCell",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1153,16 +1175,18 @@
           "id": "edge:9aad0e5a75a7d8c9",
           "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
           "target": "component:src/components/TableCol.tsx#TableCol",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1250,16 +1274,18 @@
           "id": "edge:a87908432f8463af",
           "source": "component:src/components/TableWrapper.tsx#Wrapper",
           "target": "component:src/components/Table.tsx#Table",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1305,16 +1331,18 @@
           "id": "edge:afac23500db9b7cd",
           "source": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
           "target": "component:src/icons/MenuIcon.tsx#MenuIcon",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableCol.tsx#TableCol",
-                "supplierTitle": "TableCol",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableCol.tsx#TableCol",
+                  "supplierTitle": "TableCol",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1350,16 +1378,18 @@
           "id": "edge:b883c71c67ca5f65",
           "source": "component:src/components/TableHeadRow.tsx#HeadRow",
           "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1379,16 +1409,18 @@
           "id": "edge:c86c99d4ad080307",
           "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
           "target": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1408,16 +1440,18 @@
           "id": "edge:c8b97eb507951b3f",
           "source": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
           "target": "component:src/components/TableHeadRow.tsx#HeadRow",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1529,16 +1563,18 @@
           "id": "edge:e004bfaf14d9dde4",
           "source": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
           "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
-                "supplierTitle": "DataTableHead",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableHead.tsx#DataTableHead",
+                  "supplierTitle": "DataTableHead",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1558,16 +1594,18 @@
           "id": "edge:e10997903666f615",
           "source": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
           "target": "component:src/components/Checkbox.tsx#Checkbox",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-                "supplierTitle": "ColumnCheckbox",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
+                  "supplierTitle": "ColumnCheckbox",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1581,16 +1619,18 @@
           "id": "edge:ef97d0bdce6a0fc4",
           "source": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
           "target": "component:src/components/DataTableBody.tsx#SkeletonRow",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
-                "supplierTitle": "DataTableBody",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTableBody.tsx#DataTableBody",
+                  "supplierTitle": "DataTableBody",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         },
         {
@@ -1620,16 +1660,18 @@
           "id": "edge:f3c6138799d1d593",
           "source": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
           "target": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/TableCol.tsx#TableCol",
-                "supplierTitle": "TableCol",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/TableCol.tsx#TableCol",
+                  "supplierTitle": "TableCol",
+                  "slot": "children"
+                }
+              ]
+            }
           },
           "activeWhen": [
             [
@@ -1687,47 +1729,49 @@
           "id": "edge:fcfbb865c4484622",
           "source": "component:src/components/Table.tsx#Table",
           "target": "component:src/components/DataTableBody.tsx#DataTableBody",
-          "composition": {
-            "kind": "node-prop",
-            "input": "children",
-            "origins": [
-              {
-                "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
-                "supplierTitle": "DataTableInner",
-                "input": "children"
-              }
-            ]
+          "layoutContext": {
+            "composition": {
+              "type": "node",
+              "slot": "children",
+              "origins": [
+                {
+                  "supplierId": "component:src/components/DataTable.tsx#DataTableInner",
+                  "supplierTitle": "DataTableInner",
+                  "slot": "children"
+                }
+              ]
+            }
           }
         }
       ],
-      "additional": {
+      "layoutContext": {
         "roots": ["component:src/components/DataTable.tsx#DataTableInner"],
         "controls": [
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:0",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "showHeader",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:1",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "subHeader",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:2",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "enabledPagination",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:3",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "branch",
+            "type": "branch",
             "label": "paginationPosition",
             "cases": [
               {
@@ -1757,7 +1801,7 @@
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
             "label": "paginationComponent",
             "dependsOn": [[]],
-            "kind": "branch",
+            "type": "branch",
             "cases": [
               {
                 "id": "left",
@@ -1773,14 +1817,14 @@
           {
             "id": "component:src/components/Pagination.tsx#Pagination:control:0",
             "owner": "component:src/components/Pagination.tsx#Pagination",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!options.noRowsPerPage",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/Pagination.tsx#Pagination:control:1",
             "owner": "component:src/components/Pagination.tsx#Pagination",
-            "kind": "branch",
+            "type": "branch",
             "label": "shouldShow",
             "cases": [
               {
@@ -1798,7 +1842,7 @@
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:5",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "showTableHead",
             "dependsOn": [[]]
           },
@@ -1807,7 +1851,7 @@
             "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
             "label": "hasGroups",
             "dependsOn": [[]],
-            "kind": "branch",
+            "type": "branch",
             "cases": [
               {
                 "id": "true",
@@ -1823,14 +1867,14 @@
           {
             "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:1",
             "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "selectableRows",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:2",
             "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
-            "kind": "branch",
+            "type": "branch",
             "label": "selectAll?.hideSelectAll",
             "cases": [
               {
@@ -1855,21 +1899,21 @@
           {
             "id": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox:control:0",
             "owner": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "selectAll",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:3",
             "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "expandableRows",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTableHead.tsx#DataTableHead:control:4",
             "owner": "component:src/components/DataTableHead.tsx#DataTableHead",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!expandableRowsHideExpander",
             "dependsOn": [
               [
@@ -1883,28 +1927,28 @@
           {
             "id": "component:src/components/TableCol.tsx#TableCol:control:0",
             "owner": "component:src/components/TableCol.tsx#TableCol",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!column.omit",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableCol.tsx#TableCol:control:1",
             "owner": "component:src/components/TableCol.tsx#TableCol",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "column.filterable",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableCol.tsx#TableCol:control:2",
             "owner": "component:src/components/TableCol.tsx#TableCol",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "onResizeStart",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableCol.tsx#TableCol:control:3",
             "owner": "component:src/components/TableCol.tsx#TableCol",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "column.id != null",
             "dependsOn": [
               [
@@ -1944,14 +1988,14 @@
           {
             "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:0",
             "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "open",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:1",
             "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "panelPos",
             "dependsOn": [
               [
@@ -1965,7 +2009,7 @@
           {
             "id": "component:src/components/ColumnFilter.tsx#ColumnFilter:control:2",
             "owner": "component:src/components/ColumnFilter.tsx#ColumnFilter",
-            "kind": "branch",
+            "type": "branch",
             "label": "isSet",
             "cases": [
               {
@@ -1994,7 +2038,7 @@
           {
             "id": "component:src/components/ColumnFilter.tsx#SetFilterPanel:control:0",
             "owner": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
-            "kind": "branch",
+            "type": "branch",
             "label": "visible.length",
             "cases": [
               {
@@ -2013,7 +2057,7 @@
             "owner": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
             "label": "condition",
             "dependsOn": [[]],
-            "kind": "branch",
+            "type": "branch",
             "cases": [
               {
                 "id": "false",
@@ -2029,14 +2073,14 @@
           {
             "id": "component:src/components/TableCol.tsx#TableCol:control:4",
             "owner": "component:src/components/TableCol.tsx#TableCol",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "headerMenu?.menuButton",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:0",
             "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
-            "kind": "branch",
+            "type": "branch",
             "label": "hasData",
             "cases": [
               {
@@ -2054,7 +2098,7 @@
           {
             "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:1",
             "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
-            "kind": "branch",
+            "type": "branch",
             "label": "isBusy",
             "cases": [
               {
@@ -2072,7 +2116,7 @@
           {
             "id": "component:src/components/DataTableBody.tsx#DataTableBody:control:2",
             "owner": "component:src/components/DataTableBody.tsx#DataTableBody",
-            "kind": "branch",
+            "type": "branch",
             "label": "progressSkeleton",
             "cases": [
               {
@@ -2101,21 +2145,21 @@
           {
             "id": "component:src/components/TableRow.tsx#Row:control:0",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "selection",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableRow.tsx#Row:control:1",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "expansion",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableRow.tsx#Row:control:2",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!expansion.hideExpander",
             "dependsOn": [
               [
@@ -2129,14 +2173,14 @@
           {
             "id": "component:src/components/TableRow.tsx#Row:control:3",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!column.omit",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableRow.tsx#Row:control:4",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "firstRightPinnedId != null",
             "dependsOn": [
               [
@@ -2150,7 +2194,7 @@
           {
             "id": "component:src/components/TableRow.tsx#Row:control:5",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "column.id === firstRightPinnedId",
             "dependsOn": [
               [
@@ -2168,35 +2212,35 @@
           {
             "id": "component:src/components/TableCell.tsx#Cell:control:0",
             "owner": "component:src/components/TableCell.tsx#Cell",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "props.column.editor",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableCell.tsx#Cell:control:1",
             "owner": "component:src/components/TableCell.tsx#Cell",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "props.column.editable",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableCell.tsx#EditableCell:control:0",
             "owner": "component:src/components/TableCell.tsx#EditableCell",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "editor",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableRow.tsx#Row:control:6",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "rowMenu?.menuButton",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/TableRow.tsx#Row:control:7",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "expanderMounted",
             "dependsOn": [
               [
@@ -2210,7 +2254,7 @@
           {
             "id": "component:src/components/TableRow.tsx#Row:control:8",
             "owner": "component:src/components/TableRow.tsx#Row",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "expansion.component",
             "dependsOn": [
               [
@@ -2228,7 +2272,7 @@
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:6",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "showFooterRow",
             "dependsOn": [[]]
           },
@@ -2237,7 +2281,7 @@
             "owner": "component:src/components/TableFooter.tsx#TableFooter",
             "label": "FooterComponentProp",
             "dependsOn": [[]],
-            "kind": "branch",
+            "type": "branch",
             "cases": [
               {
                 "id": "true",
@@ -2253,7 +2297,7 @@
           {
             "id": "component:src/components/TableFooter.tsx#TableFooter:control:1",
             "owner": "component:src/components/TableFooter.tsx#TableFooter",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "!column.omit",
             "dependsOn": [
               [
@@ -2267,7 +2311,7 @@
           {
             "id": "component:src/components/TableFooter.tsx#TableFooter:control:2",
             "owner": "component:src/components/TableFooter.tsx#TableFooter",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "firstRightPinnedId != null",
             "dependsOn": [
               [
@@ -2285,7 +2329,7 @@
           {
             "id": "component:src/components/TableFooter.tsx#TableFooter:control:3",
             "owner": "component:src/components/TableFooter.tsx#TableFooter",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "column.id === firstRightPinnedId",
             "dependsOn": [
               [
@@ -2307,14 +2351,14 @@
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:7",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "hasPinnedColumns",
             "dependsOn": [[]]
           },
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:8",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "responsive",
             "dependsOn": [
               [
@@ -2328,7 +2372,7 @@
           {
             "id": "component:src/components/DataTable.tsx#DataTableInner:control:9",
             "owner": "component:src/components/DataTable.tsx#DataTableInner",
-            "kind": "conditional",
+            "type": "conditional",
             "label": "menu.open",
             "dependsOn": [[]]
           }
