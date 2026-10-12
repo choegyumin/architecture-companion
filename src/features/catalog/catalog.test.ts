@@ -8,6 +8,13 @@ it("parses artifact discovery patterns independently from project instructions",
   expect(catalogConfigSchema.parse(config)).toEqual(config);
 });
 
+it("accepts empty project instructions", () => {
+  expect(catalogConfigSchema.parse({ include: ["src/**/*.review.json"], instructions: "" })).toEqual({
+    include: ["src/**/*.review.json"],
+    instructions: "",
+  });
+});
+
 const validBehavior = {
   artifactId: "src/checkout/checkout.archcomp.json",
   type: "behavior",

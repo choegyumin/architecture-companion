@@ -5,7 +5,7 @@ import { type Artifact, artifactIdSchema, parseArtifact } from "@/features/artif
 export const catalogConfigSchema = z
   .object({
     include: z.array(z.string().min(1)).default(["**/*.archcomp.json"]),
-    instructions: z.string().min(1).optional(),
+    instructions: z.string().optional(),
   })
   .strict();
 

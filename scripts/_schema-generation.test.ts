@@ -109,7 +109,7 @@ describe("generateSchemaSources", () => {
       additionalProperties: false,
       properties: {
         include: { type: "array", default: ["**/*.archcomp.json"], items: { type: "string", minLength: 1 } },
-        instructions: { type: "string", minLength: 1 },
+        instructions: { type: "string" },
       },
     });
   });
