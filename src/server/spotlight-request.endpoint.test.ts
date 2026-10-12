@@ -15,24 +15,24 @@ import { writeCatalog } from "@/server/write-catalog";
 
 function catalog(): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
-        id: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
+        type: "behavior",
         title: "Checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions: "## Purpose\nReview the checkout trigger.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
             groups: [],
-            nodes: [{ type: "default", id: "cart", kind: "page", title: "Cart" }],
+            nodes: [{ type: "default", nodeId: "cart", kind: "page", title: "Cart" }],
             edges: [],
           },
         },
       },
     ],
-    designs: [],
   };
 }
 
@@ -63,7 +63,10 @@ describe("spotlight endpoint request guard", () => {
           Origin: "https://example.com",
           "Sec-Fetch-Site": "cross-site",
         },
-        body: JSON.stringify({ artifactId: "checkout", diagram: { steps: [{ elements: [] }] } }),
+        body: JSON.stringify({
+          artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
+          diagram: { steps: [{ elements: [] }] },
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -87,7 +90,10 @@ describe("spotlight endpoint request guard", () => {
           Origin: baseUrl,
           "Sec-Fetch-Site": "same-origin",
         },
-        body: JSON.stringify({ artifactId: "checkout", diagram: { steps: [{ elements: [] }] } }),
+        body: JSON.stringify({
+          artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
+          diagram: { steps: [{ elements: [] }] },
+        }),
       });
 
       expect(response.status).toBe(201);

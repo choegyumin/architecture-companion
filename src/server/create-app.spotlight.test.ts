@@ -11,32 +11,35 @@ import { writeCatalog } from "@/server/write-catalog";
 
 function catalog(): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
-        id: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
+        type: "behavior",
         title: "Checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions: "## Purpose\nReview the checkout trigger.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
             groups: [],
             nodes: [
-              { type: "default", id: "cart", kind: "page", title: "Cart" },
-              { type: "default", id: "pay", kind: "action", title: "Pay" },
+              { type: "default", nodeId: "cart", kind: "page", title: "Cart" },
+              { type: "default", nodeId: "pay", kind: "action", title: "Pay" },
             ],
-            edges: [{ type: "default", id: "e1", source: "cart", target: "pay" }],
+            edges: [{ type: "default", edgeId: "e1", sourceNodeId: "cart", targetNodeId: "pay" }],
           },
         },
       },
     ],
-    designs: [],
   };
 }
 
 function spotlight(elements: ArtifactSpotlight["diagram"]["steps"][number]["elements"]): ArtifactSpotlight {
-  return { artifactId: "checkout", diagram: { steps: [{ elements: [...elements] }] } };
+  return {
+    artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
+    diagram: { steps: [{ elements: [...elements] }] },
+  };
 }
 
 async function prepare(extraHeaders: Record<string, string> = {}): Promise<
@@ -158,7 +161,7 @@ describe("spotlight endpoint", () => {
       expect(body.error.message).toContain("unknown diagram node: ghost");
 
       const malformed = await app.request(`${baseUrl}/api/spotlight`, {
-        body: JSON.stringify({ artifactId: "checkout" }),
+        body: JSON.stringify({ artifactId: ".architecture-companion/artifacts/checkout.archcomp.json" }),
         headers,
         method: "POST",
       });
