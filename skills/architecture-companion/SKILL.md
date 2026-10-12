@@ -23,9 +23,9 @@ For follow-up requests after a Review UI review, start with **Review follow-up**
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
-## Configuration and placement
+## Configuration
 
-`<scope>/.architecture-companion/config.json` contains the file-discovery settings and optional natural-language placement instructions. Discovery rules identify existing artifacts; placement instructions guide the agent's authoring decisions. Neither determines whether the user commits the files.
+`<scope>/.architecture-companion/config.json` contains the file-discovery settings and optional natural-language instructions for artifact work in the project. Discovery rules identify existing artifacts; `instructions` guide the agent's authoring decisions, such as placement, naming, or language. Neither determines whether the user commits the files.
 
 When first creating this file, start with:
 
@@ -37,9 +37,9 @@ When first creating this file, start with:
 
 The suffix is a default, not a filename restriction. Users can change `include` to any scope-relative file globs. JSON artifacts under `.architecture-companion/artifacts/` are always discovered independently of these patterns and `.gitignore`. Other matches respect `.gitignore`. Use the same scope for configuration, discovery, review, and source links.
 
-Before authoring, read existing configuration and artifacts and any user-supplied placement rules. When configuration, placement rules, and artifacts are all absent, ask where to place the first artifact unless the user has already specified a location. Otherwise, infer a suitable location from the current request, saved `placementInstructions`, and existing conventions; do not ask for every artifact. Create the initial configuration during authoring after resolving placement, not merely when viewing or validating a catalog. Do not overwrite existing settings.
+Before authoring, read existing configuration and artifacts and any user-supplied rules. When configuration and artifacts are all absent, ask where to place the first artifact unless the user has already specified a location. Otherwise, infer placement and other authoring choices from the current request, saved `instructions`, and existing conventions; do not ask for every artifact. Create the initial configuration during authoring after resolving placement, not merely when viewing or validating a catalog. Do not overwrite existing settings.
 
-Ask whether to save a placement rule in `placementInstructions` only when there is a reason to make it persistent, such as an explicit ongoing instruction ("from now on") or establishing the initial project convention. Apply one-time placement requests without automatically saving them or routinely asking to save them. After an approved rule is recorded, follow it without repeating the confirmation. Distinguish this project-level placement guidance from each artifact's regeneration `instructions`.
+Ask whether to save a rule in `instructions` only when there is a reason to make it persistent, such as an explicit ongoing instruction ("from now on") or establishing the initial project convention. Apply one-time requests without automatically saving them or routinely asking to save them. After an approved rule is recorded, follow it without repeating the confirmation. Distinguish this project-level guidance from each artifact's regeneration `instructions`.
 
 ## Artifact authoring
 

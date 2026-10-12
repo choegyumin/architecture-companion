@@ -68,7 +68,7 @@ describe("catalog reading", () => {
   it("uses configured glob patterns instead of forcing the default suffix, without duplicating central matches", async () => {
     await save(".architecture-companion/config.json", {
       include: ["src/**/*.review.json", ".architecture-companion/artifacts/**/*.json", "!src/excluded/**"],
-      placementInstructions: "Prefer central artifacts for new diagrams.",
+      instructions: "Prefer central artifacts for new diagrams.",
     });
     await save("src/checkout.review.json");
     await save("src/excluded/hidden.review.json");

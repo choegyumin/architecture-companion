@@ -100,7 +100,7 @@ describe("generateSchemaSources", () => {
     });
   });
 
-  it("publishes configuration defaults independently from placement instructions", () => {
+  it("publishes configuration defaults independently from project instructions", () => {
     const schema = parseJsonObject(generateSchemaSources()["config.schema.json"]);
     expect(schema).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -109,7 +109,7 @@ describe("generateSchemaSources", () => {
       additionalProperties: false,
       properties: {
         include: { type: "array", default: ["**/*.archcomp.json"], items: { type: "string", minLength: 1 } },
-        placementInstructions: { type: "string", minLength: 1 },
+        instructions: { type: "string", minLength: 1 },
       },
     });
   });

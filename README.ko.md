@@ -58,7 +58,7 @@ npx skills add choegyumin/architecture-companion
 
 다이어그램은 JSON 아티팩트 형태로 설명하는 소스코드 옆이나 `.architecture-companion/artifacts/`에 저장됩니다. 저장된 아티팩트를 다시 열어 검토하거나, 소스가 바뀐 뒤 같은 목적과 기준으로 갱신하도록 요청할 수 있습니다.
 
-`.architecture-companion/config.json`의 `include`에서 탐색 glob을 지정합니다. 초기 기본값은 `["**/*.archcomp.json"]`이며, 에이전트가 따를 자연어 배치 지침은 `placementInstructions`에 기록할 수 있습니다. 파일명이 소스 파일명과 같거나 종류를 포함할 필요는 없습니다. 종류는 JSON의 `type`로 명시하며, 아티팩트는 scope 상대 파일 경로로 식별합니다.
+`.architecture-companion/config.json`의 `include`에서 탐색 glob을 지정합니다. 초기 기본값은 `["**/*.archcomp.json"]`이며, 에이전트가 아티팩트 작업 전반에서 따를 자연어 지침은 `instructions`에 기록할 수 있습니다. 파일명이 소스 파일명과 같거나 종류를 포함할 필요는 없습니다. 종류는 JSON의 `type`로 명시하며, 아티팩트는 scope 상대 파일 경로로 식별합니다.
 
 ```text
 ❯ /architecture-companion 아티팩트를 현재 소스코드 기준으로 갱신해줘.
