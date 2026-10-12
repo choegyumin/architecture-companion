@@ -66,7 +66,10 @@ describe("DataClient", () => {
       annotations: [
         {
           id: "annotation-1",
-          anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
+          anchor: {
+            canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+            point: { x: 120, y: 80 },
+          },
           comment: {
             id: "comment-1",
             author: { id: "reviewer", name: "Reviewer" },
@@ -114,8 +117,9 @@ describe("DataClient", () => {
   });
 
   it("sorts the diagrams of a Review response by title", async () => {
-    const diagram = (id: string, title: string) => ({
+    const diagram = (type: "behavior" | "design", id: string, title: string) => ({
       artifactId: id,
+      type,
       updatedAt: "2026-10-03T09:15:00.000Z",
       title,
       generator: "built-in:freeform",
@@ -131,8 +135,16 @@ describe("DataClient", () => {
           JSON.stringify({
             scope: { isGitRepository: false, path: "/consumer" },
             catalog: {
-              behaviors: [diagram("invite", "Invite member"), diagram("checkout", "Checkout workflow")],
-              designs: [diagram("structure", "Structure"), diagram("catalog", "Catalog")],
+              artifacts: [
+                diagram("behavior", ".architecture-companion/artifacts/invite-member.archcomp.json", "Invite member"),
+                diagram(
+                  "behavior",
+                  ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+                  "Checkout workflow",
+                ),
+                diagram("design", ".architecture-companion/artifacts/structure.archcomp.json", "Structure"),
+                diagram("design", ".architecture-companion/artifacts/catalog.archcomp.json", "Catalog"),
+              ],
             },
           }),
           { status: 200 },
@@ -141,7 +153,11 @@ describe("DataClient", () => {
 
     const review = await createDataClient(baseUrl, fetcher).getReview();
 
-    expect(review.catalog?.behaviors.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
-    expect(review.catalog?.designs.map(({ title }) => title)).toEqual(["Catalog", "Structure"]);
+    expect(review.catalog?.artifacts.map(({ title }) => title)).toEqual([
+      "Catalog",
+      "Checkout workflow",
+      "Invite member",
+      "Structure",
+    ]);
   });
 });

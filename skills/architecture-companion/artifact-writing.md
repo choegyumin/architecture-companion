@@ -13,14 +13,13 @@ Each diagram should answer one central review question. Avoid repeating the same
 
 ## File organization and preserving existing artifacts
 
-A catalog is the complete set of artifacts. Each artifact contains one diagram and is stored in its own JSON file.
+A catalog is the complete set of artifacts within a scope. Each artifact contains one diagram and is stored in its own JSON file. Set `type` to `behavior` for Product Behavior or `design` for Code Design, regardless of where the file is placed.
 
-- Product Behavior: `<scope>/.architecture-companion/behaviors/<artifactId>.json`
-- Code Design: `<scope>/.architecture-companion/designs/<artifactId>.json`
+Artifacts may live beside the source they explain or in `<scope>/.architecture-companion/artifacts/`. Decide location and filename from the current request, the `instructions` in `.architecture-companion/config.json`, and existing conventions. A filename that describes the artifact's purpose is enough.
 
-The filename must match the diagram's `artifactId`. To remove a diagram, delete its file. Save complete diagrams, not merge directives or partial patches.
+An artifact's identity is its scope-relative file path, using forward slashes. Do not store an `artifactId` in the JSON. Moving or renaming the file changes its identity. To remove an artifact, delete its file. Save complete artifacts, not merge directives or partial patches.
 
-Preserve diagrams unrelated to the request. Keep existing IDs for diagrams and graph elements whose concepts retain their meaning; do not reuse an ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own.
+Preserve artifacts unrelated to the request. Keep existing IDs for graph elements whose concepts retain their meaning; do not reuse an element ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own.
 
 Architecture Companion calculates coordinates and dimensions, so do not store them in the artifact.
 

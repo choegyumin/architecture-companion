@@ -15,9 +15,10 @@ import { writeCatalog } from "@/server/write-catalog";
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -33,7 +34,6 @@ const catalog = {
       },
     },
   ],
-  designs: [],
 };
 
 async function createReview() {

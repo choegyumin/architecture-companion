@@ -18,13 +18,22 @@ import {
 
 export const artifactIdSchema = z
   .string()
-  .regex(/^[a-z0-9][a-z0-9-]*$/, "Artifact ID must be lowercase kebab-case (letters, digits, hyphens)");
+  .min(1)
+  .refine(
+    (path) =>
+      !path.startsWith("/") &&
+      !/^[a-zA-Z]:/.test(path) &&
+      !path.includes("\\") &&
+      !path.includes("\0") &&
+      path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== ".."),
+    "Artifact ID must be a scope-relative file path with forward slashes",
+  );
 
 // The envelope holds an artifact's authoring and regeneration context; the
 // varying part is the single `diagram` field below, so every envelope field
 // is declared once.
 const artifactBaseShape = {
-  artifactId: artifactIdSchema,
+  type: z.enum(["behavior", "design"]),
   title: z.string().min(1),
   updatedAt: z.string().datetime(),
   vcs: z
@@ -78,9 +87,10 @@ export const artifactSchema = z
   .strict();
 
 type ParsedArtifact = z.infer<typeof artifactSchema>;
-export type Artifact = Omit<ParsedArtifact, "generator"> & {
+export type ArtifactDocument = Omit<ParsedArtifact, "generator"> & {
   generator: ArtifactGeneratorReference;
 };
+export type Artifact = ArtifactDocument & { artifactId: string };
 
 // Layout ids sit inside the `diagram` pair, so plain comparisons do not
 // narrow the artifact's diagram union; these guards carry the pairing instead.
@@ -112,7 +122,7 @@ function toIssueMessages(error: z.ZodError): string {
     .join("; ");
 }
 
-export function parseArtifact(input: unknown): Artifact {
+export function parseArtifact(input: unknown): ArtifactDocument {
   const layout = (input as { diagram?: { layout?: { layoutId?: unknown } } } | null)?.diagram?.layout;
   if (layout != null && typeof layout === "object" && typeof layout.layoutId === "string") {
     const member = diagramMembersByLayoutId[layout.layoutId as keyof typeof diagramMembersByLayoutId];
@@ -136,5 +146,5 @@ export function parseArtifact(input: unknown): Artifact {
   if (!result.success) {
     throw new Error(`Invalid artifact: ${toIssueMessages(result.error)}`, { cause: result.error });
   }
-  return result.data as Artifact;
+  return result.data as ArtifactDocument;
 }

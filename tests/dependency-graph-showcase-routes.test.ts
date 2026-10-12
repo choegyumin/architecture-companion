@@ -16,8 +16,8 @@ import { type DependencyEdgeProjection, projectDependencyEdges } from "@/feature
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-import commanderJson from "../showcases/.architecture-companion/designs/commander-dependency-graph.json";
-import dependencyCruiserJson from "../showcases/.architecture-companion/designs/dependency-cruiser-dependency-graph.json";
+import commanderJson from "../showcases/.architecture-companion/artifacts/commander-dependency-graph.json";
+import dependencyCruiserJson from "../showcases/.architecture-companion/artifacts/dependency-cruiser-dependency-graph.json";
 
 type Aggregate = Extract<DependencyEdgeProjection, { type: "aggregate" }>;
 type AggregateEndpoint = Readonly<{ id: string; sourceId: string; targetId: string }>;

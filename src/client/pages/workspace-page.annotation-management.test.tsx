@@ -18,28 +18,13 @@ import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
+// Artifacts stay in the catalog's path-sorted order so the revision id
+// computed here matches the one the server derives from the same files.
 const catalog: CompanionCatalog = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "checkout",
-      updatedAt: "2026-10-03T09:15:00.000Z",
-      title: "Workflow",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      diagram: {
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
-          edges: [],
-        },
-      },
-    },
-  ],
-  designs: [
-    {
-      artifactId: "catalog-structure",
+      artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",
@@ -55,7 +40,8 @@ const catalog: CompanionCatalog = {
       },
     },
     {
-      artifactId: "checkout-structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -70,6 +56,23 @@ const catalog: CompanionCatalog = {
         },
       },
     },
+    {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      type: "behavior",
+      updatedAt: "2026-10-03T09:15:00.000Z",
+      title: "Workflow",
+      generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
+      diagram: {
+        layout: { layoutId: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
+          edges: [],
+        },
+      },
+    },
   ],
 };
 
@@ -79,7 +82,7 @@ function savedFeedbackDocument(body: string): AnnotationDocument {
       {
         id: "annotation-1",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 80 },
         },
         comment: {

@@ -167,8 +167,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
         ...review,
         catalog: {
           ...catalog,
-          behaviors: sortArtifactsByTitle(catalog.behaviors),
-          designs: sortArtifactsByTitle(catalog.designs),
+          artifacts: sortArtifactsByTitle(catalog.artifacts),
         },
       };
     },

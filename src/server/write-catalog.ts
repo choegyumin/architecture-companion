@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 
-import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH } from "@/server/read-catalog";
+import { artifactIdSchema } from "@/features/artifact/artifact";
+import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 
 type WritableArtifact = Readonly<{
   artifactId: string;
@@ -11,23 +12,19 @@ type WritableArtifact = Readonly<{
 type WritableArtifactCollection = readonly WritableArtifact[];
 
 export type WritableCatalog = Readonly<{
-  behaviors: WritableArtifactCollection;
-  designs: WritableArtifactCollection;
+  artifacts: WritableArtifactCollection;
 }>;
 
-const catalogKinds = [
-  { relativePath: BEHAVIORS_RELATIVE_PATH, artifacts: "behaviors" },
-  { relativePath: DESIGNS_RELATIVE_PATH, artifacts: "designs" },
-] as const;
-
-async function writeArtifactFile(scopePath: string, relativePath: string, artifact: WritableArtifact): Promise<void> {
-  const directoryPath = join(scopePath, relativePath);
-  const fileName = `${artifact.artifactId}.json`;
-  const temporaryPath = join(directoryPath, `.${artifact.artifactId}-${randomUUID()}.tmp`);
+async function writeArtifactFile(scopePath: string, artifact: WritableArtifact): Promise<void> {
+  const { artifactId, ...document } = artifact;
+  const filePath = join(scopePath, artifactIdSchema.parse(artifactId));
+  const directoryPath = dirname(filePath);
+  await mkdir(directoryPath, { recursive: true });
+  const temporaryPath = join(directoryPath, `.${basename(filePath)}-${randomUUID()}.tmp`);
 
   try {
-    await writeFile(temporaryPath, JSON.stringify(artifact), { encoding: "utf8", flag: "wx" });
-    await rename(temporaryPath, join(directoryPath, fileName));
+    await writeFile(temporaryPath, JSON.stringify(document), { encoding: "utf8", flag: "wx" });
+    await rename(temporaryPath, filePath);
   } catch (error) {
     try {
       await rm(temporaryPath, { force: true });
@@ -39,21 +36,16 @@ async function writeArtifactFile(scopePath: string, relativePath: string, artifa
 }
 
 export async function writeCatalog(scopePath: string, catalog: WritableCatalog): Promise<void> {
-  for (const { relativePath, artifacts } of catalogKinds) {
-    const directoryPath = join(scopePath, relativePath);
-    await mkdir(directoryPath, { recursive: true });
-
-    const nextFileNames = new Set(catalog[artifacts].map(({ artifactId }) => `${artifactId}.json`));
-    const previousEntries = await readdir(directoryPath).catch((error) => {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [] as string[];
-      throw error;
-    });
+  const nextPaths = new Set(catalog.artifacts.map(({ artifactId }) => artifactIdSchema.parse(artifactId)));
+  const previous = await readCatalog(scopePath);
+  if (previous.status === "valid") {
     await Promise.all(
-      previousEntries
-        .filter((entry) => entry.endsWith(".json") && !nextFileNames.has(entry))
-        .map((entry) => rm(join(directoryPath, entry), { force: true })),
+      previous.catalog.artifacts
+        .filter(({ artifactId }) => !nextPaths.has(artifactId))
+        .map(({ artifactId }) => rm(join(scopePath, artifactId), { force: true })),
     );
-
-    await Promise.all(catalog[artifacts].map((artifact) => writeArtifactFile(scopePath, relativePath, artifact)));
   }
+
+  await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
+  await Promise.all(catalog.artifacts.map((artifact) => writeArtifactFile(scopePath, artifact)));
 }

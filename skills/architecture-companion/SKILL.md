@@ -23,9 +23,33 @@ For follow-up requests after a Review UI review, start with **Review follow-up**
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
+## Configuration
+
+`<scope>/.architecture-companion/config.json` holds the file-discovery settings and optional natural-language instructions that apply to all artifact work. `instructions` guide authoring decisions such as placement, naming, and language.
+
+When first creating this file, start with:
+
+```json
+{
+  "include": ["**/*.archcomp.json"]
+}
+```
+
+JSON artifacts under `.architecture-companion/artifacts/` are always discovered, independent of the `include` patterns and `.gitignore`. All other files follow the patterns and `.gitignore`.
+
+When configuration and artifacts are both absent, ask where to place the first artifact unless the user has already specified a location. Otherwise, infer placement from the current request, saved `instructions`, and existing conventions. Do not ask for every artifact. Create the initial configuration during authoring after resolving placement, and do not overwrite existing settings.
+
+Ask whether to save a rule in `instructions` only when there is a reason to make it persistent, such as an explicit ongoing instruction ("from now on") or establishing the initial convention. The `instructions` in configuration are project guidance that applies only to Architecture Companion artifact authoring; the `instructions` in an artifact are that diagram's regeneration instructions. Neither is related to repository instruction documents such as `AGENTS.md`.
+
 ## Artifact authoring
 
-1. Read any existing diagram files in `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` first. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated diagrams and existing IDs for concepts that retain their meaning.
+1. Discover the existing catalog with the command below and read the artifact files first. The returned artifact `id` is its scope-relative file path, not a field stored in the JSON. Determine what to preserve, modify, replace, add, or remove based on the request.
+
+   ```sh
+   node "<AC>/runtime/cli/view-artifacts.js" "<scope>"
+   ```
+
+   The command prints the complete catalog as JSON, or `null` when no catalog exists. If validation fails, do not treat it as an empty catalog; inspect and fix the reported files as far as the request permits.
 
 2. Read `<AC>/schemas/artifact.schema.json` to understand the JSON structure, and apply the shared authoring rules in `<AC>/artifact-writing.md`.
 
@@ -59,7 +83,7 @@ Use the absolute paths defined above for `<AC>` and `<scope>` in the commands be
 
 ## Start the Review UI
 
-1. Check that `<scope>/.architecture-companion/behaviors/` and `<scope>/.architecture-companion/designs/` contain at least one diagram JSON file between them. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+1. Check the discovered artifacts with `view-artifacts.js` and confirm that `artifacts` contains at least one artifact. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
 
    Reuse the latest validation result if the current catalog has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid catalog.
 

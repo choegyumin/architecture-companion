@@ -13,7 +13,7 @@ import { writeCatalog } from "@/server/write-catalog";
 
 function catalog(title: string): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
         title: "Workflow",
         updatedAt: "2026-10-03T09:15:00.000Z",
@@ -28,10 +28,10 @@ function catalog(title: string): CompanionCatalog {
             edges: [],
           },
         },
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        type: "behavior",
       },
     ],
-    designs: [],
   };
 }
 
@@ -43,7 +43,10 @@ async function writeAnnotations(scopePath: string, activeArtifact: CompanionCata
       annotations: [
         {
           id: "review-note",
-          anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
+          anchor: {
+            canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+            point: { x: 120, y: 80 },
+          },
           comment: {
             id: "review-comment",
             author: { id: "reviewer", name: "Reviewer" },

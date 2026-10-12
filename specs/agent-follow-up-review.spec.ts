@@ -10,10 +10,30 @@ import { createFileAnnotationRepository } from "@/server/file-annotation-reposit
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
+// Artifacts stay in the catalog's path-sorted order so the revision id
+// computed here matches the one the server derives from the same files.
 const catalog: CompanionCatalog = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      type: "design",
+      updatedAt: "2026-10-03T09:15:00.000Z",
+      title: "Checkout structure",
+      generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
+      diagram: {
+        layout: { layoutId: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
+      },
+    },
+    {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -29,24 +49,6 @@ const catalog: CompanionCatalog = {
       },
     },
   ],
-  designs: [
-    {
-      artifactId: "checkout-structure",
-      updatedAt: "2026-10-03T09:15:00.000Z",
-      title: "Checkout structure",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
-      diagram: {
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
-          edges: [],
-        },
-      },
-    },
-  ],
 };
 
 function reviewedComments(): AnnotationDocument {
@@ -54,7 +56,10 @@ function reviewedComments(): AnnotationDocument {
     annotations: [
       {
         id: "annotation-workflow",
-        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 90 } },
+        anchor: {
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+          point: { x: 120, y: 90 },
+        },
         comment: {
           id: "comment-workflow",
           author: { id: "reviewer-1", name: "Reviewer" },
@@ -65,7 +70,7 @@ function reviewedComments(): AnnotationDocument {
       {
         id: "annotation-structure",
         anchor: {
-          canvasId: "design:checkout-structure",
+          canvasId: "design:.architecture-companion/artifacts/checkout-structure.archcomp.json",
           point: { x: 180, y: 120 },
           target: { type: "node", id: "checkout-page" },
         },

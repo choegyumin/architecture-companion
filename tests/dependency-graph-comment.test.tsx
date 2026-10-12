@@ -18,7 +18,8 @@ const sizes = {
   other: { width: 288, height: 80 },
 };
 const diagram = {
-  artifactId: "dependencies",
+  artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",
@@ -111,7 +112,7 @@ describe("dependency graph Comment snapshot", () => {
       const [commentEnabled, setCommentEnabled] = useState(true);
       const [draft, setDraft] = useState<AnnotationDraft>();
       const annotations = {
-        surface: { canvasId: "design:dependencies" },
+        surface: { canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json" },
         isCommentMode: commentEnabled,
         isManaging: false,
         isPublishing: false,
@@ -138,7 +139,7 @@ describe("dependency graph Comment snapshot", () => {
     await waitFor(() => expect(screen.getByTestId("visible-edges").textContent).toContain("aggregate:"));
     await userEvent.click(screen.getByRole("button", { name: "Comment aggregate" }));
     expect(clickedDraft?.anchor).toEqual({
-      canvasId: "design:dependencies",
+      canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
       point: { x: 40, y: 75 },
       target: { type: "edge-set", sourceId: "source", targetId: "target", edgeIds: ["one-other", "two-other"] },
     });
@@ -154,7 +155,7 @@ describe("dependency graph Comment snapshot", () => {
     await userEvent.click(screen.getByRole("button", { name: "Toggle Comment" }));
     await userEvent.click(screen.getByRole("button", { name: "Comment original" }));
     expect(clickedDraft?.anchor).toEqual({
-      canvasId: "design:dependencies",
+      canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
       point: { x: 50, y: 85 },
       target: { type: "edge", id: "one-other" },
     });

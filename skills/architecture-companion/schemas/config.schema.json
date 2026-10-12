@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./config.schema.json",
+  "type": "object",
+  "properties": {
+    "include": {
+      "default": [
+        "**/*.archcomp.json"
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "instructions": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

@@ -6,9 +6,9 @@ import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-gra
 import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-import componentStructureJson from "../.architecture-companion/designs/component-structure.json";
-import dependencyGraphJson from "../.architecture-companion/designs/dependency-graph.json";
-import sequenceJson from "../.architecture-companion/designs/review-session-sequence.json";
+import componentStructureJson from "../.architecture-companion/artifacts/component-structure.json";
+import dependencyGraphJson from "../.architecture-companion/artifacts/dependency-graph.json";
+import sequenceJson from "../.architecture-companion/artifacts/review-session-sequence.json";
 
 // The dogfooding catalog tracks this repository's own refactoring, so it moves
 // with every change to src/. It is smoke-tested only — parse, layout, and route

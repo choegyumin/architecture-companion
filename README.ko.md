@@ -56,13 +56,15 @@ npx skills add choegyumin/architecture-companion
 
 ### 3. 다음 작업에서도 이어서 사용하기
 
-다이어그램은 아티팩트 형태로 프로젝트의 `.architecture-companion/`에 저장됩니다. 저장된 아티팩트를 다시 열어 검토하거나, 소스가 바뀐 뒤 같은 목적과 기준으로 갱신하도록 요청할 수 있습니다.
+다이어그램은 JSON 아티팩트 형태로 설명하는 소스 코드 옆이나 `.architecture-companion/artifacts/`에 저장됩니다. 저장된 아티팩트를 다시 열어 검토하거나, 소스가 바뀐 뒤 같은 목적과 기준으로 갱신하도록 요청할 수 있습니다.
 
 ```text
-❯ /architecture-companion 아티팩트를 현재 소스코드 기준으로 갱신해줘.
+❯ /architecture-companion 아티팩트를 현재 소스 코드 기준으로 갱신해줘.
 ```
 
-커밋을 원하지 않는다면 `.gitignore`에 `.architecture-companion/`를 추가하세요.
+아티팩트 수집 대상은 `.architecture-companion/config.json`의 `include`로 지정할 수 있습니다. `include`는 glob을 지원하며, 기본값은 `["**/*.archcomp.json"]`입니다. 아티팩트 파일의 배치 규칙 등 에이전트가 따를 자연어 지침은 `instructions`에 기록하세요.
+
+커밋을 원하지 않는다면 `.gitignore`에 `.architecture-companion/`을 추가하세요. 기본적으로 `.gitignore`에 지정된 경로는 수집 대상에서 제외되지만, `.architecture-companion/artifacts/` 아래 JSON 파일은 항상 탐색합니다. Git으로 추적하지 않고도 `.architecture-companion/artifacts/`에 아티팩트를 유지할 수 있습니다.
 
 <br><br>
 

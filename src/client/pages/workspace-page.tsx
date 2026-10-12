@@ -863,9 +863,10 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   const { catalog } = state.review;
-  const activeProcess =
-    catalog.behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? catalog.behaviors.at(0);
-  const activeDesign = catalog.designs.find(({ artifactId }) => artifactId === activeDesignId) ?? catalog.designs.at(0);
+  const behaviors = catalog.artifacts.filter(({ type }) => type === "behavior");
+  const designs = catalog.artifacts.filter(({ type }) => type === "design");
+  const activeProcess = behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? behaviors.at(0);
+  const activeDesign = designs.find(({ artifactId }) => artifactId === activeDesignId) ?? designs.at(0);
   const activeReviewView: ReviewView | null =
     requestedReviewView === "process" && activeProcess
       ? "process"
@@ -882,7 +883,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
           activeDiagram: activeProcess,
           ariaLabel: `${activeProcess.title} product behavior diagram`,
           annotationSurface: { canvasId: `behavior:${activeProcess.artifactId}` },
-          artifacts: catalog.behaviors,
+          artifacts: behaviors,
           heading: "Product Behaviors",
           onSelect: setActiveProcessId,
         }
@@ -891,7 +892,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             activeDiagram: activeDesign,
             ariaLabel: `${activeDesign.title} code design diagram`,
             annotationSurface: { canvasId: `design:${activeDesign.artifactId}` },
-            artifacts: catalog.designs,
+            artifacts: designs,
             heading: "Code Designs",
             onSelect: setActiveDesignId,
           }
@@ -944,10 +945,10 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         }
         navigation={
           <TabsList aria-label="Review views">
-            <TabsTrigger disabled={catalog.behaviors.length === 0} value="process">
+            <TabsTrigger disabled={behaviors.length === 0} value="process">
               Product Behavior
             </TabsTrigger>
-            <TabsTrigger disabled={catalog.designs.length === 0} value="design">
+            <TabsTrigger disabled={designs.length === 0} value="design">
               Code Design
             </TabsTrigger>
           </TabsList>

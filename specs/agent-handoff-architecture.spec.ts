@@ -57,9 +57,10 @@ async function writeGenerator(
 
 function reviewArtifact(generator: string) {
   return {
-    behaviors: [
+    artifacts: [
       {
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        type: "behavior",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator,
@@ -75,7 +76,6 @@ function reviewArtifact(generator: string) {
         },
       },
     ],
-    designs: [],
   };
 }
 
@@ -132,7 +132,7 @@ describe("coding agent hands off a validated catalog as a review URL", () => {
 
       await expect(
         executeValidateSchemasCommand([scopePath], { writeStdout: collectValidationOutput }),
-      ).rejects.toThrow("Catalog is missing: .architecture-companion/behaviors");
+      ).rejects.toThrow("Catalog is missing: no artifacts found in the configured paths");
 
       await writeCatalog(scopePath, reviewArtifact("Invalid_ID"));
       await expect(
@@ -153,7 +153,7 @@ describe("coding agent hands off a validated catalog as a review URL", () => {
       const reviewResponse = await getJson(`${server.url}/api/review`);
       expect(reviewResponse.status).toBe(200);
       expect(reviewResponse.body).toMatchObject({
-        catalog: { behaviors: [{ generator: "project:dependency-graph" }] },
+        catalog: { artifacts: [{ generator: "project:dependency-graph" }] },
       });
       expect(serverOutputs).toEqual([`${server.url}\n`]);
       expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);

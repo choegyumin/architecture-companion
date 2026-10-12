@@ -10,7 +10,7 @@ const baseUrl = "http://architecture-companion.test";
 
 function catalog(title: string) {
   return {
-    behaviors: [
+    artifacts: [
       {
         title: "Workflow",
         updatedAt: "2026-10-03T09:15:00.000Z",
@@ -25,10 +25,10 @@ function catalog(title: string) {
             edges: [],
           },
         },
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        type: "behavior",
       },
     ],
-    designs: [],
   };
 }
 

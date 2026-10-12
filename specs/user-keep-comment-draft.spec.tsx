@@ -17,9 +17,10 @@ import { createReviewUpdates } from "@/server/review-updates";
 import { writeCatalog } from "@/server/write-catalog";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -35,7 +36,6 @@ const catalog = {
       },
     },
   ],
-  designs: [],
 } satisfies CompanionCatalog;
 
 function annotations(body: string): AnnotationDocument {
@@ -44,7 +44,7 @@ function annotations(body: string): AnnotationDocument {
       {
         id: "external-annotation",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 90 },
         },
         comment: {

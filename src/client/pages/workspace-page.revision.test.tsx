@@ -12,7 +12,7 @@ import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
 import { writeCatalog } from "@/server/write-catalog";
@@ -21,27 +21,12 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
 function catalog(label: string): CompanionCatalog {
   return {
-    behaviors: [
+    // Artifacts stay in the catalog's path-sorted order so the revision id
+    // computed here matches the one the server derives from the same files.
+    artifacts: [
       {
-        title: "Workflow",
-        generator: "built-in:freeform",
-        instructions:
-          "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-        diagram: {
-          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-          graph: {
-            groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
-            edges: [],
-          },
-        },
-        artifactId: "checkout",
-        updatedAt: "2026-10-03T09:15:00.000Z",
-      },
-    ],
-    designs: [
-      {
-        artifactId: "checkout-structure",
+        artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+        type: "design",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout structure",
         generator: "built-in:freeform",
@@ -65,6 +50,23 @@ function catalog(label: string): CompanionCatalog {
           },
         },
       },
+      {
+        title: "Workflow",
+        generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
+        diagram: {
+          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          graph: {
+            groups: [],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
+            edges: [],
+          },
+        },
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        type: "behavior",
+        updatedAt: "2026-10-03T09:15:00.000Z",
+      },
     ],
   };
 }
@@ -75,7 +77,7 @@ function annotationsFor(body = "Review the initial workflow."): AnnotationDocume
       {
         id: "process-feedback",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -187,10 +189,10 @@ describe("external catalog review", () => {
 
     try {
       expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
-      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
+      await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "invalid.archcomp.json"), "{ partial");
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        "Catalog contains invalid JSON: .architecture-companion/artifacts/invalid.archcomp.json",
       );
       expect(screen.getByText("Initial workflow")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();
@@ -204,7 +206,7 @@ describe("external catalog review", () => {
 
     try {
       expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
-      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
+      await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "checkout-workflow.archcomp.json"), "{ partial");
       await screen.findByRole("alert");
 
       await writeCatalog(scopePath, catalog("Recovered"));

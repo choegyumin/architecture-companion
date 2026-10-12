@@ -4,7 +4,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 
 const diagram = {
-  artifactId: "dependencies",
+  artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",

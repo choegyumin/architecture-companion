@@ -1,4 +1,4 @@
-import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
+import { readCatalog } from "@/server/read-catalog";
 import { resolveCompanionScopePath } from "@/server/resolve-companion-scope";
 
 export type ValidateSchemasCommandOptions = Readonly<{
@@ -18,7 +18,7 @@ export async function executeValidateSchemasCommand(
   const result = await readCatalog(scopePath);
 
   if (result.status === "missing") {
-    throw new Error(`Catalog is missing: ${BEHAVIORS_RELATIVE_PATH} and ${DESIGNS_RELATIVE_PATH} do not exist`);
+    throw new Error("Catalog is missing: no artifacts found in the configured paths");
   }
   if (result.status === "invalid") {
     throw new Error(result.message);

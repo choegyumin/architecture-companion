@@ -3,9 +3,12 @@
   "$id": "./artifact.schema.json",
   "type": "object",
   "properties": {
-    "artifactId": {
+    "type": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]*$"
+      "enum": [
+        "behavior",
+        "design"
+      ]
     },
     "title": {
       "type": "string",
@@ -182,7 +185,7 @@
     }
   },
   "required": [
-    "artifactId",
+    "type",
     "title",
     "updatedAt",
     "generator",

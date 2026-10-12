@@ -8,12 +8,13 @@ import userEvent from "@testing-library/user-event";
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
-import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
+import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutDiagram = {
-  artifactId: "checkout-structure",
+  artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Checkout structure",
   generator: "built-in:freeform",
@@ -74,7 +75,8 @@ const checkoutDiagram = {
   },
 };
 const catalogDiagram = {
-  artifactId: "catalog-structure",
+  artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
+  type: "design",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Catalog structure",
   generator: "built-in:freeform",
@@ -97,35 +99,35 @@ const catalogDiagram = {
     },
   },
 };
-const designArtifact = {
-  behaviors: [
-    {
-      title: "Workflow",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
-      diagram: {
-        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-        graph: {
-          groups: [],
-          nodes: [
-            { type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" },
-            { type: "default", nodeId: "confirmed", kind: "result", title: "Order confirmed" },
-          ],
-          edges: [{ type: "default", edgeId: "submit-confirmed", sourceNodeId: "submit", targetNodeId: "confirmed" }],
-        },
-      },
-      artifactId: "checkout",
-      updatedAt: "2026-10-03T09:15:00.000Z",
+const checkoutWorkflow = {
+  title: "Workflow",
+  generator: "built-in:freeform",
+  instructions:
+    "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
+  diagram: {
+    layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+    graph: {
+      groups: [],
+      nodes: [
+        { type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" },
+        { type: "default", nodeId: "confirmed", kind: "result", title: "Order confirmed" },
+      ],
+      edges: [{ type: "default", edgeId: "submit-confirmed", sourceNodeId: "submit", targetNodeId: "confirmed" }],
     },
-  ],
-  designs: [checkoutDiagram, catalogDiagram],
+  },
+  artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+  type: "behavior",
+  updatedAt: "2026-10-03T09:15:00.000Z",
+};
+const designArtifact = {
+  artifacts: [checkoutWorkflow, checkoutDiagram, catalogDiagram],
 };
 
 const processArtifact = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "invite-member",
+      artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
@@ -156,7 +158,8 @@ const processArtifact = {
       },
     },
     {
-      artifactId: "remove-member",
+      artifactId: ".architecture-companion/artifacts/remove-member.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Remove member",
       generator: "built-in:freeform",
@@ -172,7 +175,6 @@ const processArtifact = {
       },
     },
   ],
-  designs: [],
 };
 
 type RenderableArtifact = Parameters<typeof writeCatalog>[1];
@@ -199,7 +201,10 @@ async function renderArtifact(catalog: RenderableArtifact) {
 
 describe("design (architecture·implementation) review", () => {
   it("shows the design view by default when there are no behaviors", async () => {
-    const { cleanup: cleanupScope } = await renderArtifact({ ...designArtifact, behaviors: [] });
+    const { cleanup: cleanupScope } = await renderArtifact({
+      ...designArtifact,
+      artifacts: [checkoutDiagram, catalogDiagram],
+    });
 
     try {
       const processView = await screen.findByRole("tab", { name: "Product Behavior" });
@@ -216,7 +221,10 @@ describe("design (architecture·implementation) review", () => {
   it("shows an actionable error for an unknown layout configuration", async () => {
     const invalidArtifact = {
       ...designArtifact,
-      designs: [{ ...checkoutDiagram, diagram: { ...checkoutDiagram.diagram, layout: { layoutId: "unknown" } } }],
+      artifacts: [
+        checkoutWorkflow,
+        { ...checkoutDiagram, diagram: { ...checkoutDiagram.diagram, layout: { layoutId: "unknown" } } },
+      ],
     };
     const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
@@ -232,7 +240,8 @@ describe("design (architecture·implementation) review", () => {
   it("shows an actionable error for an invalid layout configuration", async () => {
     const invalidArtifact = {
       ...designArtifact,
-      designs: [
+      artifacts: [
+        checkoutWorkflow,
         {
           ...checkoutDiagram,
           diagram: {
@@ -278,10 +287,10 @@ describe("design (architecture·implementation) review", () => {
 describe("dependency graph review", () => {
   it("loads and lays out a nested dependency catalog through the Review page", async () => {
     const dependencyArtifact = {
-      behaviors: [],
-      designs: [
+      artifacts: [
         {
-          artifactId: "dependencies",
+          artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+          type: "design",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Dependencies",
           generator: "built-in:freeform",
@@ -327,9 +336,10 @@ describe("dependency graph review", () => {
 describe("process (product workflow) review", () => {
   it("renders a sequence layout with lifelines and a message", async () => {
     const sequenceArtifact = {
-      behaviors: [
+      artifacts: [
         {
-          artifactId: "request-response",
+          artifactId: ".architecture-companion/artifacts/request-response.archcomp.json",
+          type: "behavior",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Request response",
           generator: "built-in:freeform",
@@ -357,7 +367,6 @@ describe("process (product workflow) review", () => {
           },
         },
       ],
-      designs: [],
     } as const;
     const { cleanup } = await renderArtifact(sequenceArtifact);
 
@@ -376,12 +385,12 @@ describe("process (product workflow) review", () => {
   });
 
   it("keeps the page running and shows an actionable invalid-catalog error", async () => {
-    const { cleanup, scopePath } = await renderArtifact({ behaviors: [], designs: [] });
-    await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ invalid json");
+    const { cleanup, scopePath } = await renderArtifact({ artifacts: [] });
+    await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "invalid.archcomp.json"), "{ invalid json");
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        "Catalog contains invalid JSON: .architecture-companion/artifacts/invalid.archcomp.json",
       );
       expect(screen.getByText("Architecture Companion")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Comment" })).toBeDisabled();

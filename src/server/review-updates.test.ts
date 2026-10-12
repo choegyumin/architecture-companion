@@ -6,13 +6,14 @@ import type { AnnotationDocument } from "@/features/annotation/annotation-docume
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { BEHAVIORS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
+import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/server/review-updates";
 import { writeCatalog } from "@/server/write-catalog";
 
-function behavior(title: string): CompanionCatalog["behaviors"][number] {
+function behavior(title: string): CompanionCatalog["artifacts"][number] {
   return {
-    artifactId: "checkout",
+    artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+    type: "behavior",
     title: "Workflow",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",
@@ -30,7 +31,7 @@ function behavior(title: string): CompanionCatalog["behaviors"][number] {
 }
 
 function catalog(title: string): CompanionCatalog {
-  return { behaviors: [behavior(title)], designs: [] };
+  return { artifacts: [behavior(title)] };
 }
 
 async function writeAnnotations(
@@ -49,7 +50,7 @@ function annotations(body: string): AnnotationDocument {
       {
         id: "review-note",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -195,29 +196,31 @@ describe("review updates", () => {
         updatesSeen = [...updatesSeen, update];
       });
 
-      await writeFile(join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"), "{ partial");
+      await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "checkout-workflow.archcomp.json"), "{ partial");
       await vi.waitFor(() => expect(updatesSeen).toEqual([{ revision: 1, status: "invalid" }]));
       expect(await readCatalog(scopePath)).toEqual({
         status: "invalid",
-        message: "Catalog contains invalid JSON: .architecture-companion/behaviors/checkout.json",
+        message: "Catalog contains invalid JSON: .architecture-companion/artifacts/checkout-workflow.archcomp.json",
       });
 
       await writeAnnotations(scopePath, catalog("Checkout requested"), annotations("Ignored while invalid"));
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(1);
 
-      await writeCatalog(scopePath, { behaviors: [{ ...behavior("Unsupported"), unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [{ ...behavior("Unsupported"), unexpected: true }] });
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 2, status: "invalid" }));
       expect(await readCatalog(scopePath)).toMatchObject({
         status: "invalid",
-        message: expect.stringContaining("Catalog is invalid: .architecture-companion/behaviors/checkout.json"),
+        message: expect.stringContaining(
+          "Catalog is invalid: .architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        ),
       });
 
       await writeCatalog(scopePath, catalog("Checkout recovered"));
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
       expect(await readCatalog(scopePath)).toMatchObject({
         status: "valid",
-        catalog: { behaviors: [{ diagram: { graph: { nodes: [{ title: "Checkout recovered" }] } } }] },
+        catalog: { artifacts: [{ diagram: { graph: { nodes: [{ title: "Checkout recovered" }] } } }] },
       });
     } finally {
       await updates?.close();

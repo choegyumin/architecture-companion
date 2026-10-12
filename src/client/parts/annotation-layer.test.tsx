@@ -15,7 +15,7 @@ const controller: AnnotationCanvasController = {
       {
         id: "thread-1",
         anchor: {
-          canvasId: "behavior:checkout",
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
           point: { x: 120, y: 80 },
         },
         comment: {
@@ -36,7 +36,7 @@ const controller: AnnotationCanvasController = {
   removeEdit: vi.fn(async () => undefined),
   resolveEditConflict: vi.fn(async () => undefined),
   saveEdit: vi.fn(async () => true),
-  surface: { canvasId: "behavior:checkout" },
+  surface: { canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json" },
 };
 
 describe("annotation layer", () => {

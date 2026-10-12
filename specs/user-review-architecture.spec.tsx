@@ -14,9 +14,10 @@ import { writeCatalog } from "@/server/write-catalog";
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
-      artifactId: "checkout",
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -32,7 +33,8 @@ const catalog = {
       },
     },
     {
-      artifactId: "cancel-order",
+      artifactId: ".architecture-companion/artifacts/cancel-order.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Cancel order",
       generator: "built-in:freeform",
@@ -47,10 +49,9 @@ const catalog = {
         },
       },
     },
-  ],
-  designs: [
     {
-      artifactId: "checkout-structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
@@ -66,7 +67,8 @@ const catalog = {
       },
     },
     {
-      artifactId: "catalog-structure",
+      artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",

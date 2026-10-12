@@ -9,20 +9,23 @@ import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } fro
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  artifactId: "checkout",
+  artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+  type: "behavior",
   title: "Workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-  layout: { layoutId: "elk-layered" },
-  graph: {
-    groups: [],
-    nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
-    edges: [],
+  diagram: {
+    layout: { layoutId: "elk-layered" },
+    graph: {
+      groups: [],
+      nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
+      edges: [],
+    },
   },
 } as const;
-const emptyArtifact = { behaviors: [], designs: [] };
+const emptyArtifact = { artifacts: [] };
 const emptyDocument: AnnotationDocument = { annotations: [] };
 
 describe("Active revision Annotation query command", () => {
@@ -80,7 +83,10 @@ describe("Active revision Annotation query command", () => {
       annotations: [
         {
           id: "annotation-1",
-          anchor: { canvasId: "behavior:checkout", point: { x: 10, y: 20 } },
+          anchor: {
+            canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+            point: { x: 10, y: 20 },
+          },
           comment: {
             id: "comment-1",
             author: { id: "reviewer-1", name: "Reviewer" },
@@ -119,13 +125,13 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeCatalog(scopePath, { behaviors: [{ ...checkoutBehavior, unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [{ ...checkoutBehavior, unexpected: true }] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {
           writeStdout: (output) => outputs.push(output),
         }),
-      ).rejects.toThrow("Catalog is invalid: .architecture-companion/behaviors/checkout.json.");
+      ).rejects.toThrow("Catalog is invalid: .architecture-companion/artifacts/checkout-workflow.archcomp.json.");
       expect(outputs).toEqual([]);
     } finally {
       await rm(scopePath, { recursive: true });

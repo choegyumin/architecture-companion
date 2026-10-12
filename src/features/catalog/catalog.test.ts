@@ -1,7 +1,23 @@
-import { parseCatalog } from "@/features/catalog/catalog";
+import { catalogConfigSchema, parseCatalog } from "@/features/catalog/catalog";
+
+it("parses artifact discovery patterns independently from project instructions", () => {
+  const config = {
+    include: ["src/**/*.review.json"],
+    instructions: "Keep artifacts beside their feature and write titles in English.",
+  };
+  expect(catalogConfigSchema.parse(config)).toEqual(config);
+});
+
+it("accepts empty project instructions", () => {
+  expect(catalogConfigSchema.parse({ include: ["src/**/*.review.json"], instructions: "" })).toEqual({
+    include: ["src/**/*.review.json"],
+    instructions: "",
+  });
+});
 
 const validBehavior = {
-  artifactId: "checkout",
+  artifactId: "src/checkout/checkout.archcomp.json",
+  type: "behavior",
   title: "Checkout workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
@@ -32,12 +48,40 @@ const validBehavior = {
   },
 } as const;
 
-const validArtifact = {
-  behaviors: [validBehavior],
-  designs: [],
-} as const;
+const validArtifact = { artifacts: [validBehavior] } as const;
 
 describe("catalog parsing", () => {
+  it.each([
+    "/checkout.json",
+    "../checkout.json",
+    "src/../checkout.json",
+    "src\\checkout.json",
+    "C:/checkout.json",
+    "src//checkout.json",
+  ])("rejects an artifact path outside the normalized scope-relative contract: %s", (id) => {
+    expect(() => parseCatalog({ artifacts: [{ ...validBehavior, id }] })).toThrow("Invalid catalog");
+  });
+
+  it("allows the same filename in different directories", () => {
+    const catalog = {
+      artifacts: [validBehavior, { ...validBehavior, artifactId: "src/account/checkout.archcomp.json" }],
+    };
+    expect(parseCatalog(catalog)).toEqual(catalog);
+  });
+
+  it("preserves artifact types and order in a single catalog collection", () => {
+    const catalog = {
+      artifacts: [{ ...validBehavior, type: "design", artifactId: "src/checkout/design.archcomp.json" }, validBehavior],
+    };
+    expect(parseCatalog(catalog)).toEqual(catalog);
+  });
+
+  it("rejects the same path for different artifact types", () => {
+    expect(() => parseCatalog({ artifacts: [validBehavior, { ...validBehavior, type: "design" }] })).toThrow(
+      "Duplicate artifact path: src/checkout/checkout.archcomp.json",
+    );
+  });
+
   it("preserves a valid diagram catalog", () => {
     expect(parseCatalog(validArtifact)).toEqual(validArtifact);
   });
@@ -45,9 +89,11 @@ describe("catalog parsing", () => {
   it.each([
     { revision: "r1842", divergesFromRevision: false },
     { revision: "6d8c2d3b21d2647166542072ba757b1b57d496cf", divergesFromRevision: true },
-  ])("preserves authoring metadata in behaviors and designs: $revision", (vcs) => {
+  ])("preserves authoring metadata in artifacts: $revision", (vcs) => {
     const diagram = { ...validBehavior, vcs };
-    const catalog = { behaviors: [diagram], designs: [diagram] };
+    const catalog = {
+      artifacts: [diagram, { ...diagram, type: "design", artifactId: "src/checkout/design.archcomp.json" }],
+    };
 
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
@@ -55,7 +101,7 @@ describe("catalog parsing", () => {
   it.each([undefined, null, "", "not-a-date", "2026-10-03", "2026-10-03T09:15:00", "2026-10-03T09:15:00+09:00"])(
     "rejects a missing or non-UTC authoring timestamp: %s",
     (updatedAt) => {
-      const catalog = { ...validArtifact, behaviors: [{ ...validBehavior, updatedAt }] };
+      const catalog = { ...validArtifact, artifacts: [{ ...validBehavior, updatedAt }] };
 
       expect(() => parseCatalog(catalog)).toThrow("Invalid catalog");
     },
@@ -70,20 +116,20 @@ describe("catalog parsing", () => {
     { revision: "r1842", divergesFromRevision: "false" },
     { revision: "r1842", divergesFromRevision: false, dirty: true },
   ])("rejects incomplete or invalid VCS metadata: %j", (vcs) => {
-    const catalog = { ...validArtifact, behaviors: [{ ...validBehavior, vcs }] };
+    const catalog = { ...validArtifact, artifacts: [{ ...validBehavior, vcs }] };
 
     expect(() => parseCatalog(catalog)).toThrow("Invalid catalog");
   });
 
-  it("allows an catalog with no behaviors", () => {
-    const catalog = { behaviors: [], designs: [] } as const;
+  it("allows an empty catalog", () => {
+    const catalog = { artifacts: [] } as const;
 
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
 
   it("preserves custom generator IDs regardless of installation", () => {
     const behavior = { ...validBehavior, generator: "project:dependency-graph" } as const;
-    const catalog = { ...validArtifact, behaviors: [behavior] } as const;
+    const catalog = { ...validArtifact, artifacts: [behavior] } as const;
 
     expect(parseCatalog(catalog)).toEqual(catalog);
   });
@@ -95,7 +141,7 @@ describe("catalog parsing", () => {
   it("rejects unknown node and edge types", () => {
     const unknownNodeType = {
       ...validArtifact,
-      behaviors: [
+      artifacts: [
         {
           ...validBehavior,
           diagram: {
@@ -111,7 +157,7 @@ describe("catalog parsing", () => {
     };
     const unknownEdgeType = {
       ...validArtifact,
-      behaviors: [
+      artifacts: [
         {
           ...validBehavior,
           diagram: {
@@ -132,7 +178,7 @@ describe("catalog parsing", () => {
   it("rejects duplicate element IDs and dangling edges", () => {
     const duplicateNode = {
       ...validArtifact,
-      behaviors: [
+      artifacts: [
         {
           ...validBehavior,
           diagram: {
@@ -148,7 +194,7 @@ describe("catalog parsing", () => {
     };
     const danglingEdge = {
       ...validArtifact,
-      behaviors: [
+      artifacts: [
         {
           ...validBehavior,
           diagram: {
@@ -166,38 +212,17 @@ describe("catalog parsing", () => {
     expect(() => parseCatalog(danglingEdge)).toThrow("Diagram edge missing targets unknown node missing-node");
   });
 
-  it("rejects duplicate behavior IDs", () => {
-    expect(() => parseCatalog({ ...validArtifact, behaviors: [validBehavior, validBehavior] })).toThrow(
-      "Duplicate behavior ID: checkout",
-    );
-  });
-
-  it("rejects duplicate design IDs", () => {
-    const diagram = {
-      artifactId: "structure",
-      title: "Structure",
-      updatedAt: "2026-10-03T09:15:00.000Z",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
-      diagram: {
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
-          edges: [],
-        },
-      },
-    } as const;
-
-    expect(() => parseCatalog({ ...validArtifact, designs: [diagram, diagram] })).toThrow(
-      "Duplicate design ID: structure",
+  it.each(["behavior", "design"])("rejects duplicate artifact paths for %s", (type) => {
+    const artifact = { ...validBehavior, type };
+    expect(() => parseCatalog({ artifacts: [artifact, artifact] })).toThrow(
+      "Duplicate artifact path: src/checkout/checkout.archcomp.json",
     );
   });
 
   it("preserves direct node links and edge hrefs", () => {
     const diagram = {
-      artifactId: "structure",
+      artifactId: "src/checkout/structure.archcomp.json",
+      type: "design",
       title: "Structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       generator: "built-in:freeform",
@@ -231,9 +256,7 @@ describe("catalog parsing", () => {
       },
     } as const;
 
-    expect(parseCatalog({ ...validArtifact, designs: [diagram] })).toEqual({
-      ...validArtifact,
-      designs: [diagram],
-    });
+    const catalog = { artifacts: [...validArtifact.artifacts, diagram] };
+    expect(parseCatalog(catalog)).toEqual(catalog);
   });
 });

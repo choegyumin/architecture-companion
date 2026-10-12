@@ -19,9 +19,10 @@ const emptyDocument: AnnotationDocument = { annotations: [] };
 
 function catalog(title: string): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
-        artifactId: "checkout",
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        type: "behavior",
         title,
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
@@ -37,7 +38,6 @@ function catalog(title: string): CompanionCatalog {
         },
       },
     ],
-    designs: [],
   };
 }
 
@@ -50,7 +50,10 @@ function document(body: string): AnnotationDocument {
     annotations: [
       {
         id: `annotation-${body}`,
-        anchor: { canvasId: "behavior:checkout", point: { x: 120, y: 80 } },
+        anchor: {
+          canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+          point: { x: 120, y: 80 },
+        },
         comment: {
           id: `comment-${body}`,
           author: { id: "local-reviewer", name: "Local reviewer" },
@@ -133,8 +136,7 @@ describe("annotation server", () => {
 
     try {
       await writeCatalog(scopePath, {
-        behaviors: [{ ...firstArtifact.behaviors.at(0)!, unexpected: true }],
-        designs: [],
+        artifacts: [{ ...firstArtifact.artifacts.at(0)!, unexpected: true }],
       });
       const app = createApp(await resolveCompanionScope(scopePath));
 

@@ -1,7 +1,7 @@
 {
-  "artifactId": "react-admin-demo-component-structure",
+  "type": "design",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-12T13:19:53.844Z",
+  "updatedAt": "2026-10-11T21:44:47.751Z",
   "generator": "built-in:react-component-structure",
   "instructions": "## Purpose\n\nExamine how the react-admin e-commerce demo composes its admin UI: which pages and field components each resource page renders, how values flow to external react-admin and MUI boundaries, and where the same local component is supplied from several origins.\n\n## Regeneration\n\nClone https://github.com/marmelab/react-admin.git, then from its root:\n\n```sh\ngit checkout eec76175e77e1a47a7ec6471346c4f2fbdb940a1\nyarn install --immutable\nyarn workspace ra-language-english build && yarn workspace ra-language-french build && yarn workspace ra-i18n-polyglot build && yarn workspace ra-core build && yarn workspace ra-ui-materialui build && yarn workspace react-admin build\nnode \"<generator-directory>/run.js\" \\\n  --base \"examples/demo\" \\\n  --root \"ProductList\" \\\n  \"src\"\n```\n\nThe workspace builds produce the package type declarations the analysis needs; without them react-admin resolves through unbuilt symlinks and every boundary is omitted.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files. Components loaded through `React.lazy` dynamic imports are not traced.",
   "diagram": {

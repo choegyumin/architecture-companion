@@ -1,13 +1,13 @@
 {
-  "artifactId": "review-preparation",
+  "type": "behavior",
   "title": "Prepare Review URL (Skill trigger)",
-  "updatedAt": "2026-10-03T09:02:45.000Z",
+  "updatedAt": "2026-10-12T15:47:49.000Z",
   "vcs": {
-    "revision": "7ca8a28410f94231de9085560b412fd99ce4a4c7",
+    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",
-  "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
+  "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-artifacts, view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from catalog discovery and placement selection through generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
   "links": [
     {
       "href": "source:///specs/agent-handoff-architecture.spec.ts"
@@ -47,10 +47,10 @@
           "nodeId": "agent-write-artifact",
           "kind": "action",
           "title": "Write the artifact",
-          "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
+          "description": "Write JSON artifacts with an explicit behavior or design kind, using the current request, saved placement instructions, and existing conventions. Create the initial config with **/*.archcomp.json when needed.",
           "links": [
             {
-              "href": "source:///skills/architecture-companion/schemas/diagram.schema.json"
+              "href": "source:///skills/architecture-companion/schemas/artifact.schema.json"
             },
             {
               "href": "source:///skills/architecture-companion/artifact-writing.md"
@@ -77,7 +77,7 @@
           "nodeId": "agent-artifact-valid",
           "kind": "condition",
           "title": "Does the artifact contain diagrams and pass validation?",
-          "description": "Confirm that at least one diagram exists across behaviors and designs, then validate the artifact with validate-schemas before sharing a URL.",
+          "description": "Use view-artifacts to confirm at least one discovered artifact exists, then validate the entire catalog before sharing a URL.",
           "links": [
             {
               "href": "source:///src/cli/validate-schemas.command.ts"
@@ -92,14 +92,29 @@
           "nodeId": "agent-fix-artifact",
           "kind": "action",
           "title": "Complete or fix the artifact",
-          "description": "Add the requested diagrams if none exist. Fix validation errors and rerun the command until it prints Artifact is valid."
+          "description": "Add the requested diagrams if none exist. Fix validation errors and rerun validate-schemas until it prints Catalog is valid."
         },
         {
           "type": "default",
           "nodeId": "agent-share-url",
           "kind": "result",
           "title": "Hand off review URL",
-          "description": "Explain what the validated artifact covers and hand the review URL to the reviewer."
+          "description": "Explain what the validated catalog covers and hand the review URL to the reviewer."
+        },
+        {
+          "type": "default",
+          "nodeId": "agent-discover-artifacts",
+          "kind": "action",
+          "title": "Read the catalog and placement context",
+          "description": "Discover central and co-located artifacts with view-artifacts. Read configuration and user rules; ask about placement only when this is a new environment without an existing instruction or artifact.",
+          "links": [
+            {
+              "href": "source:///src/cli/view-artifacts.command.ts"
+            },
+            {
+              "href": "source:///skills/architecture-companion/SKILL.md"
+            }
+          ]
         }
       ],
       "edges": [
@@ -107,7 +122,7 @@
           "type": "default",
           "edgeId": "agent-task-to-discovery",
           "sourceNodeId": "agent-receive-review-task",
-          "targetNodeId": "agent-discover-generators"
+          "targetNodeId": "agent-discover-artifacts"
         },
         {
           "type": "default",
@@ -146,6 +161,12 @@
           "edgeId": "agent-valid-to-share",
           "sourceNodeId": "agent-start-runtime",
           "targetNodeId": "agent-share-url"
+        },
+        {
+          "type": "default",
+          "edgeId": "agent-artifacts-to-generators",
+          "sourceNodeId": "agent-discover-artifacts",
+          "targetNodeId": "agent-discover-generators"
         }
       ]
     }
