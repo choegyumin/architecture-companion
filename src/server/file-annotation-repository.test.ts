@@ -207,7 +207,7 @@ describe("per-revision Annotation file repository", () => {
     }
   });
 
-  test("rejects one stale document among concurrent saves from different behaviors", async () => {
+  test("rejects one stale document among concurrent saves from different artifacts", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-annotations-"));
     const startPath = join(scopePath, "start");
     const readyPaths = [join(scopePath, "first.ready"), join(scopePath, "second.ready")];
