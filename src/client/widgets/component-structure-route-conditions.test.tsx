@@ -14,7 +14,7 @@ import type { DiagramControl } from "@/features/diagram/diagram-graph";
 const conditional = (id: string, label: string): DiagramControl => ({
   id,
   owner: "parent",
-  kind: "conditional",
+  type: "conditional",
   label,
   dependsOn: [[]],
 });
@@ -56,7 +56,7 @@ describe("component structure route conditions", () => {
       {
         id: "branch",
         owner: "parent",
-        kind: "branch",
+        type: "branch",
         label: "mode",
         dependsOn: [[]],
         cases: [
@@ -93,7 +93,7 @@ describe("component structure route conditions", () => {
           ],
         },
       ],
-      additional: {
+      layoutContext: {
         roots: ["parent"],
         controls: [conditional("data", "data"), conditional("first", "!first"), conditional("last", "!last")],
       },

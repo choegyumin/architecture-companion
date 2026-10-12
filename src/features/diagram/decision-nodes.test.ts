@@ -25,13 +25,13 @@ const graph: ComponentStructureDiagramGraph = {
       ],
     },
   ],
-  additional: {
+  layoutContext: {
     roots: ["root"],
     controls: [
       {
         id: "a",
         owner: "root",
-        kind: "branch",
+        type: "branch",
         label: "a",
         dependsOn: [[]],
         cases: [
@@ -39,7 +39,7 @@ const graph: ComponentStructureDiagramGraph = {
           { id: "a2", label: "A2" },
         ],
       },
-      { id: "b", owner: "root", kind: "conditional", label: "b", dependsOn: [[]] },
+      { id: "b", owner: "root", type: "conditional", label: "b", dependsOn: [[]] },
     ],
   },
 };

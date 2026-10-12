@@ -44,12 +44,12 @@ const diagramControlBaseShape = {
   label: z.string().min(1),
   dependsOn: diagramRouteRequirementRulesetSchema,
 };
-export const diagramControlSchema = z.discriminatedUnion("kind", [
-  z.object({ ...diagramControlBaseShape, kind: z.literal("conditional") }).strict(),
+export const diagramControlSchema = z.discriminatedUnion("type", [
+  z.object({ ...diagramControlBaseShape, type: z.literal("conditional") }).strict(),
   z
     .object({
       ...diagramControlBaseShape,
-      kind: z.literal("branch"),
+      type: z.literal("branch"),
       cases: z.array(z.object({ id: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
       /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
       polarityPair: z.literal(true).optional(),
@@ -496,19 +496,19 @@ const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
   .extend({ composition: componentCompositionSchema.nullable().optional() })
   .meta({ id: "ComponentStructureControlEdge" });
 
-/** Additional graph properties a component structure diagram stores: its roots and controls. */
-export const componentStructureAdditionalSchema = z
+/** Graph-level layout context for component structure: its roots and controls. */
+export const componentStructureLayoutContextSchema = z
   .object({
     roots: z.array(diagramIdSchema).min(1).readonly(),
     controls: z.array(diagramControlSchema).readonly(),
   })
   .strict();
-export type ComponentStructureAdditional = z.infer<typeof componentStructureAdditionalSchema>;
+export type ComponentStructureLayoutContext = z.infer<typeof componentStructureLayoutContextSchema>;
 
 /** Component structure integrity: declared roots and controls agree with the stored relationships. */
 function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph): readonly GraphIssue[] {
   const issues: GraphIssue[] = [];
-  const { roots, controls } = graph.additional;
+  const { roots, controls } = graph.layoutContext;
   const controlsById = new Map(controls.map((control) => [control.id, control]));
   const nodeIds = new Set(graph.nodes.map((node) => node.id));
 
@@ -517,7 +517,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     if (!nodeIds.has(root) || rootIds.has(root)) {
       issues.push({
         code: "custom",
-        path: ["additional", "roots", index],
+        path: ["layoutContext", "roots", index],
         message: `${nodeIds.has(root) ? "Duplicate" : "Unknown"} component root: ${root}`,
       });
     }
@@ -529,7 +529,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     if (controlIds.has(control.id)) {
       issues.push({
         code: "custom",
-        path: ["additional", "controls", index, "id"],
+        path: ["layoutContext", "controls", index, "id"],
         message: `Duplicate component control: ${control.id}`,
       });
     }
@@ -537,17 +537,17 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     if (!nodeIds.has(control.owner)) {
       issues.push({
         code: "custom",
-        path: ["additional", "controls", index, "owner"],
+        path: ["layoutContext", "controls", index, "owner"],
         message: `Unknown component control owner: ${control.owner}`,
       });
     }
-    if (control.kind === "branch") {
+    if (control.type === "branch") {
       const caseIds = new Set<string>();
       control.cases.forEach((branchCase, caseIndex) => {
         if (caseIds.has(branchCase.id)) {
           issues.push({
             code: "custom",
-            path: ["additional", "controls", index, "cases", caseIndex, "id"],
+            path: ["layoutContext", "controls", index, "cases", caseIndex, "id"],
             message: `Duplicate component control case: ${branchCase.id}`,
           });
         }
@@ -577,7 +577,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
             message: `Unknown component control: ${requirement.controlId}`,
           });
         } else if (
-          control.kind === "conditional"
+          control.type === "conditional"
             ? requirement.value !== "on" && requirement.value !== "off"
             : !control.cases.some((branchCase) => branchCase.id === requirement.value)
         ) {
@@ -595,7 +595,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     if (edge.type === "control") validateRuleset(edge.activeWhen, ["edges", index, "activeWhen"]);
   });
   controls.forEach((control, index) => {
-    validateRuleset(control.dependsOn, ["additional", "controls", index, "dependsOn"]);
+    validateRuleset(control.dependsOn, ["layoutContext", "controls", index, "dependsOn"]);
   });
 
   const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.target));
@@ -625,7 +625,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
   if ([...controlsById.keys()].some(hasCycle)) {
     issues.push({
       code: "custom",
-      path: ["additional", "controls"],
+      path: ["layoutContext", "controls"],
       message: "Component control prerequisites contain a cycle",
     });
   }
@@ -639,7 +639,7 @@ export const componentStructureDiagramGraphSchema = z
     edges: z
       .array(z.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema]))
       .readonly(),
-    additional: componentStructureAdditionalSchema,
+    layoutContext: componentStructureLayoutContextSchema,
   })
   .strict()
   .superRefine((graph, context) => {

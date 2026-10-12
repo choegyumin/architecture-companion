@@ -212,7 +212,7 @@ function branchMetrics(graph: ProjectedComponentStructureGraph, control: Diagram
 export function initialComponentSelection(graph: ProjectedComponentStructureGraph): ComponentSelection {
   return Object.fromEntries(
     graph.controls.map((control) => {
-      if (control.kind === "conditional") return [control.id, "off"];
+      if (control.type === "conditional") return [control.id, "off"];
       const cases = control.cases.map((alternative) => ({
         ...alternative,
         metrics: branchMetrics(graph, control, alternative.id),
@@ -319,7 +319,7 @@ export function selectComponentPath(
   const selected = { ...selection, [controlId]: value };
   const control = graph.controls.find((item) => item.id === controlId)!;
   const emphasis = componentPathEmphasis(graph, selected);
-  if (control.kind === "conditional") {
+  if (control.type === "conditional") {
     if (value === "off" || emphasis.controls.has(control.id))
       return settleFallenBranchSwitches(graph, selection, selected, controlId);
   } else {
@@ -334,7 +334,7 @@ export function selectComponentPath(
   // Branch arms reroute to the decision node itself — its incoming chain names
   // the choices that must hold before the arm exists. Conditional controls own
   // no node, so they reroute to their owner.
-  const rerouteTarget = control.kind === "branch" ? control.id : control.owner;
+  const rerouteTarget = control.type === "branch" ? control.id : control.owner;
   const candidates = ancestorRoutes(graph, rerouteTarget).flatMap((route) => {
     const requested = mergeRequirements(route, [{ controlId, value }]);
     return requested
@@ -386,7 +386,7 @@ function releaseGuardRule(
       other.rule.some((item) => item.controlId === requirement.controlId && item.value === requirement.value),
     );
   const switchable = rule.filter(
-    (requirement) => graph.controls.find((control) => control.id === requirement.controlId)?.kind === "conditional",
+    (requirement) => graph.controls.find((control) => control.id === requirement.controlId)?.type === "conditional",
   );
   const exclusive = switchable.filter((requirement) => !shared(requirement));
   return (exclusive.length > 0 ? exclusive : switchable).reduce(
@@ -434,9 +434,9 @@ export function selectEdgePath(
   if (holds && activeEdges.has(edgeId)) {
     return releaseGuardRule(graph, selection, rule!, activeEdges, edgeId, ruleIndex);
   }
-  if (holds && control.kind === "conditional") {
+  if (holds && control.type === "conditional") {
     const repaired = applyRule(selection);
-    const movedBranch = controls.some((item) => item.kind === "branch" && repaired[item.id] !== selection[item.id]);
+    const movedBranch = controls.some((item) => item.type === "branch" && repaired[item.id] !== selection[item.id]);
     const changed = Object.keys(repaired).some((id) => repaired[id] !== selection[id]);
     if (changed && !movedBranch) return repaired;
     return releaseGuardRule(graph, selection, rule!, activeEdges, edgeId, ruleIndex);

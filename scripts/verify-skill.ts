@@ -496,7 +496,7 @@ async function verifyInstalledReactComponentGenerator(
   ]);
 
   type InstalledGraph = Readonly<{
-    additional: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
+    layoutContext: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
     edges: ReadonlyArray<{
       source: string;
       target: string;
@@ -552,9 +552,9 @@ async function verifyInstalledReactComponentGenerator(
   }
 
   const graph = await generateGraph();
-  assert.deepEqual(Object.keys(graph).toSorted(), ["additional", "edges", "groups", "nodes"]);
-  assert.deepEqual(graph.additional.roots, ["component:src/app.tsx#App"]);
-  assert.deepEqual(graph.additional.controls, []);
+  assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "layoutContext", "nodes"]);
+  assert.deepEqual(graph.layoutContext.roots, ["component:src/app.tsx#App"]);
+  assert.deepEqual(graph.layoutContext.controls, []);
   assert.deepEqual(graph.groups, []);
   assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
   assert.deepEqual(edgeFacts(graph), [

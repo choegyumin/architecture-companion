@@ -13,7 +13,7 @@ import type {
 const requirementText = (controls: readonly DiagramControl[], controlId: string, value: string): string => {
   const control = controls.find((item) => item.id === controlId);
   if (!control) return value;
-  if (control.kind === "branch") {
+  if (control.type === "branch") {
     return control.cases.find((branchCase) => branchCase.id === value)?.label ?? value;
   }
   // Negate the entire label without interpreting the generator's expression syntax.
@@ -40,7 +40,7 @@ export function routeConditionIncludesBranch(
   guards: DiagramRouteRequirementRuleset,
 ): boolean {
   return guards.some((rule) =>
-    rule.some(({ controlId }) => controls.find((item) => item.id === controlId)?.kind === "branch"),
+    rule.some(({ controlId }) => controls.find((item) => item.id === controlId)?.type === "branch"),
   );
 }
 
@@ -50,7 +50,7 @@ export const toDefinitionId = (nodeId: string): string => nodeId.replace(INSTANC
 
 export type RouteConditionChange = Readonly<{
   controlId: string;
-  kind: DiagramControl["kind"];
+  type: DiagramControl["type"];
   label: string;
   ownerLabel: string;
   before: string;
@@ -58,7 +58,7 @@ export type RouteConditionChange = Readonly<{
 }>;
 
 const requirementValueLabel = (control: DiagramControl, value: string): string => {
-  if (control.kind !== "branch") return value;
+  if (control.type !== "branch") return value;
   return control.cases.find((branchCase) => branchCase.id === value)?.label ?? value;
 };
 
@@ -82,7 +82,7 @@ export function describeRouteSelectionChange(
     .filter((control) => next[control.id] !== selection[control.id])
     .map((control) => ({
       controlId: control.id,
-      kind: control.kind,
+      type: control.type,
       label: control.label,
       ownerLabel: titleByDefinitionId.get(control.owner) ?? control.owner,
       before: requirementValueLabel(control, selection[control.id] ?? ""),

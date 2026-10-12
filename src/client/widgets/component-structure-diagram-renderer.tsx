@@ -185,7 +185,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                 >
                   {ownedControls.map((control) => {
                     const pair = getPolarityPairCases(control);
-                    return control.kind === "branch" && !pair ? (
+                    return control.type === "branch" && !pair ? (
                       <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
                         <span className="truncate">{control.label}</span>
                         <Select

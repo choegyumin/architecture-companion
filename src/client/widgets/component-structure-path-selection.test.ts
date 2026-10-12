@@ -23,14 +23,14 @@ const graph = projectDecisionNodes({
       ],
     },
   ],
-  additional: {
+  layoutContext: {
     roots: ["root"],
     controls: [
-      { id: "outer", owner: "root", kind: "branch", dependsOn: [[]], ...calculateConditionPolarityPair("outer") },
+      { id: "outer", owner: "root", type: "branch", dependsOn: [[]], ...calculateConditionPolarityPair("outer") },
       {
         id: "inner",
         owner: "root",
-        kind: "branch",
+        type: "branch",
         dependsOn: [[{ controlId: "outer", value: "true" }]],
         ...calculateConditionPolarityPair("!inner"),
       },

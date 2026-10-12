@@ -21,7 +21,7 @@ export type ProjectedDecisionNode = Readonly<{
   type: "decision";
   id: string;
   title: string;
-  control: Extract<DiagramControl, { kind: "branch" }>;
+  control: Extract<DiagramControl, { type: "branch" }>;
 }>;
 
 /** One dead case rendered as its own node: rendering nothing stays a selectable rendering path. */
@@ -29,7 +29,7 @@ export type ProjectedNonComponentNode = Readonly<{
   type: "non-component";
   id: string;
   title: string;
-  control: Extract<DiagramControl, { kind: "branch" }>;
+  control: Extract<DiagramControl, { type: "branch" }>;
   caseId: string;
 }>;
 
@@ -203,9 +203,9 @@ function edgeRuleset(edge: ComponentStructureDiagramGraph["edges"][number]): Dia
  * the hop they constrain.
  */
 export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): ProjectedComponentStructureGraph {
-  const controls = graph.additional.controls;
+  const controls = graph.layoutContext.controls;
   const controlsById = new Map(controls.map((control) => [control.id, control]));
-  const branchControls = controls.filter((control) => control.kind === "branch");
+  const branchControls = controls.filter((control) => control.type === "branch");
   const branchControlIds = new Set(branchControls.map(({ id }) => id));
 
   const alivePairs = new Set<string>();
@@ -305,7 +305,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
     groups: graph.groups,
     nodes: nodes.toSorted((left, right) => left.id.localeCompare(right.id)),
     edges: [...projectedEdges].toSorted((left, right) => left.id.localeCompare(right.id)),
-    roots: graph.additional.roots,
+    roots: graph.layoutContext.roots,
     controls,
   };
 }

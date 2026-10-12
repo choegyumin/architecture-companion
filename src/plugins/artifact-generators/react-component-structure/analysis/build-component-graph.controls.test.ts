@@ -73,7 +73,7 @@ describe("component rendering controls", () => {
     // Gating may land on several edges entering the target, so the contract
     // reads every edge entering it and unions their paths.
     const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
-    const controls = new Map(graph.additional.controls.map((control) => [control.id, control]));
+    const controls = new Map(graph.layoutContext.controls.map((control) => [control.id, control]));
     const entered = graph.edges.flatMap((edge) =>
       edge.target === target.id ? (edge.type === "control" ? edge.activeWhen : [[]]) : [],
     );
@@ -121,7 +121,7 @@ describe("component rendering controls", () => {
     `);
       const receiverNodes = graph.nodes.filter(({ title }) => title === "Receiver");
       expect(receiverNodes).toHaveLength(2);
-      const controls = new Map(graph.additional.controls.map((control) => [control.id, control]));
+      const controls = new Map(graph.layoutContext.controls.map((control) => [control.id, control]));
       const paths = receiverNodes.map(({ id }) => {
         const [edge] = graph.edges.filter(({ source }) => source === id);
         const ruleset = edge?.type === "control" ? edge.activeWhen : [[]];
@@ -142,15 +142,15 @@ describe("component rendering controls", () => {
         return <>{content}{hidden ? null : <Extra />}</>;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     expect(controls).toHaveLength(3);
     const ready = controls.find((control) => control.label === "ready")!;
     const choice = controls.find((control) => control.label === "choice")!;
     const visible = controls.find((control) => control.label === "!hidden")!;
-    expect(ready).toMatchObject({ kind: "conditional", dependsOn: [[]] });
-    expect(visible).toMatchObject({ kind: "conditional", dependsOn: [[]] });
+    expect(ready).toMatchObject({ type: "conditional", dependsOn: [[]] });
+    expect(visible).toMatchObject({ type: "conditional", dependsOn: [[]] });
     expect(choice).toMatchObject({
-      kind: "branch",
+      type: "branch",
       polarityPair: true,
       dependsOn: [[{ controlId: ready.id, value: "on" }]],
       cases: [
@@ -193,12 +193,12 @@ describe("component rendering controls", () => {
         );
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     const [data, ready, flag] = controls;
-    expect(data).toMatchObject({ kind: "conditional", label: "!data" });
-    expect(ready).toMatchObject({ kind: "conditional", label: "ready" });
+    expect(data).toMatchObject({ type: "conditional", label: "!data" });
+    expect(ready).toMatchObject({ type: "conditional", label: "ready" });
     expect(flag).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "flag",
       polarityPair: true,
       cases: [
@@ -215,15 +215,15 @@ describe("component rendering controls", () => {
         <>{eyebrow != null || label != null || href || anchored > 0 ? <Leaf /> : null}</>
       ); }
     `);
-    const labels = graph.additional.controls.map(({ label }) => label);
+    const labels = graph.layoutContext.controls.map(({ label }) => label);
     expect(labels).toEqual(["eyebrow != null", "label != null", "href", "anchored > 0"]);
-    expect(graph.additional.controls.every(({ kind }) => kind === "conditional")).toBe(true);
+    expect(graph.layoutContext.controls.every(({ type }) => type === "conditional")).toBe(true);
     const leafEdge = edgeTo(graph, "Leaf");
     expect(leafEdge.type === "control" ? leafEdge.activeWhen : [[]]).toEqual([
-      [{ controlId: graph.additional.controls.at(0)!.id, value: "on" }],
-      [{ controlId: graph.additional.controls.at(1)!.id, value: "on" }],
-      [{ controlId: graph.additional.controls.at(2)!.id, value: "on" }],
-      [{ controlId: graph.additional.controls.at(3)!.id, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(0)!.id, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(1)!.id, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(2)!.id, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(3)!.id, value: "on" }],
     ]);
   });
 
@@ -233,7 +233,7 @@ describe("component rendering controls", () => {
       function Right() { return <aside />; }
       export function App({ a, b, c }) { return <>{(a && b) || c ? <Left /> : <Right />}</>; }
     `);
-    const controls = new Map(graph.additional.controls.map((control) => [control.label, control]));
+    const controls = new Map(graph.layoutContext.controls.map((control) => [control.label, control]));
     const rightEdge = edgeTo(graph, "Right");
     // ¬((a ∧ b) ∨ c) = (¬a ∨ ¬b) ∧ ¬c — two rules, not one conjunction of all.
     expect(rightEdge.type === "control" ? rightEdge.activeWhen : [[]]).toEqual([
@@ -258,10 +258,10 @@ describe("component rendering controls", () => {
         <>{hide ? <First /> : <Second />}{hide ? <Third /> : <Fourth />}</>
       ); }
     `);
-    expect(graph.additional.controls).toHaveLength(1);
-    const [hide] = graph.additional.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
+    const [hide] = graph.layoutContext.controls;
     expect(hide).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "hide",
       polarityPair: true,
       cases: [
@@ -284,14 +284,14 @@ describe("component rendering controls", () => {
         <>{hide ? <First /> : <Second />}{ready && hide && <Third />}</>
       ); }
     `);
-    expect(graph.additional.controls).toHaveLength(2);
+    expect(graph.layoutContext.controls).toHaveLength(2);
     // Numbering follows first appearance in route rulesets, so the test reads
     // the controls by label instead of position.
-    const ready = graph.additional.controls.find((control) => control.label === "ready")!;
-    const hide = graph.additional.controls.find((control) => control.label === "hide")!;
-    expect(ready).toMatchObject({ kind: "conditional", label: "ready" });
+    const ready = graph.layoutContext.controls.find((control) => control.label === "ready")!;
+    const hide = graph.layoutContext.controls.find((control) => control.label === "hide")!;
+    expect(ready).toMatchObject({ type: "conditional", label: "ready" });
     expect(hide).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "hide",
       polarityPair: true,
       cases: [
@@ -312,8 +312,8 @@ describe("component rendering controls", () => {
       function Leaf() { return <span />; }
       export function App({ first, second, third }) { return <>{first && second && third && <Leaf />}</>; }
     `);
-    const [first, second, third] = graph.additional.controls;
-    expect(graph.additional.controls.map(({ label }) => label)).toEqual(["first", "second", "third"]);
+    const [first, second, third] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls.map(({ label }) => label)).toEqual(["first", "second", "third"]);
     expect(second!.dependsOn).toEqual([[{ controlId: first!.id, value: "on" }]]);
     expect(third!.dependsOn).toEqual([
       [
@@ -342,7 +342,7 @@ describe("component rendering controls", () => {
       }
     `);
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Receiver"]);
-    expect(graph.additional.controls).toEqual([]);
+    expect(graph.layoutContext.controls).toEqual([]);
   });
 
   it("omits controls whose only rendered boundary is hidden", async () => {
@@ -355,7 +355,7 @@ describe("component rendering controls", () => {
       { excludeComponentPatterns: ["Hidden"] },
     );
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf"]);
-    expect(graph.additional.controls).toEqual([]);
+    expect(graph.layoutContext.controls).toEqual([]);
   });
 
   it("keeps every route when both branches reuse the same forwarded JSX alias", async () => {
@@ -368,7 +368,7 @@ describe("component rendering controls", () => {
       }
       export function App() { return <Wrapper><Leaf /></Wrapper>; }
     `);
-    const choice = graph.additional.controls.find(({ label }) => label === "choice")!;
+    const choice = graph.layoutContext.controls.find(({ label }) => label === "choice")!;
     const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
     // Both cases survive into the stored edge's ruleset; the projection splits
     // them back into decision arms, so the assertion reads the arms.
@@ -392,9 +392,9 @@ describe("component rendering controls", () => {
       }
     `);
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Receiver"]);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     expect(controls).toHaveLength(2);
-    expect(controls.find(({ label }) => label === "ready")).toMatchObject({ kind: "conditional" });
+    expect(controls.find(({ label }) => label === "ready")).toMatchObject({ type: "conditional" });
     const hidden = controls.find(({ label }) => label === "!hidden")!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({ activeWhen: [[{ controlId: hidden.id, value: "on" }]] });
   });
@@ -403,7 +403,7 @@ describe("component rendering controls", () => {
     const graph = await graphFor(
       `function Leaf(){return <i/>}export function App({a,b,c,d}){return <>{a&&<Leaf/>}{b&&<Leaf/>}{c&&<Leaf/>}{d&&<Leaf/>}</>}`,
     );
-    expect(graph.additional.controls.map(({ label }) => label)).toEqual(["a", "b", "c", "d"]);
+    expect(graph.layoutContext.controls.map(({ label }) => label)).toEqual(["a", "b", "c", "d"]);
   });
 
   it("merges scattered polarity gates of one operand into an exclusive branch", async () => {
@@ -414,11 +414,11 @@ describe("component rendering controls", () => {
         return <>{ready && roomy && <Wide />}{ready && !roomy && <Narrow />}</>;
       }
     `);
-    expect(graph.additional.controls).toHaveLength(2);
-    const [ready, roomy] = graph.additional.controls;
-    expect(ready).toMatchObject({ kind: "conditional", label: "ready", dependsOn: [[]] });
+    expect(graph.layoutContext.controls).toHaveLength(2);
+    const [ready, roomy] = graph.layoutContext.controls;
+    expect(ready).toMatchObject({ type: "conditional", label: "ready", dependsOn: [[]] });
     expect(roomy).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "roomy",
       polarityPair: true,
       dependsOn: [[{ controlId: ready.id, value: "on" }]],
@@ -451,10 +451,10 @@ describe("component rendering controls", () => {
       function Wide() { return <aside />; }
       export function App({ roomy }) { return <>{!!roomy && <Wide />}{!roomy && <Narrow />}</>; }
     `);
-    const [roomy] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
+    const [roomy] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
     expect(roomy).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "roomy",
       polarityPair: true,
       cases: [
@@ -474,10 +474,10 @@ describe("component rendering controls", () => {
       function Filled() { return <aside />; }
       export function App({ count }) { return <>${body}</>; }
     `);
-      const [count] = graph.additional.controls;
-      expect(graph.additional.controls).toHaveLength(1);
+      const [count] = graph.layoutContext.controls;
+      expect(graph.layoutContext.controls).toHaveLength(1);
       expect(count).toMatchObject({
-        kind: "branch",
+        type: "branch",
         label: "count > 0",
         // One predicate and its complement over the same threshold — a
         // two-value subject, so it renders as a switch like any boolean gate.
@@ -498,10 +498,10 @@ describe("component rendering controls", () => {
       function Light() { return <aside />; }
       export function App({ tone }) { return <>{tone === "dark" && <Dark />}{tone === "light" && <Light />}</>; }
     `);
-    const [tone] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
+    const [tone] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
     expect(tone).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "tone",
       cases: [
         { id: '"dark"', label: '"dark"' },
@@ -525,12 +525,12 @@ describe("component rendering controls", () => {
         return <Other />;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     const first = controls.find(({ label }) => label === "first")!;
     const second = controls.find(({ label }) => label === "second")!;
     expect(controls).toHaveLength(2);
-    expect(first).toMatchObject({ kind: "conditional", dependsOn: [[]] });
-    expect(second).toMatchObject({ kind: "conditional", dependsOn: [[]] });
+    expect(first).toMatchObject({ type: "conditional", dependsOn: [[]] });
+    expect(second).toMatchObject({ type: "conditional", dependsOn: [[]] });
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
@@ -552,7 +552,7 @@ describe("component rendering controls", () => {
         return (first || second) ? <Leaf /> : <Other />;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     const first = controls.find(({ label }) => label === "first")!;
     const second = controls.find(({ label }) => label === "second")!;
     expect(controls).toHaveLength(2);
@@ -576,7 +576,7 @@ describe("component rendering controls", () => {
         return <>{first && (second || third) && <Leaf />}</>;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     expect(controls.map(({ label }) => label).toSorted()).toEqual(["first", "second", "third"]);
     const [first, second, third] = controls;
     expect(edgeTo(graph, "Leaf")).toMatchObject({
@@ -599,10 +599,10 @@ describe("component rendering controls", () => {
       function Light() { return <aside />; }
       export function App({ tone }) { return <>{tone === 'dark' && <Dark />}{tone === "dark" ? null : <Light />}</>; }
     `);
-    const [tone] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
+    const [tone] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
     expect(tone).toMatchObject({
-      kind: "branch",
+      type: "branch",
       cases: [
         // Quote style normalizes, so `'dark'` and `"dark"` still share a case.
         { id: '"dark"', label: '"dark"' },
@@ -622,10 +622,10 @@ describe("component rendering controls", () => {
         return <Content />;
       }
     `);
-    const [status] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
+    const [status] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
     expect(status).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "state.status",
       cases: [
         { id: '"loading"', label: '"loading"' },
@@ -657,8 +657,8 @@ describe("component rendering controls", () => {
         return <Second />;
       }
     `);
-    const status = graph.additional.controls.find((control) => control.label === "status")!;
-    const catalog = graph.additional.controls.find((control) => control.label === "catalog")!;
+    const status = graph.layoutContext.controls.find((control) => control.label === "status")!;
+    const catalog = graph.layoutContext.controls.find((control) => control.label === "catalog")!;
     const projected = projectDecisionNodes(graph);
 
     // The catalog gate sits after the status gates in source, so its decision
@@ -704,11 +704,11 @@ describe("component rendering controls", () => {
         return <Second />;
       }
     `);
-    const catalog = graph.additional.controls.find((control) => control.label === "catalog")!;
+    const catalog = graph.layoutContext.controls.find((control) => control.label === "catalog")!;
     // The switch's on slot is the case the field label names, even though the
     // gate is written negated; ids stay semantic ("true" = the gate as written).
     expect(catalog).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "catalog",
       polarityPair: true,
       cases: [
@@ -734,9 +734,9 @@ describe("component rendering controls", () => {
         return <>{!catalog ? <First /> : <Second />}{catalog && <Extra />}</>;
       }
     `);
-    expect(graph.additional.controls).toHaveLength(2);
-    const branch = graph.additional.controls.find((control) => control.kind === "branch")!;
-    const conditional = graph.additional.controls.find((control) => control.kind === "conditional")!;
+    expect(graph.layoutContext.controls).toHaveLength(2);
+    const branch = graph.layoutContext.controls.find((control) => control.type === "branch")!;
+    const conditional = graph.layoutContext.controls.find((control) => control.type === "conditional")!;
     expect(branch).toMatchObject({
       label: "catalog",
       cases: [
@@ -759,10 +759,10 @@ describe("component rendering controls", () => {
         return <>{tone !== "dark" && <Neutral />}{tone === "dark" && <Dark />}{tone === "light" && <Light />}</>;
       }
     `);
-    const [tone] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
+    const [tone] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
     expect(tone).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "tone",
       cases: [
         { id: '"dark"', label: '"dark"' },
@@ -795,9 +795,9 @@ describe("component rendering controls", () => {
       function Second() { return <aside />; }
       export function App({ flag }) { return <>{flag && <First />}{flag && <Second />}</>; }
     `);
-    const [flag] = graph.additional.controls;
-    expect(graph.additional.controls).toHaveLength(1);
-    expect(flag).toMatchObject({ kind: "conditional", label: "flag", dependsOn: [[]] });
+    const [flag] = graph.layoutContext.controls;
+    expect(graph.layoutContext.controls).toHaveLength(1);
+    expect(flag).toMatchObject({ type: "conditional", label: "flag", dependsOn: [[]] });
     expect(edgeTo(graph, "First")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
     expect(edgeTo(graph, "Second")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
   });
@@ -853,7 +853,7 @@ describe("component rendering controls", () => {
     `);
     expect(graph.nodes.filter(({ title }) => title === "Branch")).toHaveLength(1);
     const branch = graph.nodes.find(({ title }) => title === "Branch")!;
-    expect(graph.additional.controls).toMatchObject([{ owner: branch.id, label: "show", kind: "branch" }]);
+    expect(graph.layoutContext.controls).toMatchObject([{ owner: branch.id, label: "show", type: "branch" }]);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
     expect(leaf.type === "default" && leaf.component!.origins).toEqual(
       expect.arrayContaining([
@@ -875,9 +875,9 @@ describe("component rendering controls", () => {
       { rootPatterns: ["Shell"] },
     );
     const shell = graph.nodes.find(({ title }) => title === "Shell")!;
-    const [visible] = graph.additional.controls;
-    expect(graph.additional.roots).toEqual([shell.id]);
-    expect(graph.additional.controls).toMatchObject([{ owner: shell.id, label: "visible", dependsOn: [[]] }]);
+    const [visible] = graph.layoutContext.controls;
+    expect(graph.layoutContext.roots).toEqual([shell.id]);
+    expect(graph.layoutContext.controls).toMatchObject([{ owner: shell.id, label: "visible", dependsOn: [[]] }]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [[{ controlId: visible!.id, value: "on" }]],
       composition: {
@@ -902,8 +902,8 @@ describe("component rendering controls", () => {
     );
     const first = graph.nodes.find(({ title }) => title === "A")!;
     const second = graph.nodes.find(({ title }) => title === "B")!;
-    const [enabled] = graph.additional.controls;
-    expect(graph.additional.roots).toEqual([first.id]);
+    const [enabled] = graph.layoutContext.controls;
+    expect(graph.layoutContext.roots).toEqual([first.id]);
     expect(enabled).toMatchObject({ owner: first.id, label: "enabled", dependsOn: [[]] });
     expect(edgeTo(graph, "B")).toMatchObject({
       source: first.id,
@@ -922,11 +922,11 @@ describe("component rendering controls", () => {
       { rootPatterns: ["Recursive"] },
     );
     const recursive = graph.nodes.find(({ title }) => title === "Recursive")!;
-    expect(graph.additional.roots).toEqual([recursive.id]);
-    expect(graph.additional.controls).toMatchObject([{ owner: recursive.id, label: "more", dependsOn: [[]] }]);
+    expect(graph.layoutContext.roots).toEqual([recursive.id]);
+    expect(graph.layoutContext.controls).toMatchObject([{ owner: recursive.id, label: "more", dependsOn: [[]] }]);
     const cycle = graph.edges.find(({ source, target }) => source === recursive.id && target === recursive.id)!;
     expect(cycle).toMatchObject({
-      activeWhen: [[{ controlId: graph.additional.controls.at(0)!.id, value: "on" }]],
+      activeWhen: [[{ controlId: graph.layoutContext.controls.at(0)!.id, value: "on" }]],
     });
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Leaf", "Recursive"]);
   });
@@ -945,7 +945,7 @@ describe("component rendering controls", () => {
       { excludeComponentPatterns: ["Hidden"] },
     );
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf"]);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     expect(controls.map(({ label }) => label)).toEqual(["enabled", "ready", "visible"]);
     const app = graph.nodes.find(({ title }) => title === "App")!;
     expect(controls.every(({ owner }) => owner === app.id)).toBe(true);
@@ -995,7 +995,7 @@ describe("component rendering controls", () => {
         </Consumer>;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     // The four `ready` gates and four `show` gates each fold into one control:
     // one owner, one operand, one switch over it.
     expect(controls).toHaveLength(2);
@@ -1045,9 +1045,9 @@ describe("component rendering controls", () => {
         return <After />;
       }
     `);
-    const [mode, stop] = graph.additional.controls;
+    const [mode, stop] = graph.layoutContext.controls;
     expect(stop).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "stop",
       dependsOn: [[{ controlId: mode!.id, value: "case:0" }]],
     });
@@ -1083,12 +1083,12 @@ describe("component rendering controls", () => {
         }
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     expect(controls.map(({ label }) => label)).toEqual(["!hidden", "mode", "ready"]);
     const [visible, mode, ready] = controls;
-    expect(visible).toMatchObject({ kind: "conditional", dependsOn: [[]] });
+    expect(visible).toMatchObject({ type: "conditional", dependsOn: [[]] });
     expect(mode).toMatchObject({
-      kind: "branch",
+      type: "branch",
       dependsOn: [[{ controlId: visible!.id, value: "on" }]],
       cases: [
         { id: "case:0", label: '"first"' },
@@ -1097,7 +1097,7 @@ describe("component rendering controls", () => {
       ],
     });
     expect(ready).toMatchObject({
-      kind: "branch",
+      type: "branch",
       dependsOn: [
         [
           { controlId: visible!.id, value: "on" },
@@ -1143,7 +1143,7 @@ describe("component rendering controls", () => {
       }
       export function App() { return <Wrapper render={() => <Leaf />} />; }
     `);
-    const visible = graph.additional.controls.find(({ label }) => label === "visible")!;
+    const visible = graph.layoutContext.controls.find(({ label }) => label === "visible")!;
     const wrapper = graph.nodes.find(({ title }) => title === "Wrapper")!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       source: wrapper.id,
@@ -1161,11 +1161,11 @@ describe("component rendering controls", () => {
       }
       export function App() { return <Receiver><Leaf /></Receiver>; }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     const content = controls.find(({ label }) => label === "content")!;
     const ready = controls.find(({ label }) => label === "ready")!;
-    expect(content).toMatchObject({ kind: "branch" });
-    expect(ready).toMatchObject({ kind: "conditional", dependsOn: [[{ controlId: content.id, value: "left" }]] });
+    expect(content).toMatchObject({ type: "branch" });
+    expect(ready).toMatchObject({ type: "conditional", dependsOn: [[{ controlId: content.id, value: "left" }]] });
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
@@ -1183,8 +1183,8 @@ describe("component rendering controls", () => {
       function Receiver({ component: Component }) { return <Component />; }
       export function App() { return <Receiver component={First ${operator} Second} />; }
     `);
-    const control = graph.additional.controls.at(0)!;
-    expect(control).toMatchObject({ label: "First", kind: "branch" });
+    const control = graph.layoutContext.controls.at(0)!;
+    expect(control).toMatchObject({ label: "First", type: "branch" });
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [[{ controlId: control.id, value: "left" }]],
     });
@@ -1204,10 +1204,10 @@ describe("component rendering controls", () => {
         return <Receiver render={choice ? () => <First /> : () => <Second />}><Child /></Receiver>;
       }
     `);
-    const controls = graph.additional.controls;
+    const controls = graph.layoutContext.controls;
     const children = controls.find(({ label }) => label === "children")!;
     expect(children).toMatchObject({
-      kind: "branch",
+      type: "branch",
       cases: [
         { id: "left", label: "children" },
         { id: "right", label: "children == null" },
@@ -1220,7 +1220,7 @@ describe("component rendering controls", () => {
       activeWhen: [[{ controlId: children.id, value: "right" }]],
     });
     const choice = controls.find(({ label }) => label === "choice")!;
-    expect(choice).toMatchObject({ kind: "branch" });
+    expect(choice).toMatchObject({ type: "branch" });
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [[{ controlId: choice.id, value: "true" }]],
     });
@@ -1240,10 +1240,10 @@ describe("component rendering controls", () => {
         return <>{preferred || <Fallback />}{value ?? <Empty />}</>;
       }
     `);
-    const controls = graph.additional.controls;
-    const branch = controls.find((control) => control.kind === "branch")!;
+    const controls = graph.layoutContext.controls;
+    const branch = controls.find((control) => control.type === "branch")!;
     expect(branch).toMatchObject({
-      kind: "branch",
+      type: "branch",
       label: "preferred",
       cases: [
         { id: "left", label: "preferred" },
@@ -1260,7 +1260,7 @@ describe("component rendering controls", () => {
       activeWhen: [[{ controlId: branch.id, value: "right" }]],
     });
     const nullish = controls.find((control) => control.label === "value == null")!;
-    expect(nullish).toMatchObject({ kind: "conditional" });
+    expect(nullish).toMatchObject({ type: "conditional" });
     expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: nullish.id, value: "on" }]] });
   });
 
@@ -1271,11 +1271,11 @@ describe("component rendering controls", () => {
       export function App({ ready }) { return <><Leaf /><Leaf />{ready && <Extra />}</>; }
     `);
     const app = graph.nodes.find((node) => node.title === "App")!;
-    expect({ roots: graph.additional.roots, controls: graph.additional.controls }).toEqual({
+    expect({ roots: graph.layoutContext.roots, controls: graph.layoutContext.controls }).toEqual({
       roots: [app.id],
-      controls: [{ id: expect.any(String), owner: app.id, label: "ready", kind: "conditional", dependsOn: [[]] }],
+      controls: [{ id: expect.any(String), owner: app.id, label: "ready", type: "conditional", dependsOn: [[]] }],
     });
-    const control = graph.additional.controls.at(0)!;
+    const control = graph.layoutContext.controls.at(0)!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({ type: "default" });
     expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: control.id, value: "on" }]] });
     expect(app).toMatchObject({ component: { definitionId: "component:app.tsx#App", origins: [] } });

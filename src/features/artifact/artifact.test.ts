@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { artifactSchema, parseArtifact } from "@/features/artifact/artifact";
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
-import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
+import { componentStructureDiagramGraphSchema, diagramControlSchema } from "@/features/diagram/diagram-graph";
 
 const validDiagram = {
   id: "checkout-structure",
@@ -83,9 +83,9 @@ const validComponentDiagram = {
           activeWhen: [[{ controlId: "ready", value: "on" }]],
         },
       ],
-      additional: {
+      layoutContext: {
         roots: ["checkout-page"],
-        controls: [{ id: "ready", owner: "checkout-page", kind: "conditional", label: "ready", dependsOn: [[]] }],
+        controls: [{ id: "ready", owner: "checkout-page", type: "conditional", label: "ready", dependsOn: [[]] }],
       },
     },
   },
@@ -99,6 +99,56 @@ const composition = {
     { supplierId: "outside:Other", supplierTitle: "Other", input: "footer" },
   ],
 };
+
+describe("control storage contract", () => {
+  it.each([
+    { type: "conditional", label: "ready" },
+    {
+      type: "branch",
+      label: "ready",
+      polarityPair: true,
+      cases: [
+        { id: "false", label: "ready" },
+        { id: "true", label: "!ready" },
+      ],
+    },
+  ])("uses type to select the $type contract", (fields) => {
+    const control = { id: "gate", owner: "root", dependsOn: [[]], ...fields };
+    expect(diagramControlSchema.parse(control)).toEqual(control);
+    const { type, ...rest } = control;
+    expect(diagramControlSchema.safeParse({ ...rest, kind: type }).success).toBe(false);
+    expect(diagramControlSchema.safeParse({ ...control, kind: type }).success).toBe(false);
+  });
+});
+
+describe("component layout context", () => {
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s graph contract", (id) => {
+    const graph = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
+    expect(() =>
+      parseArtifact({
+        ...validDiagram,
+        diagram: {
+          layout: { id },
+          graph: { ...graph, layoutContext: validComponentDiagram.diagram.graph.layoutContext },
+        },
+      }),
+    ).toThrow('Unrecognized key: "layoutContext"');
+  });
+
+  it("stores roots and controls in the graph layoutContext without accepting additional", () => {
+    expect(parseArtifact(validComponentDiagram)).toEqual(validComponentDiagram);
+    const { layoutContext, ...base } = validComponentDiagram.diagram.graph;
+    for (const graph of [
+      base,
+      { ...base, additional: layoutContext },
+      { ...base, layoutContext, additional: layoutContext },
+    ]) {
+      expect(() =>
+        parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+      ).toThrow("Invalid artifact");
+    }
+  });
+});
 
 describe("component composition metadata", () => {
   it("preserves omitted composition as the direct-rendering default", () => {

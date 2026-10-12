@@ -64,13 +64,13 @@ function renderGate(polarityPair: true | undefined) {
             activeWhen: [[{ controlId: "gate", value: "true" }]],
           },
         ],
-        additional: {
+        layoutContext: {
           roots: ["root"],
           controls: [
             {
               id: "gate",
               owner: "root",
-              kind: "branch",
+              type: "branch",
               dependsOn: [[]],
               ...calculateConditionPolarityPair("!ready"),
               polarityPair,

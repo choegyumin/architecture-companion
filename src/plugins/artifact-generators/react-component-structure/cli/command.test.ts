@@ -120,7 +120,7 @@ describe("React component structure command", () => {
             }),
           ],
           edges: [],
-          additional: { roots: ["component:src/app.tsx#App"], controls: [] },
+          layoutContext: { roots: ["component:src/app.tsx#App"], controls: [] },
         });
         expect(graph.nodes.at(0)).not.toHaveProperty("kind");
       } finally {

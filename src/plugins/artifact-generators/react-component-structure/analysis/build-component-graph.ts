@@ -2125,11 +2125,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       alternatives
         ? {
             ...base,
-            kind: "branch",
+            type: "branch",
             cases: alternatives.cases,
             ...(alternatives.polarityPair ? { polarityPair: true } : {}),
           }
-        : { ...base, kind: "conditional" },
+        : { ...base, type: "conditional" },
     );
     return id;
   }
@@ -3200,7 +3200,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     };
   }
 
-  /** Converts the builder graph to the stored contract: tautological gates become plain default edges, real gates become control edges, and roots and controls move into the graph's additional properties. */
+  /** Converts the builder graph to the stored contract: tautological gates become plain default edges, real gates become control edges, and roots and controls move into the graph's layout context. */
   function toStoredGraph(graph: BuilderGraph): ComponentStructureDiagramGraph {
     return {
       groups: graph.groups,
@@ -3217,7 +3217,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           ? { type: "default", ...relationship }
           : { type: "control", ...relationship, activeWhen: ruleset };
       }),
-      additional: { roots: graph.roots, controls: graph.controls },
+      layoutContext: { roots: graph.roots, controls: graph.controls },
     };
   }
 
@@ -3318,7 +3318,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     // its two cases spell one subject and its negation, so it folds with the
     // conditionals over that subject instead of living as its own switch.
     const branchCasesOf = (control: DiagramControl): { trueText: string; falseText: string } | undefined => {
-      if (control.kind !== "branch" || control.cases.length !== 2) return undefined;
+      if (control.type !== "branch" || control.cases.length !== 2) return undefined;
       const [trueCase, falseCase] = control.cases;
       if (!trueCase || !falseCase || trueCase.id !== "true" || falseCase.id !== "false") return undefined;
       return { trueText: trueCase.label, falseText: falseCase.label };
@@ -3357,7 +3357,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const discriminantOf = (control: DiagramControl): DiscriminantMember | undefined => {
       let label: string | undefined;
       let values: readonly string[];
-      if (control.kind === "branch") {
+      if (control.type === "branch") {
         const [onCase, offCase] = control.cases;
         if (
           control.cases.length !== 2 ||
@@ -3419,7 +3419,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     for (const control of context.controls.values()) {
       if (discriminantMembers.has(control.id)) continue;
       const branchCases = branchCasesOf(control);
-      if (!branchCases && control.kind !== "conditional") continue;
+      if (!branchCases && control.type !== "conditional") continue;
       // A branch's own label is the positive subject, but its true case names
       // the gate as written — that text carries the polarity.
       const polarity = branchCases ? polarityOfLabel(branchCases.trueText) : polarityOf(control);
@@ -3630,8 +3630,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           id: control.id,
           owner: control.owner,
           ...(second
-            ? { kind: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
-            : { kind: "conditional" as const, label: first!.label }),
+            ? { type: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
+            : { type: "conditional" as const, label: first!.label }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
         });
         continue;
@@ -3644,11 +3644,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         controls.set(
           control.id,
           discriminant.staysConditional
-            ? { id: control.id, owner: control.owner, label: control.label, kind: "conditional", dependsOn }
+            ? { id: control.id, owner: control.owner, label: control.label, type: "conditional", dependsOn }
             : {
                 id: control.id,
                 owner: control.owner,
-                kind: "branch",
+                type: "branch",
                 label: discriminant.subject,
                 cases: [
                   ...discriminant.positiveLiterals.map((literal) => ({ id: literal, label: literal })),

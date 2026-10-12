@@ -11,7 +11,7 @@ describe("getPolarityPairCases", () => {
   const branch = {
     id: "gate",
     owner: "root",
-    kind: "branch" as const,
+    type: "branch" as const,
     dependsOn: [[]],
     ...calculateConditionPolarityPair("!ready"),
   };
@@ -41,7 +41,7 @@ describe("getPolarityPairCases", () => {
       getPolarityPairCases({ ...branch, cases: [...branch.cases, { id: "other", label: "Other" }] }),
     ).toBeUndefined();
     expect(
-      getPolarityPairCases({ id: "gate", owner: "root", kind: "conditional", label: "!ready", dependsOn: [[]] }),
+      getPolarityPairCases({ id: "gate", owner: "root", type: "conditional", label: "!ready", dependsOn: [[]] }),
     ).toBeUndefined();
   });
 });
