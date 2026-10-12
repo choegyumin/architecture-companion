@@ -1,7 +1,7 @@
 {
   "id": "react-data-table-component-structure",
   "title": "Component Structure — react-data-table-component",
-  "updatedAt": "2026-10-11T20:31:18.816Z",
+  "updatedAt": "2026-10-12T05:53:54.087Z",
   "generator": "built-in:react-component-structure",
   "instructions": "## Purpose\n\nExamine how react-data-table-component assembles its table: DataTableInner provides every context and renders the responsive wrapper chain down to Table, Head, and Body, while feature components (ColumnFilter, ContextMenu, ExpanderButton, Pagination) receive values through supplied props instead of direct imports.\n\n## Regeneration\n\nClone https://github.com/jbetancur/react-data-table-component.git, then from its root:\n\n```sh\ngit checkout 05d75a4992136645d698c87ef27e50653e2b1779\nnpm ci --ignore-scripts\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --root \"DataTableInner\" \\\n  \"src\"\n```\n\nOnly the dependency install is needed; the analysis reads the library sources directly, not the built dist. The root is DataTableInner, the implementation behind the React.forwardRef export, because the wrapper itself resolves to a React API boundary rather than a component definition.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files.",
   "diagram": {
@@ -636,10 +636,7 @@
           "id": "edge:03259b12342f765c",
           "source": "component:src/components/TableColExpander.tsx#ColumnExpander",
           "target": "component:src/components/Cell.tsx#CellBase@21cfa0251f36e052",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -675,20 +672,14 @@
           "id": "edge:06d55d89deaf38f1",
           "source": "component:src/components/TableCellExpander.tsx#CellExpander",
           "target": "component:src/components/Cell.tsx#CellBase@0d2c4972ee943b7b",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:0de9f4aa91443c3f",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/TableHeader.tsx#Header",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -720,10 +711,7 @@
           "id": "edge:170de849e5280413",
           "source": "component:src/components/TableCell.tsx#Cell",
           "target": "component:src/components/TableCell.tsx#EditableCell",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -744,10 +732,7 @@
           "id": "edge:1cd0c257ec67f816",
           "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
           "target": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -866,20 +851,14 @@
           "id": "edge:48bcc9c582c514c1",
           "source": "component:src/components/Select.tsx#Select",
           "target": "component:src/icons/Dropdown.tsx#DropdownIcon",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:491bedcf947c534e",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/components/TableCellExpander.tsx#CellExpander",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -898,10 +877,7 @@
           "id": "edge:4b10209e218738e5",
           "source": "component:src/components/TableColCheckbox.tsx#ColumnCheckbox",
           "target": "component:src/components/Cell.tsx#CellBase@2db4891e54fa6948",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -916,10 +892,7 @@
           "id": "edge:4ba50fe1a64066ae",
           "source": "component:src/components/Pagination.tsx#Pagination",
           "target": "component:src/components/Select.tsx#Select",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -948,10 +921,7 @@
           "id": "edge:4e7596ded298162c",
           "source": "component:src/components/DataTableBody.tsx#DataTableBody",
           "target": "component:src/components/TableBody.tsx#Body@9f5785927fc69bb4",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1012,10 +982,7 @@
           "id": "edge:5b6d3f4579c2f7ac",
           "source": "component:src/components/TableFooter.tsx#TableFooter",
           "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1059,10 +1026,7 @@
           "id": "edge:64a208a62fc4f01a",
           "source": "component:src/components/DataTableHead.tsx#DataTableHead",
           "target": "component:src/components/TableHead.tsx#Head@29c074ab3beb3156",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1077,10 +1041,7 @@
           "id": "edge:6a8a23f00b104972",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/components/TableCell.tsx#Cell",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1095,10 +1056,7 @@
           "id": "edge:71a25d7f46c858a5",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/components/RightPinSpacer.tsx#RightPinSpacer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1121,10 +1079,7 @@
           "id": "edge:7ccc1e5b94b6a44b",
           "source": "component:src/components/ColumnFilter.tsx#SetFilterPanel",
           "target": "component:src/components/Checkbox.tsx#Checkbox",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1164,10 +1119,7 @@
           "id": "edge:87dd71d6353d25f9",
           "source": "component:src/components/DataTableBody.tsx#DataTableBody",
           "target": "component:src/components/NoDataWrapper.tsx#NoDataWrapper",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1186,10 +1138,7 @@
           "id": "edge:89f07022f732e22d",
           "source": "component:src/components/DataTableBody.tsx#SkeletonRow",
           "target": "component:src/components/DataTableBody.tsx#SkeletonCell",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -1238,10 +1187,7 @@
           "id": "edge:9b37cd4b6be5bdb3",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/ContextMenu.tsx#ContextMenu",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1256,10 +1202,7 @@
           "id": "edge:9f087375772d8f40",
           "source": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
           "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1274,20 +1217,14 @@
           "id": "edge:a1f8790a87df1c7d",
           "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
           "target": "component:src/icons/FilterIcon.tsx#FilterIcon",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:a41f2ecf3bd935f2",
           "source": "component:src/components/TableCol.tsx#TableCol",
           "target": "component:src/components/Cell.tsx#CellExtended@80b90c348e60c469",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1302,10 +1239,7 @@
           "id": "edge:a76db91e6ca9f74c",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1320,10 +1254,7 @@
           "id": "edge:a86743a55d28a072",
           "source": "component:src/components/TableFooter.tsx#TableFooter",
           "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1359,10 +1290,7 @@
           "id": "edge:ad9e9dfed29ab801",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/icons/MenuIcon.tsx#MenuIcon",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1377,10 +1305,7 @@
           "id": "edge:ae79b7ccf46d8cc2",
           "source": "component:src/components/TableCell.tsx#Cell",
           "target": "component:src/components/TableCell.tsx#PlainCell",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1399,10 +1324,7 @@
           "id": "edge:af9482ce22017efb",
           "source": "component:src/components/TableCellCheckbox.tsx#TableCellCheckbox",
           "target": "component:src/components/Cell.tsx#CellBase@924783a202a0f7cd",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -1434,20 +1356,14 @@
           "id": "edge:afc9bcfdab8fa262",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/ResponsiveWrapper.tsx#ResponsiveWrapper",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:b77389d76c4303f2",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/TableSubheader.tsx#Subheader",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1537,10 +1453,7 @@
           "id": "edge:ccff9ed7c798028c",
           "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
           "target": "component:src/components/ColumnFilter.tsx#ConditionRow",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1563,10 +1476,7 @@
           "id": "edge:d249df2ee7f56363",
           "source": "component:src/components/DataTableBody.tsx#DataTableBody",
           "target": "component:src/components/TableBody.tsx#Body@ba89dd3549e3f6ae",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1589,10 +1499,7 @@
           "id": "edge:d669e3352ff0293e",
           "source": "component:src/components/ColumnFilter.tsx#ColumnFilter",
           "target": "component:src/components/ColumnFilter.tsx#ConditionLogicGroup",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1615,10 +1522,7 @@
           "id": "edge:dbc17788da99b37b",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/PinnedScrollbar.tsx#PinnedScrollbar",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1637,10 +1541,7 @@
           "id": "edge:df1483ddde29a90b",
           "source": "component:src/components/DataTableHead.tsx#DataTableHead",
           "target": "component:src/components/TableHead.tsx#Head@012375755b542fbe",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1655,10 +1556,7 @@
           "id": "edge:dfe2b58988bf0590",
           "source": "component:src/components/TableCell.tsx#EditableCell",
           "target": "component:src/components/Cell.tsx#CellExtended@bbd7f97ac4b3c488",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -1711,10 +1609,7 @@
           "id": "edge:ee5438856dfe87fb",
           "source": "component:src/components/TableCell.tsx#PlainCell",
           "target": "component:src/components/Cell.tsx#CellExtended@28272b5192ed2345",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -1738,10 +1633,7 @@
           "id": "edge:f0b874ff352bf456",
           "source": "component:src/components/TableRow.tsx#Row",
           "target": "component:src/components/ExpanderRow.tsx#ExpanderRow",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1793,10 +1685,7 @@
           "id": "edge:f4a3b20fa2244265",
           "source": "component:src/components/DataTable.tsx#DataTableInner",
           "target": "component:src/components/TablePaginationFooter.tsx#TablePaginationFooter",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {

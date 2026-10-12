@@ -1,7 +1,7 @@
 {
   "id": "react-admin-demo-component-structure",
   "title": "Component Structure — react-admin demo",
-  "updatedAt": "2026-10-11T21:22:01.972Z",
+  "updatedAt": "2026-10-12T05:53:52.391Z",
   "generator": "built-in:react-component-structure",
   "instructions": "## Purpose\n\nExamine how the react-admin e-commerce demo composes its admin UI: which pages and field components each resource page renders, how values flow to external react-admin and MUI boundaries, and where the same local component is supplied from several origins.\n\n## Regeneration\n\nClone https://github.com/marmelab/react-admin.git, then from its root:\n\n```sh\ngit checkout eec76175e77e1a47a7ec6471346c4f2fbdb940a1\nyarn install --immutable\nyarn workspace ra-language-english build && yarn workspace ra-language-french build && yarn workspace ra-i18n-polyglot build && yarn workspace ra-core build && yarn workspace ra-ui-materialui build && yarn workspace react-admin build\nnode \"<generator-directory>/run.js\" \\\n  --base \"examples/demo\" \\\n  --root \"ProductList\" \\\n  \"src\"\n```\n\nThe workspace builds produce the package type declarations the analysis needs; without them react-admin resolves through unbuilt symlinks and every boundary is omitted.\n\n## Refinements\n\nNode source links were dropped because the showcase scope does not contain the target repository files. Components loaded through `React.lazy` dynamic imports are not traced.",
   "diagram": {
@@ -677,20 +677,14 @@
           "id": "edge:14c95a38b0a34e29",
           "source": "component:src/products/ProductList.tsx#ProductList",
           "target": "external:react-admin#ListBase",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:16ad164dd821ab8c",
           "source": "component:src/products/GridList.tsx#GridList",
           "target": "component:src/products/GridList.tsx#LoadingGridList",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -722,10 +716,7 @@
           "id": "edge:1a5979ca1900fe6f",
           "source": "component:src/products/GridList.tsx#GridList",
           "target": "component:src/products/GridList.tsx#LoadedGridList",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -774,20 +765,14 @@
           "id": "edge:2e756ae2ad563ea3",
           "source": "component:src/products/ProductList.tsx#ProductTitle",
           "target": "external:react-admin#Title",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:3fd1d81daaa31f92",
           "source": "component:src/products/ProductList.tsx#ListActions",
           "target": "external:react-admin#TopToolbar",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -913,10 +898,7 @@
           "id": "edge:94dd18a37ade33a6",
           "source": "component:src/products/GridList.tsx#LoadingGridList",
           "target": "external:@mui/material#ImageList@839bb7c57256ad1f",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -1160,10 +1142,7 @@
           "id": "edge:db5c317424d7b5f9",
           "source": "component:src/products/GridList.tsx#LoadedGridList",
           "target": "external:@mui/material#ImageList@f64470edd6394224",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1212,10 +1191,7 @@
           "id": "edge:e5b52a332330ea2d",
           "source": "component:src/products/ProductList.tsx#QuickFilter",
           "target": "external:@mui/material#Chip",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -1239,10 +1215,7 @@
           "id": "edge:ec7b6d85d6645243",
           "source": "component:src/products/Aside.tsx#Aside",
           "target": "external:@mui/material#Card",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",

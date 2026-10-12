@@ -1,9 +1,9 @@
 {
   "id": "component-structure",
   "title": "Component structure",
-  "updatedAt": "2026-10-11T22:17:24.197Z",
+  "updatedAt": "2026-10-12T05:53:48.370Z",
   "vcs": {
-    "revision": "6b9fc41b74f24b746f76acaa977708e9687c4393",
+    "revision": "c9b886257193f3aef0a468e5e2981fbfc843ef76",
     "divergesFromRevision": false
   },
   "generator": "built-in:react-component-structure",
@@ -1573,10 +1573,7 @@
           "id": "edge:0eedeb45297bade6",
           "source": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
           "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -1634,10 +1631,7 @@
           "id": "edge:1823c954eece8205",
           "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
           "target": "component:src/shared/react-ui/tabs.tsx#Tabs@cd2269dff6bca29a",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1749,10 +1743,7 @@
           "id": "edge:2696eec9eef1ad78",
           "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
           "target": "external:@xyflow/react#EdgeLabelRenderer@52df2f5d08e31edb",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1814,10 +1805,7 @@
           "id": "edge:2ac57c8c048114ab",
           "source": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
           "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -1892,10 +1880,7 @@
           "id": "edge:35af79d37c3b12fd",
           "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
           "target": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -1927,20 +1912,14 @@
           "id": "edge:38230291d442e0fa",
           "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererContent",
           "target": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:397f15532a3d67a9",
           "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
           "target": "external:@xyflow/react#EdgeLabelRenderer@0f110b5bde19f834",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2014,10 +1993,7 @@
           "id": "edge:45971fc320f4a577",
           "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
           "target": "component:src/shared/react-ui/button.tsx#Button",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2086,10 +2062,7 @@
           "id": "edge:4f35d72c9b6137f3",
           "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
           "target": "component:src/client/widgets/elk-layered-diagram-renderer.tsx#ElkLayeredDiagramRenderer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2203,30 +2176,21 @@
           "id": "edge:616efe3ffea263ad",
           "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@9985004bde1bcff7",
           "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:6286352452cad23f",
           "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
           "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:64dc3ad4e0e2c835",
           "source": "component:src/shared/react-flow/bounding-group-node.tsx#BoundingGroupNode",
           "target": "external:@xyflow/react#Handle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -2262,10 +2226,7 @@
           "id": "edge:6557b67177898c05",
           "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
           "target": "component:src/shared/react-ui/button.tsx#Button",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2314,10 +2275,7 @@
           "id": "edge:6d70c3e72003dc51",
           "source": "component:src/shared/react-flow/base-overlay-panel.tsx#BaseOverlayPanel",
           "target": "external:@xyflow/react#Panel@7d936c7b8ac94d6b",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -2443,10 +2401,7 @@
           "id": "edge:8addc5ce2c4a5529",
           "source": "component:src/client/pages/workspace-page.tsx#WorkspacePage",
           "target": "component:src/shared/react-ui/tabs.tsx#Tabs@0c908edcf22bb0cf",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2499,10 +2454,7 @@
           "id": "edge:9015e80cce13555f",
           "source": "component:src/shared/react-flow/decision-node.tsx#DecisionNode",
           "target": "external:@xyflow/react#Handle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -2526,10 +2478,7 @@
           "id": "edge:93a82963c74133e6",
           "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
           "target": "component:src/client/widgets/sequence-diagram-renderer.tsx#SequenceDiagramRenderer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2595,40 +2544,28 @@
           "id": "edge:9b36f0be4809e994",
           "source": "component:src/client/parts/artifact-list.tsx#ArtifactList",
           "target": "component:src/shared/react-ui/card.tsx#Card@84a9a146a0f933e4",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:9b60c0415f048c66",
           "source": "component:src/shared/react-flow/card-node.tsx#CardNode",
           "target": "external:@xyflow/react#Handle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:9ed6f807097068e4",
           "source": "component:src/client/parts/diagram-canvas.tsx#DiagramCanvas",
           "target": "external:@xyflow/react#ReactFlow",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:a403728468d98fd0",
           "source": "component:src/client/widgets/diagram-links-panel.tsx#DiagramLinksPanel",
           "target": "external:@xyflow/react#Panel@218bbd9df1dac145",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2643,10 +2580,7 @@
           "id": "edge:a414785d6c38a821",
           "source": "component:src/shared/react-ui/field.tsx#FieldLabel",
           "target": "component:src/shared/react-ui/label.tsx#Label",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -2721,10 +2655,7 @@
           "id": "edge:af64fe394a195c79",
           "source": "component:src/client/widgets/diagram-renderer.tsx#DiagramRenderer",
           "target": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureDiagramRenderer",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2739,10 +2670,7 @@
           "id": "edge:af7a052b03b4fdd8",
           "source": "component:src/client/widgets/component-structure-diagram-renderer.tsx#ComponentStructureContent",
           "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
@@ -2778,30 +2706,21 @@
           "id": "edge:b14b0fabaf8ba12a",
           "source": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
           "target": "external:@xyflow/react#ReactFlowProvider",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:b6d224f9fedfcf36",
           "source": "component:src/client/pages/workspace-page.tsx#WorkspaceShell@32f018f1ee923609",
           "target": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "control",
           "id": "edge:b7cc20ee7843ee07",
           "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
           "target": "component:src/shared/react-ui/form.tsx#Form@30bf67d31da6e962",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -2952,20 +2871,14 @@
           "id": "edge:c6cd980644eb3343",
           "source": "component:src/client/widgets/dependency-graph-diagram-renderer.tsx#DependencyGraphDiagramRenderer",
           "target": "component:src/client/widgets/diagram-renderer-base.tsx#DiagramRendererBase",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:c720bc1a7746b70e",
           "source": "component:src/shared/react-flow/node-search.tsx#NodeSearch",
           "target": "component:src/shared/react-ui/combobox.tsx#Combobox",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -3023,10 +2936,7 @@
           "id": "edge:d903d394c5be8e65",
           "source": "component:src/shared/react-flow/route-edge.tsx#RouteEdge",
           "target": "external:@xyflow/react#BaseEdge",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -3058,10 +2968,7 @@
           "id": "edge:e08f97d1bde2f119",
           "source": "component:src/shared/react-flow/message-edge.tsx#MessageEdge",
           "target": "external:@xyflow/react#BaseEdge",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -3084,10 +2991,7 @@
           "id": "edge:e39dc1a48337f2da",
           "source": "component:src/client/parts/annotation-layer.tsx#AnnotationLayer",
           "target": "component:src/shared/react-ui/form.tsx#Form@60ce323e2ac8771d",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          },
+          "composition": null,
           "activeWhen": [
             [
               {
@@ -3157,20 +3061,14 @@
           "id": "edge:ee180ed471719b3d",
           "source": "component:src/shared/react-flow/labeled-group-node.tsx#LabeledGroupNode",
           "target": "external:@xyflow/react#Handle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
           "id": "edge:ef2f4e7948bf21fa",
           "source": "component:src/shared/react-flow/lifeline-node.tsx#LifelineNode",
           "target": "external:@xyflow/react#Handle",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
@@ -3211,10 +3109,7 @@
           "id": "edge:fa05bf75d66e4c9c",
           "source": "component:src/shared/react-ui/theme-toggle.tsx#ThemeToggle",
           "target": "component:src/shared/react-ui/button.tsx#Button",
-          "composition": {
-            "kind": "inline-render",
-            "origins": []
-          }
+          "composition": null
         },
         {
           "type": "default",
