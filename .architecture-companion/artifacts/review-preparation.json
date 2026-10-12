@@ -1,13 +1,13 @@
 {
   "type": "behavior",
   "title": "Prepare Review URL (Skill trigger)",
-  "updatedAt": "2026-10-11T22:20:39.828Z",
+  "updatedAt": "2026-10-12T15:47:49.000Z",
   "vcs": {
     "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",
-  "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-catalog, view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from catalog discovery and placement selection through generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
+  "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-artifacts, view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from catalog discovery and placement selection through generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
   "links": [
     {
       "href": "source:///specs/agent-handoff-architecture.spec.ts"
@@ -77,7 +77,7 @@
           "nodeId": "agent-artifact-valid",
           "kind": "condition",
           "title": "Does the artifact contain diagrams and pass validation?",
-          "description": "Use view-catalog to confirm at least one discovered artifact exists, then validate the entire catalog before sharing a URL.",
+          "description": "Use view-artifacts to confirm at least one discovered artifact exists, then validate the entire catalog before sharing a URL.",
           "links": [
             {
               "href": "source:///src/cli/validate-schemas.command.ts"
@@ -106,10 +106,10 @@
           "nodeId": "agent-discover-artifacts",
           "kind": "action",
           "title": "Read the catalog and placement context",
-          "description": "Discover central and co-located artifacts with view-catalog. Read configuration and user rules; ask about placement only when this is a new environment without an existing instruction or artifact.",
+          "description": "Discover central and co-located artifacts with view-artifacts. Read configuration and user rules; ask about placement only when this is a new environment without an existing instruction or artifact.",
           "links": [
             {
-              "href": "source:///src/cli/view-catalog.command.ts"
+              "href": "source:///src/cli/view-artifacts.command.ts"
             },
             {
               "href": "source:///skills/architecture-companion/SKILL.md"

@@ -38,7 +38,7 @@ const expectedCliFiles = [
   "serve.js",
   "validate-schemas.js",
   "view-annotations.js",
-  "view-catalog.js",
+  "view-artifacts.js",
   "view-generators.js",
 ] as const;
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -708,7 +708,7 @@ async function verifyInstalledCatalogEntry(
     },
   };
   await writeFixtureFile(scopePath, relativePath, JSON.stringify(artifact));
-  const scriptPath = join(skillRoot, "runtime", "cli", "view-catalog.js");
+  const scriptPath = join(skillRoot, "runtime", "cli", "view-artifacts.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
   assertSuccessfulCompletion(result, scriptPath);
   assert.deepEqual(JSON.parse(result.stdout), { artifacts: [{ ...artifact, artifactId: relativePath }] });

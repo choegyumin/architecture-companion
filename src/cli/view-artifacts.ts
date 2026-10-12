@@ -1,7 +1,7 @@
-import { executeViewCatalogCommand } from "@/cli/view-catalog.command";
+import { executeViewArtifactsCommand } from "@/cli/view-artifacts.command";
 
 try {
-  await executeViewCatalogCommand(process.argv.slice(2), {
+  await executeViewArtifactsCommand(process.argv.slice(2), {
     writeStdout: (output) => process.stdout.write(output),
   });
 } catch (error) {

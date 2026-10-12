@@ -46,7 +46,7 @@ Ask whether to save a placement rule in `placementInstructions` only when there 
 1. Discover the existing catalog using the command below and read the corresponding artifact files first. The returned artifact `id` is its scope-relative file path, not a field stored in the JSON. Determine what to preserve, modify, replace, add, or remove based on the request. Preserve unrelated artifacts and graph element IDs for concepts that retain their meaning.
 
    ```sh
-   node "<AC>/runtime/cli/view-catalog.js" "<scope>"
+   node "<AC>/runtime/cli/view-artifacts.js" "<scope>"
    ```
 
    The command prints the complete catalog as JSON, or `null` when no catalog exists. If validation fails, inspect and fix the reported files when the request permits it; do not treat a failed discovery as an empty catalog.
@@ -83,7 +83,7 @@ Ask whether to save a placement rule in `placementInstructions` only when there 
 
 ## Start the Review UI
 
-1. Check the discovered catalog with `view-catalog.js` and confirm that `artifacts` contains at least one artifact. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+1. Check the discovered artifacts with `view-artifacts.js` and confirm that `artifacts` contains at least one artifact. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
 
    Reuse the latest validation result if the current catalog has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid catalog.
 

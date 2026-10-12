@@ -1,7 +1,7 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-11T22:20:39.828Z",
+  "updatedAt": "2026-10-12T15:47:49.000Z",
   "vcs": {
     "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
     "divergesFromRevision": false
@@ -353,26 +353,26 @@
           ]
         },
         {
-          "nodeId": "file:src/cli/view-catalog.command.ts",
-          "title": "view-catalog.command.ts",
+          "nodeId": "file:src/cli/view-artifacts.command.ts",
+          "title": "view-artifacts.command.ts",
           "groupId": "group:directory:src/cli",
           "type": "default",
           "links": [
             {
               "text": "source",
-              "href": "source:///src/cli/view-catalog.command.ts"
+              "href": "source:///src/cli/view-artifacts.command.ts"
             }
           ]
         },
         {
-          "nodeId": "file:src/cli/view-catalog.ts",
-          "title": "view-catalog.ts",
+          "nodeId": "file:src/cli/view-artifacts.ts",
+          "title": "view-artifacts.ts",
           "groupId": "group:directory:src/cli",
           "type": "default",
           "links": [
             {
               "text": "source",
-              "href": "source:///src/cli/view-catalog.ts"
+              "href": "source:///src/cli/view-artifacts.ts"
             }
           ]
         },
@@ -1915,22 +1915,22 @@
           "targetNodeId": "file:src/cli/view-annotations.command.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-catalog.command.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
+          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-artifacts.command.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
           "type": "default",
-          "sourceNodeId": "file:src/cli/view-catalog.command.ts",
+          "sourceNodeId": "file:src/cli/view-artifacts.command.ts",
           "targetNodeId": "file:src/server/read-catalog.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-catalog.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
+          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-artifacts.command.ts:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:runtime",
           "type": "default",
-          "sourceNodeId": "file:src/cli/view-catalog.command.ts",
+          "sourceNodeId": "file:src/cli/view-artifacts.command.ts",
           "targetNodeId": "file:src/server/resolve-companion-scope.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-catalog.ts:file%3Asrc%2Fcli%2Fview-catalog.command.ts:runtime",
+          "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-artifacts.ts:file%3Asrc%2Fcli%2Fview-artifacts.command.ts:runtime",
           "type": "default",
-          "sourceNodeId": "file:src/cli/view-catalog.ts",
-          "targetNodeId": "file:src/cli/view-catalog.command.ts"
+          "sourceNodeId": "file:src/cli/view-artifacts.ts",
+          "targetNodeId": "file:src/cli/view-artifacts.command.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fview-generators.command.ts:file%3Asrc%2Ffeatures%2Fartifact-generator%2Fartifact-generator-id.ts:type-only",

@@ -5,13 +5,13 @@ export type ViewCatalogCommandOptions = Readonly<{
   writeStdout: (output: string) => void;
 }>;
 
-export async function executeViewCatalogCommand(
+export async function executeViewArtifactsCommand(
   args: readonly string[],
   options: ViewCatalogCommandOptions,
 ): Promise<void> {
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === undefined) {
-    throw new Error("Usage: node view-catalog.js <scope>");
+    throw new Error("Usage: node view-artifacts.js <scope>");
   }
   const scopePath = await resolveCompanionScopePath(scopeInput);
   const result = await readCatalog(scopePath);
