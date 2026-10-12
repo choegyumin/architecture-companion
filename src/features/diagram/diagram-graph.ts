@@ -472,10 +472,13 @@ export const componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.exte
 });
 export type ComponentStructureDiagramNode = z.infer<typeof componentStructureDiagramNodeSchema>;
 
-/** A stored composition, with the consumer input separate from the original suppliers' inputs. */
+/** A non-default composition, with the consumer input separate from the original suppliers' inputs. */
 export const componentCompositionSchema = z
   .object({
-    kind: z.string().min(1),
+    kind: z
+      .string()
+      .min(1)
+      .regex(/^(?!inline-render$)/, "Use null or omit composition for direct rendering"),
     input: z.string().min(1).optional(),
     origins: z.array(
       z.object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), input: z.string().min(1) }).strict(),
@@ -485,11 +488,12 @@ export const componentCompositionSchema = z
   .meta({ id: "ComponentComposition" });
 export type ComponentComposition = z.infer<typeof componentCompositionSchema>;
 
+/** Omitted or null composition means direct rendering; objects describe other supply methods. */
 const componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema
-  .extend({ composition: componentCompositionSchema.optional() })
+  .extend({ composition: componentCompositionSchema.nullable().optional() })
   .meta({ id: "ComponentStructureDefaultEdge" });
 const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
-  .extend({ composition: componentCompositionSchema.optional() })
+  .extend({ composition: componentCompositionSchema.nullable().optional() })
   .meta({ id: "ComponentStructureControlEdge" });
 
 /** Additional graph properties a component structure diagram stores: its roots and controls. */

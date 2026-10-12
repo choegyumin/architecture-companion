@@ -149,7 +149,7 @@ A span of messages within a fragment corresponding to a condition or alternative
 A code design diagram that shows the components of a component tree and the rendering paths through which they compose.
 
 **Composition**:
-An edge representing a parent component composing a child, directly or through an input such as a prop or slot. A component structure edge may store `composition` metadata: its `kind`, consumer-side `input`, and original supplier-input `origins`. The consumer input and original supplier input can differ after forwarding. Composition kinds are not restricted to one framework. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
+An edge representing a parent component composing a child, directly or through an input such as a prop or slot. For a component structure edge, omitted `composition` or explicit `null` means direct rendering (`inline-render`), the default. Other supply methods store a `composition` object with `kind`, consumer-side `input`, and original supplier-input `origins`; object-form `kind: "inline-render"` is not allowed. The consumer input and original supplier input can differ after forwarding. Composition kinds are not restricted to one framework. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
 
 **Rendering Path**:
 A conjunction of control choices under which a component renders. An edge applies when at least one of its rendering paths matches the current selection.

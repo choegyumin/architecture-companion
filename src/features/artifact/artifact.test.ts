@@ -101,7 +101,7 @@ const composition = {
 };
 
 describe("component composition metadata", () => {
-  it("keeps legacy component graphs valid without inferring composition metadata", () => {
+  it("preserves omitted composition as the direct-rendering default", () => {
     expect(parseArtifact(validComponentDiagram)).toEqual(validComponentDiagram);
   });
 
@@ -118,19 +118,22 @@ describe("component composition metadata", () => {
     );
   });
 
-  it("allows direct composition without consumer input or supplier origins", () => {
+  it("preserves explicit null composition and projects it like the omitted default", () => {
     const graph = {
       ...validComponentDiagram.diagram.graph,
-      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({
-        ...edge,
-        composition: { kind: "inline-render", origins: [] },
-      })),
+      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition: null })),
     };
+    const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
 
-    expect(componentStructureDiagramGraphSchema.parse(graph)).toEqual(graph);
+    expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
+    expect(projectDecisionNodes(componentStructureDiagramGraphSchema.parse(graph))).toEqual(
+      projectDecisionNodes(componentStructureDiagramGraphSchema.parse(validComponentDiagram.diagram.graph)),
+    );
   });
 
   it.each([
+    { kind: "inline-render", origins: [] },
+    { ...composition, kind: "inline-render" },
     { ...composition, kind: "" },
     { ...composition, input: "" },
     { kind: "slot" },
@@ -149,22 +152,35 @@ describe("component composition metadata", () => {
   });
 
   it.each(["elk-layered", "dependency-graph"])("does not widen the %s edge contract", (id) => {
-    const graph = {
-      ...validDiagram.diagram.graph,
-      edges: validDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition })),
-    };
+    for (const metadata of [composition, null]) {
+      const graph = {
+        ...validDiagram.diagram.graph,
+        edges: validDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition: metadata })),
+      };
 
-    expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow("Invalid artifact");
+      expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow("Invalid artifact");
+    }
   });
 
   it("emits distinct component edge definitions without changing generic edges", () => {
     const schema = z.toJSONSchema(artifactSchema, { target: "draft-2020-12", io: "input", reused: "inline" });
 
     expect(schema.$defs).toMatchObject({
-      ComponentComposition: { type: "object", required: ["kind", "origins"], additionalProperties: false },
-      ComponentStructureDefaultEdge: { properties: { composition: { $ref: "#/$defs/ComponentComposition" } } },
-      ComponentStructureControlEdge: { properties: { composition: { $ref: "#/$defs/ComponentComposition" } } },
+      ComponentComposition: {
+        type: "object",
+        required: ["kind", "origins"],
+        additionalProperties: false,
+        properties: { kind: { type: "string", minLength: 1, pattern: "^(?!inline-render$)" } },
+      },
+      ComponentStructureDefaultEdge: {
+        properties: { composition: { anyOf: [{ $ref: "#/$defs/ComponentComposition" }, { type: "null" }] } },
+      },
+      ComponentStructureControlEdge: {
+        properties: { composition: { anyOf: [{ $ref: "#/$defs/ComponentComposition" }, { type: "null" }] } },
+      },
     });
+    expect(schema.$defs?.ComponentStructureDefaultEdge.required).not.toContain("composition");
+    expect(schema.$defs?.ComponentStructureControlEdge.required).not.toContain("composition");
     expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureDefaultEdge");
     expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureControlEdge");
     expect(schema.$defs?.DefaultEdge.properties).not.toHaveProperty("composition");

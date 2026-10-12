@@ -76,14 +76,14 @@ Named local components use the definition identifier `component:<scope-relative-
 
 Node titles retain the original component name, never the instance hash or a serial number. Each node's `component.definitionId` identifies the definition, and `component.origins` records every verified `{ supplierId, supplierTitle, prop }` pair. The origin `prop` is the original supplied prop, not a downstream renamed consumer prop: supplying `Wrapper.header` and forwarding it to `Inner.children` retains the supplier's `header` origin while the edge's `composition.input` uses `children`. Merging nodes unions these pairs without mixing one supplier with another supplier's prop. Supplier IDs identify definitions, including suppliers outside a focused graph; they are not necessarily visible node IDs.
 
-Every relationship records a `composition` object on its stored edge, whether the edge is an unconditional `default` or a gated `control`:
+Every relationship records `composition` on its stored edge, whether the edge is an unconditional `default` or a gated `control`:
 
-- Inline rendering: `kind: "inline-render"`, no `input`, and `origins: []`.
+- Inline rendering: `composition: null`, the explicit form of the direct-rendering default.
 - Node prop, including `children`: `kind: "node-prop"`.
 - Render prop: `kind: "render-prop"`.
 - Component prop: `kind: "component-prop"`.
 
-For supplied relationships, `composition.input` names the final visible renderer's or invoker's prop with its original casing. `composition.origins` records the original `{ supplierId, supplierTitle, input }` pairs belonging to that relationship. The origin input can differ from the consumer input after forwarding. These are structured storage fields, not the general edge's display `kind` or `label`. The shared contract accepts other nonempty composition kinds for other generators; the four values above describe this React generator. Older graphs may omit `composition`; absence does not imply inline rendering.
+For supplied relationships, `composition.input` names the final visible renderer's or invoker's prop with its original casing. `composition.origins` records the original `{ supplierId, supplierTitle, input }` pairs belonging to that relationship. The origin input can differ from the consumer input after forwarding. These are structured storage fields, not the general edge's display `kind` or `label`. The shared contract accepts other nonempty composition kinds for other generators, except object-form `kind: "inline-render"`, which is not allowed. Omitting `composition` has the same direct-rendering meaning as explicit `null`; absence does not mean unknown or unrecorded analysis.
 
 The visual parent of a supplied value is its verified local renderer or invoker. Local prop forwarding is traced through verified named aliases and static prop objects. Supplier IDs identify the definitions that created the supplied values, including suppliers outside a focused graph. Equivalent merged relationships union their original supplier-input pairs without changing the existing context comparison. Different supplier contexts are not merged merely because their target definitions match. Node `component.origins` remains the aggregate used on component cards; the component structure renderer does not add a separate composition label to the edge.
 

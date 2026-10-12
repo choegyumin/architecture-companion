@@ -504,7 +504,7 @@ async function verifyInstalledReactComponentGenerator(
         kind: string;
         input?: string;
         origins: ReadonlyArray<{ supplierId: string; supplierTitle: string; input: string }>;
-      };
+      } | null;
     }>;
     groups: readonly unknown[];
     nodes: ReadonlyArray<{
@@ -572,7 +572,7 @@ async function verifyInstalledReactComponentGenerator(
             input: "children",
             origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input: "children" }],
           }
-        : { kind: "inline-render", origins: [] },
+        : null,
     );
   }
 

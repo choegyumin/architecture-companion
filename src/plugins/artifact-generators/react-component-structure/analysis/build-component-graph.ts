@@ -3207,7 +3207,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
         const ruleset = edge.activeWhen ?? [[]];
-        const relationship = { id: edge.id, source: edge.source, target: edge.target, composition: edge.composition };
+        const relationship = {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          composition: edge.composition.kind === "inline-render" ? null : edge.composition,
+        };
         return ruleset.length === 1 && ruleset.at(0)?.length === 0
           ? { type: "default", ...relationship }
           : { type: "control", ...relationship, activeWhen: ruleset };

@@ -255,7 +255,7 @@ describe("React component structure generator", () => {
         expect(inlineEdges.length).toBeGreaterThan(0);
         for (const edge of inlineEdges) {
           expect(edge.type).toBe("default");
-          expect(edge.composition).toEqual({ kind: "inline-render", origins: [] });
+          expect(edge.composition).toBeNull();
         }
       },
     );
