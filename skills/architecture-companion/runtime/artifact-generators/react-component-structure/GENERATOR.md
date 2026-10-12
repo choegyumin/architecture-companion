@@ -11,7 +11,7 @@ Use to review, at the source level, how React components within selected JavaScr
 
 ```json
 {
-  "kind": "design",
+  "type": "design",
   "generator": "built-in:react-component-structure",
   "diagram": {
     "layout": {
@@ -111,5 +111,5 @@ The renderer owns initial selections: conditional switches start off; branch sel
 Mutable or reassigned output aliases and arbitrary helper-call results remain unresolved. Loop iteration guards, exception routing, and labeled exits are not modeled; return expressions discovered in those unsupported statement forms retain source relationships without additional controls for that statement. This implementation does not add supplied-children `map`/`flatMap` transforms, traversal through unresolved JSX wrappers, intrinsic spread-only children consumption, broader default-object/module-fallback resolution, or external-symlink provenance support.
 
 1. Read the existing diagram file first, then read the temporary candidate graph. Preserve, modify, or replace the existing graph according to the request, keeping unrelated diagrams and IDs for concepts that retain their meaning.
-2. Set the enclosing artifact's `kind` to `design`, apply the **Artifact configuration** above, and record the necessary regeneration context according to the skill's shared authoring rules. Artifact identity comes from its scope-relative file path; do not store an artifact `id`.
+2. Set the enclosing artifact's `type` to `design`, apply the **Artifact configuration** above, and record the necessary regeneration context according to the skill's shared authoring rules. Artifact identity comes from its scope-relative file path; do not store an `artifactId`.
 3. Validate the entire artifact using the skill's shared authoring procedure.

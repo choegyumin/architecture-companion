@@ -3,7 +3,7 @@
   "$id": "./config.schema.json",
   "type": "object",
   "properties": {
-    "artifactPatterns": {
+    "include": {
       "default": [
         "**/*.archcomp.json"
       ],
@@ -13,9 +13,8 @@
         "minLength": 1
       }
     },
-    "placementInstructions": {
-      "type": "string",
-      "minLength": 1
+    "instructions": {
+      "type": "string"
     }
   },
   "additionalProperties": false

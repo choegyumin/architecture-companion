@@ -3,7 +3,7 @@
   "$id": "./artifact.schema.json",
   "type": "object",
   "properties": {
-    "kind": {
+    "type": {
       "type": "string",
       "enum": [
         "behavior",
@@ -185,7 +185,7 @@
     }
   },
   "required": [
-    "kind",
+    "type",
     "title",
     "updatedAt",
     "generator",

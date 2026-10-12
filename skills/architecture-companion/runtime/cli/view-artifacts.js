@@ -24063,7 +24063,7 @@ var artifactIdSchema = external_exports.string().min(1).refine(
   "Artifact ID must be a scope-relative file path with forward slashes"
 );
 var artifactBaseShape = {
-  kind: external_exports.enum(["behavior", "design"]),
+  type: external_exports.enum(["behavior", "design"]),
   title: external_exports.string().min(1),
   updatedAt: external_exports.string().datetime(),
   vcs: external_exports.object({
@@ -24131,8 +24131,8 @@ function parseArtifact(input2) {
 
 // src/features/catalog/catalog.ts
 var catalogConfigSchema = external_exports.object({
-  artifactPatterns: external_exports.array(external_exports.string().min(1)).default(["**/*.archcomp.json"]),
-  placementInstructions: external_exports.string().min(1).optional()
+  include: external_exports.array(external_exports.string().min(1)).default(["**/*.archcomp.json"]),
+  instructions: external_exports.string().optional()
 }).strict();
 var companionCatalogShapeSchema = external_exports.object({
   artifacts: external_exports.array(external_exports.unknown()).readonly()
@@ -24232,7 +24232,7 @@ async function discoverArtifactPaths(scopePath, config2) {
     }
   }
   await walk("", []);
-  const paths = [...centralPaths, ...(0, import_micromatch.default)(candidates, config2.artifactPatterns, { dot: true })].toSorted();
+  const paths = [...centralPaths, ...(0, import_micromatch.default)(candidates, config2.include, { dot: true })].toSorted();
   return { paths, centralDirectoryExists };
 }
 async function readArtifactFile(scopePath, filePath) {
@@ -24291,11 +24291,11 @@ async function resolveCompanionScopePath(inputPath) {
   return realpath(inputPath);
 }
 
-// src/cli/view-catalog.command.ts
-async function executeViewCatalogCommand(args, options) {
+// src/cli/view-artifacts.command.ts
+async function executeViewArtifactsCommand(args, options) {
   const scopeInput = args.at(0);
   if (args.length !== 1 || scopeInput === void 0) {
-    throw new Error("Usage: node view-catalog.js <scope>");
+    throw new Error("Usage: node view-artifacts.js <scope>");
   }
   const scopePath = await resolveCompanionScopePath(scopeInput);
   const result = await readCatalog(scopePath);
@@ -24304,9 +24304,9 @@ async function executeViewCatalogCommand(args, options) {
 `);
 }
 
-// src/cli/view-catalog.ts
+// src/cli/view-artifacts.ts
 try {
-  await executeViewCatalogCommand(process.argv.slice(2), {
+  await executeViewArtifactsCommand(process.argv.slice(2), {
     writeStdout: (output2) => process.stdout.write(output2)
   });
 } catch (error62) {
