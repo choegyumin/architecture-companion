@@ -20349,14 +20349,14 @@ var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
   component: diagramComponentMetadataSchema.optional()
 });
 var componentCompositionSchema = external_exports.object({
-  kind: external_exports.string().min(1),
+  kind: external_exports.string().min(1).regex(/^(?!inline-render$)/, "Use null or omit composition for direct rendering"),
   input: external_exports.string().min(1).optional(),
   origins: external_exports.array(
     external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), input: external_exports.string().min(1) }).strict()
   )
 }).strict().meta({ id: "ComponentComposition" });
-var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ composition: componentCompositionSchema.optional() }).meta({ id: "ComponentStructureDefaultEdge" });
-var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ composition: componentCompositionSchema.optional() }).meta({ id: "ComponentStructureControlEdge" });
+var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ composition: componentCompositionSchema.nullable().optional() }).meta({ id: "ComponentStructureDefaultEdge" });
+var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ composition: componentCompositionSchema.nullable().optional() }).meta({ id: "ComponentStructureControlEdge" });
 var componentStructureAdditionalSchema = external_exports.object({
   roots: external_exports.array(diagramIdSchema).min(1).readonly(),
   controls: external_exports.array(diagramControlSchema).readonly()

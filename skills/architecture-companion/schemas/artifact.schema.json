@@ -1065,7 +1065,14 @@
           "minLength": 1
         },
         "composition": {
-          "$ref": "#/$defs/ComponentComposition"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentComposition"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1081,7 +1088,8 @@
       "properties": {
         "kind": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^(?!inline-render$)"
         },
         "input": {
           "type": "string",
@@ -1143,7 +1151,14 @@
           "$ref": "#/$defs/RouteRequirementRuleset"
         },
         "composition": {
-          "$ref": "#/$defs/ComponentComposition"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentComposition"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
