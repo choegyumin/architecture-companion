@@ -19,7 +19,7 @@ Each Annotation has one `comment`. Use `anchor.canvasId` to find the diagram in 
 - Product Behavior canvas: `behavior:<scope-relative-artifact-path>`
 - Code Design canvas: `design:<scope-relative-artifact-path>`
 
-The path identifies the artifact file, using forward slashes. It is not a stored JSON field and remains relative to the scope, not to the artifact's directory. Use `view-artifacts.js` to locate the artifact. Moving or renaming a file changes its identity; do not transfer earlier Annotations by guesswork.
+The path is not a stored JSON field but the artifact file's scope-relative path, resolved against the scope rather than the artifact's directory. Use `view-artifacts.js` to locate the artifact. Moving or renaming a file changes its identity; do not transfer earlier Annotations by guesswork.
 
 An Annotation attached to a selected element has an `anchor.target`. Resolve the target according to the selection type:
 
