@@ -12,8 +12,8 @@ import { GuardEdgeLabel } from "@/shared/react-flow/guard-edge-label";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
 // "from X (slot)" bullets live in the card details, derived from the stored
-// component origins; authored graphs without structured origins fall back to
-// the incoming edge labels.
+// layout context origins; authored graphs without structured origins fall back
+// to the incoming edge labels.
 export function collectComponentOrigins(
   graph: Readonly<{
     nodes: ProjectedComponentStructureGraph["nodes"];
@@ -27,9 +27,9 @@ export function collectComponentOrigins(
     else entriesByTarget.set(target, new Set([entry]));
   };
   for (const node of graph.nodes) {
-    const structured = node.type === "default" ? (node.component?.origins ?? []) : [];
+    const structured = node.type === "default" ? (node.layoutContext?.origins ?? []) : [];
     for (const origin of structured) {
-      add(node.id, `from ${origin.supplierTitle} (${origin.prop})`);
+      add(node.id, `from ${origin.supplierTitle} (${origin.slot})`);
     }
     if (structured.length > 0) continue;
     for (const edge of graph.edges) {

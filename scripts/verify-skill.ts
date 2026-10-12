@@ -500,17 +500,19 @@ async function verifyInstalledReactComponentGenerator(
     edges: ReadonlyArray<{
       source: string;
       target: string;
-      composition?: {
-        kind: string;
-        input?: string;
-        origins: ReadonlyArray<{ supplierId: string; supplierTitle: string; input: string }>;
-      } | null;
+      layoutContext?: {
+        composition?: {
+          type: string;
+          slot?: string;
+          origins: ReadonlyArray<{ supplierId: string; supplierTitle: string; slot: string }>;
+        } | null;
+      };
     }>;
     groups: readonly unknown[];
     nodes: ReadonlyArray<{
       id: string;
       title: string;
-      component?: { origins?: ReadonlyArray<{ supplierTitle?: string; prop: string }> };
+      layoutContext?: { origins?: ReadonlyArray<{ supplierTitle?: string; slot: string }> };
     }>;
   }>;
 
@@ -546,7 +548,7 @@ async function verifyInstalledReactComponentGenerator(
         source: nodesById.get(edge.source)?.title,
         target: nodesById.get(edge.target)?.title,
         // Card origins remain an aggregate alongside per-edge composition metadata.
-        supplies: (nodesById.get(edge.target)?.component?.origins ?? []).map(({ prop }) => prop).toSorted(),
+        supplies: (nodesById.get(edge.target)?.layoutContext?.origins ?? []).map(({ slot }) => slot).toSorted(),
       }))
       .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   }
@@ -565,13 +567,15 @@ async function verifyInstalledReactComponentGenerator(
   const contentId = graph.nodes.find(({ title }) => title === "Content")!.id;
   for (const edge of graph.edges) {
     if (edge.target === contentId) {
-      assert.deepEqual(edge.composition, {
-        kind: "node-prop",
-        input: "children",
-        origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input: "children" }],
+      assert.deepEqual(edge.layoutContext, {
+        composition: {
+          type: "node",
+          slot: "children",
+          origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", slot: "children" }],
+        },
       });
     } else {
-      assert.equal(Object.hasOwn(edge, "composition"), false, "Direct rendering must omit default composition.");
+      assert.equal(Object.hasOwn(edge, "layoutContext"), false, "Direct rendering must omit empty layout context.");
     }
   }
 

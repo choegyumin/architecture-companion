@@ -116,7 +116,7 @@ describe("React component structure command", () => {
             expect.objectContaining({
               type: "default",
               title: "App",
-              component: { definitionId: "component:src/app.tsx#App", origins: [] },
+              layoutContext: { definitionId: "component:src/app.tsx#App", origins: [] },
             }),
           ],
           edges: [],

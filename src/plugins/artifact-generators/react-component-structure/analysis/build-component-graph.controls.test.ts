@@ -813,30 +813,30 @@ describe("component rendering controls", () => {
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
     const leafEdges = graph.edges.filter(({ target }) => target === leaf.id);
     expect(leafEdges).toHaveLength(2);
-    expect(leafEdges.map(({ composition }) => composition)).toEqual(
+    expect(leafEdges.map(({ layoutContext }) => layoutContext?.composition)).toEqual(
       expect.arrayContaining([
         {
-          kind: "node-prop",
-          input: "children",
+          type: "node",
+          slot: "children",
           origins: expect.arrayContaining([
-            { supplierId: "component:app.tsx#App", supplierTitle: "App", input: "header" },
-            { supplierId: "component:app.tsx#App", supplierTitle: "App", input: "footer" },
+            { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
+            { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
           ]),
         },
         {
-          kind: "node-prop",
-          input: "children",
-          origins: [{ supplierId: "component:app.tsx#Other", supplierTitle: "Other", input: "header" }],
+          type: "node",
+          slot: "children",
+          origins: [{ supplierId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" }],
         },
       ]),
     );
-    expect(leafEdges.flatMap(({ composition }) => composition!.origins)).toHaveLength(3);
-    expect(leaf.type === "default" && leaf.component!.origins).toHaveLength(3);
-    expect(leaf.type === "default" && leaf.component!.origins).toEqual(
+    expect(leafEdges.flatMap(({ layoutContext }) => layoutContext!.composition!.origins)).toHaveLength(3);
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierId: "component:app.tsx#App", supplierTitle: "App", prop: "header" },
-        { supplierId: "component:app.tsx#App", supplierTitle: "App", prop: "footer" },
-        { supplierId: "component:app.tsx#Other", supplierTitle: "Other", prop: "header" },
+        { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
+        { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
+        { supplierId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" },
       ]),
     );
   });
@@ -855,14 +855,14 @@ describe("component rendering controls", () => {
     const branch = graph.nodes.find(({ title }) => title === "Branch")!;
     expect(graph.layoutContext.controls).toMatchObject([{ owner: branch.id, label: "show", type: "branch" }]);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
-    expect(leaf.type === "default" && leaf.component!.origins).toEqual(
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierId: "component:app.tsx#First", supplierTitle: "First", prop: "children" },
-        { supplierId: "component:app.tsx#First", supplierTitle: "First", prop: "panel" },
-        { supplierId: "component:app.tsx#Second", supplierTitle: "Second", prop: "children" },
+        { supplierId: "component:app.tsx#First", supplierTitle: "First", slot: "children" },
+        { supplierId: "component:app.tsx#First", supplierTitle: "First", slot: "panel" },
+        { supplierId: "component:app.tsx#Second", supplierTitle: "Second", slot: "children" },
       ]),
     );
-    expect(leaf.type === "default" && leaf.component!.origins).toHaveLength(3);
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
   });
 
   it("removes outside supplier control requirements when focusing on their consumer", async () => {
@@ -880,15 +880,17 @@ describe("component rendering controls", () => {
     expect(graph.layoutContext.controls).toMatchObject([{ owner: shell.id, label: "visible", dependsOn: [[]] }]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [[{ controlId: visible!.id, value: "on" }]],
-      composition: {
-        kind: "node-prop",
-        input: "children",
-        origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", input: "children" }],
+      layoutContext: {
+        composition: {
+          type: "node",
+          slot: "children",
+          origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
+        },
       },
     });
     expect(graph.nodes.some(({ id }) => id === "component:app.tsx#App")).toBe(false);
     expect(graph.nodes.find(({ title }) => title === "Leaf")).toMatchObject({
-      component: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", prop: "children" }] },
+      layoutContext: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }] },
     });
   });
 
@@ -977,7 +979,7 @@ describe("component rendering controls", () => {
     `);
     const edge = edgeTo(graph, "Child");
     expect(edge.type).toBe(type);
-    expect(edge).not.toHaveProperty("composition");
+    expect(edge).not.toHaveProperty("layoutContext");
   });
 
   it("combines supplier and consumer controls for children, node, render and component props", async () => {
@@ -1000,21 +1002,25 @@ describe("component rendering controls", () => {
     // one owner, one operand, one switch over it.
     expect(controls).toHaveLength(2);
     const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
-    for (const [title, prop, kind] of [
-      ["Child", "children", "node-prop"],
-      ["Panel", "panel", "node-prop"],
-      ["Rendered", "render", "render-prop"],
-      ["Widget", "component", "component-prop"],
+    for (const [title, slot, compositionType] of [
+      ["Child", "children", "node"],
+      ["Panel", "panel", "node"],
+      ["Rendered", "render", "render"],
+      ["Widget", "component", "component"],
     ]) {
       const edge = edgeTo(graph, title!);
       expect(edge.type).toBe("control");
-      expect(edge.composition).toEqual({
-        kind,
-        input: prop,
-        origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", input: prop }],
+      expect(edge.layoutContext).toEqual({
+        composition: {
+          type: compositionType,
+          slot,
+          origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot }],
+        },
       });
       const target = nodes.get(edge.target)!;
-      expect(target.type === "default" && target.component!.origins).toContainEqual(expect.objectContaining({ prop }));
+      expect(target.type === "default" && target.layoutContext!.origins).toContainEqual(
+        expect.objectContaining({ slot }),
+      );
       const ruleset = edge.type === "control" ? edge.activeWhen : [[]];
       expect(ruleset).toHaveLength(1);
       const path = ruleset.at(0)!;
@@ -1027,7 +1033,7 @@ describe("component rendering controls", () => {
         ["App", "Consumer"],
       );
       expect(nodes.get(edge.target)).toMatchObject({
-        component: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", prop }] },
+        layoutContext: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot }] },
       });
     }
   });
@@ -1278,6 +1284,6 @@ describe("component rendering controls", () => {
     const control = graph.layoutContext.controls.at(0)!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({ type: "default" });
     expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: control.id, value: "on" }]] });
-    expect(app).toMatchObject({ component: { definitionId: "component:app.tsx#App", origins: [] } });
+    expect(app).toMatchObject({ layoutContext: { definitionId: "component:app.tsx#App", origins: [] } });
   });
 });

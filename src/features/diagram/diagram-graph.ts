@@ -60,16 +60,6 @@ export type DiagramControl = z.infer<typeof diagramControlSchema>;
 
 /* === Node === */
 
-/** Component provenance: the supplier and slot that composed a merged component instance. */
-const diagramComponentMetadataSchema = z
-  .object({
-    definitionId: diagramIdSchema,
-    origins: z.array(
-      z.object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), prop: z.string().min(1) }).strict(),
-    ),
-  })
-  .strict();
-
 const diagramNodeBaseShape = {
   id: diagramIdSchema,
   title: z.string().min(1),
@@ -467,33 +457,45 @@ export const dependencyDiagramGraphSchema = z
   .meta({ id: "DependencyGraph" });
 export type DependencyDiagramGraph = z.infer<typeof dependencyDiagramGraphSchema>;
 
+/** Component provenance: the original supplier and slot, shared by node aggregates and edge compositions. */
+const componentOriginSchema = z
+  .object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), slot: z.string().min(1) })
+  .strict()
+  .meta({ id: "ComponentOrigin" });
+
+const componentStructureNodeLayoutContextSchema = z
+  .object({
+    definitionId: diagramIdSchema,
+    origins: z.array(componentOriginSchema),
+  })
+  .strict();
+
 export const componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
-  component: diagramComponentMetadataSchema.optional(),
+  layoutContext: componentStructureNodeLayoutContextSchema.optional(),
 });
 export type ComponentStructureDiagramNode = z.infer<typeof componentStructureDiagramNodeSchema>;
 
-/** A non-default composition, with the consumer input separate from the original suppliers' inputs. */
+/** A non-default composition, with the consumer slot separate from the original suppliers' slots. */
 export const componentCompositionSchema = z
   .object({
-    kind: z
-      .string()
-      .min(1)
-      .regex(/^(?!inline-render$)/, "Use null or omit composition for direct rendering"),
-    input: z.string().min(1).optional(),
-    origins: z.array(
-      z.object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), input: z.string().min(1) }).strict(),
-    ),
+    type: z.enum(["node", "render", "component"]),
+    slot: z.string().min(1).optional(),
+    origins: z.array(componentOriginSchema),
   })
   .strict()
   .meta({ id: "ComponentComposition" });
 export type ComponentComposition = z.infer<typeof componentCompositionSchema>;
 
 /** Omitted or null composition means direct rendering; objects describe other supply methods. */
+const componentStructureEdgeLayoutContextSchema = z
+  .object({ composition: componentCompositionSchema.nullable().optional() })
+  .strict()
+  .meta({ id: "ComponentStructureEdgeLayoutContext" });
 const componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema
-  .extend({ composition: componentCompositionSchema.nullable().optional() })
+  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() })
   .meta({ id: "ComponentStructureDefaultEdge" });
 const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
-  .extend({ composition: componentCompositionSchema.nullable().optional() })
+  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() })
   .meta({ id: "ComponentStructureControlEdge" });
 
 /** Graph-level layout context for component structure: its roots and controls. */

@@ -51,7 +51,11 @@ type BuilderEdge = Readonly<{
   source: string;
   target: string;
   activeWhen?: DiagramRouteRequirementRuleset;
-  composition: ComponentComposition;
+  composition: Readonly<{
+    kind: ReactComponentRelationshipKind;
+    slot?: string;
+    origins: ComponentComposition["origins"];
+  }>;
 }>;
 
 export type ComponentGraphOptions = Readonly<{
@@ -3097,14 +3101,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         : relationship.origins.map(({ supplierId, prop }) => ({
             supplierId,
             supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
-            input: prop,
+            slot: prop,
           }));
     }
-    function componentMetadata(id: string, definitionId: string): ComponentStructureDiagramNode["component"] {
+    function nodeLayoutContext(
+      id: string,
+      definitionId: string,
+    ): NonNullable<ComponentStructureDiagramNode["layoutContext"]> {
       const origins = relationships.flatMap((relationship) =>
-        relationship.target === id
-          ? compositionOrigins(relationship).map(({ input, ...origin }) => ({ ...origin, prop: input }))
-          : [],
+        relationship.target === id ? compositionOrigins(relationship) : [],
       );
       return {
         definitionId,
@@ -3121,7 +3126,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               title: definition.name,
               description: definition.relativePath,
               links: [{ href: sourceHref(definition.relativePath) }],
-              component: componentMetadata(id, target.id),
+              layoutContext: nodeLayoutContext(id, target.id),
             },
           ]
         : [];
@@ -3135,7 +3140,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         id,
         title: target.title,
         description: `${target.externalPackage} boundary`,
-        component: componentMetadata(id, target.id),
+        layoutContext: nodeLayoutContext(id, target.id),
       }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
     const edges: BuilderEdge[] = relationships
@@ -3148,7 +3153,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         activeWhen: relationship.ruleset,
         composition: {
           kind: relationship.kind,
-          ...(relationship.kind === "inline-render" ? {} : { input: relationship.propName }),
+          ...(relationship.kind === "inline-render" ? {} : { slot: relationship.propName }),
           origins: compositionOrigins(relationship),
         },
       }))
@@ -3202,16 +3207,26 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
   /** Converts the builder graph to the stored contract: tautological gates become plain default edges, real gates become control edges, and roots and controls move into the graph's layout context. */
   function toStoredGraph(graph: BuilderGraph): ComponentStructureDiagramGraph {
+    const compositionTypes: Record<SuppliedValueKind, ComponentComposition["type"]> = {
+      "node-prop": "node",
+      "render-prop": "render",
+      "component-prop": "component",
+    };
     return {
       groups: graph.groups,
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
         const ruleset = edge.activeWhen ?? [[]];
+        const { kind, ...composition } = edge.composition;
         const relationship = {
           id: edge.id,
           source: edge.source,
           target: edge.target,
-          ...(edge.composition.kind === "inline-render" ? {} : { composition: edge.composition }),
+          ...(kind === "inline-render"
+            ? {}
+            : {
+                layoutContext: { composition: { type: compositionTypes[kind], ...composition } },
+              }),
         };
         return ruleset.length === 1 && ruleset.at(0)?.length === 0
           ? { type: "default", ...relationship }
@@ -3840,13 +3855,13 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       .map((node) => {
         if (node.type !== "default") return { ...node, id: outputIds.get(node.id)! };
         const origins = graph.nodes.flatMap((candidate) =>
-          candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.component!.origins : [],
+          candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.layoutContext!.origins : [],
         );
         return {
           ...node,
           id: outputIds.get(node.id)!,
-          component: {
-            ...node.component!,
+          layoutContext: {
+            ...node.layoutContext!,
             origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()],
           },
         };
@@ -3891,7 +3906,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           origins: [
             ...new Map(
               [...(existing?.composition.origins ?? []), ...edge.composition.origins].map((origin) => [
-                JSON.stringify([origin.supplierId, origin.input]),
+                JSON.stringify([origin.supplierId, origin.slot]),
                 origin,
               ]),
             ).values(),

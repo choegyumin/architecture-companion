@@ -47,10 +47,10 @@ async function withFixture(
   }
 }
 
-function originProps(graph: ComponentStructureDiagramGraph, nodeId: string): string[] {
+function originSlots(graph: ComponentStructureDiagramGraph, nodeId: string): string[] {
   const node = graph.nodes.find(({ id }) => id === nodeId);
   return node?.type === "default"
-    ? (node.component?.origins ?? []).map(({ supplierTitle, prop }) => `${supplierTitle}:${prop}`).toSorted()
+    ? (node.layoutContext?.origins ?? []).map(({ supplierTitle, slot }) => `${supplierTitle}:${slot}`).toSorted()
     : [];
 }
 
@@ -60,9 +60,9 @@ function edgeFacts(graph: ComponentStructureDiagramGraph) {
     .map((edge) => ({
       source: nodesById.get(edge.source)?.title,
       target: nodesById.get(edge.target)?.title,
-      // Edges carry no labels any more; supplied targets record which prop
-      // each supplier provided in their component origins.
-      supplies: originProps(graph, edge.target),
+      // Edges carry no labels any more; supplied targets record which slot
+      // each supplier provided in their layout context origins.
+      supplies: originSlots(graph, edge.target),
     }))
     .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
@@ -114,7 +114,7 @@ describe("React component structure generator", () => {
           expect(renderer.title).toBe("Renderer");
           const children = graph.edges.filter((edge) => edge.source === renderer.id);
           expect(children).toHaveLength(1);
-          expect(originProps(graph, children.at(0)!.target)).toEqual(["App:children"]);
+          expect(originSlots(graph, children.at(0)!.target)).toEqual(["App:children"]);
           return nodesById.get(children.at(0)!.target)?.title;
         });
         expect(compositions.toSorted()).toEqual(["First", "Second"]);
@@ -157,7 +157,7 @@ describe("React component structure generator", () => {
           const compositions = wrappers.map(({ id }) => {
             const outgoing = graph.edges.filter(({ source }) => source === id);
             expect(outgoing).toHaveLength(1);
-            expect(originProps(graph, outgoing.at(0)!.target)).toEqual(["App:children"]);
+            expect(originSlots(graph, outgoing.at(0)!.target)).toEqual(["App:children"]);
             return titlesById.get(outgoing.at(0)!.target);
           });
           expect(compositions.toSorted()).toEqual(["First", "Second"]);
@@ -201,7 +201,7 @@ describe("React component structure generator", () => {
     );
   });
 
-  it("keeps every supplied relationship kind attached to its own composition", async () => {
+  it("keeps every supplied composition type and slot in its edge layoutContext", async () => {
     await withFixture(
       {
         "src/app.tsx": `
@@ -229,21 +229,21 @@ describe("React component structure generator", () => {
         const compositions = renderers.map(({ id }) => {
           const edges = graph.edges.filter(({ source }) => source === id);
           expect(edges).toHaveLength(3);
-          expect(edges.map(({ composition }) => composition)).toEqual(
+          expect(edges.map(({ layoutContext }) => layoutContext?.composition)).toEqual(
             expect.arrayContaining(
               [
-                ["node-prop", "panel"],
-                ["render-prop", "render"],
-                ["component-prop", "component"],
-              ].map(([kind, input]) => ({
-                kind,
-                input,
-                origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input }],
+                ["node", "panel"],
+                ["render", "render"],
+                ["component", "component"],
+              ].map(([type, slot]) => ({
+                type,
+                slot,
+                origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", slot }],
               })),
             ),
           );
           for (const edge of edges) {
-            expect(originProps(graph, edge.target)).toEqual(["App:component", "App:panel", "App:render"]);
+            expect(originSlots(graph, edge.target)).toEqual(["App:component", "App:panel", "App:render"]);
           }
           return edges.map(({ target }) => titlesById.get(target)).toSorted();
         });
@@ -255,7 +255,7 @@ describe("React component structure generator", () => {
         expect(inlineEdges.length).toBeGreaterThan(0);
         for (const edge of inlineEdges) {
           expect(edge.type).toBe("default");
-          expect(edge).not.toHaveProperty("composition");
+          expect(edge).not.toHaveProperty("layoutContext");
         }
       },
     );
@@ -293,7 +293,7 @@ describe("React component structure generator", () => {
             expect.objectContaining({ target: content.at(0)!.id }),
           ]);
           // Two distinct supplier definitions share the display name; both stay.
-          expect(originProps(graph, content.at(0)!.id)).toEqual(["Parent:children", "Parent:children"]);
+          expect(originSlots(graph, content.at(0)!.id)).toEqual(["Parent:children", "Parent:children"]);
         }
         expect(new Set(graph.edges.map(({ id }) => id)).size).toBe(graph.edges.length);
       },
@@ -346,7 +346,7 @@ describe("React component structure generator", () => {
         expect(graph.edges.filter(({ source }) => source === innerId)).toEqual([
           expect.objectContaining({ target: contentId }),
         ]);
-        expect(originProps(graph, contentId)).toEqual(["App:children"]);
+        expect(originSlots(graph, contentId)).toEqual(["App:children"]);
       },
     );
   });
@@ -517,7 +517,7 @@ describe("React component structure generator", () => {
             expect.objectContaining({ target: contentId }),
           ]);
         }
-        expect(originProps(first, contentId)).toEqual(["ParentA:content", "ParentB:content"]);
+        expect(originSlots(first, contentId)).toEqual(["ParentA:content", "ParentB:content"]);
       },
     );
   });
@@ -1377,7 +1377,7 @@ describe("React component structure generator", () => {
         ]);
         expect(
           graph.edges
-            .map((edge) => ({ source: edge.source, target: edge.target, supplies: originProps(graph, edge.target) }))
+            .map((edge) => ({ source: edge.source, target: edge.target, supplies: originSlots(graph, edge.target) }))
             .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
         ).toEqual([
           {

@@ -2,7 +2,11 @@ import { z } from "zod";
 
 import { artifactSchema, parseArtifact } from "@/features/artifact/artifact";
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
-import { componentStructureDiagramGraphSchema, diagramControlSchema } from "@/features/diagram/diagram-graph";
+import {
+  componentCompositionSchema,
+  componentStructureDiagramGraphSchema,
+  diagramControlSchema,
+} from "@/features/diagram/diagram-graph";
 
 const validDiagram = {
   id: "checkout-structure",
@@ -92,13 +96,14 @@ const validComponentDiagram = {
 } as const;
 
 const composition = {
-  kind: "slot",
-  input: "children",
+  type: "node",
+  slot: "children",
   origins: [
-    { supplierId: "outside:App", supplierTitle: "App", input: "header" },
-    { supplierId: "outside:Other", supplierTitle: "Other", input: "footer" },
+    { supplierId: "outside:App", supplierTitle: "App", slot: "header" },
+    { supplierId: "outside:Other", supplierTitle: "Other", slot: "footer" },
   ],
 };
+const nodeLayoutContext = { definitionId: "definition:Shared", origins: composition.origins };
 
 describe("control storage contract", () => {
   it.each([
@@ -122,6 +127,46 @@ describe("control storage contract", () => {
 });
 
 describe("component layout context", () => {
+  it("preserves node definition IDs and aggregated supplier slots in layoutContext", () => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      nodes: validComponentDiagram.diagram.graph.nodes.map((node) => ({
+        ...node,
+        layoutContext: nodeLayoutContext,
+      })),
+    };
+    const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
+    expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
+  });
+
+  it.each([
+    null,
+    {},
+    { ...nodeLayoutContext, definitionId: "" },
+    { definitionId: "definition:Shared" },
+    { ...nodeLayoutContext, origins: [{ supplierId: "outside:App", supplierTitle: "App", prop: "header" }] },
+    { ...nodeLayoutContext, origins: [{ ...composition.origins.at(0), slot: "" }] },
+    { ...nodeLayoutContext, component: nodeLayoutContext },
+  ])("rejects malformed node layout context: %j", (layoutContext) => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      nodes: validComponentDiagram.diagram.graph.nodes.map((node) => ({ ...node, layoutContext })),
+    };
+    expect(() =>
+      parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+    ).toThrow("Invalid artifact");
+  });
+
+  it("rejects the removed node component wrapper", () => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      nodes: validComponentDiagram.diagram.graph.nodes.map((node) => ({ ...node, component: nodeLayoutContext })),
+    };
+    expect(() =>
+      parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+    ).toThrow('Unrecognized key: "component"');
+  });
+
   it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s graph contract", (id) => {
     const graph = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
     expect(() =>
@@ -130,6 +175,19 @@ describe("component layout context", () => {
         diagram: {
           layout: { id },
           graph: { ...graph, layoutContext: validComponentDiagram.diagram.graph.layoutContext },
+        },
+      }),
+    ).toThrow('Unrecognized key: "layoutContext"');
+  });
+
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s node contract", (id) => {
+    const graph = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
+    expect(() =>
+      parseArtifact({
+        ...validDiagram,
+        diagram: {
+          layout: { id },
+          graph: { ...graph, nodes: graph.nodes.map((node) => ({ ...node, layoutContext: nodeLayoutContext })) },
         },
       }),
     ).toThrow('Unrecognized key: "layoutContext"');
@@ -151,14 +209,19 @@ describe("component layout context", () => {
 });
 
 describe("component composition metadata", () => {
+  it.each(["node", "render", "component"])("validates the framework-neutral %s supply type", (type) => {
+    const metadata = { ...composition, type };
+    expect(componentCompositionSchema.parse(metadata)).toEqual(metadata);
+  });
+
   it("preserves omitted composition as the direct-rendering default", () => {
     expect(parseArtifact(validComponentDiagram)).toEqual(validComponentDiagram);
   });
 
-  it("preserves per-edge kind, consumer input, and original supplier-input pairs through JSON", () => {
+  it("preserves per-edge type, consumer slot, and original supplier-slot pairs through JSON", () => {
     const graph = {
       ...validComponentDiagram.diagram.graph,
-      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition })),
+      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, layoutContext: { composition } })),
     };
     const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
 
@@ -168,47 +231,83 @@ describe("component composition metadata", () => {
     );
   });
 
-  it("preserves explicit null composition and projects it like the omitted default", () => {
-    const graph = {
-      ...validComponentDiagram.diagram.graph,
-      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition: null })),
-    };
-    const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
+  it.each([{}, { composition: null }])(
+    "preserves explicit direct-rendering context %j and projects it like the omitted default",
+    (layoutContext) => {
+      const graph = {
+        ...validComponentDiagram.diagram.graph,
+        edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, layoutContext })),
+      };
+      const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
 
-    expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
-    expect(projectDecisionNodes(componentStructureDiagramGraphSchema.parse(graph))).toEqual(
-      projectDecisionNodes(componentStructureDiagramGraphSchema.parse(validComponentDiagram.diagram.graph)),
-    );
-  });
+      expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
+      expect(projectDecisionNodes(componentStructureDiagramGraphSchema.parse(graph))).toEqual(
+        projectDecisionNodes(componentStructureDiagramGraphSchema.parse(validComponentDiagram.diagram.graph)),
+      );
+    },
+  );
 
   it.each([
-    { kind: "inline-render", origins: [] },
-    { ...composition, kind: "inline-render" },
-    { ...composition, kind: "" },
-    { ...composition, input: "" },
-    { kind: "slot" },
+    ...["inline-render", "node-prop", "render-prop", "component-prop", "slot", "", null].map((type) => ({
+      ...composition,
+      type,
+    })),
+    { ...composition, kind: "node" },
+    { ...composition, input: "children" },
+    { ...composition, slot: "" },
+    { type: "node" },
     { ...composition, unexpected: true },
     { ...composition, origins: [{ ...composition.origins.at(0), supplierId: "" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), supplierTitle: "" }] },
-    { ...composition, origins: [{ ...composition.origins.at(0), input: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), slot: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), input: "header" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), prop: "header" }] },
   ])("rejects malformed composition metadata: %j", (invalid) => {
     for (const edge of validComponentDiagram.diagram.graph.edges) {
-      const graph = { ...validComponentDiagram.diagram.graph, edges: [{ ...edge, composition: invalid }] };
+      const graph = {
+        ...validComponentDiagram.diagram.graph,
+        edges: [{ ...edge, layoutContext: { composition: invalid } }],
+      };
       expect(() =>
         parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
       ).toThrow("Invalid artifact");
     }
   });
 
-  it.each(["elk-layered", "dependency-graph"])("does not widen the %s edge contract", (id) => {
+  it.each([null, composition, { composition, unexpected: true }])(
+    "rejects malformed edge layout context: %j",
+    (layoutContext) => {
+      const graph = {
+        ...validComponentDiagram.diagram.graph,
+        edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, layoutContext })),
+      };
+      expect(() =>
+        parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+      ).toThrow("Invalid artifact");
+    },
+  );
+
+  it.each([composition, null])("rejects the removed top-level edge composition: %j", (composition) => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      edges: validComponentDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition })),
+    };
+    expect(() =>
+      parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+    ).toThrow('Unrecognized key: "composition"');
+  });
+
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s edge contract", (id) => {
+    const base = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
     for (const metadata of [composition, null]) {
       const graph = {
-        ...validDiagram.diagram.graph,
-        edges: validDiagram.diagram.graph.edges.map((edge) => ({ ...edge, composition: metadata })),
+        ...base,
+        edges: base.edges.map((edge) => ({ ...edge, layoutContext: { composition: metadata } })),
       };
 
-      expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow("Invalid artifact");
+      expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow(
+        'Unrecognized key: "layoutContext"',
+      );
     }
   });
 
@@ -216,25 +315,40 @@ describe("component composition metadata", () => {
     const schema = z.toJSONSchema(artifactSchema, { target: "draft-2020-12", io: "input", reused: "inline" });
 
     expect(schema.$defs).toMatchObject({
+      ComponentOrigin: {
+        type: "object",
+        required: ["supplierId", "supplierTitle", "slot"],
+        additionalProperties: false,
+        properties: { slot: { type: "string", minLength: 1 } },
+      },
       ComponentComposition: {
         type: "object",
-        required: ["kind", "origins"],
+        required: ["type", "origins"],
         additionalProperties: false,
-        properties: { kind: { type: "string", minLength: 1, pattern: "^(?!inline-render$)" } },
+        properties: { type: { type: "string", enum: ["node", "render", "component"] } },
+      },
+      ComponentStructureEdgeLayoutContext: {
+        type: "object",
+        additionalProperties: false,
+        properties: { composition: { anyOf: [{ $ref: "#/$defs/ComponentComposition" }, { type: "null" }] } },
       },
       ComponentStructureDefaultEdge: {
-        properties: { composition: { anyOf: [{ $ref: "#/$defs/ComponentComposition" }, { type: "null" }] } },
+        properties: { layoutContext: { $ref: "#/$defs/ComponentStructureEdgeLayoutContext" } },
       },
       ComponentStructureControlEdge: {
-        properties: { composition: { anyOf: [{ $ref: "#/$defs/ComponentComposition" }, { type: "null" }] } },
+        properties: { layoutContext: { $ref: "#/$defs/ComponentStructureEdgeLayoutContext" } },
       },
     });
-    expect(schema.$defs?.ComponentStructureDefaultEdge.required).not.toContain("composition");
-    expect(schema.$defs?.ComponentStructureControlEdge.required).not.toContain("composition");
+    expect(schema.$defs?.ComponentStructureDefaultEdge.required).not.toContain("layoutContext");
+    expect(schema.$defs?.ComponentStructureControlEdge.required).not.toContain("layoutContext");
+    expect(schema.$defs?.ComponentStructureEdgeLayoutContext.required ?? []).not.toContain("composition");
     expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureDefaultEdge");
     expect(JSON.stringify(schema.$defs?.ComponentStructureGraph)).toContain("#/$defs/ComponentStructureControlEdge");
-    expect(schema.$defs?.DefaultEdge.properties).not.toHaveProperty("composition");
-    expect(schema.$defs?.ControlEdge.properties).not.toHaveProperty("composition");
+    for (const name of ["DefaultNode", "DefaultEdge", "ControlEdge"]) {
+      expect(schema.$defs?.[name]?.properties).not.toHaveProperty("layoutContext");
+    }
+    expect(schema.$defs?.ComponentStructureDefaultEdge.properties).not.toHaveProperty("composition");
+    expect(schema.$defs?.ComponentStructureControlEdge.properties).not.toHaveProperty("composition");
   });
 });
 
