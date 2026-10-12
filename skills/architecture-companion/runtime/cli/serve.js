@@ -23182,22 +23182,16 @@ var diagramControlBaseShape = {
   label: external_exports.string().min(1),
   dependsOn: diagramRouteRequirementRulesetSchema
 };
-var diagramControlSchema = external_exports.discriminatedUnion("kind", [
-  external_exports.object({ ...diagramControlBaseShape, kind: external_exports.literal("conditional") }).strict(),
+var diagramControlSchema = external_exports.discriminatedUnion("type", [
+  external_exports.object({ ...diagramControlBaseShape, type: external_exports.literal("conditional") }).strict(),
   external_exports.object({
     ...diagramControlBaseShape,
-    kind: external_exports.literal("branch"),
+    type: external_exports.literal("branch"),
     cases: external_exports.array(external_exports.object({ id: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
     /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
     polarityPair: external_exports.literal(true).optional()
   }).strict()
 ]);
-var diagramComponentMetadataSchema = external_exports.object({
-  definitionId: diagramIdSchema,
-  origins: external_exports.array(
-    external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), prop: external_exports.string().min(1) }).strict()
-  )
-}).strict();
 var diagramNodeBaseShape = {
   id: diagramIdSchema,
   title: external_exports.string().min(1),
@@ -23478,25 +23472,29 @@ var dependencyDiagramGraphSchema = external_exports.object({
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
 }).meta({ id: "DependencyGraph" });
+var componentOriginSchema = external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), slot: external_exports.string().min(1) }).strict().meta({ id: "ComponentOrigin" });
+var componentStructureNodeLayoutContextSchema = external_exports.object({
+  definitionId: diagramIdSchema,
+  origins: external_exports.array(componentOriginSchema)
+}).strict();
 var componentStructureDiagramNodeSchema = defaultDiagramNodeSchema.extend({
-  component: diagramComponentMetadataSchema.optional()
+  layoutContext: componentStructureNodeLayoutContextSchema.optional()
 });
 var componentCompositionSchema = external_exports.object({
-  kind: external_exports.string().min(1).regex(/^(?!inline-render$)/, "Use null or omit composition for direct rendering"),
-  input: external_exports.string().min(1).optional(),
-  origins: external_exports.array(
-    external_exports.object({ supplierId: diagramIdSchema, supplierTitle: external_exports.string().min(1), input: external_exports.string().min(1) }).strict()
-  )
+  type: external_exports.enum(["node", "render", "component"]),
+  slot: external_exports.string().min(1).optional(),
+  origins: external_exports.array(componentOriginSchema)
 }).strict().meta({ id: "ComponentComposition" });
-var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ composition: componentCompositionSchema.nullable().optional() }).meta({ id: "ComponentStructureDefaultEdge" });
-var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ composition: componentCompositionSchema.nullable().optional() }).meta({ id: "ComponentStructureControlEdge" });
-var componentStructureAdditionalSchema = external_exports.object({
+var componentStructureEdgeLayoutContextSchema = external_exports.object({ composition: componentCompositionSchema.nullable().optional() }).strict().meta({ id: "ComponentStructureEdgeLayoutContext" });
+var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureDefaultEdge" });
+var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureControlEdge" });
+var componentStructureLayoutContextSchema = external_exports.object({
   roots: external_exports.array(diagramIdSchema).min(1).readonly(),
   controls: external_exports.array(diagramControlSchema).readonly()
 }).strict();
 function validateComponentStructureGraph(graph) {
   const issues = [];
-  const { roots, controls } = graph.additional;
+  const { roots, controls } = graph.layoutContext;
   const controlsById = new Map(controls.map((control) => [control.id, control]));
   const nodeIds = new Set(graph.nodes.map((node2) => node2.id));
   const rootIds = /* @__PURE__ */ new Set();
@@ -23504,7 +23502,7 @@ function validateComponentStructureGraph(graph) {
     if (!nodeIds.has(root) || rootIds.has(root)) {
       issues.push({
         code: "custom",
-        path: ["additional", "roots", index],
+        path: ["layoutContext", "roots", index],
         message: `${nodeIds.has(root) ? "Duplicate" : "Unknown"} component root: ${root}`
       });
     }
@@ -23515,7 +23513,7 @@ function validateComponentStructureGraph(graph) {
     if (controlIds.has(control.id)) {
       issues.push({
         code: "custom",
-        path: ["additional", "controls", index, "id"],
+        path: ["layoutContext", "controls", index, "id"],
         message: `Duplicate component control: ${control.id}`
       });
     }
@@ -23523,17 +23521,17 @@ function validateComponentStructureGraph(graph) {
     if (!nodeIds.has(control.owner)) {
       issues.push({
         code: "custom",
-        path: ["additional", "controls", index, "owner"],
+        path: ["layoutContext", "controls", index, "owner"],
         message: `Unknown component control owner: ${control.owner}`
       });
     }
-    if (control.kind === "branch") {
+    if (control.type === "branch") {
       const caseIds = /* @__PURE__ */ new Set();
       control.cases.forEach((branchCase, caseIndex) => {
         if (caseIds.has(branchCase.id)) {
           issues.push({
             code: "custom",
-            path: ["additional", "controls", index, "cases", caseIndex, "id"],
+            path: ["layoutContext", "controls", index, "cases", caseIndex, "id"],
             message: `Duplicate component control case: ${branchCase.id}`
           });
         }
@@ -23561,7 +23559,7 @@ function validateComponentStructureGraph(graph) {
             path: [...issuePath, ruleIndex, requirementIndex, "controlId"],
             message: `Unknown component control: ${requirement.controlId}`
           });
-        } else if (control.kind === "conditional" ? requirement.value !== "on" && requirement.value !== "off" : !control.cases.some((branchCase) => branchCase.id === requirement.value)) {
+        } else if (control.type === "conditional" ? requirement.value !== "on" && requirement.value !== "off" : !control.cases.some((branchCase) => branchCase.id === requirement.value)) {
           issues.push({
             code: "custom",
             path: [...issuePath, ruleIndex, requirementIndex, "value"],
@@ -23575,7 +23573,7 @@ function validateComponentStructureGraph(graph) {
     if (edge.type === "control") validateRuleset(edge.activeWhen, ["edges", index, "activeWhen"]);
   });
   controls.forEach((control, index) => {
-    validateRuleset(control.dependsOn, ["additional", "controls", index, "dependsOn"]);
+    validateRuleset(control.dependsOn, ["layoutContext", "controls", index, "dependsOn"]);
   });
   const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.target));
   graph.nodes.forEach((node2, index) => {
@@ -23603,7 +23601,7 @@ function validateComponentStructureGraph(graph) {
   if ([...controlsById.keys()].some(hasCycle)) {
     issues.push({
       code: "custom",
-      path: ["additional", "controls"],
+      path: ["layoutContext", "controls"],
       message: "Component control prerequisites contain a cycle"
     });
   }
@@ -23613,7 +23611,7 @@ var componentStructureDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
   nodes: external_exports.array(componentStructureDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(external_exports.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema])).readonly(),
-  additional: componentStructureAdditionalSchema
+  layoutContext: componentStructureLayoutContextSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
 }).meta({ id: "ComponentStructureGraph" });

@@ -843,7 +843,7 @@
                   "$ref": "#/$defs/Link"
                 }
               },
-              "component": {
+              "layoutContext": {
                 "type": "object",
                 "properties": {
                   "definitionId": {
@@ -853,27 +853,7 @@
                   "origins": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "properties": {
-                        "supplierId": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "supplierTitle": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "prop": {
-                          "type": "string",
-                          "minLength": 1
-                        }
-                      },
-                      "required": [
-                        "supplierId",
-                        "supplierTitle",
-                        "prop"
-                      ],
-                      "additionalProperties": false
+                      "$ref": "#/$defs/ComponentOrigin"
                     }
                   }
                 },
@@ -906,7 +886,7 @@
             ]
           }
         },
-        "additional": {
+        "layoutContext": {
           "type": "object",
           "properties": {
             "roots": {
@@ -941,7 +921,7 @@
                       "dependsOn": {
                         "$ref": "#/$defs/RouteRequirementRuleset"
                       },
-                      "kind": {
+                      "type": {
                         "type": "string",
                         "const": "conditional"
                       }
@@ -951,7 +931,7 @@
                       "owner",
                       "label",
                       "dependsOn",
-                      "kind"
+                      "type"
                     ],
                     "additionalProperties": false
                   },
@@ -973,7 +953,7 @@
                       "dependsOn": {
                         "$ref": "#/$defs/RouteRequirementRuleset"
                       },
-                      "kind": {
+                      "type": {
                         "type": "string",
                         "const": "branch"
                       },
@@ -1009,7 +989,7 @@
                       "owner",
                       "label",
                       "dependsOn",
-                      "kind",
+                      "type",
                       "cases"
                     ],
                     "additionalProperties": false
@@ -1029,7 +1009,30 @@
         "groups",
         "nodes",
         "edges",
-        "additional"
+        "layoutContext"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentOrigin": {
+      "type": "object",
+      "properties": {
+        "supplierId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supplierTitle": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slot": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "supplierId",
+        "supplierTitle",
+        "slot"
       ],
       "additionalProperties": false
     },
@@ -1064,6 +1067,21 @@
           "type": "string",
           "minLength": 1
         },
+        "layoutContext": {
+          "$ref": "#/$defs/ComponentStructureEdgeLayoutContext"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "ComponentStructureEdgeLayoutContext": {
+      "type": "object",
+      "properties": {
         "composition": {
           "anyOf": [
             {
@@ -1075,55 +1093,32 @@
           ]
         }
       },
-      "required": [
-        "id",
-        "type",
-        "source",
-        "target"
-      ],
       "additionalProperties": false
     },
     "ComponentComposition": {
       "type": "object",
       "properties": {
-        "kind": {
+        "type": {
           "type": "string",
-          "minLength": 1,
-          "pattern": "^(?!inline-render$)"
+          "enum": [
+            "node",
+            "render",
+            "component"
+          ]
         },
-        "input": {
+        "slot": {
           "type": "string",
           "minLength": 1
         },
         "origins": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "supplierId": {
-                "type": "string",
-                "minLength": 1
-              },
-              "supplierTitle": {
-                "type": "string",
-                "minLength": 1
-              },
-              "input": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "supplierId",
-              "supplierTitle",
-              "input"
-            ],
-            "additionalProperties": false
+            "$ref": "#/$defs/ComponentOrigin"
           }
         }
       },
       "required": [
-        "kind",
+        "type",
         "origins"
       ],
       "additionalProperties": false
@@ -1150,15 +1145,8 @@
         "activeWhen": {
           "$ref": "#/$defs/RouteRequirementRuleset"
         },
-        "composition": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ComponentComposition"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "layoutContext": {
+          "$ref": "#/$defs/ComponentStructureEdgeLayoutContext"
         }
       },
       "required": [

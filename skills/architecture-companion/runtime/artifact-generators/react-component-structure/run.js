@@ -5618,10 +5618,10 @@ function createComponentGraphBuilder(ts) {
       id,
       alternatives ? {
         ...base,
-        kind: "branch",
+        type: "branch",
         cases: alternatives.cases,
         ...alternatives.polarityPair ? { polarityPair: true } : {}
-      } : { ...base, kind: "conditional" }
+      } : { ...base, type: "conditional" }
     );
     return id;
   }
@@ -6355,12 +6355,12 @@ function createComponentGraphBuilder(ts) {
       return relationship.kind === "inline-render" ? [] : relationship.origins.map(({ supplierId, prop }) => ({
         supplierId,
         supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
-        input: prop
+        slot: prop
       }));
     }
-    function componentMetadata(id, definitionId) {
+    function nodeLayoutContext(id, definitionId) {
       const origins = relationships.flatMap(
-        (relationship) => relationship.target === id ? compositionOrigins(relationship).map(({ input, ...origin }) => ({ ...origin, prop: input })) : []
+        (relationship) => relationship.target === id ? compositionOrigins(relationship) : []
       );
       return {
         definitionId,
@@ -6376,7 +6376,7 @@ function createComponentGraphBuilder(ts) {
           title: definition.name,
           description: definition.relativePath,
           links: [{ href: sourceHref(definition.relativePath) }],
-          component: componentMetadata(id, target.id)
+          layoutContext: nodeLayoutContext(id, target.id)
         }
       ] : [];
     });
@@ -6386,7 +6386,7 @@ function createComponentGraphBuilder(ts) {
       id,
       title: target.title,
       description: `${target.externalPackage} boundary`,
-      component: componentMetadata(id, target.id)
+      layoutContext: nodeLayoutContext(id, target.id)
     }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
     const edges = relationships.filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target)).map((relationship) => ({
@@ -6397,7 +6397,7 @@ function createComponentGraphBuilder(ts) {
       activeWhen: relationship.ruleset,
       composition: {
         kind: relationship.kind,
-        ...relationship.kind === "inline-render" ? {} : { input: relationship.propName },
+        ...relationship.kind === "inline-render" ? {} : { slot: relationship.propName },
         origins: compositionOrigins(relationship)
       }
     })).toSorted((left, right) => left.id.localeCompare(right.id));
@@ -6438,20 +6438,28 @@ function createComponentGraphBuilder(ts) {
     };
   }
   function toStoredGraph(graph) {
+    const compositionTypes = {
+      "node-prop": "node",
+      "render-prop": "render",
+      "component-prop": "component"
+    };
     return {
       groups: graph.groups,
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
         const ruleset = edge.activeWhen ?? [[]];
+        const { kind, ...composition } = edge.composition;
         const relationship = {
           id: edge.id,
           source: edge.source,
           target: edge.target,
-          ...edge.composition.kind === "inline-render" ? {} : { composition: edge.composition }
+          ...kind === "inline-render" ? {} : {
+            layoutContext: { composition: { type: compositionTypes[kind], ...composition } }
+          }
         };
         return ruleset.length === 1 && ruleset.at(0)?.length === 0 ? { type: "default", ...relationship } : { type: "control", ...relationship, activeWhen: ruleset };
       }),
-      additional: { roots: graph.roots, controls: graph.controls }
+      layoutContext: { roots: graph.roots, controls: graph.controls }
     };
   }
   function mergePolarityConditionals(context, rulesByComponentId) {
@@ -6518,7 +6526,7 @@ function createComponentGraphBuilder(ts) {
     };
     const polarityOf = (control) => polarityOfLabel(control.label);
     const branchCasesOf = (control) => {
-      if (control.kind !== "branch" || control.cases.length !== 2) return void 0;
+      if (control.type !== "branch" || control.cases.length !== 2) return void 0;
       const [trueCase, falseCase] = control.cases;
       if (!trueCase || !falseCase || trueCase.id !== "true" || falseCase.id !== "false") return void 0;
       return { trueText: trueCase.label, falseText: falseCase.label };
@@ -6528,7 +6536,7 @@ function createComponentGraphBuilder(ts) {
     const discriminantOf = (control) => {
       let label;
       let values;
-      if (control.kind === "branch") {
+      if (control.type === "branch") {
         const [onCase, offCase] = control.cases;
         if (control.cases.length !== 2 || onCase?.id !== "true" || offCase?.id !== "false" || offCase.label !== negateLabel(onCase.label))
           return void 0;
@@ -6584,7 +6592,7 @@ function createComponentGraphBuilder(ts) {
     for (const control of context.controls.values()) {
       if (discriminantMembers.has(control.id)) continue;
       const branchCases = branchCasesOf(control);
-      if (!branchCases && control.kind !== "conditional") continue;
+      if (!branchCases && control.type !== "conditional") continue;
       const polarity = branchCases ? polarityOfLabel(branchCases.trueText) : polarityOf(control);
       if (!polarity) continue;
       const key = `${control.owner}\0${polarity.group}`;
@@ -6743,7 +6751,7 @@ function createComponentGraphBuilder(ts) {
         controls.set(control.id, {
           id: control.id,
           owner: control.owner,
-          ...second ? { kind: "branch", ...calculatePolarityPair({ cases: [first, second] }) } : { kind: "conditional", label: first.label },
+          ...second ? { type: "branch", ...calculatePolarityPair({ cases: [first, second] }) } : { type: "conditional", label: first.label },
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn)))
         });
         continue;
@@ -6755,10 +6763,10 @@ function createComponentGraphBuilder(ts) {
         );
         controls.set(
           control.id,
-          discriminant.staysConditional ? { id: control.id, owner: control.owner, label: control.label, kind: "conditional", dependsOn } : {
+          discriminant.staysConditional ? { id: control.id, owner: control.owner, label: control.label, type: "conditional", dependsOn } : {
             id: control.id,
             owner: control.owner,
-            kind: "branch",
+            type: "branch",
             label: discriminant.subject,
             cases: [
               ...discriminant.positiveLiterals.map((literal) => ({ id: literal, label: literal })),
@@ -6923,13 +6931,13 @@ function createComponentGraphBuilder(ts) {
     const nodes = graph.nodes.filter(({ id }) => classes.get(id) === id).map((node) => {
       if (node.type !== "default") return { ...node, id: outputIds.get(node.id) };
       const origins = graph.nodes.flatMap(
-        (candidate) => candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.component.origins : []
+        (candidate) => candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.layoutContext.origins : []
       );
       return {
         ...node,
         id: outputIds.get(node.id),
-        component: {
-          ...node.component,
+        layoutContext: {
+          ...node.layoutContext,
           origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()]
         }
       };
@@ -6970,7 +6978,7 @@ function createComponentGraphBuilder(ts) {
           origins: [
             ...new Map(
               [...existing?.composition.origins ?? [], ...edge.composition.origins].map((origin) => [
-                JSON.stringify([origin.supplierId, origin.input]),
+                JSON.stringify([origin.supplierId, origin.slot]),
                 origin
               ])
             ).values()
