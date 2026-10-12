@@ -45,16 +45,14 @@ export function validateSpotlightAgainstCatalog(
   catalog: CompanionCatalog,
   spotlight: ArtifactSpotlight,
 ): SpotlightValidation {
-  const artifact =
-    catalog.behaviors.find(({ id }) => id === spotlight.artifactId) ??
-    catalog.designs.find(({ id }) => id === spotlight.artifactId);
+  const artifact = catalog.artifacts.find(({ artifactId }) => artifactId === spotlight.artifactId);
   if (!artifact) {
     return { status: "invalid", message: `Spotlight references an unknown artifact: ${spotlight.artifactId}` };
   }
 
-  const groupIds = new Set(artifact.diagram.graph.groups.map(({ id }) => id));
-  const nodeIds = new Set(artifact.diagram.graph.nodes.map(({ id }) => id));
-  const edgeIds = new Set(artifact.diagram.graph.edges.map(({ id }) => id));
+  const groupIds = new Set(artifact.diagram.graph.groups.map(({ groupId }) => groupId));
+  const nodeIds = new Set(artifact.diagram.graph.nodes.map(({ nodeId }) => nodeId));
+  const edgeIds = new Set(artifact.diagram.graph.edges.map(({ edgeId }) => edgeId));
   const endpointIds = new Set([...groupIds, ...nodeIds]);
 
   const problems: string[] = [];

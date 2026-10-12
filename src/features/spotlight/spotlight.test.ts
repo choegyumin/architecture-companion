@@ -5,44 +5,46 @@ import {
   validateSpotlightAgainstCatalog,
 } from "@/features/spotlight/spotlight";
 
+const checkoutArtifactId = ".architecture-companion/artifacts/checkout.archcomp.json";
+
 function catalog(): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
-        id: "checkout",
+        artifactId: checkoutArtifactId,
+        type: "behavior",
         title: "Checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions: "## Purpose\nReview the checkout trigger.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
-            groups: [{ id: "store", title: "Store" }],
+            groups: [{ groupId: "store", title: "Store" }],
             nodes: [
-              { type: "default", id: "cart", kind: "page", title: "Cart", groupId: "store" },
-              { type: "default", id: "pay", kind: "action", title: "Pay" },
+              { type: "default", nodeId: "cart", kind: "page", title: "Cart", groupId: "store" },
+              { type: "default", nodeId: "pay", kind: "action", title: "Pay" },
             ],
             edges: [
-              { type: "default", id: "e1", source: "cart", target: "pay" },
-              { type: "default", id: "e2", source: "cart", target: "pay" },
+              { type: "default", edgeId: "e1", sourceNodeId: "cart", targetNodeId: "pay" },
+              { type: "default", edgeId: "e2", sourceNodeId: "cart", targetNodeId: "pay" },
             ],
           },
         },
       },
     ],
-    designs: [],
   };
 }
 
 function spotlight(steps: ArtifactSpotlight["diagram"]["steps"]): ArtifactSpotlight {
-  return { artifactId: "checkout", diagram: { steps } };
+  return { artifactId: checkoutArtifactId, diagram: { steps } };
 }
 
 describe("parseArtifactSpotlight", () => {
   it("parses spotlight steps with diagram element targets and captions", () => {
     expect(
       parseArtifactSpotlight({
-        artifactId: "checkout",
+        artifactId: checkoutArtifactId,
         diagram: {
           steps: [
             {
@@ -57,7 +59,7 @@ describe("parseArtifactSpotlight", () => {
         },
       }),
     ).toEqual({
-      artifactId: "checkout",
+      artifactId: checkoutArtifactId,
       diagram: {
         steps: [
           {
@@ -74,18 +76,18 @@ describe("parseArtifactSpotlight", () => {
   });
 
   it("accepts a step without elements to show a whole artifact", () => {
-    expect(parseArtifactSpotlight({ artifactId: "checkout", diagram: { steps: [{ elements: [] }] } })).toEqual({
-      artifactId: "checkout",
+    expect(parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [] }] } })).toEqual({
+      artifactId: checkoutArtifactId,
       diagram: { steps: [{ elements: [] }] },
     });
   });
 
-  it("rejects unknown fields, non-kebab artifact ids, and empty step lists", () => {
-    expect(() => parseArtifactSpotlight({ artifactId: "checkout", reason: "why" })).toThrow();
-    expect(() => parseArtifactSpotlight({ artifactId: "Checkout", diagram: { steps: [{ elements: [] }] } })).toThrow();
-    expect(() => parseArtifactSpotlight({ artifactId: "checkout", diagram: { steps: [] } })).toThrow();
+  it("rejects unknown fields, non-relative artifact ids, and empty step lists", () => {
+    expect(() => parseArtifactSpotlight({ artifactId: checkoutArtifactId, reason: "why" })).toThrow();
+    expect(() => parseArtifactSpotlight({ artifactId: "/checkout", diagram: { steps: [{ elements: [] }] } })).toThrow();
+    expect(() => parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [] } })).toThrow();
     expect(() =>
-      parseArtifactSpotlight({ artifactId: "checkout", diagram: { steps: [{ elements: [], step: 1 }] } }),
+      parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [], step: 1 }] } }),
     ).toThrow();
   });
 });
