@@ -76,9 +76,9 @@ Named local components use the definition identifier `component:<scope-relative-
 
 Node titles retain the original component name, never the instance hash or a serial number. Each node's `component.definitionId` identifies the definition, and `component.origins` records every verified `{ supplierId, supplierTitle, prop }` pair. The origin `prop` is the original supplied prop, not a downstream renamed consumer prop: supplying `Wrapper.header` and forwarding it to `Inner.children` retains the supplier's `header` origin while the edge's `composition.input` uses `children`. Merging nodes unions these pairs without mixing one supplier with another supplier's prop. Supplier IDs identify definitions, including suppliers outside a focused graph; they are not necessarily visible node IDs.
 
-Every relationship records `composition` on its stored edge, whether the edge is an unconditional `default` or a gated `control`:
+Stored edges use the following `composition` forms, whether the edge is an unconditional `default` or a gated `control`:
 
-- Inline rendering: `composition: null`, the explicit form of the direct-rendering default.
+- Inline rendering: omit `composition`, the direct-rendering default. The contract also accepts explicit `composition: null`, but this generator omits the default to keep artifacts compact.
 - Node prop, including `children`: `kind: "node-prop"`.
 - Render prop: `kind: "render-prop"`.
 - Component prop: `kind: "component-prop"`.

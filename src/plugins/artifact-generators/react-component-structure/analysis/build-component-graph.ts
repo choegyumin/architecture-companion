@@ -3211,7 +3211,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           id: edge.id,
           source: edge.source,
           target: edge.target,
-          composition: edge.composition.kind === "inline-render" ? null : edge.composition,
+          ...(edge.composition.kind === "inline-render" ? {} : { composition: edge.composition }),
         };
         return ruleset.length === 1 && ruleset.at(0)?.length === 0
           ? { type: "default", ...relationship }

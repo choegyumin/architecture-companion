@@ -719,11 +719,9 @@ describe("component rendering controls", () => {
     });
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [[{ controlId: catalog.id, value: "true" }]],
-      composition: null,
     });
     expect(edgeTo(graph, "Second")).toMatchObject({
       activeWhen: [[{ controlId: catalog.id, value: "false" }]],
-      composition: null,
     });
   });
 
@@ -972,14 +970,14 @@ describe("component rendering controls", () => {
   it.each([
     ["<Child />", "default"],
     ["ready && <Child />", "control"],
-  ])("stores direct rendering as null composition for %s", async (expression, type) => {
+  ])("omits default composition for %s", async (expression, type) => {
     const graph = await graphFor(`
       function Child() { return <span />; }
       export function App({ ready }) { return ${expression}; }
     `);
     const edge = edgeTo(graph, "Child");
     expect(edge.type).toBe(type);
-    expect(edge.composition).toBeNull();
+    expect(edge).not.toHaveProperty("composition");
   });
 
   it("combines supplier and consumer controls for children, node, render and component props", async () => {

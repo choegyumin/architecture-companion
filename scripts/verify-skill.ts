@@ -564,16 +564,15 @@ async function verifyInstalledReactComponentGenerator(
   ]);
   const contentId = graph.nodes.find(({ title }) => title === "Content")!.id;
   for (const edge of graph.edges) {
-    assert.deepEqual(
-      edge.composition,
-      edge.target === contentId
-        ? {
-            kind: "node-prop",
-            input: "children",
-            origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input: "children" }],
-          }
-        : null,
-    );
+    if (edge.target === contentId) {
+      assert.deepEqual(edge.composition, {
+        kind: "node-prop",
+        input: "children",
+        origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", input: "children" }],
+      });
+    } else {
+      assert.equal(Object.hasOwn(edge, "composition"), false, "Direct rendering must omit default composition.");
+    }
   }
 
   const externalAliasGraph = await generateGraph([], "external-src");

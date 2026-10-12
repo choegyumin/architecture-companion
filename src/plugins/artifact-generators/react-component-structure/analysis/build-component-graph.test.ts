@@ -255,7 +255,7 @@ describe("React component structure generator", () => {
         expect(inlineEdges.length).toBeGreaterThan(0);
         for (const edge of inlineEdges) {
           expect(edge.type).toBe("default");
-          expect(edge.composition).toBeNull();
+          expect(edge).not.toHaveProperty("composition");
         }
       },
     );
