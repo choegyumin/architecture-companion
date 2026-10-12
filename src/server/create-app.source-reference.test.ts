@@ -13,35 +13,35 @@ function catalog() {
   return {
     behaviors: [
       {
-        id: "checkout",
+        artifactId: "checkout",
         title: "Checkout workflow",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout requested" }],
+          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
           edges: [],
         },
       },
     ],
     designs: [
       {
-        id: "structure",
+        artifactId: "structure",
         title: "Checkout structure",
         updatedAt: "2026-10-03T09:15:00.000Z",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout input ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts.",
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
           nodes: [
             {
               type: "default",
-              id: "checkout-page",
+              nodeId: "checkout-page",
               kind: "component",
               title: "Checkout page",
               description: "Collect checkout input",

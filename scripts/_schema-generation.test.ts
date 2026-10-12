@@ -33,10 +33,10 @@ describe("generateSchemaSources", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "./artifact.schema.json",
       type: "object",
-      required: ["id", "title", "updatedAt", "generator", "instructions", "diagram"],
+      required: ["artifactId", "title", "updatedAt", "generator", "instructions", "diagram"],
       additionalProperties: false,
       properties: {
-        id: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
+        artifactId: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
         updatedAt: { type: "string", format: "date-time" },
         generator: {
           type: "string",
@@ -54,6 +54,12 @@ describe("generateSchemaSources", () => {
     // and every use references it.
     expect(Object.keys(artifactSchemaJson.$defs as JsonObject).toSorted()).toEqual(
       [
+        "AuxiliaryDefinition",
+        "ComponentComposition",
+        "ComponentOrigin",
+        "ComponentStructureEdgeLayoutContext",
+        "ComponentStructureDefaultEdge",
+        "ComponentStructureControlEdge",
         "ComponentStructureGraph",
         "ControlEdge",
         "DefaultEdge",
@@ -77,7 +83,7 @@ describe("generateSchemaSources", () => {
     expect(members.map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
     const graphDefByLayoutId: Record<string, string> = {};
     for (const member of members) {
-      const layoutId = (((member.properties as JsonObject).layout as JsonObject).properties as JsonObject).id as {
+      const layoutId = (((member.properties as JsonObject).layout as JsonObject).properties as JsonObject).layoutId as {
         const: string;
       };
       graphDefByLayoutId[layoutId.const] = refName((member.properties as JsonObject).graph);

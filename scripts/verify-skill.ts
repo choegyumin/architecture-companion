@@ -496,13 +496,23 @@ async function verifyInstalledReactComponentGenerator(
   ]);
 
   type InstalledGraph = Readonly<{
-    additional: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
-    edges: ReadonlyArray<{ source: string; target: string }>;
+    layoutContext: Readonly<{ rootNodeIds: readonly string[]; controls: readonly unknown[] }>;
+    edges: ReadonlyArray<{
+      sourceNodeId: string;
+      targetNodeId: string;
+      layoutContext?: {
+        composition?: {
+          type: string;
+          slot?: string;
+          origins: ReadonlyArray<{ supplierDefinitionId: string; slot: string }>;
+        } | null;
+      };
+    }>;
     groups: readonly unknown[];
     nodes: ReadonlyArray<{
-      id: string;
+      nodeId: string;
       title: string;
-      component?: { origins?: ReadonlyArray<{ supplierTitle?: string; prop: string }> };
+      layoutContext?: { origins?: ReadonlyArray<{ slot: string }> };
     }>;
   }>;
 
@@ -532,22 +542,23 @@ async function verifyInstalledReactComponentGenerator(
   }
 
   function edgeFacts(graph: InstalledGraph) {
-    const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+    const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
     return graph.edges
       .map((edge) => ({
-        source: nodesById.get(edge.source)?.title,
-        target: nodesById.get(edge.target)?.title,
-        // Edges carry no labels: supplied slots record their prop on the
-        // target's component origins.
-        supplies: (nodesById.get(edge.target)?.component?.origins ?? []).map(({ prop }) => prop).toSorted(),
+        source: nodesById.get(edge.sourceNodeId)?.title,
+        target: nodesById.get(edge.targetNodeId)?.title,
+        // Card origins remain an aggregate alongside per-edge composition metadata.
+        supplies: (nodesById.get(edge.targetNodeId)?.layoutContext?.origins ?? []).map(({ slot }) => slot).toSorted(),
       }))
       .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   }
 
   const graph = await generateGraph();
-  assert.deepEqual(Object.keys(graph).toSorted(), ["additional", "edges", "groups", "nodes"]);
-  assert.deepEqual(graph.additional.roots, ["component:src/app.tsx#App"]);
-  assert.deepEqual(graph.additional.controls, []);
+  assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "layoutContext", "nodes"]);
+  assert.deepEqual(graph.layoutContext.rootNodeIds, ["component:src/app.tsx#App"]);
+  assert.deepEqual(graph.layoutContext.controls, []);
+  // Every supplier stays in the unfocused graph, so the registry stays omitted.
+  assert.equal(Object.hasOwn(graph.layoutContext, "auxiliaryDefinitions"), false);
   assert.deepEqual(graph.groups, []);
   assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
   assert.deepEqual(edgeFacts(graph), [
@@ -555,10 +566,24 @@ async function verifyInstalledReactComponentGenerator(
     { source: "Layout", target: "Content", supplies: ["children"] },
     { source: "Layout", target: "Header", supplies: [] },
   ]);
+  const contentId = graph.nodes.find(({ title }) => title === "Content")!.nodeId;
+  for (const edge of graph.edges) {
+    if (edge.targetNodeId === contentId) {
+      assert.deepEqual(edge.layoutContext, {
+        composition: {
+          type: "node",
+          slot: "children",
+          origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+        },
+      });
+    } else {
+      assert.equal(Object.hasOwn(edge, "layoutContext"), false, "Direct rendering must omit empty layout context.");
+    }
+  }
 
   const externalAliasGraph = await generateGraph([], "external-src");
   assert.deepEqual(
-    externalAliasGraph.nodes.map(({ id }) => id),
+    externalAliasGraph.nodes.map(({ nodeId }) => nodeId),
     ["component:external-src/app.tsx#App", "external:ui-kit#Button"],
   );
   assert.deepEqual(edgeFacts(externalAliasGraph), [{ source: "App", target: "Button", supplies: [] }]);
@@ -633,16 +658,18 @@ async function verifyInstalledJsModuleDependencyGenerator(
 
   const graphPath = output.graphPath as string;
   const graph = JSON.parse(await readRequiredText(graphPath)) as Readonly<{
-    groups?: readonly Readonly<{ id?: unknown }>[];
-    nodes?: readonly Readonly<{ id?: unknown }>[];
-    edges?: readonly Readonly<{ id?: unknown }>[];
+    groups?: readonly Readonly<{ groupId?: unknown }>[];
+    nodes?: readonly Readonly<{ nodeId?: unknown }>[];
+    edges?: readonly Readonly<{ edgeId?: unknown }>[];
   }>;
-  assert.ok(!graph.groups?.some(({ id }) => id === "group:directory:src"));
-  assert.ok(!graph.groups?.some(({ id }) => id === "group:package:."));
-  assert.ok(graph.groups?.some(({ id }) => id === "group:external-packages"));
-  assert.ok(graph.nodes?.some(({ id }) => id === "file:src/index.ts"));
-  assert.ok(graph.nodes?.some(({ id }) => id === "external:installed-package"));
-  assert.ok(graph.edges?.some(({ id }) => id === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"));
+  assert.ok(!graph.groups?.some(({ groupId }) => groupId === "group:directory:src"));
+  assert.ok(!graph.groups?.some(({ groupId }) => groupId === "group:package:."));
+  assert.ok(graph.groups?.some(({ groupId }) => groupId === "group:external-packages"));
+  assert.ok(graph.nodes?.some(({ nodeId }) => nodeId === "file:src/index.ts"));
+  assert.ok(graph.nodes?.some(({ nodeId }) => nodeId === "external:installed-package"));
+  assert.ok(
+    graph.edges?.some(({ edgeId }) => edgeId === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"),
+  );
   await rm(dirname(graphPath), { recursive: true });
 }
 

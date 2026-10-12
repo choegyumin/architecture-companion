@@ -29,7 +29,7 @@ async function graphFor(source: string): Promise<ProjectedComponentStructureGrap
 
 function branchArm(graph: ProjectedComponentStructureGraph, controlLabel: string, port: string) {
   const control = graph.controls.find(({ label }) => label === controlLabel)!;
-  return graph.edges.find((edge) => edge.source === control.id && edge.sourcePort === port)!;
+  return graph.edges.find((edge) => edge.source === control.controlId && edge.sourcePort === port)!;
 }
 
 describe("decision node projection", () => {
@@ -41,15 +41,15 @@ describe("decision node projection", () => {
     `);
     const control = graph.controls.find(({ label }) => label === "choice")!;
     const decision = graph.nodes.find((node) => node.type === "decision")!;
-    expect(decision).toMatchObject({ id: control.id, title: "choice" });
+    expect(decision).toMatchObject({ id: control.controlId, title: "choice" });
     expect(graph.nodes.filter((node) => node.type === "decision")).toHaveLength(1);
     expect(graph.edges).toContainEqual(
-      expect.objectContaining({ source: "component:app.tsx#App", target: control.id }),
+      expect.objectContaining({ source: "component:app.tsx#App", target: control.controlId }),
     );
     expect(branchArm(graph, "choice", "true")).toMatchObject({
       target: "component:app.tsx#Leaf",
-      activeWhen: [[{ controlId: control.id, value: "true" }]],
-      guards: [[{ controlId: control.id, value: "true" }]],
+      activeWhen: [[{ controlId: control.controlId, value: "true" }]],
+      guards: [[{ controlId: control.controlId, value: "true" }]],
     });
     expect(branchArm(graph, "choice", "false")).toMatchObject({
       target: "component:app.tsx#Other",
@@ -69,11 +69,11 @@ describe("decision node projection", () => {
     const inner = graph.controls.find(({ label }) => label === "inner")!;
     expect(graph.edges).toContainEqual(
       expect.objectContaining({
-        source: outer.id,
-        target: inner.id,
+        source: outer.controlId,
+        target: inner.controlId,
         sourcePort: "true",
-        activeWhen: [[{ controlId: outer.id, value: "true" }]],
-        guards: [[{ controlId: outer.id, value: "true" }]],
+        activeWhen: [[{ controlId: outer.controlId, value: "true" }]],
+        guards: [[{ controlId: outer.controlId, value: "true" }]],
       }),
     );
     const deepArm = branchArm(graph, "inner", "true");
@@ -81,12 +81,12 @@ describe("decision node projection", () => {
       target: "component:app.tsx#Leaf",
       activeWhen: [
         [
-          { controlId: outer.id, value: "true" },
-          { controlId: inner.id, value: "true" },
+          { controlId: outer.controlId, value: "true" },
+          { controlId: inner.controlId, value: "true" },
         ],
       ],
       // The label carries only the control this hop chooses.
-      guards: [[{ controlId: inner.id, value: "true" }]],
+      guards: [[{ controlId: inner.controlId, value: "true" }]],
     });
   });
 
@@ -96,13 +96,13 @@ describe("decision node projection", () => {
       export function App({ mode }) { switch (mode) { case 0: return <Leaf />; } return null; }
     `);
     const mode = graph.controls.find(({ label }) => label === "mode")!;
-    const deadNodeId = `${mode.id}:case:1:non-component`;
-    expect(graph.nodes.find(({ id }) => id === deadNodeId)).toMatchObject({
+    const deadNodeId = `${mode.controlId}:case:1:non-component`;
+    expect(graph.nodes.find((node) => node.type !== "default" && node.id === deadNodeId)).toMatchObject({
       title: "Non-component",
     });
     expect(branchArm(graph, "mode", "case:1")).toMatchObject({
       target: deadNodeId,
-      guards: [[{ controlId: mode.id, value: "case:1" }]],
+      guards: [[{ controlId: mode.controlId, value: "case:1" }]],
     });
   });
 
@@ -115,8 +115,8 @@ describe("decision node projection", () => {
     const ready = graph.controls.find(({ label }) => label === "ready")!;
     const edge = graph.edges.find((edge) => edge.target === "component:app.tsx#Leaf")!;
     expect(edge).toMatchObject({
-      activeWhen: [[{ controlId: ready.id, value: "on" }]],
-      guards: [[{ controlId: ready.id, value: "on" }]],
+      activeWhen: [[{ controlId: ready.controlId, value: "on" }]],
+      guards: [[{ controlId: ready.controlId, value: "on" }]],
     });
   });
 });

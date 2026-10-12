@@ -12,17 +12,17 @@ import { writeCatalog } from "@/server/write-catalog";
 
 function behavior(title: string): CompanionCatalog["behaviors"][number] {
   return {
-    id: "checkout",
+    artifactId: "checkout",
     title: "Workflow",
     updatedAt: "2026-10-03T09:15:00.000Z",
     generator: "built-in:freeform",
     instructions:
       "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
     diagram: {
-      layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+      layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
       graph: {
         groups: [],
-        nodes: [{ id: "submit", type: "default", kind: "trigger", title }],
+        nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title }],
         edges: [],
       },
     },

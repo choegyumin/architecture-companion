@@ -18,13 +18,13 @@ export function ArtifactList({ activeArtifactId, artifacts, heading, onSelect }:
       <CardContent className="min-h-0 overflow-y-auto">
         <ItemGroup aria-label={heading}>
           {artifacts.map((artifact) => {
-            const isActive = artifact.id === activeArtifactId;
+            const isActive = artifact.artifactId === activeArtifactId;
 
             return (
               <Item
                 aria-current={isActive ? "page" : undefined}
-                key={artifact.id}
-                onClick={() => onSelect(artifact.id)}
+                key={artifact.artifactId}
+                onClick={() => onSelect(artifact.artifactId)}
                 render={<button type="button" />}
                 size="menu"
                 variant={isActive ? "muted" : "default"}

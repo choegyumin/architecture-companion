@@ -73,33 +73,33 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:external-packages",
+          groupId: "group:external-packages",
           title: "External packages",
         },
       ]);
       expect(graph.nodes).toEqual([
         {
           type: "default",
-          id: "external:sample-package",
+          nodeId: "external:sample-package",
           kind: "External package",
           title: "sample-package",
           groupId: "group:external-packages",
         },
         {
           type: "default",
-          id: "file:src/index.ts",
+          nodeId: "file:src/index.ts",
           title: "index.ts",
           links: [{ text: "source", href: "source:///src/index.ts" }],
         },
         {
           type: "default",
-          id: "file:src/runtime.ts",
+          nodeId: "file:src/runtime.ts",
           title: "runtime.ts",
           links: [{ text: "source", href: "source:///src/runtime.ts" }],
         },
         {
           type: "default",
-          id: "file:src/types.ts",
+          nodeId: "file:src/types.ts",
           title: "types.ts",
           links: [{ text: "source", href: "source:///src/types.ts" }],
         },
@@ -107,21 +107,21 @@ describe("JavaScript module dependency graph generator", () => {
       expect(graph.edges).toEqual([
         {
           type: "default",
-          id: "dependency:file%3Asrc%2Findex.ts:external%3Asample-package:runtime",
-          source: "file:src/index.ts",
-          target: "external:sample-package",
+          edgeId: "dependency:file%3Asrc%2Findex.ts:external%3Asample-package:runtime",
+          sourceNodeId: "file:src/index.ts",
+          targetNodeId: "external:sample-package",
         },
         {
           type: "default",
-          id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fruntime.ts:runtime",
-          source: "file:src/index.ts",
-          target: "file:src/runtime.ts",
+          edgeId: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fruntime.ts:runtime",
+          sourceNodeId: "file:src/index.ts",
+          targetNodeId: "file:src/runtime.ts",
         },
         {
           type: "default",
-          id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Ftypes.ts:type-only",
-          source: "file:src/index.ts",
-          target: "file:src/types.ts",
+          edgeId: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Ftypes.ts:type-only",
+          sourceNodeId: "file:src/index.ts",
+          targetNodeId: "file:src/types.ts",
           kind: "type-only",
         },
       ]);
@@ -142,11 +142,11 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:directory:src",
+          groupId: "group:directory:src",
           title: "src",
         },
         {
-          id: "group:package:packages/nested",
+          groupId: "group:package:packages/nested",
           title: "nested-package",
           description: "Package packages/nested",
         },
@@ -154,20 +154,20 @@ describe("JavaScript module dependency graph generator", () => {
       expect(graph.nodes).toEqual([
         {
           type: "default",
-          id: "file:packages/nested/index.ts",
+          nodeId: "file:packages/nested/index.ts",
           title: "index.ts",
           groupId: "group:package:packages/nested",
           links: [{ text: "source", href: "source:///packages/nested/index.ts" }],
         },
         {
           type: "default",
-          id: "file:root.ts",
+          nodeId: "file:root.ts",
           title: "root.ts",
           links: [{ text: "source", href: "source:///root.ts" }],
         },
         {
           type: "default",
-          id: "file:src/index.ts",
+          nodeId: "file:src/index.ts",
           title: "index.ts",
           groupId: "group:directory:src",
           links: [{ text: "source", href: "source:///src/index.ts" }],
@@ -189,26 +189,26 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:directory:src/client",
+          groupId: "group:directory:src/client",
           title: "client",
         },
         {
-          id: "group:directory:src/server",
+          groupId: "group:directory:src/server",
           title: "server",
         },
       ]);
       expect(graph.nodes).toEqual([
         expect.objectContaining({
-          id: "file:src/client/index.ts",
+          nodeId: "file:src/client/index.ts",
           groupId: "group:directory:src/client",
         }),
         expect.not.objectContaining({ groupId: expect.anything() }),
         expect.objectContaining({
-          id: "file:src/server/index.ts",
+          nodeId: "file:src/server/index.ts",
           groupId: "group:directory:src/server",
         }),
       ]);
-      expect(graph.nodes.at(1)).toEqual(expect.objectContaining({ id: "file:src/index.ts" }));
+      expect(graph.nodes.at(1)).toEqual(expect.objectContaining({ nodeId: "file:src/index.ts" }));
     });
   });
 
@@ -224,21 +224,21 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:directory:scripts",
+          groupId: "group:directory:scripts",
           title: "scripts",
         },
         {
-          id: "group:directory:src",
+          groupId: "group:directory:src",
           title: "src",
         },
       ]);
       expect(graph.nodes).toEqual([
         expect.objectContaining({
-          id: "file:scripts/build.ts",
+          nodeId: "file:scripts/build.ts",
           groupId: "group:directory:scripts",
         }),
         expect.objectContaining({
-          id: "file:src/index.ts",
+          nodeId: "file:src/index.ts",
           groupId: "group:directory:src",
         }),
       ]);
@@ -258,18 +258,18 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
-          id: "group:directory:packages/nested/lib",
+          groupId: "group:directory:packages/nested/lib",
           title: "lib",
         },
       ]);
       expect(graph.nodes).toEqual([
         expect.not.objectContaining({ groupId: expect.anything() }),
         expect.objectContaining({
-          id: "file:packages/nested/lib/value.ts",
+          nodeId: "file:packages/nested/lib/value.ts",
           groupId: "group:directory:packages/nested/lib",
         }),
       ]);
-      expect(graph.nodes.at(0)).toEqual(expect.objectContaining({ id: "file:packages/nested/index.ts" }));
+      expect(graph.nodes.at(0)).toEqual(expect.objectContaining({ nodeId: "file:packages/nested/index.ts" }));
     });
   });
 
@@ -291,9 +291,9 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.edges).toContainEqual({
         type: "default",
-        id: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Faliased.ts:runtime",
-        source: "file:src/index.ts",
-        target: "file:src/aliased.ts",
+        edgeId: "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Faliased.ts:runtime",
+        sourceNodeId: "file:src/index.ts",
+        targetNodeId: "file:src/aliased.ts",
       });
     });
   });
@@ -342,7 +342,7 @@ describe("JavaScript module dependency graph generator", () => {
       const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
       const externalNodeIds = graph.nodes
         .filter(({ kind }) => kind === "External package")
-        .map(({ id }) => id)
+        .map(({ nodeId }) => nodeId)
         .toSorted();
 
       expect(externalNodeIds).toEqual([
@@ -371,8 +371,8 @@ describe("JavaScript module dependency graph generator", () => {
 
       try {
         const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["."] });
-        expect(graph.nodes.filter(({ id }) => id.startsWith("file:"))).toEqual([
-          expect.objectContaining({ id: "file:src/index.ts" }),
+        expect(graph.nodes.filter(({ nodeId }) => nodeId.startsWith("file:"))).toEqual([
+          expect.objectContaining({ nodeId: "file:src/index.ts" }),
         ]);
       } finally {
         await chmod(join(rootPath, "dist"), 0o755);
@@ -390,7 +390,7 @@ describe("JavaScript module dependency graph generator", () => {
         scopePath: rootPath,
         sourcePaths: ["dist/built.js"],
       });
-      expect(namedFile.nodes.map(({ id }) => id)).toEqual(["file:dist/built.js"]);
+      expect(namedFile.nodes.map(({ nodeId }) => nodeId)).toEqual(["file:dist/built.js"]);
 
       // A named directory root is not filtered itself, but gitignore's
       // parent-directory inheritance still applies to its descendants.
@@ -414,7 +414,7 @@ describe("JavaScript module dependency graph generator", () => {
         exclude: ["!src/legacy.ts", "src/other.ts"],
       });
 
-      expect(graph.nodes.map(({ id }) => id).toSorted()).toEqual(["file:src/index.ts", "file:src/legacy.ts"]);
+      expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual(["file:src/index.ts", "file:src/legacy.ts"]);
     });
   });
 
@@ -426,7 +426,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
 
-      expect(graph.nodes.map(({ id }) => id)).toEqual(["file:src/index.ts"]);
+      expect(graph.nodes.map(({ nodeId }) => nodeId)).toEqual(["file:src/index.ts"]);
     });
   });
 
@@ -488,13 +488,13 @@ describe("JavaScript module dependency graph generator", () => {
       expect(
         graph.nodes
           .filter(({ kind }) => kind === "External package")
-          .map(({ id }) => id)
+          .map(({ nodeId }) => nodeId)
           .toSorted(),
       ).toEqual(["external:require-only-package", "external:sample-package", "external:types-only-package"]);
       expect(graph.edges).toContainEqual(
         expect.objectContaining({
-          source: "file:src/index.cts",
-          target: "external:types-only-package",
+          sourceNodeId: "file:src/index.cts",
+          targetNodeId: "external:types-only-package",
           kind: "type-only",
         }),
       );
@@ -514,8 +514,8 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.edges).toContainEqual(
         expect.objectContaining({
-          source: "file:src/index.js",
-          target: "file:src/types.js",
+          sourceNodeId: "file:src/index.js",
+          targetNodeId: "file:src/types.js",
           kind: "type-only",
         }),
       );
@@ -555,20 +555,20 @@ describe("JavaScript module dependency graph generator", () => {
       await writeFixtureFile(rootPath, "src/c.ts", "export {};\n");
 
       const graph = await buildModuleGraph({ scopePath: rootPath, sourcePaths: ["src"] });
-      const collidingEdges = graph.edges.filter(({ source }) =>
-        ["file:src/a.ts", "file:src/a.ts->file:src/b.ts"].includes(source),
+      const collidingEdges = graph.edges.filter(({ sourceNodeId }) =>
+        ["file:src/a.ts", "file:src/a.ts->file:src/b.ts"].includes(sourceNodeId),
       );
 
       expect(collidingEdges).toHaveLength(2);
       expect(collidingEdges).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            source: "file:src/a.ts",
-            target: "file:src/b.ts->file:src/c.ts",
+            sourceNodeId: "file:src/a.ts",
+            targetNodeId: "file:src/b.ts->file:src/c.ts",
           }),
           expect.objectContaining({
-            source: "file:src/a.ts->file:src/b.ts",
-            target: "file:src/c.ts",
+            sourceNodeId: "file:src/a.ts->file:src/b.ts",
+            targetNodeId: "file:src/c.ts",
           }),
         ]),
       );

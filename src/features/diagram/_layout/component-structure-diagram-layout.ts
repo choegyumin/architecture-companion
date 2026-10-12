@@ -20,9 +20,10 @@ import {
   toNodeRects,
   toPlainElkNode,
 } from "@/features/diagram/_layout/elk-core";
-import type {
-  ProjectedComponentStructureGraph,
-  ProjectedComponentStructureNode,
+import {
+  type ProjectedComponentStructureGraph,
+  type ProjectedComponentStructureNode,
+  projectedComponentStructureNodeId,
 } from "@/features/diagram/decision-nodes";
 import type {
   DiagramLayout,
@@ -44,7 +45,7 @@ import type {
 // segment splitting) only exists on the straightened polyline path.
 export const componentStructureDiagramLayoutConfigSchema = z
   .object({
-    id: z.literal("component-structure"),
+    layoutId: z.literal("component-structure"),
     options: z
       .object({
         elk: elkOptionMapSchema.optional(),
@@ -117,7 +118,7 @@ function slopePoint(
 }
 
 function toElkNode(node: ProjectedComponentStructureNode, nodeSizes: DiagramNodeSizes, direction: ElkCoreDirection) {
-  const size = toPlainElkNode(node, nodeSizes);
+  const size = toPlainElkNode({ id: projectedComponentStructureNodeId(node) }, nodeSizes);
   if (node.type !== "decision") return size;
   const control = node.control;
 
@@ -136,7 +137,7 @@ function toElkNode(node: ProjectedComponentStructureNode, nodeSizes: DiagramNode
   };
   const ports = control.cases.map((branchCase, index) => {
     const anchor = anchorOf(index);
-    return { id: elkPortId(node.id, branchCase.id), width: 4, height: 4, x: anchor.x - 2, y: anchor.y - 2 };
+    return { id: elkPortId(node.id, branchCase.caseId), width: 4, height: 4, x: anchor.x - 2, y: anchor.y - 2 };
   });
   ports.push({
     id: elkPortId(node.id, DECISION_ENTRY_PORT),
@@ -409,7 +410,15 @@ export async function layoutComponentStructureDiagram(
     {
       id: ELK_ROOT_ID,
       layoutOptions: resolved.layoutOptions,
-      children: toElkChildrenTree(graph, resolved.direction, (node) => toElkNode(node, nodeSizes, resolved.direction)),
+      children: toElkChildrenTree(
+        {
+          groups: graph.groups,
+          // Stored nodes carry `nodeId`; the ELK tree keys children by a plain `id`.
+          nodes: graph.nodes.map((node) => ({ ...node, id: projectedComponentStructureNodeId(node) })),
+        },
+        resolved.direction,
+        (node: ProjectedComponentStructureNode) => toElkNode(node, nodeSizes, resolved.direction),
+      ),
       edges: graph.edges.map((edge) => ({
         id: edge.id,
         // A port-bound arm leaves from its decision node's port, not its center;
@@ -419,15 +428,19 @@ export async function layoutComponentStructureDiagram(
       })),
     },
     {
-      nodeIds: graph.nodes.map(({ id }) => id),
-      groupIds: graph.groups.map(({ id }) => id),
+      nodeIds: graph.nodes.map(projectedComponentStructureNodeId),
+      groupIds: graph.groups.map(({ groupId }) => groupId),
       edgeRouting: resolved.edgeRouting,
     },
   );
 
   const layout: DiagramLayout = {
     ...placed,
-    initialView: toElkViewportPolicy(graph.nodes, graph.edges, resolved.direction),
+    initialView: toElkViewportPolicy(
+      graph.nodes.map((node) => ({ nodeId: projectedComponentStructureNodeId(node) })),
+      graph.edges.map(({ target }) => ({ targetNodeId: target })),
+      resolved.direction,
+    ),
   };
   const reAnchored = reAnchorReverseDecisionEdges(graph, layout, resolved.direction);
   return straightenComponentStructureEdges(graph, reAnchored, resolved.direction);

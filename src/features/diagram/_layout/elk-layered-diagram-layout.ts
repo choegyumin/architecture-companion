@@ -29,7 +29,7 @@ import type {
 
 export const elkLayeredDiagramLayoutConfigSchema = z
   .object({
-    id: z.literal("elk-layered"),
+    layoutId: z.literal("elk-layered"),
     options: z
       .object({
         nudgeObstacleNodes: z.boolean().optional(),
@@ -58,10 +58,10 @@ function toStraightEdges(
   rects: ReadonlyMap<string, Rect>,
 ): DiagramLayoutEdge[] {
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
-    const edge = graph.edges.find(({ id }) => id === placement.id);
+    const edge = graph.edges.find(({ edgeId }) => edgeId === placement.id);
     if (!edge || edge.type === "message") return placement;
-    const source = rects.get(edge.source);
-    const target = rects.get(edge.target);
+    const source = rects.get(edge.sourceNodeId);
+    const target = rects.get(edge.targetNodeId);
     if (!source || !target) return placement;
 
     const sourceCenter = centerOf(source);
@@ -99,14 +99,14 @@ export function straightenLayeredEdges(
   const shifted = new Map<string, number>();
   for (const edge of graph.edges) {
     if (edge.type === "message") continue;
-    const source = rects.get(edge.source);
-    const target = rects.get(edge.target);
+    const source = rects.get(edge.sourceNodeId);
+    const target = rects.get(edge.targetNodeId);
     if (!source || !target) continue;
 
     const sourceCenter = centerOf(source);
     const targetCenter = centerOf(target);
     for (const [obstacleId, obstacle] of rects) {
-      if (obstacleId === edge.source || obstacleId === edge.target) continue;
+      if (obstacleId === edge.sourceNodeId || obstacleId === edge.targetNodeId) continue;
       const [t0, t1] = clipSegment(sourceCenter, targetCenter, expanded(obstacle, OBSTACLE_MARGIN)) ?? [-1, -1];
       if (t1 - t0 <= 0.02) continue;
 
@@ -165,12 +165,21 @@ export async function layoutElkLayeredDiagram(
     {
       id: ELK_ROOT_ID,
       layoutOptions: resolved.layoutOptions,
-      children: toElkChildrenTree(diagram, resolved.direction, (node) => toPlainElkNode(node, nodeSizes)),
-      edges: diagram.edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
+      children: toElkChildrenTree(
+        // Stored nodes carry `nodeId`; the ELK tree keys children by a plain `id`.
+        { groups: diagram.groups, nodes: diagram.nodes.map((node) => ({ ...node, id: node.nodeId })) },
+        resolved.direction,
+        (node) => toPlainElkNode(node, nodeSizes),
+      ),
+      edges: diagram.edges.map((edge) => ({
+        id: edge.edgeId,
+        sources: [edge.sourceNodeId],
+        targets: [edge.targetNodeId],
+      })),
     },
     {
-      nodeIds: diagram.nodes.map(({ id }) => id),
-      groupIds: diagram.groups.map(({ id }) => id),
+      nodeIds: diagram.nodes.map(({ nodeId }) => nodeId),
+      groupIds: diagram.groups.map(({ groupId }) => groupId),
       edgeRouting: resolved.edgeRouting,
     },
   );

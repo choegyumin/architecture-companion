@@ -13,17 +13,17 @@ import { writeCatalog } from "@/server/write-catalog";
 const catalog: CompanionCatalog = {
   behaviors: [
     {
-      id: "checkout",
+      artifactId: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
           edges: [],
         },
       },
@@ -31,17 +31,17 @@ const catalog: CompanionCatalog = {
   ],
   designs: [
     {
-      id: "checkout-structure",
+      artifactId: "checkout-structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
           edges: [],
         },
       },

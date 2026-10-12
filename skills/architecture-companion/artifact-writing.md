@@ -15,10 +15,10 @@ Each diagram should answer one central review question. Avoid repeating the same
 
 A catalog is the complete set of artifacts. Each artifact contains one diagram and is stored in its own JSON file.
 
-- Product Behavior: `<scope>/.architecture-companion/behaviors/<id>.json`
-- Code Design: `<scope>/.architecture-companion/designs/<id>.json`
+- Product Behavior: `<scope>/.architecture-companion/behaviors/<artifactId>.json`
+- Code Design: `<scope>/.architecture-companion/designs/<artifactId>.json`
 
-The filename must match the diagram's `id`. To remove a diagram, delete its file. Save complete diagrams, not merge directives or partial patches.
+The filename must match the diagram's `artifactId`. To remove a diagram, delete its file. Save complete diagrams, not merge directives or partial patches.
 
 Preserve diagrams unrelated to the request. Keep existing IDs for diagrams and graph elements whose concepts retain their meaning; do not reuse an ID for a concept whose meaning has changed. When changing multiple files together, apply the changes consecutively while keeping each file valid on its own.
 
@@ -87,6 +87,22 @@ Not every field allowed by the schema is displayed. Put explanations needed for 
 | `fragment` node | `operator`, each branch's `guard`         | Put conditions needed for review in each branch's `guard`.      |
 | `default` edge  | `kind`, `label`                           | Convey the relationship's meaning through the displayed fields. |
 | `message` edge  | `label`                                   |                                                                 |
+
+### Component structure relationships
+
+Layout-specific data lives in `layoutContext` on the graph, its nodes, and its edges. Its contract follows the diagram's `layout.layoutId` and is validated against that layout's schema; it is not a free-form area, and fields defined for one layout are not valid in another. The component structure graph stores `rootNodeIds` and `controls` in the graph's `layoutContext`.
+
+On both `default` and `control` edges, omitted `composition` or explicit `composition: null` in the edge's `layoutContext` means direct rendering, the default. Other supply methods use a `composition` object. Its `type` is one of `node`, `render`, or `component`: content to render supplied through the slot, a function or template that creates the content, or a component definition. Optional `slot` names the consumer's input with its original source name and casing; required `origins` contains the original `{ supplierDefinitionId, slot }` pairs for that edge. Supplier definition IDs identify definitions and need not appear among the visible nodes. Keep the consumer slot separate from the original supplier slot when forwarding renames it.
+
+Supplier display names are not stored on origins. Viewers resolve them from `layoutContext.auxiliaryDefinitions` entries (`{ definitionId, title }`) first, then from the title of a node carrying the same `definitionId`, and otherwise show the fixed label `outside graph`.
+
+Preserve this metadata from generator output instead of reconstructing it from edge IDs or a target node's aggregated origins. The edge's `sourceNodeId` already identifies the direct parent; `origins` describes slot-based supply, not parenthood. These fields are not separate visible edge labels in the component structure renderer. Node `layoutContext.origins` remains the aggregate displayed on component cards, and `layoutContext.definitionId` identifies the definition the node represents, distinct from the node's own graph `nodeId`. Do not store an empty `layoutContext: {}` on an element with no layout-specific data; omit the field instead.
+
+### Component structure polarity pairs
+
+A branch marked `polarityPair: true` represents one subject and its complement, not merely any two alternatives. Store its two cases in `[ON, OFF]` order after polarity calculation. Preserve case IDs and all `activeWhen`/`dependsOn` references when ordering: a source-negated gate can have `false` as its ON case. The viewer reads this stored result without inferring polarity from labels or IDs.
+
+Generators implemented in this repository reuse `src/features/diagram/control-polarity.ts` for the calculation.
 
 ## Evidence links
 

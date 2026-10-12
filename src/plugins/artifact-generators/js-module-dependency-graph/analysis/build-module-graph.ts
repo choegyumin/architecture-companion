@@ -36,8 +36,10 @@ type LocalGrouping = Readonly<{
   groups: readonly DiagramGraph["groups"][number][];
 }>;
 
-function compareById<T extends Readonly<{ id: string }>>(left: T, right: T): number {
-  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+function compareById<K extends "groupId" | "nodeId" | "edgeId">(
+  key: K,
+): (left: Readonly<Record<K, string>>, right: Readonly<Record<K, string>>) => number {
+  return (left, right) => (left[key] < right[key] ? -1 : left[key] > right[key] ? 1 : 0);
 }
 
 function sourceHref(relativePath: string): string {
@@ -112,7 +114,7 @@ async function buildLocalGrouping(
       descriptorsById.set(parentId, {
         parentId: undefined,
         group: {
-          id: parentId,
+          groupId: parentId,
           title: boundary.name,
           description: `Package ${boundary.relativeRootPath}`,
         },
@@ -129,7 +131,7 @@ async function buildLocalGrouping(
       const id = directoryGroupId(scopeRelativeDirectory);
       descriptorsById.set(id, {
         parentId,
-        group: { id, title: segment },
+        group: { groupId: id, title: segment },
       });
       parentId = id;
     }
@@ -140,14 +142,14 @@ async function buildLocalGrouping(
 
   const rootGroups = [...descriptorsById.values()].filter(({ parentId }) => parentId === undefined);
   const localRootCount = rootGroups.length + ungroupedFileCount;
-  const omittedRootId = localRootCount === 1 ? rootGroups.at(0)?.group.id : undefined;
+  const omittedRootId = localRootCount === 1 ? rootGroups.at(0)?.group.groupId : undefined;
   const groups = [...descriptorsById.values()]
-    .filter(({ group }) => group.id !== omittedRootId)
+    .filter(({ group }) => group.groupId !== omittedRootId)
     .map(({ group, parentId }) => ({
       ...group,
-      ...(parentId && parentId !== omittedRootId ? { parentId } : {}),
+      ...(parentId && parentId !== omittedRootId ? { parentGroupId: parentId } : {}),
     }))
-    .toSorted(compareById);
+    .toSorted(compareById("groupId"));
   const groupIdByFile = new Map<string, string>();
 
   for (const [absolutePath, groupId] of assignedGroupIdByFile) {
@@ -163,7 +165,7 @@ async function buildDiagramGraph(
   analyzedModules: readonly AnalyzedModule[],
 ): Promise<DiagramGraph> {
   const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
-  const groups = new Map(localGrouping.groups.map((group) => [group.id, group]));
+  const groups = new Map(localGrouping.groups.map((group) => [group.groupId, group]));
   const localNodeByPath = new Map<string, string>();
   const nodes: DiagramGraph["nodes"][number][] = [];
 
@@ -173,7 +175,7 @@ async function buildDiagramGraph(
     localNodeByPath.set(absolutePath, id);
     nodes.push({
       type: "default",
-      id,
+      nodeId: id,
       title: basename(relativePath),
       ...(groupId ? { groupId } : {}),
       links: [{ text: "source", href: sourceHref(relativePath) }],
@@ -195,13 +197,13 @@ async function buildDiagramGraph(
         target = `external:${dependency.target.packageName}`;
         externalNodes.set(target, {
           type: "default",
-          id: target,
+          nodeId: target,
           kind: "External package",
           title: dependency.target.packageName,
           groupId: "group:external-packages",
         });
         groups.set("group:external-packages", {
-          id: "group:external-packages",
+          groupId: "group:external-packages",
           title: "External packages",
         });
       }
@@ -210,18 +212,18 @@ async function buildDiagramGraph(
       const id = dependencyEdgeId(source, target, dependency.kind);
       edges.set(id, {
         type: "default",
-        id,
-        source,
-        target,
+        edgeId: id,
+        sourceNodeId: source,
+        targetNodeId: target,
         ...(dependency.kind === "type-only" ? { kind: "type-only" } : {}),
       });
     }
   }
 
   return diagramGraphSchema.parse({
-    groups: [...groups.values()].toSorted(compareById),
-    nodes: [...externalNodes.values(), ...nodes].toSorted(compareById),
-    edges: [...edges.values()].toSorted(compareById),
+    groups: [...groups.values()].toSorted(compareById("groupId")),
+    nodes: [...externalNodes.values(), ...nodes].toSorted(compareById("nodeId")),
+    edges: [...edges.values()].toSorted(compareById("edgeId")),
   });
 }
 

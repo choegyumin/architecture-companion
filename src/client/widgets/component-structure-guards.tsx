@@ -4,7 +4,10 @@ import {
   routeConditionIncludesBranch,
   routeConditionText,
 } from "@/client/widgets/component-structure-route-conditions";
-import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
+import {
+  type ProjectedComponentStructureGraph,
+  projectedComponentStructureNodeId,
+} from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { clearEdgeHighlight, reportEdgeHighlight } from "@/shared/react-flow/edge-highlight";
@@ -12,12 +15,13 @@ import { GuardEdgeLabel } from "@/shared/react-flow/guard-edge-label";
 import { pointAlongPolyline, polylineArcLength } from "@/shared/react-flow/polyline-edge-label-placement";
 
 // "from X (slot)" bullets live in the card details, derived from the stored
-// component origins; authored graphs without structured origins fall back to
-// the incoming edge labels.
+// layout context origins; authored graphs without structured origins fall back
+// to the incoming edge labels.
 export function collectComponentOrigins(
   graph: Readonly<{
     nodes: ProjectedComponentStructureGraph["nodes"];
     edges: readonly Readonly<{ target: string; source: string; label?: string }>[];
+    auxiliaryDefinitions?: readonly { definitionId: string; title: string }[];
   }>,
 ): ReadonlyMap<string, readonly string[]> {
   const entriesByTarget = new Map<string, Set<string>>();
@@ -26,15 +30,32 @@ export function collectComponentOrigins(
     if (known) known.add(entry);
     else entriesByTarget.set(target, new Set([entry]));
   };
+  const registryTitles = new Map(
+    (graph.auxiliaryDefinitions ?? []).map(({ definitionId, title }) => [definitionId, title]),
+  );
+  const nodeTitlesByDefinitionId = new Map(
+    graph.nodes.flatMap((node) =>
+      node.type === "default" && node.layoutContext ? [[node.layoutContext.definitionId, node.title] as const] : [],
+    ),
+  );
+  // Supplier names are not stored on origins: the registry wins, then any node
+  // carrying the same definition, and only then a fixed label — a supplier can
+  // legitimately sit outside the graph, e.g. when --root focus dropped it.
+  const supplierTitle = (definitionId: string): string =>
+    registryTitles.get(definitionId) ?? nodeTitlesByDefinitionId.get(definitionId) ?? "outside graph";
   for (const node of graph.nodes) {
-    const structured = node.type === "default" ? (node.component?.origins ?? []) : [];
+    const structured = node.type === "default" ? (node.layoutContext?.origins ?? []) : [];
     for (const origin of structured) {
-      add(node.id, `from ${origin.supplierTitle} (${origin.prop})`);
+      add(
+        projectedComponentStructureNodeId(node),
+        `from ${supplierTitle(origin.supplierDefinitionId)} (${origin.slot})`,
+      );
     }
     if (structured.length > 0) continue;
     for (const edge of graph.edges) {
-      if (edge.target !== node.id || !edge.label) continue;
-      add(node.id, edge.label);
+      const nodeId = projectedComponentStructureNodeId(node);
+      if (edge.target !== nodeId || !edge.label) continue;
+      add(nodeId, edge.label);
     }
   }
   return new Map([...entriesByTarget].map(([target, entries]) => [target, [...entries].toSorted()]));
@@ -67,7 +88,7 @@ export function attachGuardLabels({
 }: ComponentGuardLabelsProps): DiagramReactFlowEdge[] {
   const graphEdgeById = new Map(graph.edges.map((edge) => [edge.id, edge]));
   const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
-  const controlIds = new Set(controls.map((control) => control.id));
+  const controlIds = new Set(controls.map((control) => control.controlId));
   // Route-bearing edges get one combined label; the decoration pass below
   // needs the anchor for each, so collect them first.
   const labeled = edges.flatMap((edge) => {

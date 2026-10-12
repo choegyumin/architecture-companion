@@ -12,17 +12,17 @@ const diagramBase = {
 
 const groupedDiagram = {
   ...diagramBase,
-  groups: [{ id: "checkout", title: "Checkout" }],
+  groups: [{ groupId: "checkout", title: "Checkout" }],
   nodes: [
     {
-      id: "checkout-page",
+      nodeId: "checkout-page",
       type: "default",
       kind: "component",
       title: "Checkout page",
       groupId: "checkout",
     },
     {
-      id: "payment-client",
+      nodeId: "payment-client",
       type: "default",
       kind: "component",
       title: "Payment client",
@@ -31,10 +31,10 @@ const groupedDiagram = {
   ],
   edges: [
     {
-      id: "uses-payment-client",
+      edgeId: "uses-payment-client",
       type: "default",
-      source: "checkout-page",
-      target: "payment-client",
+      sourceNodeId: "checkout-page",
+      targetNodeId: "payment-client",
     },
   ],
 } satisfies DiagramGraph;
@@ -48,10 +48,10 @@ const directionDiagram = {
   ...diagramBase,
   groups: [],
   nodes: [
-    { id: "source", type: "default", kind: "source", title: "Source" },
-    { id: "target", type: "default", kind: "target", title: "Target" },
+    { nodeId: "source", type: "default", kind: "source", title: "Source" },
+    { nodeId: "target", type: "default", kind: "target", title: "Target" },
   ],
-  edges: [{ id: "source-target", type: "default", source: "source", target: "target" }],
+  edges: [{ edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" }],
 } satisfies DiagramGraph;
 
 const directionNodeSizes = {
@@ -64,22 +64,22 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { id: "root", type: "default", kind: "source", title: "Root" },
-        { id: "spine-mid", type: "default", kind: "source", title: "Spine mid" },
-        { id: "spine-deep", type: "default", kind: "source", title: "Spine deep" },
-        { id: "fan-a", type: "default", kind: "source", title: "Fan A" },
-        { id: "fan-b", type: "default", kind: "source", title: "Fan B" },
-        { id: "fan-c", type: "default", kind: "source", title: "Fan C" },
+        { nodeId: "root", type: "default", kind: "source", title: "Root" },
+        { nodeId: "spine-mid", type: "default", kind: "source", title: "Spine mid" },
+        { nodeId: "spine-deep", type: "default", kind: "source", title: "Spine deep" },
+        { nodeId: "fan-a", type: "default", kind: "source", title: "Fan A" },
+        { nodeId: "fan-b", type: "default", kind: "source", title: "Fan B" },
+        { nodeId: "fan-c", type: "default", kind: "source", title: "Fan C" },
       ],
       edges: [
-        { id: "root-spine-mid", type: "default", source: "root", target: "spine-mid" },
-        { id: "spine-mid-deep", type: "default", source: "spine-mid", target: "spine-deep" },
-        { id: "root-fan-a", type: "default", source: "root", target: "fan-a" },
-        { id: "root-fan-b", type: "default", source: "root", target: "fan-b" },
-        { id: "root-fan-c", type: "default", source: "root", target: "fan-c" },
+        { edgeId: "root-spine-mid", type: "default", sourceNodeId: "root", targetNodeId: "spine-mid" },
+        { edgeId: "spine-mid-deep", type: "default", sourceNodeId: "spine-mid", targetNodeId: "spine-deep" },
+        { edgeId: "root-fan-a", type: "default", sourceNodeId: "root", targetNodeId: "fan-a" },
+        { edgeId: "root-fan-b", type: "default", sourceNodeId: "root", targetNodeId: "fan-b" },
+        { edgeId: "root-fan-c", type: "default", sourceNodeId: "root", targetNodeId: "fan-c" },
       ],
     } satisfies DiagramGraph;
-    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 288, height: 176 }]));
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 176 }]));
 
     const result = await layoutElkLayeredDiagram(diagram, nodeSizes);
     const root = result.nodes.find(({ id }) => id === "root");
@@ -145,17 +145,17 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { id: "source", type: "default", kind: "source", title: "Source" },
-        { id: "obstacle", type: "default", kind: "component", title: "Obstacle" },
-        { id: "target", type: "default", kind: "target", title: "Target" },
+        { nodeId: "source", type: "default", kind: "source", title: "Source" },
+        { nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
+        { nodeId: "target", type: "default", kind: "target", title: "Target" },
       ],
       edges: [
-        { id: "source-obstacle", type: "default", source: "source", target: "obstacle" },
-        { id: "obstacle-target", type: "default", source: "obstacle", target: "target" },
-        { id: "source-target", type: "default", source: "source", target: "target" },
+        { edgeId: "source-obstacle", type: "default", sourceNodeId: "source", targetNodeId: "obstacle" },
+        { edgeId: "obstacle-target", type: "default", sourceNodeId: "obstacle", targetNodeId: "target" },
+        { edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" },
       ],
     } satisfies DiagramGraph;
-    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 100, height: 100 }]));
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 100, height: 100 }]));
 
     const result = await layoutElkLayeredDiagram(diagram, nodeSizes, {
       nudgeObstacleNodes: true,
@@ -196,7 +196,7 @@ describe("ELK layered diagram layout", () => {
 
   it("rejects elk option keys that are neither verified nor raw", () => {
     const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-      id: "elk-layered",
+      layoutId: "elk-layered",
       options: { elk: { "layered.thoroughness": "9" } },
     });
 
@@ -208,7 +208,7 @@ describe("ELK layered diagram layout", () => {
   it("rejects raw padding and spacing options as design-owned", () => {
     for (const key of ["_.padding", "_.spacing.nodeNode", "_.layered.spacing.baseValue"]) {
       const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-        id: "elk-layered",
+        layoutId: "elk-layered",
         options: { elk: { [key]: "40" } },
       });
 
@@ -220,7 +220,7 @@ describe("ELK layered diagram layout", () => {
 
   it("rejects non-string values for raw elk options", () => {
     const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-      id: "elk-layered",
+      layoutId: "elk-layered",
       options: { elk: { "_.layered.thoroughness": 9 } },
     });
 
@@ -242,10 +242,10 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...diagramBase,
       groups: [
-        { id: "empty", title: "Empty" },
-        { id: "sibling", title: "Sibling" },
+        { groupId: "empty", title: "Empty" },
+        { groupId: "sibling", title: "Sibling" },
       ],
-      nodes: [{ id: "solo", type: "default", kind: "source", title: "Solo", groupId: "sibling" }],
+      nodes: [{ nodeId: "solo", type: "default", kind: "source", title: "Solo", groupId: "sibling" }],
       edges: [],
     } satisfies DiagramGraph;
 
@@ -295,17 +295,17 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { id: "source", type: "default", kind: "source", title: "Source" },
-        { id: "obstacle", type: "default", kind: "component", title: "Obstacle" },
-        { id: "target", type: "default", kind: "target", title: "Target" },
+        { nodeId: "source", type: "default", kind: "source", title: "Source" },
+        { nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
+        { nodeId: "target", type: "default", kind: "target", title: "Target" },
       ],
       edges: [
-        { id: "source-obstacle", type: "default", source: "source", target: "obstacle" },
-        { id: "obstacle-target", type: "default", source: "obstacle", target: "target" },
-        { id: "source-target", type: "default", source: "source", target: "target" },
+        { edgeId: "source-obstacle", type: "default", sourceNodeId: "source", targetNodeId: "obstacle" },
+        { edgeId: "obstacle-target", type: "default", sourceNodeId: "obstacle", targetNodeId: "target" },
+        { edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" },
       ],
     } satisfies DiagramGraph;
-    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ id }) => [id, { width: 100, height: 100 }]));
+    const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 100, height: 100 }]));
 
     const defaults = await layoutElkLayeredDiagram(diagram, nodeSizes, { elk: { direction: "DOWN" } });
     const nudged = await layoutElkLayeredDiagram(diagram, nodeSizes, {
@@ -350,7 +350,9 @@ function toStraightenedLayout(
   };
 }
 
-function toStraightenedGraph(edgeSpecs: ReadonlyArray<{ id: string; source: string; target: string }>): DiagramGraph {
+function toStraightenedGraph(
+  edgeSpecs: ReadonlyArray<{ edgeId: string; sourceNodeId: string; targetNodeId: string }>,
+): DiagramGraph {
   return {
     groups: [],
     nodes: [],
@@ -369,7 +371,7 @@ describe("straightenLayeredEdges", () => {
     );
 
     const result = straightenLayeredEdges(
-      toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]),
+      toStraightenedGraph([{ edgeId: "source-target", sourceNodeId: "source", targetNodeId: "target" }]),
       layout,
       "DOWN",
     );
@@ -390,7 +392,7 @@ describe("straightenLayeredEdges", () => {
   });
 
   it("nudges an obstacle node clear of the sightline", () => {
-    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const graph = toStraightenedGraph([{ edgeId: "source-target", sourceNodeId: "source", targetNodeId: "target" }]);
     const layout = toStraightenedLayout(
       [
         { id: "source", x: 0, y: 0, width: 100, height: 100 },
@@ -413,7 +415,7 @@ describe("straightenLayeredEdges", () => {
   });
 
   it("keeps a nudged node inside its parent group", () => {
-    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const graph = toStraightenedGraph([{ edgeId: "source-target", sourceNodeId: "source", targetNodeId: "target" }]);
     const layout = toStraightenedLayout(
       [
         { id: "source", x: 0, y: 0, width: 100, height: 100 },
@@ -433,7 +435,7 @@ describe("straightenLayeredEdges", () => {
   });
 
   it("nudges along the vertical axis for horizontal flow directions", () => {
-    const graph = toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]);
+    const graph = toStraightenedGraph([{ edgeId: "source-target", sourceNodeId: "source", targetNodeId: "target" }]);
     const layout = toStraightenedLayout(
       [
         { id: "source", x: 0, y: 0, width: 100, height: 100 },
@@ -460,7 +462,7 @@ describe("straightenLayeredEdges", () => {
     );
 
     const result = straightenLayeredEdges(
-      toStraightenedGraph([{ id: "source-target", source: "source", target: "target" }]),
+      toStraightenedGraph([{ edgeId: "source-target", sourceNodeId: "source", targetNodeId: "target" }]),
       layout,
       "DOWN",
     );

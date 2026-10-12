@@ -116,11 +116,11 @@ describe("React component structure command", () => {
             expect.objectContaining({
               type: "default",
               title: "App",
-              component: { definitionId: "component:src/app.tsx#App", origins: [] },
+              layoutContext: { definitionId: "component:src/app.tsx#App", origins: [] },
             }),
           ],
           edges: [],
-          additional: { roots: ["component:src/app.tsx#App"], controls: [] },
+          layoutContext: { rootNodeIds: ["component:src/app.tsx#App"], controls: [] },
         });
         expect(graph.nodes.at(0)).not.toHaveProperty("kind");
       } finally {

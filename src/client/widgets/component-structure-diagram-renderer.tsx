@@ -7,7 +7,6 @@ import {
   componentPathEmphasis,
   type ComponentSelection,
   initialComponentSelection,
-  isPolarityPairBranch,
   selectComponentPath,
   selectEdgePath,
 } from "@/client/widgets/component-structure-path-selection";
@@ -27,6 +26,7 @@ import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk
 import type { Artifact } from "@/features/artifact/artifact";
 import { isComponentStructureArtifact } from "@/features/artifact/artifact";
 import { layoutComponentStructureDiagram } from "@/features/diagram/_layout/component-structure-diagram-layout";
+import { getPolarityPairCases } from "@/features/diagram/control-polarity";
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
@@ -138,9 +138,9 @@ function ComponentStructureContent(props: DiagramRendererProps) {
   const controlsByOwner = useMemo(() => {
     const byOwner = new Map<string, DiagramControl[]>();
     for (const control of controls) {
-      const known = byOwner.get(control.owner);
+      const known = byOwner.get(control.ownerNodeId);
       if (known) known.push(control);
-      else byOwner.set(control.owner, [control]);
+      else byOwner.set(control.ownerNodeId, [control]);
     }
     return byOwner;
   }, [controls]);
@@ -183,18 +183,19 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                   className="nodrag nopan mt-3 flex max-w-full flex-col gap-1.5"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  {ownedControls.map((control) =>
-                    control.kind === "branch" && !isPolarityPairBranch(control) ? (
-                      <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
+                  {ownedControls.map((control) => {
+                    const pair = getPolarityPairCases(control);
+                    return control.type === "branch" && !pair ? (
+                      <label className="flex items-center justify-between gap-2 text-xs" key={control.controlId}>
                         <span className="truncate">{control.label}</span>
                         <Select
                           items={Object.fromEntries(
-                            control.cases.map((branchCase) => [branchCase.id, branchCase.label]),
+                            control.cases.map((branchCase) => [branchCase.caseId, branchCase.label]),
                           )}
                           onValueChange={(next) => {
-                            if (next != null) onControlSelect(control.id, next);
+                            if (next != null) onControlSelect(control.controlId, next);
                           }}
-                          value={selected[control.id] ?? null}
+                          value={selected[control.controlId] ?? null}
                         >
                           <SelectTrigger aria-label={control.label}>
                             <SelectValue />
@@ -204,7 +205,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                             <SelectPositioner>
                               <SelectPopup>
                                 {control.cases.map((branchCase) => (
-                                  <SelectItem key={branchCase.id} value={branchCase.id}>
+                                  <SelectItem key={branchCase.caseId} value={branchCase.caseId}>
                                     <SelectItemIndicator />
                                     <SelectItemText>{branchCase.label}</SelectItemText>
                                   </SelectItem>
@@ -215,26 +216,20 @@ function ComponentStructureContent(props: DiagramRendererProps) {
                         </Select>
                       </label>
                     ) : (
-                      <label className="flex items-center justify-between gap-2 text-xs" key={control.id}>
+                      <label className="flex items-center justify-between gap-2 text-xs" key={control.controlId}>
                         <span className="truncate">{control.label}</span>
                         <Switch
-                          checked={
-                            control.kind === "branch"
-                              ? selected[control.id] === control.cases.at(0)?.id
-                              : selected[control.id] === "on"
-                          }
+                          checked={selected[control.controlId] === (pair?.onCase.caseId ?? "on")}
                           onCheckedChange={(checked) => {
-                            if (control.kind !== "branch") {
-                              onControlSelect(control.id, checked ? "on" : "off");
-                              return;
-                            }
-                            const caseId = (checked ? control.cases.at(0) : control.cases.at(1))?.id;
-                            if (caseId != null) onControlSelect(control.id, caseId);
+                            onControlSelect(
+                              control.controlId,
+                              checked ? (pair?.onCase.caseId ?? "on") : (pair?.offCase.caseId ?? "off"),
+                            );
                           }}
                         />
                       </label>
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               ) : undefined,
           },

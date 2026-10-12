@@ -12,7 +12,7 @@ import type {
 } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
-export const dependencyGraphLayoutConfigSchema = z.object({ id: z.literal("dependency-graph") }).strict();
+export const dependencyGraphLayoutConfigSchema = z.object({ layoutId: z.literal("dependency-graph") }).strict();
 
 const GROUP_PADDING = { top: 96, right: 80, bottom: 80, left: 80 } as const;
 const ROOT_PADDING = { top: 48, right: 48, bottom: 48, left: 48 } as const;
@@ -182,15 +182,15 @@ function layoutDirectNodes(
   graph: DiagramGraph,
   directId: string,
 ): Item {
-  const indexes = new Map(nodes.map((node, index) => [node.id, index]));
+  const indexes = new Map(nodes.map((node, index) => [node.nodeId, index]));
   const connections = graph.edges.flatMap((edge): (readonly [number, number])[] => {
-    const source = indexes.get(edge.source);
-    const target = indexes.get(edge.target);
+    const source = indexes.get(edge.sourceNodeId);
+    const target = indexes.get(edge.targetNodeId);
     return source === undefined || target === undefined ? [] : [[source, target]];
   });
   const items = nodes.map((node) => ({
-    id: node.id,
-    size: getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
+    id: node.nodeId,
+    size: getOrThrow(nodeSizes[node.nodeId], `Missing measured node size: ${node.nodeId}`),
     nodes: [],
     groups: [],
   }));
@@ -199,17 +199,17 @@ function layoutDirectNodes(
     id: directId,
     size: arranged.size,
     nodes: nodes.map((node, index) => ({
-      id: node.id,
-      position: getOrThrow(arranged.positions[index], `Missing dependency node position: ${node.id}`),
-      size: getOrThrow(nodeSizes[node.id], `Missing measured node size: ${node.id}`),
+      id: node.nodeId,
+      position: getOrThrow(arranged.positions[index], `Missing dependency node position: ${node.nodeId}`),
+      size: getOrThrow(nodeSizes[node.nodeId], `Missing measured node size: ${node.nodeId}`),
     })),
     groups: [],
   };
 }
 
 export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {
-  const groupById = new Map(graph.groups.map((group) => [group.id, group]));
-  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const groupById = new Map(graph.groups.map((group) => [group.groupId, group]));
+  const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
   let directId = "direct-nodes";
   while (groupById.has(directId)) directId += ":";
 
@@ -221,27 +221,27 @@ export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNod
     while (groupId) {
       const group = groupById.get(groupId);
       if (!group) return undefined;
-      if (group.parentId === parentId) return group.id;
-      groupId = group.parentId;
+      if (group.parentGroupId === parentId) return group.groupId;
+      groupId = group.parentGroupId;
     }
     return undefined;
   }
 
   function layoutScope(parentId: string | undefined): Scope {
     const padding = parentId ? GROUP_PADDING : ROOT_PADDING;
-    const children = graph.groups.filter((group) => group.parentId === parentId);
+    const children = graph.groups.filter((group) => group.parentGroupId === parentId);
     const directNodes = graph.nodes.filter(
       (node): node is DefaultDiagramNode => node.groupId === parentId && node.type === "default",
     );
     const items: Item[] = children.map((group) => {
-      const contents = layoutScope(group.id);
-      return { id: group.id, size: contents.size, nodes: contents.nodes, groups: contents.groups };
+      const contents = layoutScope(group.groupId);
+      return { id: group.groupId, size: contents.size, nodes: contents.nodes, groups: contents.groups };
     });
     if (directNodes.length > 0) items.push(layoutDirectNodes(directNodes, nodeSizes, graph, directId));
     const indexes = new Map(items.map((item, index) => [item.id, index]));
     const connections = graph.edges.flatMap((edge): (readonly [number, number])[] => {
-      const source = indexes.get(ownerOf(edge.source, parentId) ?? "");
-      const target = indexes.get(ownerOf(edge.target, parentId) ?? "");
+      const source = indexes.get(ownerOf(edge.sourceNodeId, parentId) ?? "");
+      const target = indexes.get(ownerOf(edge.targetNodeId, parentId) ?? "");
       return source === undefined || target === undefined || source === target ? [] : [[source, target]];
     });
     const arranged = arrangeItems(items, connections, parentId ? GROUP_GAP : ROOT_GAP);
@@ -306,8 +306,8 @@ export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNod
   });
 
   const edges: DiagramLayoutEdge[] = graph.edges.map((edge) => {
-    const source = getOrThrow(nodeBounds.get(edge.source), `Missing dependency source: ${edge.source}`);
-    const target = getOrThrow(nodeBounds.get(edge.target), `Missing dependency target: ${edge.target}`);
+    const source = getOrThrow(nodeBounds.get(edge.sourceNodeId), `Missing dependency source: ${edge.sourceNodeId}`);
+    const target = getOrThrow(nodeBounds.get(edge.targetNodeId), `Missing dependency target: ${edge.targetNodeId}`);
     const sourceCenter = {
       x: source.position.x + source.size.width / 2,
       y: source.position.y + source.size.height / 2,
@@ -316,12 +316,12 @@ export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNod
       x: target.position.x + target.size.width / 2,
       y: target.position.y + target.size.height / 2,
     };
-    if (edge.source === edge.target) {
+    if (edge.sourceNodeId === edge.targetNodeId) {
       const top = source.position.y;
       const left = sourceCenter.x - source.size.width / 4;
       const right = sourceCenter.x + source.size.width / 4;
       return {
-        id: edge.id,
+        id: edge.edgeId,
         points: [
           { x: right, y: top },
           { x: right, y: top - 16 },
@@ -334,7 +334,7 @@ export function layoutDependencyGraph(graph: DiagramGraph, nodeSizes: DiagramNod
     const down = targetCenter.y >= sourceCenter.y;
     const right = targetCenter.x >= sourceCenter.x;
     return {
-      id: edge.id,
+      id: edge.edgeId,
       points: vertical
         ? [
             { x: sourceCenter.x, y: source.position.y + (down ? source.size.height : 0) },

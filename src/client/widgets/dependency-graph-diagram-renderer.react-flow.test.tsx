@@ -4,28 +4,28 @@ import type { Artifact } from "@/features/artifact/artifact";
 import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
 
 const diagram = {
-  id: "dependencies",
+  artifactId: "dependencies",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",
   diagram: {
-    layout: { id: "dependency-graph" },
+    layout: { layoutId: "dependency-graph" },
     graph: {
       groups: [
-        { id: "app", title: "App" },
-        { id: "nested", title: "Nested", parentId: "app" },
-        { id: "library", title: "Library" },
+        { groupId: "app", title: "App" },
+        { groupId: "nested", title: "Nested", parentGroupId: "app" },
+        { groupId: "library", title: "Library" },
       ],
       nodes: [
-        { id: "a", type: "default", title: "A", groupId: "app" },
-        { id: "b", type: "default", title: "B", groupId: "nested" },
-        { id: "c", type: "default", title: "C", groupId: "library" },
+        { nodeId: "a", type: "default", title: "A", groupId: "app" },
+        { nodeId: "b", type: "default", title: "B", groupId: "nested" },
+        { nodeId: "c", type: "default", title: "C", groupId: "library" },
       ],
       edges: [
-        { id: "a-c", type: "default", source: "a", target: "c", label: "Uses C" },
-        { id: "b-c", type: "default", source: "b", target: "c" },
-        { id: "b-a", type: "default", source: "b", target: "a" },
+        { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c", label: "Uses C" },
+        { edgeId: "b-c", type: "default", sourceNodeId: "b", targetNodeId: "c" },
+        { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
       ],
     },
   },
@@ -130,8 +130,11 @@ describe("dependency graph React Flow adapter", () => {
         ...diagram.diagram,
         graph: {
           ...diagram.diagram.graph,
-          nodes: [...diagram.diagram.graph.nodes, { id: "bundle:app", type: "default", title: "Root file" }],
-          edges: [...diagram.diagram.graph.edges, { id: "bundle:app:", type: "default", source: "a", target: "b" }],
+          nodes: [...diagram.diagram.graph.nodes, { nodeId: "bundle:app", type: "default", title: "Root file" }],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "bundle:app:", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+          ],
         },
       },
     } satisfies Artifact;
@@ -176,7 +179,10 @@ describe("dependency graph React Flow adapter", () => {
         ...diagram.diagram,
         graph: {
           ...diagram.diagram.graph,
-          edges: [...diagram.diagram.graph.edges, { id: "a-b", type: "default", source: "a", target: "b" }],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+          ],
         },
       },
     } satisfies Artifact;
@@ -203,11 +209,11 @@ describe("dependency graph React Flow adapter", () => {
         ...diagram.diagram,
         graph: {
           ...diagram.diagram.graph,
-          nodes: [...diagram.diagram.graph.nodes, { id: "root", type: "default", title: "Root" }],
+          nodes: [...diagram.diagram.graph.nodes, { nodeId: "root", type: "default", title: "Root" }],
           edges: [
             ...diagram.diagram.graph.edges,
-            { id: "a-root", type: "default", source: "a", target: "root" },
-            { id: "root-a", type: "default", source: "root", target: "a" },
+            { edgeId: "a-root", type: "default", sourceNodeId: "a", targetNodeId: "root" },
+            { edgeId: "root-a", type: "default", sourceNodeId: "root", targetNodeId: "a" },
           ],
         },
       },
@@ -232,13 +238,13 @@ describe("dependency graph React Flow adapter", () => {
           ...diagram.diagram.graph,
           nodes: [
             ...diagram.diagram.graph.nodes,
-            { id: "root-one", type: "default", title: "Root One" },
-            { id: "root-two", type: "default", title: "Root Two" },
+            { nodeId: "root-one", type: "default", title: "Root One" },
+            { nodeId: "root-two", type: "default", title: "Root Two" },
           ],
           edges: [
             ...diagram.diagram.graph.edges,
-            { id: "one-two", type: "default", source: "root-one", target: "root-two" },
-            { id: "two-one", type: "default", source: "root-two", target: "root-one" },
+            { edgeId: "one-two", type: "default", sourceNodeId: "root-one", targetNodeId: "root-two" },
+            { edgeId: "two-one", type: "default", sourceNodeId: "root-two", targetNodeId: "root-one" },
           ],
         },
       },

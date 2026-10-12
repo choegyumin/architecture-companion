@@ -7,17 +7,17 @@ import { BEHAVIORS_RELATIVE_PATH } from "@/server/read-catalog";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  id: "checkout",
+  artifactId: "checkout",
   title: "Checkout",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview order submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   diagram: {
-    layout: { id: "elk-layered" },
+    layout: { layoutId: "elk-layered" },
     graph: {
       groups: [],
-      nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Submit order" }],
+      nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Submit order" }],
       edges: [],
     },
   },
@@ -115,7 +115,7 @@ describe("Catalog schema validation command", () => {
       await mkdir(join(scopePath, BEHAVIORS_RELATIVE_PATH), { recursive: true });
       await writeFile(
         join(scopePath, BEHAVIORS_RELATIVE_PATH, "checkout.json"),
-        JSON.stringify({ ...checkoutBehavior, id: "checkout-workflow" }),
+        JSON.stringify({ ...checkoutBehavior, artifactId: "checkout-workflow" }),
       );
 
       await expect(

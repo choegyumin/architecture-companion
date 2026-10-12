@@ -3,30 +3,30 @@ import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 
 const graph = {
   groups: [
-    { id: "app", title: "App" },
-    { id: "pages", title: "Pages", parentId: "app" },
-    { id: "api", title: "API" },
-    { id: "shared", title: "Shared" },
+    { groupId: "app", title: "App" },
+    { groupId: "pages", title: "Pages", parentGroupId: "app" },
+    { groupId: "api", title: "API" },
+    { groupId: "shared", title: "Shared" },
   ],
   nodes: [
-    { id: "app-a", type: "default", title: "App A", groupId: "app" },
-    { id: "app-b", type: "default", title: "App B", groupId: "app" },
-    { id: "page", type: "default", title: "Page", groupId: "pages" },
-    { id: "api-file", type: "default", title: "API File", groupId: "api" },
-    { id: "shared-file", type: "default", title: "Shared File", groupId: "shared" },
-    { id: "root", type: "default", title: "Root" },
+    { nodeId: "app-a", type: "default", title: "App A", groupId: "app" },
+    { nodeId: "app-b", type: "default", title: "App B", groupId: "app" },
+    { nodeId: "page", type: "default", title: "Page", groupId: "pages" },
+    { nodeId: "api-file", type: "default", title: "API File", groupId: "api" },
+    { nodeId: "shared-file", type: "default", title: "Shared File", groupId: "shared" },
+    { nodeId: "root", type: "default", title: "Root" },
   ],
   edges: [
-    { id: "app-a-to-api", type: "default", source: "app-a", target: "api-file" },
-    { id: "app-b-to-api", type: "default", source: "app-b", target: "api-file" },
-    { id: "api-to-app", type: "default", source: "api-file", target: "app-a" },
-    { id: "page-to-api", type: "default", source: "page", target: "api-file" },
-    { id: "page-to-shared", type: "default", source: "page", target: "shared-file" },
-    { id: "app-to-page", type: "default", source: "app-a", target: "page" },
-    { id: "app-to-app", type: "default", source: "app-a", target: "app-b" },
-    { id: "api-to-root", type: "default", source: "api-file", target: "root" },
-    { id: "root-to-api", type: "default", source: "root", target: "api-file" },
-    { id: "app-self", type: "default", source: "app-a", target: "app-a" },
+    { edgeId: "app-a-to-api", type: "default", sourceNodeId: "app-a", targetNodeId: "api-file" },
+    { edgeId: "app-b-to-api", type: "default", sourceNodeId: "app-b", targetNodeId: "api-file" },
+    { edgeId: "api-to-app", type: "default", sourceNodeId: "api-file", targetNodeId: "app-a" },
+    { edgeId: "page-to-api", type: "default", sourceNodeId: "page", targetNodeId: "api-file" },
+    { edgeId: "page-to-shared", type: "default", sourceNodeId: "page", targetNodeId: "shared-file" },
+    { edgeId: "app-to-page", type: "default", sourceNodeId: "app-a", targetNodeId: "page" },
+    { edgeId: "app-to-app", type: "default", sourceNodeId: "app-a", targetNodeId: "app-b" },
+    { edgeId: "api-to-root", type: "default", sourceNodeId: "api-file", targetNodeId: "root" },
+    { edgeId: "root-to-api", type: "default", sourceNodeId: "root", targetNodeId: "api-file" },
+    { edgeId: "app-self", type: "default", sourceNodeId: "app-a", targetNodeId: "app-a" },
   ],
 } as const satisfies DiagramGraph;
 
@@ -57,38 +57,38 @@ describe("dependency edge projection", () => {
   it("shows each relationship once at its lowest common scope at every depth", () => {
     const nested = {
       groups: [
-        { id: "A", title: "A" },
-        { id: "B", title: "B", parentId: "A" },
-        { id: "C", title: "C", parentId: "B" },
-        { id: "D", title: "D", parentId: "C" },
-        { id: "E", title: "E" },
-        { id: "F", title: "F", parentId: "E" },
-        { id: "G", title: "G", parentId: "F" },
-        { id: "H", title: "H", parentId: "G" },
-        { id: "X", title: "X", parentId: "B" },
-        { id: "Y", title: "Y", parentId: "C" },
+        { groupId: "A", title: "A" },
+        { groupId: "B", title: "B", parentGroupId: "A" },
+        { groupId: "C", title: "C", parentGroupId: "B" },
+        { groupId: "D", title: "D", parentGroupId: "C" },
+        { groupId: "E", title: "E" },
+        { groupId: "F", title: "F", parentGroupId: "E" },
+        { groupId: "G", title: "G", parentGroupId: "F" },
+        { groupId: "H", title: "H", parentGroupId: "G" },
+        { groupId: "X", title: "X", parentGroupId: "B" },
+        { groupId: "Y", title: "Y", parentGroupId: "C" },
       ],
       nodes: [
-        { id: "d", type: "default", title: "D file", groupId: "D" },
-        { id: "d2", type: "default", title: "Other D file", groupId: "D" },
-        { id: "h", type: "default", title: "H file", groupId: "H" },
-        { id: "x", type: "default", title: "X file", groupId: "X" },
-        { id: "y", type: "default", title: "Y file", groupId: "Y" },
-        { id: "c", type: "default", title: "C file", groupId: "C" },
-        { id: "c2", type: "default", title: "Other C file", groupId: "C" },
-        { id: "root", type: "default", title: "Root" },
-        { id: "other-root", type: "default", title: "Other root" },
+        { nodeId: "d", type: "default", title: "D file", groupId: "D" },
+        { nodeId: "d2", type: "default", title: "Other D file", groupId: "D" },
+        { nodeId: "h", type: "default", title: "H file", groupId: "H" },
+        { nodeId: "x", type: "default", title: "X file", groupId: "X" },
+        { nodeId: "y", type: "default", title: "Y file", groupId: "Y" },
+        { nodeId: "c", type: "default", title: "C file", groupId: "C" },
+        { nodeId: "c2", type: "default", title: "Other C file", groupId: "C" },
+        { nodeId: "root", type: "default", title: "Root" },
+        { nodeId: "other-root", type: "default", title: "Other root" },
       ],
       edges: [
-        { id: "across-roots", type: "default", source: "d", target: "h" },
-        { id: "inside-B", type: "default", source: "d", target: "x" },
-        { id: "inside-C", type: "default", source: "d", target: "y" },
-        { id: "loose-to-child", type: "default", source: "c", target: "d" },
-        { id: "child-to-loose", type: "default", source: "d", target: "c2" },
-        { id: "inside-bundle", type: "default", source: "c", target: "c2" },
-        { id: "inside-leaf", type: "default", source: "d", target: "d2" },
-        { id: "root-to-group", type: "default", source: "root", target: "d" },
-        { id: "root-to-root", type: "default", source: "root", target: "other-root" },
+        { edgeId: "across-roots", type: "default", sourceNodeId: "d", targetNodeId: "h" },
+        { edgeId: "inside-B", type: "default", sourceNodeId: "d", targetNodeId: "x" },
+        { edgeId: "inside-C", type: "default", sourceNodeId: "d", targetNodeId: "y" },
+        { edgeId: "loose-to-child", type: "default", sourceNodeId: "c", targetNodeId: "d" },
+        { edgeId: "child-to-loose", type: "default", sourceNodeId: "d", targetNodeId: "c2" },
+        { edgeId: "inside-bundle", type: "default", sourceNodeId: "c", targetNodeId: "c2" },
+        { edgeId: "inside-leaf", type: "default", sourceNodeId: "d", targetNodeId: "d2" },
+        { edgeId: "root-to-group", type: "default", sourceNodeId: "root", targetNodeId: "d" },
+        { edgeId: "root-to-root", type: "default", sourceNodeId: "root", targetNodeId: "other-root" },
       ],
     } satisfies DiagramGraph;
     const projected = projectDependencyEdges(nested);
@@ -117,29 +117,29 @@ describe("dependency edge projection", () => {
       ...graph,
       groups: graph.groups.map((group) => ({
         ...group,
-        get parentId() {
-          parentReads.set(group.id, (parentReads.get(group.id) ?? 0) + 1);
-          return "parentId" in group ? group.parentId : undefined;
+        get parentGroupId() {
+          parentReads.set(group.groupId, (parentReads.get(group.groupId) ?? 0) + 1);
+          return "parentGroupId" in group ? group.parentGroupId : undefined;
         },
       })),
     } satisfies DiagramGraph;
 
     expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
-    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(1);
+    for (const group of graph.groups) expect(parentReads.get(group.groupId)).toBe(1);
     expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
-    for (const group of graph.groups) expect(parentReads.get(group.id)).toBe(2);
+    for (const group of graph.groups) expect(parentReads.get(group.groupId)).toBe(2);
   });
 
   it("shows every relationship as original edges when the graph has no groups", () => {
     const plain = {
       groups: [],
       nodes: [
-        { id: "a", type: "default", title: "A" },
-        { id: "b", type: "default", title: "B" },
+        { nodeId: "a", type: "default", title: "A" },
+        { nodeId: "b", type: "default", title: "B" },
       ],
       edges: [
-        { id: "a-to-b", type: "default", source: "a", target: "b" },
-        { id: "b-to-a", type: "default", source: "b", target: "a" },
+        { edgeId: "a-to-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+        { edgeId: "b-to-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
       ],
     } as const satisfies DiagramGraph;
 
@@ -172,7 +172,10 @@ describe("dependency edge projection", () => {
   it("keeps direct sibling nodes as boundary endpoints in either direction", () => {
     const withSibling = {
       ...graph,
-      edges: [...graph.edges, { id: "page-to-app-b", type: "default", source: "page", target: "app-b" }],
+      edges: [
+        ...graph.edges,
+        { edgeId: "page-to-app-b", type: "default", sourceNodeId: "page", targetNodeId: "app-b" },
+      ],
     } as const satisfies DiagramGraph;
     const projections = projectDependencyEdges(withSibling, { type: "group", id: "pages" });
 
@@ -213,7 +216,15 @@ describe("dependency edge projection", () => {
   it("keeps aggregate IDs separate from original IDs and rejects unknown focus members", () => {
     const colliding = {
       ...graph,
-      edges: [...graph.edges, { id: 'aggregate:["app","api"]', type: "default", source: "app-a", target: "api-file" }],
+      edges: [
+        ...graph.edges,
+        {
+          edgeId: 'aggregate:["app","api"]',
+          type: "default",
+          sourceNodeId: "app-a",
+          targetNodeId: "api-file",
+        },
+      ],
     } as const satisfies DiagramGraph;
     for (const focus of [undefined, { type: "group", id: "app" }] as const) {
       const projected = projectDependencyEdges(colliding, focus);

@@ -13,20 +13,20 @@ import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutDiagram = {
-  id: "checkout-structure",
+  artifactId: "checkout-structure",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Checkout structure",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the page, payment form, and client relations.",
   diagram: {
-    layout: { id: "elk-layered" },
+    layout: { layoutId: "elk-layered" },
     graph: {
-      groups: [{ id: "checkout-feature", title: "Checkout feature" }],
+      groups: [{ groupId: "checkout-feature", title: "Checkout feature" }],
       nodes: [
         {
           type: "default",
-          id: "checkout-page",
+          nodeId: "checkout-page",
           kind: "component",
           title: "Checkout page",
           description: "Coordinates checkout",
@@ -35,7 +35,7 @@ const checkoutDiagram = {
         },
         {
           type: "default",
-          id: "payment-form",
+          nodeId: "payment-form",
           kind: "component",
           title: "Payment form",
           description: "Collects payment details",
@@ -44,7 +44,7 @@ const checkoutDiagram = {
         },
         {
           type: "default",
-          id: "payment-client",
+          nodeId: "payment-client",
           kind: "client",
           title: "Payment client",
           description: "Calls the payment API",
@@ -55,18 +55,18 @@ const checkoutDiagram = {
       edges: [
         {
           type: "default",
-          id: "payment-details",
+          edgeId: "payment-details",
           kind: "data-flow",
-          source: "payment-form",
-          target: "payment-client",
+          sourceNodeId: "payment-form",
+          targetNodeId: "payment-client",
           label: "Payment details",
         },
         {
           type: "default",
-          id: "uses-payment-client",
+          edgeId: "uses-payment-client",
           kind: "dependency",
-          source: "checkout-page",
-          target: "payment-client",
+          sourceNodeId: "checkout-page",
+          targetNodeId: "payment-client",
           label: "Uses payment client",
         },
       ],
@@ -74,19 +74,19 @@ const checkoutDiagram = {
   },
 };
 const catalogDiagram = {
-  id: "catalog-structure",
+  artifactId: "catalog-structure",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Catalog structure",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview product browsing ownership.\n\n## Regeneration\nRebuild the catalog page boundary.",
   diagram: {
-    layout: { id: "elk-layered" },
+    layout: { layoutId: "elk-layered" },
     graph: {
       groups: [],
       nodes: [
         {
           type: "default",
-          id: "catalog-page",
+          nodeId: "catalog-page",
           kind: "component",
           title: "Catalog page",
           description: "Supports product discovery",
@@ -105,17 +105,17 @@ const designArtifact = {
       instructions:
         "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
       diagram: {
-        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
           nodes: [
-            { type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" },
-            { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
+            { type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" },
+            { type: "default", nodeId: "confirmed", kind: "result", title: "Order confirmed" },
           ],
-          edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+          edges: [{ type: "default", edgeId: "submit-confirmed", sourceNodeId: "submit", targetNodeId: "confirmed" }],
         },
       },
-      id: "checkout",
+      artifactId: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
     },
   ],
@@ -125,42 +125,48 @@ const designArtifact = {
 const processArtifact = {
   behaviors: [
     {
-      id: "invite-member",
+      artifactId: "invite-member",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview member invitations.\n\n## Regeneration\nRebuild submission, eligibility, sending, and delivery steps.",
       diagram: {
-        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
           nodes: [
-            { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
-            { type: "default", id: "eligible", kind: "condition", title: "Eligible member?" },
-            { type: "default", id: "send", kind: "action", title: "Send invitation" },
-            { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
+            { type: "default", nodeId: "invite", kind: "trigger", title: "Invitation submitted" },
+            { type: "default", nodeId: "eligible", kind: "condition", title: "Eligible member?" },
+            { type: "default", nodeId: "send", kind: "action", title: "Send invitation" },
+            { type: "default", nodeId: "delivered", kind: "result", title: "Invitation delivered" },
           ],
           edges: [
-            { type: "default", id: "invite-eligible", source: "invite", target: "eligible" },
-            { type: "default", id: "eligible-send", source: "eligible", target: "send", label: "Eligible" },
-            { type: "default", id: "send-delivered", source: "send", target: "delivered" },
+            { type: "default", edgeId: "invite-eligible", sourceNodeId: "invite", targetNodeId: "eligible" },
+            {
+              type: "default",
+              edgeId: "eligible-send",
+              sourceNodeId: "eligible",
+              targetNodeId: "send",
+              label: "Eligible",
+            },
+            { type: "default", edgeId: "send-delivered", sourceNodeId: "send", targetNodeId: "delivered" },
           ],
         },
       },
     },
     {
-      id: "remove-member",
+      artifactId: "remove-member",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Remove member",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview member removal.\n\n## Regeneration\nRebuild the removal trigger from the member workflow.",
       diagram: {
-        layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "remove", kind: "trigger", title: "Member removal requested" }],
+          nodes: [{ type: "default", nodeId: "remove", kind: "trigger", title: "Member removal requested" }],
           edges: [],
         },
       },
@@ -210,13 +216,13 @@ describe("design (architecture·implementation) review", () => {
   it("shows an actionable error for an unknown layout configuration", async () => {
     const invalidArtifact = {
       ...designArtifact,
-      designs: [{ ...checkoutDiagram, diagram: { ...checkoutDiagram.diagram, layout: { id: "unknown" } } }],
+      designs: [{ ...checkoutDiagram, diagram: { ...checkoutDiagram.diagram, layout: { layoutId: "unknown" } } }],
     };
     const { cleanup: cleanupScope } = await renderArtifact(invalidArtifact);
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Invalid artifact: diagram.layout.id: Unsupported layout configuration: unknown",
+        "Invalid artifact: diagram.layout.layoutId: Unsupported layout configuration: unknown",
       );
     } finally {
       await cleanupScope();
@@ -231,7 +237,7 @@ describe("design (architecture·implementation) review", () => {
           ...checkoutDiagram,
           diagram: {
             ...checkoutDiagram.diagram,
-            layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
+            layout: { layoutId: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
           },
         },
       ],
@@ -275,28 +281,28 @@ describe("dependency graph review", () => {
       behaviors: [],
       designs: [
         {
-          id: "dependencies",
+          artifactId: "dependencies",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Dependencies",
           generator: "built-in:freeform",
           instructions:
             "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the grouped module relations.",
           diagram: {
-            layout: { id: "dependency-graph" },
+            layout: { layoutId: "dependency-graph" },
             graph: {
               groups: [
-                { id: "source", title: "Source" },
-                { id: "nested", title: "Nested", parentId: "source" },
-                { id: "target", title: "Target" },
+                { groupId: "source", title: "Source" },
+                { groupId: "nested", title: "Nested", parentGroupId: "source" },
+                { groupId: "target", title: "Target" },
               ],
               nodes: [
-                { id: "a", type: "default", title: "A", groupId: "source" },
-                { id: "b", type: "default", title: "B", groupId: "nested" },
-                { id: "c", type: "default", title: "C", groupId: "target" },
+                { nodeId: "a", type: "default", title: "A", groupId: "source" },
+                { nodeId: "b", type: "default", title: "B", groupId: "nested" },
+                { nodeId: "c", type: "default", title: "C", groupId: "target" },
               ],
               edges: [
-                { id: "a-c", type: "default", source: "a", target: "c" },
-                { id: "b-c", type: "default", source: "b", target: "c" },
+                { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c" },
+                { edgeId: "b-c", type: "default", sourceNodeId: "b", targetNodeId: "c" },
               ],
             },
           },
@@ -323,26 +329,26 @@ describe("process (product workflow) review", () => {
     const sequenceArtifact = {
       behaviors: [
         {
-          id: "request-response",
+          artifactId: "request-response",
           updatedAt: "2026-10-03T09:15:00.000Z",
           title: "Request response",
           generator: "built-in:freeform",
           instructions:
             "## Purpose\nReview client-server requests.\n\n## Regeneration\nRebuild the client and server lifelines and request message.",
           diagram: {
-            layout: { id: "sequence" },
+            layout: { layoutId: "sequence" },
             graph: {
               groups: [],
               nodes: [
-                { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-                { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+                { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+                { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
               ],
               edges: [
                 {
-                  id: "request",
+                  edgeId: "request",
                   type: "message",
-                  source: "client",
-                  target: "server",
+                  sourceNodeId: "client",
+                  targetNodeId: "server",
                   messageType: "sync",
                   label: "Request",
                 },

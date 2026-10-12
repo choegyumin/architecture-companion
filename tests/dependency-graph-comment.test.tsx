@@ -18,28 +18,28 @@ const sizes = {
   other: { width: 288, height: 80 },
 };
 const diagram = {
-  id: "dependencies",
+  artifactId: "dependencies",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Dependencies",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
   diagram: {
-    layout: { id: "dependency-graph" },
+    layout: { layoutId: "dependency-graph" },
     graph: {
       groups: [
-        { id: "source", title: "Source" },
-        { id: "target", title: "Target" },
+        { groupId: "source", title: "Source" },
+        { groupId: "target", title: "Target" },
       ],
       nodes: [
-        { id: "one", type: "default", title: "One", groupId: "source" },
-        { id: "two", type: "default", title: "Two", groupId: "source" },
-        { id: "other", type: "default", title: "Other", groupId: "target" },
+        { nodeId: "one", type: "default", title: "One", groupId: "source" },
+        { nodeId: "two", type: "default", title: "Two", groupId: "source" },
+        { nodeId: "other", type: "default", title: "Other", groupId: "target" },
       ],
       edges: [
-        { id: "one-other", type: "default", source: "one", target: "other" },
-        { id: "two-other", type: "default", source: "two", target: "other" },
-        { id: "one-two", type: "default", source: "one", target: "two" },
+        { edgeId: "one-other", type: "default", sourceNodeId: "one", targetNodeId: "other" },
+        { edgeId: "two-other", type: "default", sourceNodeId: "two", targetNodeId: "other" },
+        { edgeId: "one-two", type: "default", sourceNodeId: "one", targetNodeId: "two" },
       ],
     },
   },

@@ -12,7 +12,7 @@ import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/r
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (artifact.diagram.layout.id !== "dependency-graph") throw new Error("Expected a dependency graph layout.");
+  if (artifact.diagram.layout.layoutId !== "dependency-graph") throw new Error("Expected a dependency graph layout.");
   return layoutDependencyGraph(artifact.diagram.graph, nodeSizes);
 }
 
@@ -21,24 +21,24 @@ function describeDependencyFocus(artifact: Artifact, focus: DependencyFocus): st
     const element =
       focus.type === "node"
         ? getOrThrow(
-            artifact.diagram.graph.nodes.find((node) => node.id === focus.id),
+            artifact.diagram.graph.nodes.find((node) => node.nodeId === focus.id),
             `Missing focused diagram node: ${focus.id}`,
           )
         : getOrThrow(
-            artifact.diagram.graph.groups.find((group) => group.id === focus.id),
+            artifact.diagram.graph.groups.find((group) => group.groupId === focus.id),
             `Missing focused diagram group: ${focus.id}`,
           );
     return `Focused on ${element.title}`;
   }
 
   const firstEdgeId = focus.edgeIds.at(0);
-  const nodesById = new Map(artifact.diagram.graph.nodes.map((node) => [node.id, node]));
+  const nodesById = new Map(artifact.diagram.graph.nodes.map((node) => [node.nodeId, node]));
   const edge = getOrThrow(
-    artifact.diagram.graph.edges.find((candidate) => candidate.id === firstEdgeId),
+    artifact.diagram.graph.edges.find((candidate) => candidate.edgeId === firstEdgeId),
     `Missing focused aggregate edge: ${firstEdgeId}`,
   );
-  const source = getOrThrow(nodesById.get(edge.source), `Missing edge source: ${edge.source}`);
-  const target = getOrThrow(nodesById.get(edge.target), `Missing edge target: ${edge.target}`);
+  const source = getOrThrow(nodesById.get(edge.sourceNodeId), `Missing edge source: ${edge.sourceNodeId}`);
+  const target = getOrThrow(nodesById.get(edge.targetNodeId), `Missing edge target: ${edge.targetNodeId}`);
   return `${focus.edgeIds.length} edges: ${source.title} → ${target.title}`;
 }
 

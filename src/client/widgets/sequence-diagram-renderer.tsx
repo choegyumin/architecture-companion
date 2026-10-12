@@ -5,7 +5,7 @@ import { layoutSequenceDiagram } from "@/features/diagram/_layout/sequence-diagr
 import type { DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 
 function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (artifact.diagram.layout.id !== "sequence") throw new Error("Expected a sequence diagram layout.");
+  if (artifact.diagram.layout.layoutId !== "sequence") throw new Error("Expected a sequence diagram layout.");
   return layoutSequenceDiagram(artifact.diagram.graph, nodeSizes);
 }
 

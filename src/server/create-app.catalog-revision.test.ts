@@ -18,14 +18,14 @@ function catalog(title: string) {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
           graph: {
             groups: [],
-            nodes: [{ type: "default", id: "submit", kind: "trigger", title }],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title }],
             edges: [],
           },
         },
-        id: "checkout",
+        artifactId: "checkout",
       },
     ],
     designs: [],

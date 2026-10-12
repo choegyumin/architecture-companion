@@ -112,7 +112,7 @@ A graph element representing a relationship or interaction between two nodes.
 A collection of one or more edges treated as a single unit, for example when selecting them or attaching an annotation.
 
 **Control**:
-A decision that gates which paths apply. Branch controls choose exactly one of their cases; conditional controls toggle on or off. Controls may declare prerequisites on other controls (`dependsOn`). In a component structure diagram, controls come from component source and are stored in the graph's additional properties. Represented in code as `DiagramControl`.
+A decision that gates which paths apply. Branch controls choose exactly one of their cases; conditional controls toggle on or off. A control's `type` is `conditional` or `branch`. Controls may declare prerequisites on other controls (`dependsOn`). In a component structure diagram, controls come from component source and are stored in the graph's `layoutContext`. Represented in code as `DiagramControl`.
 
 **Control case**:
 One of the values a branch control chooses between. Each case appears as one port on the corresponding decision node.
@@ -120,8 +120,14 @@ One of the values a branch control chooses between. Each case appears as one por
 **Guard**:
 A label stating the condition under which a path applies. On a sequence diagram it describes a fragment's branch; on a component structure diagram it is a Route Requirement Ruleset derived from the stored relationship's `activeWhen`.
 
-**Additional Graph Properties**:
-A graph's layout-specific extension properties. Which properties are valid is decided by the artifact's layout; for example, a component structure diagram stores its roots and controls here.
+**Type**:
+A schema-defined classification stored as `type` on nodes, edges, controls, and compositions. The schema validates it as a closed set of values, and it decides the fields specific to that type. A `type` is not required to be a union discriminator that changes the object's field shape: a single object shape can also carry a `type` field with a closed value set, such as a composition's supply method.
+
+**Kind**:
+A free-form display category stored as `kind` on common nodes and edges. It is descriptive text for display only and is never used to select a schema shape or validate a field set.
+
+**Layout Context**:
+The layout-specific data of a graph, node, or edge, stored as its `layoutContext`. Which contract the `layoutContext` follows is decided by the artifact's `layout.layoutId`, and it is validated against the schema defined for that layout. It is not a free-form extension object and not runtime state; fields defined for one layout are not arbitrarily valid in another. For example, a component structure diagram stores its root nodes (`rootNodeIds`), controls, and optionally auxiliary definition names (`auxiliaryDefinitions`) in the graph's `layoutContext`.
 
 #### Sequence Diagrams
 
@@ -149,7 +155,10 @@ A span of messages within a fragment corresponding to a condition or alternative
 A code design diagram that shows the components of a component tree and the rendering paths through which they compose.
 
 **Composition**:
-An edge representing a parent component composing a child, whether through inline rendering, a node prop, a render prop, or a component prop. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
+An edge representing a parent component composing a child, directly or through a slot. For a component structure edge, omitted `composition` (in the edge's `layoutContext`) or explicit `null` means direct rendering, the default. Other supply methods store a `composition` object with `type`, consumer-side `slot`, and original supplier `origins`. `composition.type` is one of `node`, `render`, or `component`. The consumer slot and the original supplier slot can differ after forwarding. A composition gated by controls is stored as the `control` edge type with its `activeWhen` Route Requirement Ruleset; the type itself is not exclusive to component structure diagrams.
+
+**Slot**:
+A named input used for component composition. The term covers inputs supplied with content to render, functions or templates that create content, and component definitions, and is not limited to one framework's slot API. A stored slot field records the source code's input name unchanged.
 
 **Rendering Path**:
 A conjunction of control choices under which a component renders. An edge applies when at least one of its rendering paths matches the current selection.
@@ -158,7 +167,10 @@ A conjunction of control choices under which a component renders. An edge applie
 In a component structure diagram, the projection of a branch control as a decision node, derived for display instead of stored in the graph. Its ports are the control's cases, and one outgoing path leaves through each port.
 
 **Component Origin**:
-The supplier and slot through which a merged component instance was composed, listed on the component's card.
+The original supplier and slot through which a component was supplied. Per-edge `layoutContext.composition.origins` preserves the relationship's supplier definition IDs and original slot names. Node `layoutContext.origins` aggregates these origins for the component's card. The supplier's display name is resolved, not stored: `layoutContext.auxiliaryDefinitions` first, then the title of a node carrying the same `definitionId`, and otherwise the fixed label `outside graph`. The node's `layoutContext.definitionId` points to the source definition the node represents; the same definition can appear as several nodes after context expansion, and it is distinct from the node's own graph `nodeId`. Supplier definition IDs are not necessarily visible node instance IDs.
+
+**Component Definition**:
+A declaration in component source, identified as `component:<scope-relative-file>#<name>` by the React generator. The graph may reference a definition without showing a node for it: origins point at definitions (`supplierDefinitionId`), never at node instances. A definition with one usage context appears as one node whose `nodeId` equals the definition id; additional contexts add `@<hash>` suffixes. Definitions that stay referenced after their nodes drop out — for example under `--root` focus — can be named in the graph's `layoutContext.auxiliaryDefinitions`.
 
 **Control Owner Component**:
 The component whose source defines a control. The owner's card displays the control as a switch or select.

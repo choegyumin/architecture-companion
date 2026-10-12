@@ -1,4 +1,5 @@
 import type {
+  AuxiliaryDefinition,
   ComponentStructureDiagramGraph,
   ComponentStructureDiagramNode,
   DiagramControl,
@@ -21,7 +22,7 @@ export type ProjectedDecisionNode = Readonly<{
   type: "decision";
   id: string;
   title: string;
-  control: Extract<DiagramControl, { kind: "branch" }>;
+  control: Extract<DiagramControl, { type: "branch" }>;
 }>;
 
 /** One dead case rendered as its own node: rendering nothing stays a selectable rendering path. */
@@ -29,12 +30,17 @@ export type ProjectedNonComponentNode = Readonly<{
   type: "non-component";
   id: string;
   title: string;
-  control: Extract<DiagramControl, { kind: "branch" }>;
+  control: Extract<DiagramControl, { type: "branch" }>;
   caseId: string;
 }>;
 
 export type ProjectedComponentStructureNode =
   ComponentStructureDiagramNode | ProjectedDecisionNode | ProjectedNonComponentNode;
+
+/** Stored nodes carry `nodeId`; the projected decision and non-component nodes carry `id`. */
+export function projectedComponentStructureNodeId(node: ProjectedComponentStructureNode): string {
+  return node.type === "default" ? node.nodeId : node.id;
+}
 
 /** One displayed hop: split segments carry the port they leave from and the guards their label renders. */
 export type ProjectedComponentStructureEdge = Readonly<{
@@ -52,6 +58,7 @@ export type ProjectedComponentStructureGraph = Readonly<{
   edges: readonly ProjectedComponentStructureEdge[];
   roots: readonly string[];
   controls: readonly DiagramControl[];
+  auxiliaryDefinitions?: readonly AuxiliaryDefinition[];
 }>;
 
 // Each dead case gets its own non-component node: a case that renders nothing
@@ -139,12 +146,12 @@ function missingGuardRules(
  */
 function segmentsOf(
   rule: readonly DiagramRouteRequirement[],
-  edge: Readonly<{ source: string; target: string }>,
+  edge: Readonly<{ sourceNodeId: string; targetNodeId: string }>,
   isBranch: (controlId: string) => boolean,
   controlsById: ReadonlyMap<string, Pick<DiagramControl, "dependsOn">>,
 ): Segment[] {
   const segments: (Segment & { seeds: DiagramRouteRequirement[] })[] = [];
-  let start = edge.source;
+  let start = edge.sourceNodeId;
   let startPort: string | undefined;
   let portCondition: DiagramRouteRequirement | undefined;
   const activeWhen: DiagramRouteRequirement[] = [];
@@ -177,7 +184,7 @@ function segmentsOf(
     activeWhen.push(requirement);
     span = [];
   }
-  push(edge.target);
+  push(edge.targetNodeId);
 
   // Lift declared-but-untraversed prerequisites onto the segments that reach
   // their controls, so every guard renders somewhere.
@@ -203,10 +210,10 @@ function edgeRuleset(edge: ComponentStructureDiagramGraph["edges"][number]): Dia
  * the hop they constrain.
  */
 export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): ProjectedComponentStructureGraph {
-  const controls = graph.additional.controls;
-  const controlsById = new Map(controls.map((control) => [control.id, control]));
-  const branchControls = controls.filter((control) => control.kind === "branch");
-  const branchControlIds = new Set(branchControls.map(({ id }) => id));
+  const controls = graph.layoutContext.controls;
+  const controlsById = new Map(controls.map((control) => [control.controlId, control]));
+  const branchControls = controls.filter((control) => control.type === "branch");
+  const branchControlIds = new Set(branchControls.map(({ controlId }) => controlId));
 
   const alivePairs = new Set<string>();
   for (const edge of graph.edges) {
@@ -226,10 +233,10 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
       // plain conjunctions of its own rules plus their untraversed prerequisites.
       // An edge whose rules all avoid branches keeps its stored ruleset;
       // otherwise only its branchless rules stay.
-      wholeEdges.set(edge.id, {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
+      wholeEdges.set(edge.edgeId, {
+        id: edge.edgeId,
+        source: edge.sourceNodeId,
+        target: edge.targetNodeId,
         ...(edge.type === "control"
           ? { activeWhen: branchless.length === ruleset.length ? edge.activeWhen : branchless }
           : {}),
@@ -264,27 +271,30 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
   const nonComponentNodes: ProjectedNonComponentNode[] = [];
   for (const control of branchControls) {
     for (const branchCase of control.cases) {
-      if (alivePairs.has(`${control.id}\0${branchCase.id}`)) continue;
+      if (alivePairs.has(`${control.controlId}\0${branchCase.caseId}`)) continue;
       deadCases.push({
-        source: control.id,
-        target: nonComponentNodeId(control.id, branchCase.id),
-        sourcePort: branchCase.id,
-        guards: [[{ controlId: control.id, value: branchCase.id }]],
-        activeWhen: control.dependsOn.map((rule) => [...rule, { controlId: control.id, value: branchCase.id }]),
+        source: control.controlId,
+        target: nonComponentNodeId(control.controlId, branchCase.caseId),
+        sourcePort: branchCase.caseId,
+        guards: [[{ controlId: control.controlId, value: branchCase.caseId }]],
+        activeWhen: (control.dependsOn ?? [[]]).map((rule) => [
+          ...rule,
+          { controlId: control.controlId, value: branchCase.caseId },
+        ]),
       });
       nonComponentNodes.push({
         type: "non-component",
-        id: nonComponentNodeId(control.id, branchCase.id),
+        id: nonComponentNodeId(control.controlId, branchCase.caseId),
         title: "Non-component",
         control,
-        caseId: branchCase.id,
+        caseId: branchCase.caseId,
       });
     }
   }
 
   const decisionNodes: ProjectedDecisionNode[] = branchControls.map((control) => ({
     type: "decision",
-    id: control.id,
+    id: control.controlId,
     title: control.label,
     control,
   }));
@@ -303,9 +313,14 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
   const nodes = [...graph.nodes, ...decisionNodes, ...nonComponentNodes];
   return {
     groups: graph.groups,
-    nodes: nodes.toSorted((left, right) => left.id.localeCompare(right.id)),
+    nodes: nodes.toSorted((left, right) =>
+      projectedComponentStructureNodeId(left).localeCompare(projectedComponentStructureNodeId(right)),
+    ),
     edges: [...projectedEdges].toSorted((left, right) => left.id.localeCompare(right.id)),
-    roots: graph.additional.roots,
+    roots: graph.layoutContext.rootNodeIds,
     controls,
+    ...(graph.layoutContext.auxiliaryDefinitions
+      ? { auxiliaryDefinitions: graph.layoutContext.auxiliaryDefinitions }
+      : {}),
   };
 }

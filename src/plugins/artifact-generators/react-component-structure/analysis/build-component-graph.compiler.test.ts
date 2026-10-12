@@ -51,10 +51,10 @@ async function withFixture(
 }
 
 function edgeFacts(graph: ComponentStructureDiagramGraph) {
-  const titlesById = new Map(graph.nodes.map(({ id, title }) => [id, title]));
-  return graph.edges.map(({ source, target }) => ({
-    source: titlesById.get(source),
-    target: titlesById.get(target),
+  const titlesById = new Map(graph.nodes.map(({ nodeId, title }) => [nodeId, title]));
+  return graph.edges.map(({ sourceNodeId, targetNodeId }) => ({
+    source: titlesById.get(sourceNodeId),
+    target: titlesById.get(targetNodeId),
   }));
 }
 

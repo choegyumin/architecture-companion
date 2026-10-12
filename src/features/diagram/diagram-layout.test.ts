@@ -1,33 +1,35 @@
 import { layoutDiagram } from "@/features/diagram/diagram-layout";
 
 const elkDiagram = {
-  layout: { id: "elk-layered" },
+  layout: { layoutId: "elk-layered" },
   graph: {
     groups: [],
     nodes: [
-      { id: "source", type: "default", kind: "component", title: "Source" },
-      { id: "target", type: "default", kind: "component", title: "Target" },
+      { nodeId: "source", type: "default", kind: "component", title: "Source" },
+      { nodeId: "target", type: "default", kind: "component", title: "Target" },
     ],
-    edges: [{ id: "source-target", type: "default", source: "source", target: "target" }],
+    edges: [{ edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" }],
   },
 } satisfies Parameters<typeof layoutDiagram>[0];
 
 const sequenceDiagram = {
-  layout: { id: "sequence" },
+  layout: { layoutId: "sequence" },
   graph: {
     groups: [],
     nodes: [
-      { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-      { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+      { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+      { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
     ],
-    edges: [{ id: "request", type: "message", source: "client", target: "server", messageType: "sync" }],
+    edges: [
+      { edgeId: "request", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
+    ],
   },
 } satisfies Parameters<typeof layoutDiagram>[0];
 
 describe("diagram layout dispatcher", () => {
   test("routes a dependency graph layout to the nested dependency strategy", async () => {
     const result = await layoutDiagram(
-      { ...elkDiagram, layout: { id: "dependency-graph" } },
+      { ...elkDiagram, layout: { layoutId: "dependency-graph" } },
       { source: { width: 160, height: 120 }, target: { width: 160, height: 120 } },
     );
 
