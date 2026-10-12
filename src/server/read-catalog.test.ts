@@ -67,7 +67,7 @@ describe("catalog reading", () => {
 
   it("uses configured glob patterns instead of forcing the default suffix, without duplicating central matches", async () => {
     await save(".architecture-companion/config.json", {
-      artifactPatterns: ["src/**/*.review.json", ".architecture-companion/artifacts/**/*.json", "!src/excluded/**"],
+      include: ["src/**/*.review.json", ".architecture-companion/artifacts/**/*.json", "!src/excluded/**"],
       placementInstructions: "Prefer central artifacts for new diagrams.",
     });
     await save("src/checkout.review.json");
@@ -97,8 +97,8 @@ describe("catalog reading", () => {
     });
   });
 
-  it("keeps central artifacts visible when configured patterns are empty", async () => {
-    await save(".architecture-companion/config.json", { artifactPatterns: [] });
+  it("keeps central artifacts visible when the configured includes are empty", async () => {
+    await save(".architecture-companion/config.json", { include: [] });
     await save("src/hidden.archcomp.json");
     await save(`${ARTIFACTS_RELATIVE_PATH}/central.json`);
     expect(await readCatalog(scopePath)).toMatchObject({
@@ -107,7 +107,7 @@ describe("catalog reading", () => {
     });
   });
 
-  it.each(["{ partial", JSON.stringify({ artifactPatterns: "*.json" }), JSON.stringify({ unknown: true })])(
+  it.each(["{ partial", JSON.stringify({ include: "*.json" }), JSON.stringify({ unknown: true })])(
     "reports invalid configuration instead of silently using defaults: %s",
     async (content) => {
       await mkdir(join(scopePath, ".architecture-companion"), { recursive: true });

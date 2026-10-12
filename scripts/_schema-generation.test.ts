@@ -108,7 +108,7 @@ describe("generateSchemaSources", () => {
       type: "object",
       additionalProperties: false,
       properties: {
-        artifactPatterns: { type: "array", default: ["**/*.archcomp.json"], items: { type: "string", minLength: 1 } },
+        include: { type: "array", default: ["**/*.archcomp.json"], items: { type: "string", minLength: 1 } },
         placementInstructions: { type: "string", minLength: 1 },
       },
     });

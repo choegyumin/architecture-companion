@@ -80,7 +80,7 @@ async function discoverArtifactPaths(scopePath: string, config: CatalogConfig) {
     }
   }
   await walk("", []);
-  const paths = [...centralPaths, ...micromatch(candidates, config.artifactPatterns, { dot: true })].toSorted();
+  const paths = [...centralPaths, ...micromatch(candidates, config.include, { dot: true })].toSorted();
   return { paths, centralDirectoryExists };
 }
 

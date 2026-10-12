@@ -31,11 +31,11 @@ When first creating this file, start with:
 
 ```json
 {
-  "artifactPatterns": ["**/*.archcomp.json"]
+  "include": ["**/*.archcomp.json"]
 }
 ```
 
-The suffix is a default, not a filename restriction. Users can change `artifactPatterns` to any scope-relative file globs. JSON artifacts under `.architecture-companion/artifacts/` are always discovered independently of these patterns and `.gitignore`. Other matches respect `.gitignore`. Use the same scope for configuration, discovery, review, and source links.
+The suffix is a default, not a filename restriction. Users can change `include` to any scope-relative file globs. JSON artifacts under `.architecture-companion/artifacts/` are always discovered independently of these patterns and `.gitignore`. Other matches respect `.gitignore`. Use the same scope for configuration, discovery, review, and source links.
 
 Before authoring, read existing configuration and artifacts and any user-supplied placement rules. When configuration, placement rules, and artifacts are all absent, ask where to place the first artifact unless the user has already specified a location. Otherwise, infer a suitable location from the current request, saved `placementInstructions`, and existing conventions; do not ask for every artifact. Create the initial configuration during authoring after resolving placement, not merely when viewing or validating a catalog. Do not overwrite existing settings.
 

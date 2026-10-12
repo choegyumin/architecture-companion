@@ -1,3 +1,3 @@
 {
-  "artifactPatterns": ["**/*.archcomp.json"]
+  "include": ["**/*.archcomp.json"]
 }

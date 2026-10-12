@@ -2,7 +2,7 @@ import { catalogConfigSchema, parseCatalog } from "@/features/catalog/catalog";
 
 it("parses artifact discovery patterns independently from placement instructions", () => {
   const config = {
-    artifactPatterns: ["src/**/*.review.json"],
+    include: ["src/**/*.review.json"],
     placementInstructions: "Keep artifacts beside their feature.",
   };
   expect(catalogConfigSchema.parse(config)).toEqual(config);
