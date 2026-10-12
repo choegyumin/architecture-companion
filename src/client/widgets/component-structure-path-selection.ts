@@ -128,7 +128,7 @@ function componentRulesetHolds(
       const control = controls.find((item) => item.controlId === controlId)!;
       return (
         reachableNodes.has(control.ownerNodeId) &&
-        componentRulesetHolds(control.dependsOn, selection, controls, reachableNodes)
+        componentRulesetHolds(control.dependsOn ?? [[]], selection, controls, reachableNodes)
       );
     }),
   );
@@ -175,7 +175,7 @@ function withPrerequisites(
   if (pending === undefined) return [candidate];
   const control = graph.controls.find((item) => item.controlId === pending)!;
   const nextExpanded = new Set([...expanded, pending]);
-  return control.dependsOn.flatMap((rule) => {
+  return (control.dependsOn ?? [[]]).flatMap((rule) => {
     const merged = mergeRequirements(candidate, rule);
     return merged ? withPrerequisites(graph, merged, nextExpanded) : [];
   });
@@ -253,7 +253,8 @@ export function componentPathEmphasis(graph: ProjectedComponentStructureGraph, s
     controls
       .filter(
         (control) =>
-          nodes.has(control.ownerNodeId) && componentRulesetHolds(control.dependsOn, selection, controls, nodes),
+          nodes.has(control.ownerNodeId) &&
+          componentRulesetHolds(control.dependsOn ?? [[]], selection, controls, nodes),
       )
       .map((control) => control.controlId),
   );

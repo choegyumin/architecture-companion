@@ -126,6 +126,13 @@ describe("control storage contract", () => {
     expect(diagramControlSchema.safeParse({ ...rest, kind: type }).success).toBe(false);
     expect(diagramControlSchema.safeParse({ ...control, kind: type }).success).toBe(false);
   });
+
+  it("treats an omitted dependsOn as no prerequisites while keeping [] invalid", () => {
+    const control = { controlId: "gate", ownerNodeId: "root", type: "conditional", label: "ready" };
+    expect(diagramControlSchema.parse(control)).toEqual(control);
+    expect(diagramControlSchema.parse({ ...control, dependsOn: [[]] })).toEqual({ ...control, dependsOn: [[]] });
+    expect(diagramControlSchema.safeParse({ ...control, dependsOn: [] }).success).toBe(false);
+  });
 });
 
 describe("typed ID field names", () => {

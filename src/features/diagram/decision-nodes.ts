@@ -275,7 +275,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
         target: nonComponentNodeId(control.controlId, branchCase.caseId),
         sourcePort: branchCase.caseId,
         guards: [[{ controlId: control.controlId, value: branchCase.caseId }]],
-        activeWhen: control.dependsOn.map((rule) => [
+        activeWhen: (control.dependsOn ?? [[]]).map((rule) => [
           ...rule,
           { controlId: control.controlId, value: branchCase.caseId },
         ]),

@@ -2882,7 +2882,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           const id = `${instance.id}:control:${controlId.split(":control:").at(-1)}`;
           const when = combineRulesets(
             prerequisites,
-            instantiateRuleset(template.dependsOn, instance, source, prerequisites),
+            instantiateRuleset(template.dependsOn ?? [[]], instance, source, prerequisites),
           );
           const existing = controls.get(id);
           controls.set(id, {
@@ -3237,7 +3237,16 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           ? { type: "default", ...relationship }
           : { type: "control", ...relationship, activeWhen: ruleset };
       }),
-      layoutContext: { rootNodeIds: graph.roots, controls: graph.controls },
+      layoutContext: {
+        rootNodeIds: graph.roots,
+        // The contract treats an omitted dependsOn as [[]], so the empty
+        // ruleset is dropped here like other stored defaults.
+        controls: graph.controls.map(({ dependsOn, ...control }) =>
+          dependsOn !== undefined && dependsOn.length === 1 && dependsOn.at(0)?.length === 0
+            ? control
+            : { ...control, dependsOn },
+        ),
+      },
     };
   }
 
@@ -3472,7 +3481,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
       }
     };
-    for (const control of context.controls.values()) scanDiscriminantUsage(control.dependsOn);
+    for (const control of context.controls.values()) scanDiscriminantUsage(control.dependsOn ?? [[]]);
     for (const ruleset of context.useRulesets.values()) scanDiscriminantUsage(ruleset);
     for (const use of context.uses.values()) {
       for (const supplied of use.suppliedValues) {
@@ -3652,14 +3661,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           ...(second
             ? { type: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
             : { type: "conditional" as const, label: first!.label }),
-          dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn))),
+          dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn ?? [[]]))),
         });
         continue;
       }
       const discriminant = discriminantByRepresentative.get(control.controlId);
       if (discriminant) {
         const dependsOn = unionRulesets(
-          ...discriminant.members.map(({ control: member }) => rewrite(member.dependsOn)),
+          ...discriminant.members.map(({ control: member }) => rewrite(member.dependsOn ?? [[]])),
         );
         controls.set(
           control.controlId,
@@ -3686,7 +3695,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         continue;
       }
       if (memberIds.has(control.controlId)) continue;
-      controls.set(control.controlId, { ...control, dependsOn: rewrite(control.dependsOn) });
+      controls.set(control.controlId, { ...control, dependsOn: rewrite(control.dependsOn ?? [[]]) });
     }
     // Gates ordered `A && B` at one site and `B && A` at another make the
     // merged controls prerequisites of each other. Peers gated in conflicting
@@ -3694,7 +3703,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     // that closes the cycle, in source order, until the graph is acyclic.
     const creationOrder = new Map([...controls.keys()].map((id, index) => [id, index]));
     const dependents = (control: DiagramControl) => [
-      ...new Set(control.dependsOn.flat().map(({ controlId }) => controlId)),
+      ...new Set((control.dependsOn ?? []).flat().map(({ controlId }) => controlId)),
     ];
     for (;;) {
       const state = new Map<string, "visiting" | "done">();
@@ -3730,7 +3739,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const control = controls.get(latest)!;
       controls.set(latest, {
         ...control,
-        dependsOn: control.dependsOn.map((rule) => rule.filter(({ controlId }) => controlId !== successor)),
+        dependsOn: (control.dependsOn ?? []).map((rule) => rule.filter(({ controlId }) => controlId !== successor)),
       });
     }
     context.controls.clear();
@@ -3784,7 +3793,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const control = availableControls.get(controlId);
         if (!control || neededControls.has(controlId)) continue;
         neededControls.add(controlId);
-        requireControls(control.dependsOn);
+        requireControls(control.dependsOn ?? [[]]);
       }
     }
     for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.activeWhen ?? [[]]);
@@ -3839,7 +3848,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const ownedControls = (controlsByOwner.get(node.nodeId) ?? []).map(
           ({ controlId: _controlId, ownerNodeId: _ownerNodeId, dependsOn, ...metadata }) => ({
             ...metadata,
-            dependsOn: normalizeRulesets(dependsOn, classes),
+            dependsOn: normalizeRulesets(dependsOn ?? [[]], classes),
           }),
         );
         const signature = JSON.stringify([classes.get(node.nodeId), ownedControls, [...new Set(outgoing)].toSorted()]);
@@ -3904,7 +3913,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         ...control,
         controlId: id,
         ownerNodeId: outputIds.get(control.ownerNodeId)!,
-        dependsOn: unionRulesets(existing?.dependsOn ?? [], rewriteRulesets(control.dependsOn)),
+        dependsOn: unionRulesets(existing?.dependsOn ?? [], rewriteRulesets(control.dependsOn ?? [[]])),
       });
     }
     const edges = new Map<string, (typeof graph.edges)[number]>();

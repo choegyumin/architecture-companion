@@ -147,8 +147,8 @@ describe("component rendering controls", () => {
     const ready = controls.find((control) => control.label === "ready")!;
     const choice = controls.find((control) => control.label === "choice")!;
     const visible = controls.find((control) => control.label === "!hidden")!;
-    expect(ready).toMatchObject({ type: "conditional", dependsOn: [[]] });
-    expect(visible).toMatchObject({ type: "conditional", dependsOn: [[]] });
+    expect(ready).toMatchObject({ type: "conditional" });
+    expect(visible).toMatchObject({ type: "conditional" });
     expect(choice).toMatchObject({
       type: "branch",
       polarityPair: true,
@@ -416,7 +416,7 @@ describe("component rendering controls", () => {
     `);
     expect(graph.layoutContext.controls).toHaveLength(2);
     const [ready, roomy] = graph.layoutContext.controls;
-    expect(ready).toMatchObject({ type: "conditional", label: "ready", dependsOn: [[]] });
+    expect(ready).toMatchObject({ type: "conditional", label: "ready" });
     expect(roomy).toMatchObject({
       type: "branch",
       label: "roomy",
@@ -533,8 +533,8 @@ describe("component rendering controls", () => {
     const first = controls.find(({ label }) => label === "first")!;
     const second = controls.find(({ label }) => label === "second")!;
     expect(controls).toHaveLength(2);
-    expect(first).toMatchObject({ type: "conditional", dependsOn: [[]] });
-    expect(second).toMatchObject({ type: "conditional", dependsOn: [[]] });
+    expect(first).toMatchObject({ type: "conditional" });
+    expect(second).toMatchObject({ type: "conditional" });
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
@@ -721,8 +721,8 @@ describe("component rendering controls", () => {
         { caseId: "false", label: onLabel },
         { caseId: "true", label: condition },
       ],
-      dependsOn: [[]],
     });
+    expect(catalog).not.toHaveProperty("dependsOn");
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [[{ controlId: catalog.controlId, value: "true" }]],
     });
@@ -750,7 +750,7 @@ describe("component rendering controls", () => {
         { caseId: "true", label: "!catalog" },
       ],
     });
-    expect(conditional).toMatchObject({ label: "catalog", dependsOn: [[]] });
+    expect(conditional).toMatchObject({ label: "catalog" });
     expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: branch.controlId, value: "true" }]]);
     expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: branch.controlId, value: "false" }]]);
     expect(edgeActiveWhen(graph, "Extra")).toEqual([[{ controlId: conditional.controlId, value: "on" }]]);
@@ -803,7 +803,7 @@ describe("component rendering controls", () => {
     `);
     const [flag] = graph.layoutContext.controls;
     expect(graph.layoutContext.controls).toHaveLength(1);
-    expect(flag).toMatchObject({ type: "conditional", label: "flag", dependsOn: [[]] });
+    expect(flag).toMatchObject({ type: "conditional", label: "flag" });
     expect(edgeTo(graph, "First")).toMatchObject({ activeWhen: [[{ controlId: flag.controlId, value: "on" }]] });
     expect(edgeTo(graph, "Second")).toMatchObject({ activeWhen: [[{ controlId: flag.controlId, value: "on" }]] });
   });
@@ -883,9 +883,7 @@ describe("component rendering controls", () => {
     const shell = graph.nodes.find(({ title }) => title === "Shell")!;
     const [visible] = graph.layoutContext.controls;
     expect(graph.layoutContext.rootNodeIds).toEqual([shell.nodeId]);
-    expect(graph.layoutContext.controls).toMatchObject([
-      { ownerNodeId: shell.nodeId, label: "visible", dependsOn: [[]] },
-    ]);
+    expect(graph.layoutContext.controls).toMatchObject([{ ownerNodeId: shell.nodeId, label: "visible" }]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [[{ controlId: visible!.controlId, value: "on" }]],
       layoutContext: {
@@ -916,7 +914,7 @@ describe("component rendering controls", () => {
     const second = graph.nodes.find(({ title }) => title === "B")!;
     const [enabled] = graph.layoutContext.controls;
     expect(graph.layoutContext.rootNodeIds).toEqual([first.nodeId]);
-    expect(enabled).toMatchObject({ ownerNodeId: first.nodeId, label: "enabled", dependsOn: [[]] });
+    expect(enabled).toMatchObject({ ownerNodeId: first.nodeId, label: "enabled" });
     expect(edgeTo(graph, "B")).toMatchObject({
       sourceNodeId: first.nodeId,
       activeWhen: [[{ controlId: enabled!.controlId, value: "on" }]],
@@ -935,9 +933,7 @@ describe("component rendering controls", () => {
     );
     const recursive = graph.nodes.find(({ title }) => title === "Recursive")!;
     expect(graph.layoutContext.rootNodeIds).toEqual([recursive.nodeId]);
-    expect(graph.layoutContext.controls).toMatchObject([
-      { ownerNodeId: recursive.nodeId, label: "more", dependsOn: [[]] },
-    ]);
+    expect(graph.layoutContext.controls).toMatchObject([{ ownerNodeId: recursive.nodeId, label: "more" }]);
     const cycle = graph.edges.find(
       ({ sourceNodeId, targetNodeId }) => sourceNodeId === recursive.nodeId && targetNodeId === recursive.nodeId,
     )!;
@@ -1108,7 +1104,7 @@ describe("component rendering controls", () => {
     const controls = graph.layoutContext.controls;
     expect(controls.map(({ label }) => label)).toEqual(["!hidden", "mode", "ready"]);
     const [visible, mode, ready] = controls;
-    expect(visible).toMatchObject({ type: "conditional", dependsOn: [[]] });
+    expect(visible).toMatchObject({ type: "conditional" });
     expect(mode).toMatchObject({
       type: "branch",
       dependsOn: [[{ controlId: visible!.controlId, value: "on" }]],
@@ -1304,7 +1300,6 @@ describe("component rendering controls", () => {
           ownerNodeId: app.nodeId,
           label: "ready",
           type: "conditional",
-          dependsOn: [[]],
         },
       ],
     });

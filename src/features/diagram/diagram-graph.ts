@@ -42,7 +42,9 @@ const diagramControlBaseShape = {
   controlId: diagramIdSchema,
   ownerNodeId: diagramIdSchema,
   label: z.string().min(1),
-  dependsOn: diagramRouteRequirementRulesetSchema,
+  // Omitted `dependsOn` equals [[]]: the control has no prerequisites. An
+  // explicit [] stays invalid because an empty OR never holds.
+  dependsOn: diagramRouteRequirementRulesetSchema.optional(),
 };
 export const diagramControlSchema = z.discriminatedUnion("type", [
   z.object({ ...diagramControlBaseShape, type: z.literal("conditional") }).strict(),
@@ -609,7 +611,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     if (edge.type === "control") validateRuleset(edge.activeWhen, ["edges", index, "activeWhen"]);
   });
   controls.forEach((control, index) => {
-    validateRuleset(control.dependsOn, ["layoutContext", "controls", index, "dependsOn"]);
+    if (control.dependsOn) validateRuleset(control.dependsOn, ["layoutContext", "controls", index, "dependsOn"]);
   });
 
   const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.targetNodeId));
