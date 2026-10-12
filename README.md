@@ -65,13 +65,13 @@ Diagrams are grounded in your code and help you understand it visually. You can 
 
 Diagrams are saved as JSON artifacts beside the source they explain or in `.architecture-companion/artifacts/`. You can reopen saved artifacts for review, or ask your agent to regenerate them after the source changes, preserving the same purpose and criteria.
 
-`.architecture-companion/config.json` defines discovery globs in `include` (initial default: `["**/*.archcomp.json"]`) and can record natural-language `instructions` for your agent to follow across artifact work. Filenames do not have to match the source or include an artifact type. Each artifact declares its `type` in JSON and is identified by its path relative to the scope.
-
 ```text
 ❯ /architecture-companion Regenerate the artifacts from the current source code.
 ```
 
-Commit and ignore policies are your choice. Discovery respects `.gitignore` for co-located artifacts; JSON files under `.architecture-companion/artifacts/` are always discovered, even if that directory is ignored or excluded by the configured globs.
+You can control which artifacts are discovered through `include` in `.architecture-companion/config.json`. `include` supports globs and defaults to `["**/*.archcomp.json"]`. Record natural-language instructions for your agent, such as placement rules for artifact files, in `instructions`.
+
+If you do not want to commit artifacts, add `.architecture-companion/` to `.gitignore`. By default, paths listed in `.gitignore` are excluded from discovery, but JSON files under `.architecture-companion/artifacts/` are always discovered. You can keep artifacts in `.architecture-companion/artifacts/` without tracking them in Git.
 
 <br><br>
 
