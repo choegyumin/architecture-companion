@@ -55,6 +55,8 @@ describe("generateSchemaSources", () => {
     expect(Object.keys(artifactSchemaJson.$defs as JsonObject).toSorted()).toEqual(
       [
         "ComponentComposition",
+        "ComponentOrigin",
+        "ComponentStructureEdgeLayoutContext",
         "ComponentStructureDefaultEdge",
         "ComponentStructureControlEdge",
         "ComponentStructureGraph",
