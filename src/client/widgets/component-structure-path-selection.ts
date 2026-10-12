@@ -1,7 +1,8 @@
 import { getPolarityPairCases } from "@/features/diagram/control-polarity";
-import type {
-  ProjectedComponentStructureEdge,
-  ProjectedComponentStructureGraph,
+import {
+  type ProjectedComponentStructureEdge,
+  type ProjectedComponentStructureGraph,
+  projectedComponentStructureNodeId,
 } from "@/features/diagram/decision-nodes";
 import type {
   DiagramControl,
@@ -21,7 +22,12 @@ function condensedComponents(graph: ProjectedComponentStructureGraph): ReadonlyM
   const components = new Map<string, number>();
   let index = 0;
   let component = 0;
-  const outgoing = new Map(graph.nodes.map((node) => [node.id, graph.edges.filter((edge) => edge.source === node.id)]));
+  const outgoing = new Map(
+    graph.nodes.map((node) => [
+      projectedComponentStructureNodeId(node),
+      graph.edges.filter((edge) => edge.source === projectedComponentStructureNodeId(node)),
+    ]),
+  );
   function visit(nodeId: string) {
     indices.set(nodeId, index);
     lowest.set(nodeId, index++);
@@ -44,7 +50,10 @@ function condensedComponents(graph: ProjectedComponentStructureGraph): ReadonlyM
     } while (member !== nodeId);
     component++;
   }
-  for (const node of graph.nodes) if (!indices.has(node.id)) visit(node.id);
+  for (const node of graph.nodes) {
+    const nodeId = projectedComponentStructureNodeId(node);
+    if (!indices.has(nodeId)) visit(nodeId);
+  }
   return components;
 }
 
@@ -116,9 +125,9 @@ function componentRulesetHolds(
   return ruleset.some((rule) =>
     rule.every(({ controlId, value }) => {
       if (selection[controlId] !== value) return false;
-      const control = controls.find((item) => item.id === controlId)!;
+      const control = controls.find((item) => item.controlId === controlId)!;
       return (
-        reachableNodes.has(control.owner) &&
+        reachableNodes.has(control.ownerNodeId) &&
         componentRulesetHolds(control.dependsOn, selection, controls, reachableNodes)
       );
     }),
@@ -164,7 +173,7 @@ function withPrerequisites(
 ): RouteCandidate[] {
   const pending = [...candidate.requirements.keys()].find((controlId) => !expanded.has(controlId));
   if (pending === undefined) return [candidate];
-  const control = graph.controls.find((item) => item.id === pending)!;
+  const control = graph.controls.find((item) => item.controlId === pending)!;
   const nextExpanded = new Set([...expanded, pending]);
   return control.dependsOn.flatMap((rule) => {
     const merged = mergeRequirements(candidate, rule);
@@ -187,7 +196,7 @@ function branchMetrics(graph: ProjectedComponentStructureGraph, control: Diagram
   // Other controls remain undecided, but an alternative cannot count its own opposite routes.
   const eligibleEdges = graph.edges.filter((edge) =>
     routesByEdge.get(edge.id)!.some((route) => {
-      const required = route.requirements.get(control.id);
+      const required = route.requirements.get(control.controlId);
       return required === undefined || required === value;
     }),
   );
@@ -204,21 +213,21 @@ function branchMetrics(graph: ProjectedComponentStructureGraph, control: Diagram
   }
   const candidateGraph = { ...graph, edges: eligibleEdges.filter((edge) => reachable.has(edge.source)) };
   const starts = candidateGraph.edges.filter((edge) =>
-    routesByEdge.get(edge.id)!.some((route) => route.requirements.get(control.id) === value),
+    routesByEdge.get(edge.id)!.some((route) => route.requirements.get(control.controlId) === value),
   );
-  return routeMetrics(candidateGraph, condensedComponents(candidateGraph), starts, control.owner);
+  return routeMetrics(candidateGraph, condensedComponents(candidateGraph), starts, control.ownerNodeId);
 }
 
 export function initialComponentSelection(graph: ProjectedComponentStructureGraph): ComponentSelection {
   return Object.fromEntries(
     graph.controls.map((control) => {
-      if (control.type === "conditional") return [control.id, "off"];
+      if (control.type === "conditional") return [control.controlId, "off"];
       const cases = control.cases.map((alternative) => ({
         ...alternative,
-        metrics: branchMetrics(graph, control, alternative.id),
+        metrics: branchMetrics(graph, control, alternative.caseId),
       }));
       cases.sort((left, right) => compareMetrics(left.metrics, right.metrics));
-      return [control.id, cases.at(0)!.id];
+      return [control.controlId, cases.at(0)!.caseId];
     }),
   );
 }
@@ -243,9 +252,10 @@ export function componentPathEmphasis(graph: ProjectedComponentStructureGraph, s
   const activeControls = new Set(
     controls
       .filter(
-        (control) => nodes.has(control.owner) && componentRulesetHolds(control.dependsOn, selection, controls, nodes),
+        (control) =>
+          nodes.has(control.ownerNodeId) && componentRulesetHolds(control.dependsOn, selection, controls, nodes),
       )
-      .map((control) => control.id),
+      .map((control) => control.controlId),
   );
   return { nodes, edges, controls: activeControls };
 }
@@ -261,7 +271,7 @@ function withReachableOwners(
   const missingSources = [
     ...new Set(
       [...candidate.requirements.keys()].map(
-        (controlId) => graph.controls.find((control) => control.id === controlId)!.owner,
+        (controlId) => graph.controls.find((control) => control.controlId === controlId)!.ownerNodeId,
       ),
     ),
   ].filter((source) => !reachable.has(source));
@@ -298,13 +308,13 @@ function settleFallenBranchSwitches(
   const afterEmphasis = componentPathEmphasis(graph, after);
   let next = after;
   for (const control of graph.controls) {
-    if (control.id === clickedId) continue;
+    if (control.controlId === clickedId) continue;
     const pair = getPolarityPairCases(control);
     if (!pair) continue;
-    const offCase = pair.offCase.id;
-    if (next[control.id] === offCase) continue;
-    if (beforeEmphasis.nodes.has(control.id) && !afterEmphasis.nodes.has(control.id)) {
-      next = { ...next, [control.id]: offCase };
+    const offCase = pair.offCase.caseId;
+    if (next[control.controlId] === offCase) continue;
+    if (beforeEmphasis.nodes.has(control.controlId) && !afterEmphasis.nodes.has(control.controlId)) {
+      next = { ...next, [control.controlId]: offCase };
     }
   }
   return next;
@@ -317,10 +327,10 @@ export function selectComponentPath(
   value: string,
 ): ComponentSelection {
   const selected = { ...selection, [controlId]: value };
-  const control = graph.controls.find((item) => item.id === controlId)!;
+  const control = graph.controls.find((item) => item.controlId === controlId)!;
   const emphasis = componentPathEmphasis(graph, selected);
   if (control.type === "conditional") {
-    if (value === "off" || emphasis.controls.has(control.id))
+    if (value === "off" || emphasis.controls.has(control.controlId))
       return settleFallenBranchSwitches(graph, selection, selected, controlId);
   } else {
     // A branch needs rerouting only when its arm is unreachable: the control
@@ -334,7 +344,7 @@ export function selectComponentPath(
   // Branch arms reroute to the decision node itself — its incoming chain names
   // the choices that must hold before the arm exists. Conditional controls own
   // no node, so they reroute to their owner.
-  const rerouteTarget = control.type === "branch" ? control.id : control.owner;
+  const rerouteTarget = control.type === "branch" ? control.controlId : control.ownerNodeId;
   const candidates = ancestorRoutes(graph, rerouteTarget).flatMap((route) => {
     const requested = mergeRequirements(route, [{ controlId, value }]);
     return requested
@@ -386,7 +396,8 @@ function releaseGuardRule(
       other.rule.some((item) => item.controlId === requirement.controlId && item.value === requirement.value),
     );
   const switchable = rule.filter(
-    (requirement) => graph.controls.find((control) => control.id === requirement.controlId)?.type === "conditional",
+    (requirement) =>
+      graph.controls.find((control) => control.controlId === requirement.controlId)?.type === "conditional",
   );
   const exclusive = switchable.filter((requirement) => !shared(requirement));
   return (exclusive.length > 0 ? exclusive : switchable).reduce(
@@ -410,7 +421,7 @@ export function selectEdgePath(
   value: string,
 ): ComponentSelection {
   const controls = graph.controls;
-  const control = controls.find((item) => item.id === controlId)!;
+  const control = controls.find((item) => item.controlId === controlId)!;
   const edge = graph.edges.find((item) => item.id === edgeId);
   const guards = edge?.guards;
   const ruleIndex =
@@ -436,7 +447,9 @@ export function selectEdgePath(
   }
   if (holds && control.type === "conditional") {
     const repaired = applyRule(selection);
-    const movedBranch = controls.some((item) => item.type === "branch" && repaired[item.id] !== selection[item.id]);
+    const movedBranch = controls.some(
+      (item) => item.type === "branch" && repaired[item.controlId] !== selection[item.controlId],
+    );
     const changed = Object.keys(repaired).some((id) => repaired[id] !== selection[id]);
     if (changed && !movedBranch) return repaired;
     return releaseGuardRule(graph, selection, rule!, activeEdges, edgeId, ruleIndex);

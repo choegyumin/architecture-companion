@@ -3,7 +3,7 @@ import type { DiagramGraph } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 
 function sizes(graph: DiagramGraph): DiagramNodeSizes {
-  return Object.fromEntries(graph.nodes.map(({ id }) => [id, { width: 288, height: 144 }]));
+  return Object.fromEntries(graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 144 }]));
 }
 
 function absolutePosition(layout: DiagramLayout, id: string): { x: number; y: number } {
@@ -28,13 +28,18 @@ function doesNotOverlap(layout: DiagramLayout, leftId: string, rightId: string):
   );
 }
 
-const node = (id: string, groupId?: string) => ({
-  id,
+const node = (nodeId: string, groupId?: string) => ({
+  nodeId,
   type: "default" as const,
-  title: id,
+  title: nodeId,
   ...(groupId ? { groupId } : {}),
 });
-const edge = (id: string, source: string, target: string) => ({ id, type: "default" as const, source, target });
+const edge = (edgeId: string, sourceNodeId: string, targetNodeId: string) => ({
+  edgeId,
+  type: "default" as const,
+  sourceNodeId,
+  targetNodeId,
+});
 
 describe("dependency graph layout", () => {
   it("places SCC peers in one dependency level and their dependencies below without overlap", async () => {
@@ -50,18 +55,18 @@ describe("dependency graph layout", () => {
     expect(y("a")).toBeLessThan(y("c"));
     expect(y("c")).toBeLessThan(y("d"));
     expect(doesNotOverlap(layout, "a", "b")).toBe(true);
-    expect(layout.edges.map(({ id }) => id)).toEqual(graph.edges.map(({ id }) => id));
+    expect(layout.edges.map(({ id }) => id)).toEqual(graph.edges.map(({ edgeId }) => edgeId));
     expect(layout.initialView).toEqual({ mode: "fit" });
   });
 
   it("orders nested groups and direct files together without a visible virtual group", async () => {
     const graph = {
       groups: [
-        { id: "app", title: "App" },
-        { id: "library", title: "Library" },
-        { id: "nested", title: "Nested", parentId: "app" },
-        { id: "deep", title: "Deep", parentId: "nested" },
-        { id: "sibling", title: "Sibling", parentId: "app" },
+        { groupId: "app", title: "App" },
+        { groupId: "library", title: "Library" },
+        { groupId: "nested", title: "Nested", parentGroupId: "app" },
+        { groupId: "deep", title: "Deep", parentGroupId: "nested" },
+        { groupId: "sibling", title: "Sibling", parentGroupId: "app" },
       ],
       nodes: [
         node("direct-a", "app"),
@@ -82,8 +87,8 @@ describe("dependency graph layout", () => {
     const layout = await layoutDependencyGraph(graph, sizes(graph));
     const y = (id: string) => absolutePosition(layout, id).y;
 
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(graph.groups.map(({ id }) => id).toSorted());
-    expect(layout.nodes.map(({ id }) => id).toSorted()).toEqual(graph.nodes.map(({ id }) => id).toSorted());
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(graph.groups.map(({ groupId }) => groupId).toSorted());
+    expect(layout.nodes.map(({ id }) => id).toSorted()).toEqual(graph.nodes.map(({ nodeId }) => nodeId).toSorted());
     expect(layout.nodes.find(({ id }) => id === "direct-a")?.parentId).toBe("app");
     expect(layout.nodes.find(({ id }) => id === "root-file")?.parentId).toBeUndefined();
     expect(layout.groups.find(({ id }) => id === "deep")?.parentId).toBe("nested");
@@ -98,11 +103,11 @@ describe("dependency graph layout", () => {
   it("keeps fixed group padding and separate root and nested layer gaps", async () => {
     const graph = {
       groups: [
-        { id: "parent", title: "Parent" },
-        { id: "peer", title: "Peer" },
-        { id: "later", title: "Later" },
-        { id: "child", title: "Child", parentId: "parent" },
-        { id: "next-child", title: "Next Child", parentId: "parent" },
+        { groupId: "parent", title: "Parent" },
+        { groupId: "peer", title: "Peer" },
+        { groupId: "later", title: "Later" },
+        { groupId: "child", title: "Child", parentGroupId: "parent" },
+        { groupId: "next-child", title: "Next Child", parentGroupId: "parent" },
       ],
       nodes: [node("first", "child"), node("second", "next-child"), node("outside", "later")],
       edges: [edge("internal", "first", "second"), edge("external", "second", "outside")],
@@ -134,9 +139,9 @@ describe("dependency graph layout", () => {
   it("keeps cyclic sibling groups at the same level and their dependent group below", async () => {
     const graph = {
       groups: [
-        { id: "first", title: "First" },
-        { id: "second", title: "Second" },
-        { id: "dependency", title: "Dependency" },
+        { groupId: "first", title: "First" },
+        { groupId: "second", title: "Second" },
+        { groupId: "dependency", title: "Dependency" },
       ],
       nodes: [node("a", "first"), node("b", "second"), node("c", "dependency")],
       edges: [edge("a-b", "a", "b"), edge("b-a", "b", "a"), edge("b-c", "b", "c")],
@@ -166,7 +171,7 @@ describe("dependency graph layout", () => {
 
   it("keeps wide same-level sibling groups alongside one another", async () => {
     const graph = {
-      groups: ["first", "second", "third", "fourth"].map((id) => ({ id, title: id })),
+      groups: ["first", "second", "third", "fourth"].map((groupId) => ({ groupId, title: groupId })),
       nodes: [node("a", "first"), node("b", "second"), node("c", "third"), node("d", "fourth")],
       edges: [],
     } satisfies DiagramGraph;
@@ -179,7 +184,7 @@ describe("dependency graph layout", () => {
 
   it("reserves empty group space and loops above a node without crossing its same-row sibling", async () => {
     const graph = {
-      groups: [{ id: "empty", title: "Empty" }],
+      groups: [{ groupId: "empty", title: "Empty" }],
       nodes: [node("file"), node("sibling")],
       edges: [edge("self", "file", "file")],
     } satisfies DiagramGraph;

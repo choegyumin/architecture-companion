@@ -10,20 +10,20 @@ describe("sequence diagram layout", () => {
     const diagram = createSequenceDiagram({
       nodes: [
         {
-          id: "client",
+          nodeId: "client",
           type: "lifeline",
           kind: "participant",
           title: "Client",
           activations: [
             {
-              id: "client-work",
+              activationId: "client-work",
               startsAt: { messageId: "request", endpoint: "source" },
               endsAt: { messageId: "response", endpoint: "target" },
             },
           ],
         },
         {
-          id: "server",
+          nodeId: "server",
           type: "lifeline",
           kind: "participant",
           title: "Server",
@@ -31,8 +31,8 @@ describe("sequence diagram layout", () => {
         },
       ],
       edges: [
-        { id: "request", type: "message", source: "client", target: "server", messageType: "sync" },
-        { id: "response", type: "message", source: "server", target: "client", messageType: "return" },
+        { edgeId: "request", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
+        { edgeId: "response", type: "message", sourceNodeId: "server", targetNodeId: "client", messageType: "return" },
       ],
     });
 
@@ -58,34 +58,34 @@ describe("sequence diagram layout", () => {
     const diagram = createSequenceDiagram({
       nodes: [
         {
-          id: "client",
+          nodeId: "client",
           type: "lifeline",
           kind: "participant",
           title: "Client",
           activations: [
             {
-              id: "client-work",
+              activationId: "client-work",
               startsAt: { messageId: "request", endpoint: "source" },
               endsAt: { messageId: "request", endpoint: "source" },
             },
           ],
         },
         {
-          id: "server",
+          nodeId: "server",
           type: "lifeline",
           kind: "participant",
           title: "Server",
           activations: [],
         },
         {
-          id: "validity",
+          nodeId: "validity",
           type: "fragment",
           kind: "condition",
           title: "Validity",
           operator: "opt",
           branches: [
             {
-              id: "valid",
+              branchId: "valid",
               guard: "valid",
               startMessageId: "request",
               endMessageId: "request",
@@ -93,7 +93,9 @@ describe("sequence diagram layout", () => {
           ],
         },
       ],
-      edges: [{ id: "request", type: "message", source: "client", target: "server", messageType: "sync" }],
+      edges: [
+        { edgeId: "request", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
+      ],
     });
 
     const result = await layoutSequenceDiagram(diagram, {
@@ -115,19 +117,19 @@ describe("sequence diagram layout", () => {
   it("sizes each fragment to the message routes of its branches", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { id: "first", type: "lifeline", kind: "participant", title: "First", activations: [] },
-        { id: "second", type: "lifeline", kind: "participant", title: "Second", activations: [] },
-        { id: "third", type: "lifeline", kind: "participant", title: "Third", activations: [] },
-        { id: "fourth", type: "lifeline", kind: "participant", title: "Fourth", activations: [] },
+        { nodeId: "first", type: "lifeline", kind: "participant", title: "First", activations: [] },
+        { nodeId: "second", type: "lifeline", kind: "participant", title: "Second", activations: [] },
+        { nodeId: "third", type: "lifeline", kind: "participant", title: "Third", activations: [] },
+        { nodeId: "fourth", type: "lifeline", kind: "participant", title: "Fourth", activations: [] },
         {
-          id: "retry",
+          nodeId: "retry",
           type: "fragment",
           kind: "retry",
           title: "Retry",
           operator: "loop",
           branches: [
             {
-              id: "retry-attempt",
+              branchId: "retry-attempt",
               guard: "retry available",
               startMessageId: "inside",
               endMessageId: "inside",
@@ -136,9 +138,9 @@ describe("sequence diagram layout", () => {
         },
       ],
       edges: [
-        { id: "before", type: "message", source: "first", target: "fourth", messageType: "sync" },
-        { id: "inside", type: "message", source: "second", target: "third", messageType: "sync" },
-        { id: "after", type: "message", source: "first", target: "fourth", messageType: "sync" },
+        { edgeId: "before", type: "message", sourceNodeId: "first", targetNodeId: "fourth", messageType: "sync" },
+        { edgeId: "inside", type: "message", sourceNodeId: "second", targetNodeId: "third", messageType: "sync" },
+        { edgeId: "after", type: "message", sourceNodeId: "first", targetNodeId: "fourth", messageType: "sync" },
       ],
     });
 
@@ -170,25 +172,25 @@ describe("sequence diagram layout", () => {
   it("reserves vertical space before the first message of each fragment branch", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
         {
-          id: "result",
+          nodeId: "result",
           type: "fragment",
           kind: "result",
           title: "Result",
           operator: "alt",
           branches: [
-            { id: "success", guard: "success", startMessageId: "success", endMessageId: "success" },
-            { id: "failure", guard: "failure", startMessageId: "failure", endMessageId: "failure" },
+            { branchId: "success", guard: "success", startMessageId: "success", endMessageId: "success" },
+            { branchId: "failure", guard: "failure", startMessageId: "failure", endMessageId: "failure" },
           ],
         },
       ],
       edges: [
-        { id: "before", type: "message", source: "client", target: "server", messageType: "sync" },
-        { id: "success", type: "message", source: "server", target: "client", messageType: "return" },
-        { id: "failure", type: "message", source: "server", target: "client", messageType: "return" },
-        { id: "after", type: "message", source: "client", target: "server", messageType: "sync" },
+        { edgeId: "before", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
+        { edgeId: "success", type: "message", sourceNodeId: "server", targetNodeId: "client", messageType: "return" },
+        { edgeId: "failure", type: "message", sourceNodeId: "server", targetNodeId: "client", messageType: "return" },
+        { edgeId: "after", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
       ],
     });
 
@@ -226,28 +228,28 @@ describe("sequence diagram layout", () => {
   it("keeps consecutive fragments from sharing a boundary", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
         {
-          id: "first-fragment",
+          nodeId: "first-fragment",
           type: "fragment",
           kind: "condition",
           title: "First fragment",
           operator: "opt",
-          branches: [{ id: "first-branch", guard: "first", startMessageId: "first", endMessageId: "first" }],
+          branches: [{ branchId: "first-branch", guard: "first", startMessageId: "first", endMessageId: "first" }],
         },
         {
-          id: "second-fragment",
+          nodeId: "second-fragment",
           type: "fragment",
           kind: "condition",
           title: "Second fragment",
           operator: "opt",
-          branches: [{ id: "second-branch", guard: "second", startMessageId: "second", endMessageId: "second" }],
+          branches: [{ branchId: "second-branch", guard: "second", startMessageId: "second", endMessageId: "second" }],
         },
       ],
       edges: [
-        { id: "first", type: "message", source: "client", target: "server", messageType: "sync" },
-        { id: "second", type: "message", source: "client", target: "server", messageType: "sync" },
+        { edgeId: "first", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
+        { edgeId: "second", type: "message", sourceNodeId: "client", targetNodeId: "server", messageType: "sync" },
       ],
     });
 
@@ -267,12 +269,12 @@ describe("sequence diagram layout", () => {
   it("extends a self-message to the lifeline gap and keeps the whole row below the loop", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
-        { id: "worker", type: "lifeline", kind: "participant", title: "Worker", activations: [] },
+        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { nodeId: "worker", type: "lifeline", kind: "participant", title: "Worker", activations: [] },
       ],
       edges: [
-        { id: "self", type: "message", source: "server", target: "server", messageType: "sync" },
-        { id: "next", type: "message", source: "server", target: "worker", messageType: "sync" },
+        { edgeId: "self", type: "message", sourceNodeId: "server", targetNodeId: "server", messageType: "sync" },
+        { edgeId: "next", type: "message", sourceNodeId: "server", targetNodeId: "worker", messageType: "sync" },
       ],
     });
 

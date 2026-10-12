@@ -28,15 +28,15 @@ export function buildElkLayeredDiagramReactFlowRenderModel(
   const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource);
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edges = layout.edges.map<DiagramReactFlowEdge>((placement) => {
-    const edge = artifact.diagram.graph.edges.find(({ id }) => id === placement.id);
+    const edge = artifact.diagram.graph.edges.find(({ edgeId }) => edgeId === placement.id);
     if (!edge) throw new Error(`Layout result references an unknown diagram edge: ${placement.id}`);
     if (edge.type === "message") return toMessageReactFlowEdge(edge, placement.points, onLinkActivate);
     const display = diagramEdgeDisplay(edge);
 
     return {
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
+      id: edge.edgeId,
+      source: edge.sourceNodeId,
+      target: edge.targetNodeId,
       focusable: false,
       selectable: false,
       markerEnd: { type: MarkerType.ArrowClosed, color: DIAGRAM_EDGE_COLOR },

@@ -125,12 +125,13 @@ type Scene = Readonly<{
 function showcaseScene(title: string, artifactJson: unknown): Scene {
   const diagram = parseArtifact(artifactJson);
   const graph = diagram.diagram.graph;
-  const sizes = Object.fromEntries(graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+  const sizes = Object.fromEntries(graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]));
   // One shared layout keeps the ELK run cached across the generated tests.
   const layout = layoutDependencyGraph(graph, sizes);
   const focused = new Map(
     graph.groups.map(
-      (group) => [group.id, aggregates(projectDependencyEdges(graph, { type: "group", id: group.id }))] as const,
+      (group) =>
+        [group.groupId, aggregates(projectDependencyEdges(graph, { type: "group", id: group.groupId }))] as const,
     ),
   );
   return { title, graph, layout, focused };
@@ -158,7 +159,7 @@ function busiestGroup(
 // A parent and one of its child groups both relate to the same focus, so their
 // aggregate routes must stay readable while nesting one level apart.
 function nestedRelation(scene: Scene): readonly Aggregate[] | undefined {
-  const parents = new Map(scene.graph.groups.map((group) => [group.id, group.parentId]));
+  const parents = new Map(scene.graph.groups.map((group) => [group.groupId, group.parentGroupId]));
   for (const [focusId, projections] of scene.focused) {
     const sources = projections.map(({ sourceId }) => sourceId);
     for (const source of sources) {
@@ -187,7 +188,7 @@ for (const { title, json } of [
 
     // One `it` per group so the five-second timeout applies to each focus rather
     // than to the sweep as a whole; the shared layout keeps the scene cached.
-    for (const { id: groupId, title: groupTitle } of scene.graph.groups) {
+    for (const { groupId, title: groupTitle } of scene.graph.groups) {
       it(`keeps ${groupTitle}'s focused boundary edges on separate tracks`, async () => {
         const layout = await scene.layout;
         const projections = getOrThrow(scene.focused.get(groupId), `Missing focused projections: ${groupId}`);

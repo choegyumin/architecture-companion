@@ -19,17 +19,17 @@ import { writeCatalog } from "@/server/write-catalog";
 const catalog = {
   behaviors: [
     {
-      id: "checkout",
+      artifactId: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ id: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
           edges: [],
         },
       },

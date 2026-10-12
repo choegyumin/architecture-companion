@@ -34,7 +34,7 @@ async function graphFor(
 
 function edgeTo(graph: Pick<ComponentStructureDiagramGraph, "nodes" | "edges">, title: string) {
   const target = graph.nodes.find((node) => node.type === "default" && node.title === title)!;
-  return graph.edges.find((edge) => edge.target === target.id)!;
+  return graph.edges.find((edge) => edge.targetNodeId === target.nodeId)!;
 }
 
 // A stored `default` edge applies unconditionally, so its ruleset reads [[]].
@@ -73,9 +73,9 @@ describe("component rendering controls", () => {
     // Gating may land on several edges entering the target, so the contract
     // reads every edge entering it and unions their paths.
     const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
-    const controls = new Map(graph.layoutContext.controls.map((control) => [control.id, control]));
+    const controls = new Map(graph.layoutContext.controls.map((control) => [control.controlId, control]));
     const entered = graph.edges.flatMap((edge) =>
-      edge.target === target.id ? (edge.type === "control" ? edge.activeWhen : [[]]) : [],
+      edge.targetNodeId === target.nodeId ? (edge.type === "control" ? edge.activeWhen : [[]]) : [],
     );
     expect(
       new Set(
@@ -121,9 +121,9 @@ describe("component rendering controls", () => {
     `);
       const receiverNodes = graph.nodes.filter(({ title }) => title === "Receiver");
       expect(receiverNodes).toHaveLength(2);
-      const controls = new Map(graph.layoutContext.controls.map((control) => [control.id, control]));
-      const paths = receiverNodes.map(({ id }) => {
-        const [edge] = graph.edges.filter(({ source }) => source === id);
+      const controls = new Map(graph.layoutContext.controls.map((control) => [control.controlId, control]));
+      const paths = receiverNodes.map(({ nodeId }) => {
+        const [edge] = graph.edges.filter(({ sourceNodeId }) => sourceNodeId === nodeId);
         const ruleset = edge?.type === "control" ? edge.activeWhen : [[]];
         expect(ruleset).toHaveLength(1);
         return ruleset.at(0)!.map(({ controlId, value }) => ({ label: controls.get(controlId)!.label, value }));
@@ -152,29 +152,29 @@ describe("component rendering controls", () => {
     expect(choice).toMatchObject({
       type: "branch",
       polarityPair: true,
-      dependsOn: [[{ controlId: ready.id, value: "on" }]],
+      dependsOn: [[{ controlId: ready.controlId, value: "on" }]],
       cases: [
-        { id: "true", label: "choice" },
-        { id: "false", label: "!choice" },
+        { caseId: "true", label: "choice" },
+        { caseId: "false", label: "!choice" },
       ],
     });
     expect(edgeTo(graph, "Left")).toMatchObject({
       activeWhen: [
         [
-          { controlId: ready.id, value: "on" },
-          { controlId: choice.id, value: "true" },
+          { controlId: ready.controlId, value: "on" },
+          { controlId: choice.controlId, value: "true" },
         ],
       ],
     });
     expect(edgeTo(graph, "Right")).toMatchObject({
       activeWhen: [
         [
-          { controlId: ready.id, value: "on" },
-          { controlId: choice.id, value: "false" },
+          { controlId: ready.controlId, value: "on" },
+          { controlId: choice.controlId, value: "false" },
         ],
       ],
     });
-    expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: visible.id, value: "on" }]] });
+    expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: visible.controlId, value: "on" }]] });
   });
 
   it("folds double negation when deriving gate labels", async () => {
@@ -202,8 +202,8 @@ describe("component rendering controls", () => {
       label: "flag",
       polarityPair: true,
       cases: [
-        { id: "true", label: "flag" },
-        { id: "false", label: "!flag" },
+        { caseId: "true", label: "flag" },
+        { caseId: "false", label: "!flag" },
       ],
     });
   });
@@ -220,10 +220,10 @@ describe("component rendering controls", () => {
     expect(graph.layoutContext.controls.every(({ type }) => type === "conditional")).toBe(true);
     const leafEdge = edgeTo(graph, "Leaf");
     expect(leafEdge.type === "control" ? leafEdge.activeWhen : [[]]).toEqual([
-      [{ controlId: graph.layoutContext.controls.at(0)!.id, value: "on" }],
-      [{ controlId: graph.layoutContext.controls.at(1)!.id, value: "on" }],
-      [{ controlId: graph.layoutContext.controls.at(2)!.id, value: "on" }],
-      [{ controlId: graph.layoutContext.controls.at(3)!.id, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(0)!.controlId, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(1)!.controlId, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(2)!.controlId, value: "on" }],
+      [{ controlId: graph.layoutContext.controls.at(3)!.controlId, value: "on" }],
     ]);
   });
 
@@ -238,12 +238,12 @@ describe("component rendering controls", () => {
     // ¬((a ∧ b) ∨ c) = (¬a ∨ ¬b) ∧ ¬c — two rules, not one conjunction of all.
     expect(rightEdge.type === "control" ? rightEdge.activeWhen : [[]]).toEqual([
       [
-        { controlId: controls.get("a")!.id, value: "off" },
-        { controlId: controls.get("c")!.id, value: "off" },
+        { controlId: controls.get("a")!.controlId, value: "off" },
+        { controlId: controls.get("c")!.controlId, value: "off" },
       ],
       [
-        { controlId: controls.get("b")!.id, value: "off" },
-        { controlId: controls.get("c")!.id, value: "off" },
+        { controlId: controls.get("b")!.controlId, value: "off" },
+        { controlId: controls.get("c")!.controlId, value: "off" },
       ],
     ]);
   });
@@ -265,14 +265,14 @@ describe("component rendering controls", () => {
       label: "hide",
       polarityPair: true,
       cases: [
-        { id: "hide", label: "hide" },
-        { id: "!hide", label: "!hide" },
+        { caseId: "hide", label: "hide" },
+        { caseId: "!hide", label: "!hide" },
       ],
     });
-    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: hide.id, value: "hide" }]]);
-    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: hide.id, value: "!hide" }]]);
-    expect(edgeActiveWhen(graph, "Third")).toEqual([[{ controlId: hide.id, value: "hide" }]]);
-    expect(edgeActiveWhen(graph, "Fourth")).toEqual([[{ controlId: hide.id, value: "!hide" }]]);
+    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: hide.controlId, value: "hide" }]]);
+    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: hide.controlId, value: "!hide" }]]);
+    expect(edgeActiveWhen(graph, "Third")).toEqual([[{ controlId: hide.controlId, value: "hide" }]]);
+    expect(edgeActiveWhen(graph, "Fourth")).toEqual([[{ controlId: hide.controlId, value: "!hide" }]]);
   });
 
   it("folds a boolean ternary branch with conditionals over the same subject", async () => {
@@ -295,14 +295,14 @@ describe("component rendering controls", () => {
       label: "hide",
       polarityPair: true,
       cases: [
-        { id: "hide", label: "hide" },
-        { id: "!hide", label: "!hide" },
+        { caseId: "hide", label: "hide" },
+        { caseId: "!hide", label: "!hide" },
       ],
     });
     expect(edgeActiveWhen(graph, "Third")).toEqual([
       [
-        { controlId: ready.id, value: "on" },
-        { controlId: hide.id, value: "hide" },
+        { controlId: ready.controlId, value: "on" },
+        { controlId: hide.controlId, value: "hide" },
       ],
     ]);
   });
@@ -314,19 +314,19 @@ describe("component rendering controls", () => {
     `);
     const [first, second, third] = graph.layoutContext.controls;
     expect(graph.layoutContext.controls.map(({ label }) => label)).toEqual(["first", "second", "third"]);
-    expect(second!.dependsOn).toEqual([[{ controlId: first!.id, value: "on" }]]);
+    expect(second!.dependsOn).toEqual([[{ controlId: first!.controlId, value: "on" }]]);
     expect(third!.dependsOn).toEqual([
       [
-        { controlId: first!.id, value: "on" },
-        { controlId: second!.id, value: "on" },
+        { controlId: first!.controlId, value: "on" },
+        { controlId: second!.controlId, value: "on" },
       ],
     ]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
-          { controlId: first!.id, value: "on" },
-          { controlId: second!.id, value: "on" },
-          { controlId: third!.id, value: "on" },
+          { controlId: first!.controlId, value: "on" },
+          { controlId: second!.controlId, value: "on" },
+          { controlId: third!.controlId, value: "on" },
         ],
       ],
     });
@@ -373,11 +373,11 @@ describe("component rendering controls", () => {
     // Both cases survive into the stored edge's ruleset; the projection splits
     // them back into decision arms, so the assertion reads the arms.
     const arms = projectDecisionNodes(graph)
-      .edges.filter((edge) => edge.source === choice.id && edge.target === target.id)
+      .edges.filter((edge) => edge.source === choice.controlId && edge.target === target.nodeId)
       .toSorted((left, right) => (left.sourcePort ?? "").localeCompare(right.sourcePort ?? ""));
     expect(arms.map((arm) => ({ port: arm.sourcePort, activeWhen: arm.activeWhen }))).toEqual([
-      { port: "false", activeWhen: [[{ controlId: choice.id, value: "false" }]] },
-      { port: "true", activeWhen: [[{ controlId: choice.id, value: "true" }]] },
+      { port: "false", activeWhen: [[{ controlId: choice.controlId, value: "false" }]] },
+      { port: "true", activeWhen: [[{ controlId: choice.controlId, value: "true" }]] },
     ]);
   });
 
@@ -396,7 +396,7 @@ describe("component rendering controls", () => {
     expect(controls).toHaveLength(2);
     expect(controls.find(({ label }) => label === "ready")).toMatchObject({ type: "conditional" });
     const hidden = controls.find(({ label }) => label === "!hidden")!;
-    expect(edgeTo(graph, "Leaf")).toMatchObject({ activeWhen: [[{ controlId: hidden.id, value: "on" }]] });
+    expect(edgeTo(graph, "Leaf")).toMatchObject({ activeWhen: [[{ controlId: hidden.controlId, value: "on" }]] });
   });
 
   it("orders sibling controls by source order rather than hashed usage IDs", async () => {
@@ -421,25 +421,25 @@ describe("component rendering controls", () => {
       type: "branch",
       label: "roomy",
       polarityPair: true,
-      dependsOn: [[{ controlId: ready.id, value: "on" }]],
+      dependsOn: [[{ controlId: ready.controlId, value: "on" }]],
       cases: [
-        { id: "roomy", label: "roomy" },
-        { id: "!roomy", label: "!roomy" },
+        { caseId: "roomy", label: "roomy" },
+        { caseId: "!roomy", label: "!roomy" },
       ],
     });
     expect(edgeTo(graph, "Wide")).toMatchObject({
       activeWhen: [
         [
-          { controlId: ready.id, value: "on" },
-          { controlId: roomy.id, value: "roomy" },
+          { controlId: ready.controlId, value: "on" },
+          { controlId: roomy.controlId, value: "roomy" },
         ],
       ],
     });
     expect(edgeTo(graph, "Narrow")).toMatchObject({
       activeWhen: [
         [
-          { controlId: ready.id, value: "on" },
-          { controlId: roomy.id, value: "!roomy" },
+          { controlId: ready.controlId, value: "on" },
+          { controlId: roomy.controlId, value: "!roomy" },
         ],
       ],
     });
@@ -458,12 +458,12 @@ describe("component rendering controls", () => {
       label: "roomy",
       polarityPair: true,
       cases: [
-        { id: "roomy", label: "roomy" },
-        { id: "!roomy", label: "!roomy" },
+        { caseId: "roomy", label: "roomy" },
+        { caseId: "!roomy", label: "!roomy" },
       ],
     });
-    expect(edgeTo(graph, "Wide")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "roomy" }]] });
-    expect(edgeTo(graph, "Narrow")).toMatchObject({ activeWhen: [[{ controlId: roomy.id, value: "!roomy" }]] });
+    expect(edgeTo(graph, "Wide")).toMatchObject({ activeWhen: [[{ controlId: roomy.controlId, value: "roomy" }]] });
+    expect(edgeTo(graph, "Narrow")).toMatchObject({ activeWhen: [[{ controlId: roomy.controlId, value: "!roomy" }]] });
   });
 
   it.each(["{count > 0 && <Filled />}{count <= 0 && <Empty />}", "{count <= 0 && <Empty />}{count > 0 && <Filled />}"])(
@@ -483,12 +483,16 @@ describe("component rendering controls", () => {
         // two-value subject, so it renders as a switch like any boolean gate.
         polarityPair: true,
         cases: [
-          { id: "count > 0", label: "count > 0" },
-          { id: "count <= 0", label: "count <= 0" },
+          { caseId: "count > 0", label: "count > 0" },
+          { caseId: "count <= 0", label: "count <= 0" },
         ],
       });
-      expect(edgeTo(graph, "Filled")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count > 0" }]] });
-      expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: count.id, value: "count <= 0" }]] });
+      expect(edgeTo(graph, "Filled")).toMatchObject({
+        activeWhen: [[{ controlId: count.controlId, value: "count > 0" }]],
+      });
+      expect(edgeTo(graph, "Empty")).toMatchObject({
+        activeWhen: [[{ controlId: count.controlId, value: "count <= 0" }]],
+      });
     },
   );
 
@@ -504,15 +508,15 @@ describe("component rendering controls", () => {
       type: "branch",
       label: "tone",
       cases: [
-        { id: '"dark"', label: '"dark"' },
-        { id: '"light"', label: '"light"' },
+        { caseId: '"dark"', label: '"dark"' },
+        { caseId: '"light"', label: '"light"' },
       ],
     });
     expect(edgeTo(graph, "Dark")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: '"dark"' }]],
+      activeWhen: [[{ controlId: tone.controlId, value: '"dark"' }]],
     });
     expect(edgeTo(graph, "Light")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: '"light"' }]],
+      activeWhen: [[{ controlId: tone.controlId, value: '"light"' }]],
     });
   });
 
@@ -534,13 +538,13 @@ describe("component rendering controls", () => {
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
-          { controlId: first.id, value: "on" },
-          { controlId: second.id, value: "on" },
+          { controlId: first.controlId, value: "on" },
+          { controlId: second.controlId, value: "on" },
         ],
       ],
     });
     expect(edgeTo(graph, "Other")).toMatchObject({
-      activeWhen: [[{ controlId: first.id, value: "off" }], [{ controlId: second.id, value: "off" }]],
+      activeWhen: [[{ controlId: first.controlId, value: "off" }], [{ controlId: second.controlId, value: "off" }]],
     });
   });
 
@@ -557,13 +561,13 @@ describe("component rendering controls", () => {
     const second = controls.find(({ label }) => label === "second")!;
     expect(controls).toHaveLength(2);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
-      activeWhen: [[{ controlId: first.id, value: "on" }], [{ controlId: second.id, value: "on" }]],
+      activeWhen: [[{ controlId: first.controlId, value: "on" }], [{ controlId: second.controlId, value: "on" }]],
     });
     expect(edgeTo(graph, "Other")).toMatchObject({
       activeWhen: [
         [
-          { controlId: first.id, value: "off" },
-          { controlId: second.id, value: "off" },
+          { controlId: first.controlId, value: "off" },
+          { controlId: second.controlId, value: "off" },
         ],
       ],
     });
@@ -582,12 +586,12 @@ describe("component rendering controls", () => {
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
-          { controlId: first!.id, value: "on" },
-          { controlId: second!.id, value: "on" },
+          { controlId: first!.controlId, value: "on" },
+          { controlId: second!.controlId, value: "on" },
         ],
         [
-          { controlId: first!.id, value: "on" },
-          { controlId: third!.id, value: "on" },
+          { controlId: first!.controlId, value: "on" },
+          { controlId: third!.controlId, value: "on" },
         ],
       ],
     });
@@ -605,8 +609,8 @@ describe("component rendering controls", () => {
       type: "branch",
       cases: [
         // Quote style normalizes, so `'dark'` and `"dark"` still share a case.
-        { id: '"dark"', label: '"dark"' },
-        { id: "otherwise", label: "otherwise" },
+        { caseId: '"dark"', label: '"dark"' },
+        { caseId: "otherwise", label: "otherwise" },
       ],
     });
   });
@@ -628,21 +632,21 @@ describe("component rendering controls", () => {
       type: "branch",
       label: "state.status",
       cases: [
-        { id: '"loading"', label: '"loading"' },
-        { id: '"error"', label: '"error"' },
-        { id: "otherwise", label: "otherwise" },
+        { caseId: '"loading"', label: '"loading"' },
+        { caseId: '"error"', label: '"error"' },
+        { caseId: "otherwise", label: "otherwise" },
       ],
     });
     // The failure route's inherited "not loading" drops as implied by "error",
     // and the fall-through route converges on the remainder case.
     expect(edgeTo(graph, "Loading")).toMatchObject({
-      activeWhen: [[{ controlId: status.id, value: '"loading"' }]],
+      activeWhen: [[{ controlId: status.controlId, value: '"loading"' }]],
     });
     expect(edgeTo(graph, "Failure")).toMatchObject({
-      activeWhen: [[{ controlId: status.id, value: '"error"' }]],
+      activeWhen: [[{ controlId: status.controlId, value: '"error"' }]],
     });
     expect(edgeTo(graph, "Content")).toMatchObject({
-      activeWhen: [[{ controlId: status.id, value: "otherwise" }]],
+      activeWhen: [[{ controlId: status.controlId, value: "otherwise" }]],
     });
   });
 
@@ -664,31 +668,33 @@ describe("component rendering controls", () => {
     // The catalog gate sits after the status gates in source, so its decision
     // node hangs off the status remainder arm — never the other way around,
     // which stranded the graph whenever status left the remainder case.
-    const intoCatalog = projected.edges.find((edge) => edge.target === catalog.id && edge.source !== catalog.id)!;
-    expect(intoCatalog.source).toBe(status.id);
+    const intoCatalog = projected.edges.find(
+      (edge) => edge.target === catalog.controlId && edge.source !== catalog.controlId,
+    )!;
+    expect(intoCatalog.source).toBe(status.controlId);
     expect(intoCatalog.sourcePort).toBe("otherwise");
-    expect(intoCatalog.activeWhen).toEqual([[{ controlId: status.id, value: "otherwise" }]]);
+    expect(intoCatalog.activeWhen).toEqual([[{ controlId: status.controlId, value: "otherwise" }]]);
 
     // One remainder arm reaches the catalog decision; the instance split rides
     // the catalog's own arms instead of duplicating the remainder label.
     const remainderArms = projected.edges.filter(
-      (edge) => edge.source === status.id && edge.sourcePort === "otherwise",
+      (edge) => edge.source === status.controlId && edge.sourcePort === "otherwise",
     );
     expect(remainderArms).toHaveLength(1);
     const firstEdge = projected.edges.find(
-      (edge) => edge.source === catalog.id && edge.target === edgeTo(graph, "First").target,
+      (edge) => edge.source === catalog.controlId && edge.target === edgeTo(graph, "First").targetNodeId,
     )!;
     expect(firstEdge).toMatchObject({
       sourcePort: "true",
       activeWhen: [
         [
-          { controlId: status.id, value: "otherwise" },
-          { controlId: catalog.id, value: "true" },
+          { controlId: status.controlId, value: "otherwise" },
+          { controlId: catalog.controlId, value: "true" },
         ],
       ],
     });
-    expect(projected.edges.find((edge) => edge.target === edgeTo(graph, "Second").target)).toMatchObject({
-      source: catalog.id,
+    expect(projected.edges.find((edge) => edge.target === edgeTo(graph, "Second").targetNodeId)).toMatchObject({
+      source: catalog.controlId,
     });
   });
 
@@ -712,16 +718,16 @@ describe("component rendering controls", () => {
       label: "catalog",
       polarityPair: true,
       cases: [
-        { id: "false", label: onLabel },
-        { id: "true", label: condition },
+        { caseId: "false", label: onLabel },
+        { caseId: "true", label: condition },
       ],
       dependsOn: [[]],
     });
     expect(edgeTo(graph, "First")).toMatchObject({
-      activeWhen: [[{ controlId: catalog.id, value: "true" }]],
+      activeWhen: [[{ controlId: catalog.controlId, value: "true" }]],
     });
     expect(edgeTo(graph, "Second")).toMatchObject({
-      activeWhen: [[{ controlId: catalog.id, value: "false" }]],
+      activeWhen: [[{ controlId: catalog.controlId, value: "false" }]],
     });
   });
 
@@ -740,14 +746,14 @@ describe("component rendering controls", () => {
     expect(branch).toMatchObject({
       label: "catalog",
       cases: [
-        { id: "false", label: "catalog" },
-        { id: "true", label: "!catalog" },
+        { caseId: "false", label: "catalog" },
+        { caseId: "true", label: "!catalog" },
       ],
     });
     expect(conditional).toMatchObject({ label: "catalog", dependsOn: [[]] });
-    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: branch.id, value: "true" }]]);
-    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: branch.id, value: "false" }]]);
-    expect(edgeActiveWhen(graph, "Extra")).toEqual([[{ controlId: conditional.id, value: "on" }]]);
+    expect(edgeActiveWhen(graph, "First")).toEqual([[{ controlId: branch.controlId, value: "true" }]]);
+    expect(edgeActiveWhen(graph, "Second")).toEqual([[{ controlId: branch.controlId, value: "false" }]]);
+    expect(edgeActiveWhen(graph, "Extra")).toEqual([[{ controlId: conditional.controlId, value: "on" }]]);
   });
 
   it("expands a negated discriminant gate over the values it still allows", async () => {
@@ -765,9 +771,9 @@ describe("component rendering controls", () => {
       type: "branch",
       label: "tone",
       cases: [
-        { id: '"dark"', label: '"dark"' },
-        { id: '"light"', label: '"light"' },
-        { id: "otherwise", label: "otherwise" },
+        { caseId: '"dark"', label: '"dark"' },
+        { caseId: '"light"', label: '"light"' },
+        { caseId: "otherwise", label: "otherwise" },
       ],
     });
     // The expanded rule stays one ruleset on the stored edge, so the contract
@@ -775,17 +781,17 @@ describe("component rendering controls", () => {
     const neutral = graph.nodes.find((node) => node.type === "default" && node.title === "Neutral")!;
     const neutralPaths = new Set(
       graph.edges.flatMap((edge) =>
-        edge.target === neutral.id ? (edge.type === "control" ? edge.activeWhen : [[]]) : [],
+        edge.targetNodeId === neutral.nodeId ? (edge.type === "control" ? edge.activeWhen : [[]]) : [],
       ),
     );
     expect(neutralPaths).toEqual(
-      new Set([[{ controlId: tone.id, value: '"light"' }], [{ controlId: tone.id, value: "otherwise" }]]),
+      new Set([[{ controlId: tone.controlId, value: '"light"' }], [{ controlId: tone.controlId, value: "otherwise" }]]),
     );
     expect(edgeTo(graph, "Dark")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: '"dark"' }]],
+      activeWhen: [[{ controlId: tone.controlId, value: '"dark"' }]],
     });
     expect(edgeTo(graph, "Light")).toMatchObject({
-      activeWhen: [[{ controlId: tone.id, value: '"light"' }]],
+      activeWhen: [[{ controlId: tone.controlId, value: '"light"' }]],
     });
   });
 
@@ -798,8 +804,8 @@ describe("component rendering controls", () => {
     const [flag] = graph.layoutContext.controls;
     expect(graph.layoutContext.controls).toHaveLength(1);
     expect(flag).toMatchObject({ type: "conditional", label: "flag", dependsOn: [[]] });
-    expect(edgeTo(graph, "First")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
-    expect(edgeTo(graph, "Second")).toMatchObject({ activeWhen: [[{ controlId: flag.id, value: "on" }]] });
+    expect(edgeTo(graph, "First")).toMatchObject({ activeWhen: [[{ controlId: flag.controlId, value: "on" }]] });
+    expect(edgeTo(graph, "Second")).toMatchObject({ activeWhen: [[{ controlId: flag.controlId, value: "on" }]] });
   });
 
   it("preserves original supplier prop pairs when forwarding renames them before merged rendering", async () => {
@@ -811,7 +817,7 @@ describe("component rendering controls", () => {
       export function App() { return <><Wrapper header={<Leaf />} /><Wrapper footer={<Leaf />} /><Other /></>; }
     `);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
-    const leafEdges = graph.edges.filter(({ target }) => target === leaf.id);
+    const leafEdges = graph.edges.filter(({ targetNodeId }) => targetNodeId === leaf.nodeId);
     expect(leafEdges).toHaveLength(2);
     expect(leafEdges.map(({ layoutContext }) => layoutContext?.composition)).toEqual(
       expect.arrayContaining([
@@ -819,14 +825,14 @@ describe("component rendering controls", () => {
           type: "node",
           slot: "children",
           origins: expect.arrayContaining([
-            { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
-            { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
+            { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
+            { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
           ]),
         },
         {
           type: "node",
           slot: "children",
-          origins: [{ supplierId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" }],
         },
       ]),
     );
@@ -834,9 +840,9 @@ describe("component rendering controls", () => {
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
-        { supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
-        { supplierId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" },
+        { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
+        { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
+        { supplierDefinitionId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" },
       ]),
     );
   });
@@ -853,13 +859,13 @@ describe("component rendering controls", () => {
     `);
     expect(graph.nodes.filter(({ title }) => title === "Branch")).toHaveLength(1);
     const branch = graph.nodes.find(({ title }) => title === "Branch")!;
-    expect(graph.layoutContext.controls).toMatchObject([{ owner: branch.id, label: "show", type: "branch" }]);
+    expect(graph.layoutContext.controls).toMatchObject([{ ownerNodeId: branch.nodeId, label: "show", type: "branch" }]);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierId: "component:app.tsx#First", supplierTitle: "First", slot: "children" },
-        { supplierId: "component:app.tsx#First", supplierTitle: "First", slot: "panel" },
-        { supplierId: "component:app.tsx#Second", supplierTitle: "Second", slot: "children" },
+        { supplierDefinitionId: "component:app.tsx#First", supplierTitle: "First", slot: "children" },
+        { supplierDefinitionId: "component:app.tsx#First", supplierTitle: "First", slot: "panel" },
+        { supplierDefinitionId: "component:app.tsx#Second", supplierTitle: "Second", slot: "children" },
       ]),
     );
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
@@ -876,21 +882,25 @@ describe("component rendering controls", () => {
     );
     const shell = graph.nodes.find(({ title }) => title === "Shell")!;
     const [visible] = graph.layoutContext.controls;
-    expect(graph.layoutContext.roots).toEqual([shell.id]);
-    expect(graph.layoutContext.controls).toMatchObject([{ owner: shell.id, label: "visible", dependsOn: [[]] }]);
+    expect(graph.layoutContext.rootNodeIds).toEqual([shell.nodeId]);
+    expect(graph.layoutContext.controls).toMatchObject([
+      { ownerNodeId: shell.nodeId, label: "visible", dependsOn: [[]] },
+    ]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
-      activeWhen: [[{ controlId: visible!.id, value: "on" }]],
+      activeWhen: [[{ controlId: visible!.controlId, value: "on" }]],
       layoutContext: {
         composition: {
           type: "node",
           slot: "children",
-          origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
         },
       },
     });
-    expect(graph.nodes.some(({ id }) => id === "component:app.tsx#App")).toBe(false);
+    expect(graph.nodes.some(({ nodeId }) => nodeId === "component:app.tsx#App")).toBe(false);
     expect(graph.nodes.find(({ title }) => title === "Leaf")).toMatchObject({
-      layoutContext: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }] },
+      layoutContext: {
+        origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
+      },
     });
   });
 
@@ -905,13 +915,13 @@ describe("component rendering controls", () => {
     const first = graph.nodes.find(({ title }) => title === "A")!;
     const second = graph.nodes.find(({ title }) => title === "B")!;
     const [enabled] = graph.layoutContext.controls;
-    expect(graph.layoutContext.roots).toEqual([first.id]);
-    expect(enabled).toMatchObject({ owner: first.id, label: "enabled", dependsOn: [[]] });
+    expect(graph.layoutContext.rootNodeIds).toEqual([first.nodeId]);
+    expect(enabled).toMatchObject({ ownerNodeId: first.nodeId, label: "enabled", dependsOn: [[]] });
     expect(edgeTo(graph, "B")).toMatchObject({
-      source: first.id,
-      activeWhen: [[{ controlId: enabled!.id, value: "on" }]],
+      sourceNodeId: first.nodeId,
+      activeWhen: [[{ controlId: enabled!.controlId, value: "on" }]],
     });
-    expect(edgeTo(graph, "A")).toMatchObject({ source: second.id, type: "default" });
+    expect(edgeTo(graph, "A")).toMatchObject({ sourceNodeId: second.nodeId, type: "default" });
   });
 
   it("keeps recursive control references finite and rebases focused roots", async () => {
@@ -924,11 +934,15 @@ describe("component rendering controls", () => {
       { rootPatterns: ["Recursive"] },
     );
     const recursive = graph.nodes.find(({ title }) => title === "Recursive")!;
-    expect(graph.layoutContext.roots).toEqual([recursive.id]);
-    expect(graph.layoutContext.controls).toMatchObject([{ owner: recursive.id, label: "more", dependsOn: [[]] }]);
-    const cycle = graph.edges.find(({ source, target }) => source === recursive.id && target === recursive.id)!;
+    expect(graph.layoutContext.rootNodeIds).toEqual([recursive.nodeId]);
+    expect(graph.layoutContext.controls).toMatchObject([
+      { ownerNodeId: recursive.nodeId, label: "more", dependsOn: [[]] },
+    ]);
+    const cycle = graph.edges.find(
+      ({ sourceNodeId, targetNodeId }) => sourceNodeId === recursive.nodeId && targetNodeId === recursive.nodeId,
+    )!;
     expect(cycle).toMatchObject({
-      activeWhen: [[{ controlId: graph.layoutContext.controls.at(0)!.id, value: "on" }]],
+      activeWhen: [[{ controlId: graph.layoutContext.controls.at(0)!.controlId, value: "on" }]],
     });
     expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Leaf", "Recursive"]);
   });
@@ -950,20 +964,20 @@ describe("component rendering controls", () => {
     const controls = graph.layoutContext.controls;
     expect(controls.map(({ label }) => label)).toEqual(["enabled", "ready", "visible"]);
     const app = graph.nodes.find(({ title }) => title === "App")!;
-    expect(controls.every(({ owner }) => owner === app.id)).toBe(true);
-    expect(controls.at(1)!.dependsOn).toEqual([[{ controlId: controls.at(0)!.id, value: "on" }]]);
+    expect(controls.every(({ ownerNodeId }) => ownerNodeId === app.nodeId)).toBe(true);
+    expect(controls.at(1)!.dependsOn).toEqual([[{ controlId: controls.at(0)!.controlId, value: "on" }]]);
     expect(controls.at(2)!.dependsOn).toEqual([
       [
-        { controlId: controls.at(0)!.id, value: "on" },
-        { controlId: controls.at(1)!.id, value: "on" },
+        { controlId: controls.at(0)!.controlId, value: "on" },
+        { controlId: controls.at(1)!.controlId, value: "on" },
       ],
     ]);
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
-          { controlId: controls.at(0)!.id, value: "on" },
-          { controlId: controls.at(1)!.id, value: "on" },
-          { controlId: controls.at(2)!.id, value: "on" },
+          { controlId: controls.at(0)!.controlId, value: "on" },
+          { controlId: controls.at(1)!.controlId, value: "on" },
+          { controlId: controls.at(2)!.controlId, value: "on" },
         ],
       ],
     });
@@ -1001,7 +1015,7 @@ describe("component rendering controls", () => {
     // The four `ready` gates and four `show` gates each fold into one control:
     // one owner, one operand, one switch over it.
     expect(controls).toHaveLength(2);
-    const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+    const nodes = new Map(graph.nodes.map((node) => [node.nodeId, node]));
     for (const [title, slot, compositionType] of [
       ["Child", "children", "node"],
       ["Panel", "panel", "node"],
@@ -1014,10 +1028,10 @@ describe("component rendering controls", () => {
         composition: {
           type: compositionType,
           slot,
-          origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot }],
         },
       });
-      const target = nodes.get(edge.target)!;
+      const target = nodes.get(edge.targetNodeId)!;
       expect(target.type === "default" && target.layoutContext!.origins).toContainEqual(
         expect.objectContaining({ slot }),
       );
@@ -1025,15 +1039,17 @@ describe("component rendering controls", () => {
       expect(ruleset).toHaveLength(1);
       const path = ruleset.at(0)!;
       expect(path).toHaveLength(2);
-      expect(path.map(({ controlId }) => controls.find(({ id }) => id === controlId)?.label)).toEqual([
+      expect(path.map(({ controlId }) => controls.find(({ controlId: id }) => id === controlId)?.label)).toEqual([
         "ready",
         "show",
       ]);
-      expect(path.map(({ controlId }) => nodes.get(controls.find(({ id }) => id === controlId)!.owner)?.title)).toEqual(
-        ["App", "Consumer"],
-      );
-      expect(nodes.get(edge.target)).toMatchObject({
-        layoutContext: { origins: [{ supplierId: "component:app.tsx#App", supplierTitle: "App", slot }] },
+      expect(
+        path.map(
+          ({ controlId }) => nodes.get(controls.find(({ controlId: id }) => id === controlId)!.ownerNodeId)?.title,
+        ),
+      ).toEqual(["App", "Consumer"]);
+      expect(nodes.get(edge.targetNodeId)).toMatchObject({
+        layoutContext: { origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot }] },
       });
     }
   });
@@ -1055,21 +1071,21 @@ describe("component rendering controls", () => {
     expect(stop).toMatchObject({
       type: "branch",
       label: "stop",
-      dependsOn: [[{ controlId: mode!.id, value: "case:0" }]],
+      dependsOn: [[{ controlId: mode!.controlId, value: "case:0" }]],
     });
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [
         [
-          { controlId: mode!.id, value: "case:0" },
-          { controlId: stop!.id, value: "false" },
+          { controlId: mode!.controlId, value: "case:0" },
+          { controlId: stop!.controlId, value: "false" },
         ],
       ],
     });
     expect(edgeTo(graph, "After")).toMatchObject({
       activeWhen: [
         [
-          { controlId: mode!.id, value: "case:0" },
-          { controlId: stop!.id, value: "true" },
+          { controlId: mode!.controlId, value: "case:0" },
+          { controlId: stop!.controlId, value: "true" },
         ],
       ],
     });
@@ -1095,45 +1111,45 @@ describe("component rendering controls", () => {
     expect(visible).toMatchObject({ type: "conditional", dependsOn: [[]] });
     expect(mode).toMatchObject({
       type: "branch",
-      dependsOn: [[{ controlId: visible!.id, value: "on" }]],
+      dependsOn: [[{ controlId: visible!.controlId, value: "on" }]],
       cases: [
-        { id: "case:0", label: '"first"' },
-        { id: "case:1", label: '"alias"' },
-        { id: "case:2", label: "default" },
+        { caseId: "case:0", label: '"first"' },
+        { caseId: "case:1", label: '"alias"' },
+        { caseId: "case:2", label: "default" },
       ],
     });
     expect(ready).toMatchObject({
       type: "branch",
       dependsOn: [
         [
-          { controlId: visible!.id, value: "on" },
-          { controlId: mode!.id, value: "case:0" },
+          { controlId: visible!.controlId, value: "on" },
+          { controlId: mode!.controlId, value: "case:0" },
         ],
         [
-          { controlId: visible!.id, value: "on" },
-          { controlId: mode!.id, value: "case:1" },
+          { controlId: visible!.controlId, value: "on" },
+          { controlId: mode!.controlId, value: "case:1" },
         ],
       ],
     });
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [
         [
-          { controlId: visible!.id, value: "on" },
-          { controlId: mode!.id, value: "case:0" },
-          { controlId: ready!.id, value: "true" },
+          { controlId: visible!.controlId, value: "on" },
+          { controlId: mode!.controlId, value: "case:0" },
+          { controlId: ready!.controlId, value: "true" },
         ],
         [
-          { controlId: visible!.id, value: "on" },
-          { controlId: mode!.id, value: "case:1" },
-          { controlId: ready!.id, value: "true" },
+          { controlId: visible!.controlId, value: "on" },
+          { controlId: mode!.controlId, value: "case:1" },
+          { controlId: ready!.controlId, value: "true" },
         ],
       ],
     });
     expect(edgeTo(graph, "Other")).toMatchObject({
       activeWhen: [
         [
-          { controlId: visible!.id, value: "on" },
-          { controlId: mode!.id, value: "case:2" },
+          { controlId: visible!.controlId, value: "on" },
+          { controlId: mode!.controlId, value: "case:2" },
         ],
       ],
     });
@@ -1152,8 +1168,8 @@ describe("component rendering controls", () => {
     const visible = graph.layoutContext.controls.find(({ label }) => label === "visible")!;
     const wrapper = graph.nodes.find(({ title }) => title === "Wrapper")!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({
-      source: wrapper.id,
-      activeWhen: [[{ controlId: visible.id, value: "on" }]],
+      sourceNodeId: wrapper.nodeId,
+      activeWhen: [[{ controlId: visible.controlId, value: "on" }]],
     });
   });
 
@@ -1171,12 +1187,15 @@ describe("component rendering controls", () => {
     const content = controls.find(({ label }) => label === "content")!;
     const ready = controls.find(({ label }) => label === "ready")!;
     expect(content).toMatchObject({ type: "branch" });
-    expect(ready).toMatchObject({ type: "conditional", dependsOn: [[{ controlId: content.id, value: "left" }]] });
+    expect(ready).toMatchObject({
+      type: "conditional",
+      dependsOn: [[{ controlId: content.controlId, value: "left" }]],
+    });
     expect(edgeTo(graph, "Leaf")).toMatchObject({
       activeWhen: [
         [
-          { controlId: content.id, value: "left" },
-          { controlId: ready.id, value: "on" },
+          { controlId: content.controlId, value: "left" },
+          { controlId: ready.controlId, value: "on" },
         ],
       ],
     });
@@ -1192,10 +1211,10 @@ describe("component rendering controls", () => {
     const control = graph.layoutContext.controls.at(0)!;
     expect(control).toMatchObject({ label: "First", type: "branch" });
     expect(edgeTo(graph, "First")).toMatchObject({
-      activeWhen: [[{ controlId: control.id, value: "left" }]],
+      activeWhen: [[{ controlId: control.controlId, value: "left" }]],
     });
     expect(edgeTo(graph, "Second")).toMatchObject({
-      activeWhen: [[{ controlId: control.id, value: "right" }]],
+      activeWhen: [[{ controlId: control.controlId, value: "right" }]],
     });
   });
 
@@ -1215,23 +1234,23 @@ describe("component rendering controls", () => {
     expect(children).toMatchObject({
       type: "branch",
       cases: [
-        { id: "left", label: "children" },
-        { id: "right", label: "children == null" },
+        { caseId: "left", label: "children" },
+        { caseId: "right", label: "children == null" },
       ],
     });
     expect(edgeTo(graph, "Child")).toMatchObject({
-      activeWhen: [[{ controlId: children.id, value: "left" }]],
+      activeWhen: [[{ controlId: children.controlId, value: "left" }]],
     });
     expect(edgeTo(graph, "Fallback")).toMatchObject({
-      activeWhen: [[{ controlId: children.id, value: "right" }]],
+      activeWhen: [[{ controlId: children.controlId, value: "right" }]],
     });
     const choice = controls.find(({ label }) => label === "choice")!;
     expect(choice).toMatchObject({ type: "branch" });
     expect(edgeTo(graph, "First")).toMatchObject({
-      activeWhen: [[{ controlId: choice.id, value: "true" }]],
+      activeWhen: [[{ controlId: choice.controlId, value: "true" }]],
     });
     expect(edgeTo(graph, "Second")).toMatchObject({
-      activeWhen: [[{ controlId: choice.id, value: "false" }]],
+      activeWhen: [[{ controlId: choice.controlId, value: "false" }]],
     });
   });
 
@@ -1252,22 +1271,22 @@ describe("component rendering controls", () => {
       type: "branch",
       label: "preferred",
       cases: [
-        { id: "left", label: "preferred" },
-        { id: "right", label: "!preferred" },
+        { caseId: "left", label: "preferred" },
+        { caseId: "right", label: "!preferred" },
       ],
     });
     // The decision is the left operand's truthiness, so it is a switch even
     // though the arms render value alternatives.
     expect(branch.polarityPair).toBe(true);
     expect(edgeTo(graph, "Preferred")).toMatchObject({
-      activeWhen: [[{ controlId: branch.id, value: "left" }]],
+      activeWhen: [[{ controlId: branch.controlId, value: "left" }]],
     });
     expect(edgeTo(graph, "Fallback")).toMatchObject({
-      activeWhen: [[{ controlId: branch.id, value: "right" }]],
+      activeWhen: [[{ controlId: branch.controlId, value: "right" }]],
     });
     const nullish = controls.find((control) => control.label === "value == null")!;
     expect(nullish).toMatchObject({ type: "conditional" });
-    expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: nullish.id, value: "on" }]] });
+    expect(edgeTo(graph, "Empty")).toMatchObject({ activeWhen: [[{ controlId: nullish.controlId, value: "on" }]] });
   });
 
   it("emits a condition only for conditional JSX, not repeated simultaneous uses", async () => {
@@ -1277,13 +1296,21 @@ describe("component rendering controls", () => {
       export function App({ ready }) { return <><Leaf /><Leaf />{ready && <Extra />}</>; }
     `);
     const app = graph.nodes.find((node) => node.title === "App")!;
-    expect({ roots: graph.layoutContext.roots, controls: graph.layoutContext.controls }).toEqual({
-      roots: [app.id],
-      controls: [{ id: expect.any(String), owner: app.id, label: "ready", type: "conditional", dependsOn: [[]] }],
+    expect({ rootNodeIds: graph.layoutContext.rootNodeIds, controls: graph.layoutContext.controls }).toEqual({
+      rootNodeIds: [app.nodeId],
+      controls: [
+        {
+          controlId: expect.any(String),
+          ownerNodeId: app.nodeId,
+          label: "ready",
+          type: "conditional",
+          dependsOn: [[]],
+        },
+      ],
     });
     const control = graph.layoutContext.controls.at(0)!;
     expect(edgeTo(graph, "Leaf")).toMatchObject({ type: "default" });
-    expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: control.id, value: "on" }]] });
+    expect(edgeTo(graph, "Extra")).toMatchObject({ activeWhen: [[{ controlId: control.controlId, value: "on" }]] });
     expect(app).toMatchObject({ layoutContext: { definitionId: "component:app.tsx#App", origins: [] } });
   });
 });

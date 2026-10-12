@@ -21,17 +21,17 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 const catalog: CompanionCatalog = {
   behaviors: [
     {
-      id: "checkout",
+      artifactId: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Workflow",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
           edges: [],
         },
       },
@@ -39,33 +39,33 @@ const catalog: CompanionCatalog = {
   ],
   designs: [
     {
-      id: "catalog-structure",
+      artifactId: "catalog-structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Catalog structure",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the catalog entry point.\n\n## Regeneration\nRebuild the catalog page boundary.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "catalog-page", kind: "component", title: "Catalog page" }],
+          nodes: [{ type: "default", nodeId: "catalog-page", kind: "component", title: "Catalog page" }],
           edges: [],
         },
       },
     },
     {
-      id: "checkout-structure",
+      artifactId: "checkout-structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "checkout-page", kind: "component", title: "Checkout page" }],
+          nodes: [{ type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" }],
           edges: [],
         },
       },

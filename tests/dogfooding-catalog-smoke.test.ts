@@ -17,7 +17,7 @@ import sequenceJson from "../.architecture-companion/designs/review-session-sequ
 
 const diagram = parseArtifact(dependencyGraphJson);
 const graph = diagram.diagram.graph;
-const sizes = Object.fromEntries(graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]));
+const sizes = Object.fromEntries(graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]));
 // One shared layout keeps the ELK run cached across the generated tests.
 const layout = layoutDependencyGraph(graph, sizes);
 
@@ -31,7 +31,7 @@ describe("dogfooding catalog smoke", () => {
 
   // One `it` per group, following the suite convention: the five-second timeout
   // applies to each focus rather than to the sweep as a whole.
-  for (const { id: groupId } of graph.groups) {
+  for (const { groupId } of graph.groups) {
     const projections = projectDependencyEdges(graph, { type: "group", id: groupId }).filter(
       (projection) => projection.type === "aggregate",
     );

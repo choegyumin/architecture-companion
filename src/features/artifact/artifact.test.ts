@@ -9,19 +9,19 @@ import {
 } from "@/features/diagram/diagram-graph";
 
 const validDiagram = {
-  id: "checkout-structure",
+  artifactId: "checkout-structure",
   title: "Checkout structure",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout responsibilities and dependencies.\n\n## Regeneration\nInspect the checkout page and payment client and map their verified relationships.",
   diagram: {
-    layout: { id: "elk-layered" },
+    layout: { layoutId: "elk-layered" },
     graph: {
-      groups: [{ id: "checkout", title: "Checkout" }],
+      groups: [{ groupId: "checkout", title: "Checkout" }],
       nodes: [
         {
-          id: "checkout-page",
+          nodeId: "checkout-page",
           type: "default",
           kind: "component",
           title: "Checkout page",
@@ -30,14 +30,14 @@ const validDiagram = {
           groupId: "checkout",
           links: [{ text: "checkout-page.tsx", href: "source:///src/checkout-page.tsx#L1-L20" }],
         },
-        { id: "payment-client", type: "default", kind: "client", title: "Payment client", groupId: "checkout" },
+        { nodeId: "payment-client", type: "default", kind: "client", title: "Payment client", groupId: "checkout" },
       ],
       edges: [
         {
-          id: "uses-payment-client",
+          edgeId: "uses-payment-client",
           type: "default",
-          source: "checkout-page",
-          target: "payment-client",
+          sourceNodeId: "checkout-page",
+          targetNodeId: "payment-client",
           kind: "dependency",
           label: "Uses payment client",
           href: "https://example.com/payment-client",
@@ -50,19 +50,19 @@ const validDiagram = {
 const validSequenceDiagram = {
   ...validDiagram,
   diagram: {
-    layout: { id: "sequence" },
+    layout: { layoutId: "sequence" },
     graph: {
       groups: [],
       nodes: [
-        { id: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
       ],
       edges: [
         {
-          id: "request",
+          edgeId: "request",
           type: "message",
-          source: "client",
-          target: "server",
+          sourceNodeId: "client",
+          targetNodeId: "server",
           label: "Request",
           messageType: "sync",
         },
@@ -74,22 +74,24 @@ const validSequenceDiagram = {
 const validComponentDiagram = {
   ...validDiagram,
   diagram: {
-    layout: { id: "component-structure" },
+    layout: { layoutId: "component-structure" },
     graph: {
       ...validDiagram.diagram.graph,
       edges: [
-        { id: "inline", type: "default", source: "checkout-page", target: "payment-client" },
+        { edgeId: "inline", type: "default", sourceNodeId: "checkout-page", targetNodeId: "payment-client" },
         {
-          id: "conditional",
+          edgeId: "conditional",
           type: "control",
-          source: "checkout-page",
-          target: "payment-client",
+          sourceNodeId: "checkout-page",
+          targetNodeId: "payment-client",
           activeWhen: [[{ controlId: "ready", value: "on" }]],
         },
       ],
       layoutContext: {
-        roots: ["checkout-page"],
-        controls: [{ id: "ready", owner: "checkout-page", type: "conditional", label: "ready", dependsOn: [[]] }],
+        rootNodeIds: ["checkout-page"],
+        controls: [
+          { controlId: "ready", ownerNodeId: "checkout-page", type: "conditional", label: "ready", dependsOn: [[]] },
+        ],
       },
     },
   },
@@ -99,8 +101,8 @@ const composition = {
   type: "node",
   slot: "children",
   origins: [
-    { supplierId: "outside:App", supplierTitle: "App", slot: "header" },
-    { supplierId: "outside:Other", supplierTitle: "Other", slot: "footer" },
+    { supplierDefinitionId: "outside:App", supplierTitle: "App", slot: "header" },
+    { supplierDefinitionId: "outside:Other", supplierTitle: "Other", slot: "footer" },
   ],
 };
 const nodeLayoutContext = { definitionId: "definition:Shared", origins: composition.origins };
@@ -113,16 +115,147 @@ describe("control storage contract", () => {
       label: "ready",
       polarityPair: true,
       cases: [
-        { id: "false", label: "ready" },
-        { id: "true", label: "!ready" },
+        { caseId: "false", label: "ready" },
+        { caseId: "true", label: "!ready" },
       ],
     },
   ])("uses type to select the $type contract", (fields) => {
-    const control = { id: "gate", owner: "root", dependsOn: [[]], ...fields };
+    const control = { controlId: "gate", ownerNodeId: "root", dependsOn: [[]], ...fields };
     expect(diagramControlSchema.parse(control)).toEqual(control);
     const { type, ...rest } = control;
     expect(diagramControlSchema.safeParse({ ...rest, kind: type }).success).toBe(false);
     expect(diagramControlSchema.safeParse({ ...control, kind: type }).success).toBe(false);
+  });
+});
+
+describe("typed ID field names", () => {
+  it.each([
+    ["artifact envelope", { ...validDiagram, id: validDiagram.artifactId }],
+    ["layout configuration", { ...validDiagram, diagram: { ...validDiagram.diagram, layout: { id: "elk-layered" } } }],
+    [
+      "group identity",
+      {
+        ...validDiagram,
+        diagram: {
+          ...validDiagram.diagram,
+          graph: { ...validDiagram.diagram.graph, groups: [{ id: "checkout", title: "Checkout" }] },
+        },
+      },
+    ],
+    [
+      "node identity",
+      {
+        ...validDiagram,
+        diagram: {
+          ...validDiagram.diagram,
+          graph: {
+            ...validDiagram.diagram.graph,
+            nodes: validDiagram.diagram.graph.nodes.map((node) => ({ ...node, id: node.nodeId })),
+          },
+        },
+      },
+    ],
+    [
+      "edge identity",
+      {
+        ...validDiagram,
+        diagram: {
+          ...validDiagram.diagram,
+          graph: {
+            ...validDiagram.diagram.graph,
+            edges: validDiagram.diagram.graph.edges.map((edge) => ({ ...edge, id: edge.edgeId })),
+          },
+        },
+      },
+    ],
+    [
+      "edge endpoints",
+      {
+        ...validDiagram,
+        diagram: {
+          ...validDiagram.diagram,
+          graph: {
+            ...validDiagram.diagram.graph,
+            edges: validDiagram.diagram.graph.edges.map((edge) => ({
+              edgeId: edge.edgeId,
+              type: edge.type,
+              source: edge.sourceNodeId,
+              target: edge.targetNodeId,
+            })),
+          },
+        },
+      },
+    ],
+    [
+      "group parent",
+      {
+        ...validDiagram,
+        diagram: {
+          ...validDiagram.diagram,
+          graph: {
+            ...validDiagram.diagram.graph,
+            groups: [{ groupId: "checkout", title: "Checkout", parentId: "missing" }],
+          },
+        },
+      },
+    ],
+    [
+      "component roots",
+      {
+        ...validComponentDiagram,
+        diagram: {
+          ...validComponentDiagram.diagram,
+          graph: {
+            ...validComponentDiagram.diagram.graph,
+            layoutContext: {
+              ...validComponentDiagram.diagram.graph.layoutContext,
+              roots: validComponentDiagram.diagram.graph.layoutContext.rootNodeIds,
+            },
+          },
+        },
+      },
+    ],
+    [
+      "component control",
+      {
+        ...validComponentDiagram,
+        diagram: {
+          ...validComponentDiagram.diagram,
+          graph: {
+            ...validComponentDiagram.diagram.graph,
+            layoutContext: {
+              ...validComponentDiagram.diagram.graph.layoutContext,
+              controls: validComponentDiagram.diagram.graph.layoutContext.controls.map((control) => ({
+                ...control,
+                id: control.controlId,
+                owner: control.ownerNodeId,
+              })),
+            },
+          },
+        },
+      },
+    ],
+    [
+      "supplier reference",
+      {
+        ...validComponentDiagram,
+        diagram: {
+          ...validComponentDiagram.diagram,
+          graph: {
+            ...validComponentDiagram.diagram.graph,
+            nodes: validComponentDiagram.diagram.graph.nodes.map((node) => ({
+              ...node,
+              layoutContext: {
+                definitionId: "definition:Shared",
+                origins: [{ supplierId: "outside:App", supplierTitle: "App", slot: "header" }],
+              },
+            })),
+          },
+        },
+      },
+    ],
+  ])("rejects the removed untyped %s fields", (_label, artifact) => {
+    expect(() => parseArtifact(artifact)).toThrow("Invalid artifact");
   });
 });
 
@@ -144,7 +277,7 @@ describe("component layout context", () => {
     {},
     { ...nodeLayoutContext, definitionId: "" },
     { definitionId: "definition:Shared" },
-    { ...nodeLayoutContext, origins: [{ supplierId: "outside:App", supplierTitle: "App", prop: "header" }] },
+    { ...nodeLayoutContext, origins: [{ supplierDefinitionId: "outside:App", supplierTitle: "App", prop: "header" }] },
     { ...nodeLayoutContext, origins: [{ ...composition.origins.at(0), slot: "" }] },
     { ...nodeLayoutContext, component: nodeLayoutContext },
   ])("rejects malformed node layout context: %j", (layoutContext) => {
@@ -167,26 +300,26 @@ describe("component layout context", () => {
     ).toThrow('Unrecognized key: "component"');
   });
 
-  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s graph contract", (id) => {
-    const graph = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s graph contract", (layoutId) => {
+    const graph = layoutId === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
     expect(() =>
       parseArtifact({
         ...validDiagram,
         diagram: {
-          layout: { id },
+          layout: { layoutId },
           graph: { ...graph, layoutContext: validComponentDiagram.diagram.graph.layoutContext },
         },
       }),
     ).toThrow('Unrecognized key: "layoutContext"');
   });
 
-  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s node contract", (id) => {
-    const graph = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s node contract", (layoutId) => {
+    const graph = layoutId === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
     expect(() =>
       parseArtifact({
         ...validDiagram,
         diagram: {
-          layout: { id },
+          layout: { layoutId },
           graph: { ...graph, nodes: graph.nodes.map((node) => ({ ...node, layoutContext: nodeLayoutContext })) },
         },
       }),
@@ -257,7 +390,7 @@ describe("component composition metadata", () => {
     { ...composition, slot: "" },
     { type: "node" },
     { ...composition, unexpected: true },
-    { ...composition, origins: [{ ...composition.origins.at(0), supplierId: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), supplierDefinitionId: "" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), supplierTitle: "" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), slot: "" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), input: "header" }] },
@@ -297,15 +430,15 @@ describe("component composition metadata", () => {
     ).toThrow('Unrecognized key: "composition"');
   });
 
-  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s edge contract", (id) => {
-    const base = id === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
+  it.each(["elk-layered", "dependency-graph", "sequence"])("does not widen the %s edge contract", (layoutId) => {
+    const base = layoutId === "sequence" ? validSequenceDiagram.diagram.graph : validDiagram.diagram.graph;
     for (const metadata of [composition, null]) {
       const graph = {
         ...base,
         edges: base.edges.map((edge) => ({ ...edge, layoutContext: { composition: metadata } })),
       };
 
-      expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { id }, graph } })).toThrow(
+      expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { layoutId }, graph } })).toThrow(
         'Unrecognized key: "layoutContext"',
       );
     }
@@ -317,7 +450,7 @@ describe("component composition metadata", () => {
     expect(schema.$defs).toMatchObject({
       ComponentOrigin: {
         type: "object",
-        required: ["supplierId", "supplierTitle", "slot"],
+        required: ["supplierDefinitionId", "supplierTitle", "slot"],
         additionalProperties: false,
         properties: { slot: { type: "string", minLength: 1 } },
       },
@@ -400,35 +533,40 @@ describe("artifact parsing", () => {
   it("preserves provider-owned layout options", () => {
     const diagram = {
       ...validDiagram,
-      diagram: { ...validDiagram.diagram, layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } } },
+      diagram: {
+        ...validDiagram.diagram,
+        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+      },
     };
 
     expect(parseArtifact(diagram)).toEqual(diagram);
   });
 
   it("parses supported layout configurations", () => {
-    expect(parseArtifact(validSequenceDiagram).diagram.layout).toEqual({ id: "sequence" });
+    expect(parseArtifact(validSequenceDiagram).diagram.layout).toEqual({ layoutId: "sequence" });
     expect(
-      parseArtifact({ ...validDiagram, diagram: { ...validDiagram.diagram, layout: { id: "dependency-graph" } } })
-        .diagram.layout,
+      parseArtifact({
+        ...validDiagram,
+        diagram: { ...validDiagram.diagram, layout: { layoutId: "dependency-graph" } },
+      }).diagram.layout,
     ).toEqual({
-      id: "dependency-graph",
+      layoutId: "dependency-graph",
     });
   });
 
   it("restricts dependency graphs to default nodes and edges", () => {
     const dependencyDiagram = {
       ...validDiagram,
-      diagram: { ...validDiagram.diagram, layout: { id: "dependency-graph" } },
+      diagram: { ...validDiagram.diagram, layout: { layoutId: "dependency-graph" } },
     } as const;
     expect(parseArtifact(dependencyDiagram).diagram.graph).toEqual(validDiagram.diagram.graph);
     const fragment = {
-      id: "fragment",
+      nodeId: "fragment",
       type: "fragment",
       title: "Alternative",
       kind: "frame",
       operator: "alt",
-      branches: [{ id: "branch", guard: "valid", startMessageId: "request", endMessageId: "request" }],
+      branches: [{ branchId: "branch", guard: "valid", startMessageId: "request", endMessageId: "request" }],
     } as const;
     for (const node of [...validSequenceDiagram.diagram.graph.nodes, fragment]) {
       expect(() =>
@@ -451,14 +589,14 @@ describe("artifact parsing", () => {
 
   it("rejects unsupported layout configurations", () => {
     expect(() =>
-      parseArtifact({ ...validDiagram, diagram: { ...validDiagram.diagram, layout: { id: "unknown" } } }),
+      parseArtifact({ ...validDiagram, diagram: { ...validDiagram.diagram, layout: { layoutId: "unknown" } } }),
     ).toThrow("Invalid artifact");
     expect(() =>
       parseArtifact({
         ...validDiagram,
         diagram: {
           ...validDiagram.diagram,
-          layout: { id: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
+          layout: { layoutId: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
         },
       }),
     ).toThrow("Invalid artifact");
@@ -467,14 +605,14 @@ describe("artifact parsing", () => {
         ...validDiagram,
         diagram: {
           ...validDiagram.diagram,
-          layout: { id: "elk-layered", options: { spacing: 24 } },
+          layout: { layoutId: "elk-layered", options: { spacing: 24 } },
         },
       }),
     ).toThrow("Invalid artifact");
     expect(() =>
       parseArtifact({
         ...validDiagram,
-        diagram: { ...validDiagram.diagram, layout: { id: "sequence", options: {} } },
+        diagram: { ...validDiagram.diagram, layout: { layoutId: "sequence", options: {} } },
       }),
     ).toThrow("Invalid artifact");
   });
@@ -487,7 +625,7 @@ describe("artifact parsing", () => {
           ...validSequenceDiagram.diagram,
           graph: {
             ...validSequenceDiagram.diagram.graph,
-            groups: [{ id: "checkout", title: "Checkout" }],
+            groups: [{ groupId: "checkout", title: "Checkout" }],
           },
         },
       }),
@@ -502,7 +640,7 @@ describe("artifact parsing", () => {
           ...validSequenceDiagram.diagram,
           graph: {
             ...validSequenceDiagram.diagram.graph,
-            nodes: [{ id: "service", type: "default", kind: "component", title: "Service" }],
+            nodes: [{ nodeId: "service", type: "default", kind: "component", title: "Service" }],
             edges: [],
           },
         },
@@ -520,7 +658,7 @@ describe("artifact parsing", () => {
             ...validSequenceDiagram.diagram.graph,
             nodes: [
               ...validSequenceDiagram.diagram.graph.nodes,
-              { id: "service", type: "default", kind: "component", title: "Service" },
+              { nodeId: "service", type: "default", kind: "component", title: "Service" },
             ],
           },
         },
@@ -536,7 +674,7 @@ describe("artifact parsing", () => {
           ...validSequenceDiagram.diagram,
           graph: {
             ...validSequenceDiagram.diagram.graph,
-            edges: [{ id: "dependency", type: "default", source: "client", target: "server" }],
+            edges: [{ edgeId: "dependency", type: "default", sourceNodeId: "client", targetNodeId: "server" }],
           },
         },
       }),
@@ -551,7 +689,7 @@ describe("artifact parsing", () => {
           ...validDiagram.diagram,
           graph: {
             ...validDiagram.diagram.graph,
-            edges: [{ ...validDiagram.diagram.graph.edges.at(0), id: "checkout-page" }],
+            edges: [{ ...validDiagram.diagram.graph.edges.at(0), edgeId: "checkout-page" }],
           },
         },
       }),
@@ -563,7 +701,7 @@ describe("artifact parsing", () => {
           ...validDiagram.diagram,
           graph: {
             ...validDiagram.diagram.graph,
-            edges: [{ ...validDiagram.diagram.graph.edges.at(0), target: "missing" }],
+            edges: [{ ...validDiagram.diagram.graph.edges.at(0), targetNodeId: "missing" }],
           },
         },
       }),
@@ -592,8 +730,8 @@ describe("artifact parsing", () => {
           graph: {
             ...validDiagram.diagram.graph,
             groups: [
-              { id: "checkout", title: "Checkout", parentId: "application" },
-              { id: "application", title: "Application", parentId: "checkout" },
+              { groupId: "checkout", title: "Checkout", parentGroupId: "application" },
+              { groupId: "application", title: "Application", parentGroupId: "checkout" },
             ],
           },
         },
@@ -661,34 +799,34 @@ describe("artifact parsing", () => {
           groups: [],
           nodes: [
             {
-              id: "client",
+              nodeId: "client",
               type: "lifeline",
               kind: "participant",
               title: "Client",
               activations: [
                 {
-                  id: "request",
+                  activationId: "request",
                   startsAt: { messageId: "request", endpoint: "source" },
                   endsAt: { messageId: "response", endpoint: "target" },
                 },
               ],
             },
-            { id: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+            { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
           ],
           edges: [
             {
-              id: "request",
+              edgeId: "request",
               type: "message",
-              source: "client",
-              target: "server",
+              sourceNodeId: "client",
+              targetNodeId: "server",
               label: "Request",
               messageType: "sync",
             },
             {
-              id: "response",
+              edgeId: "response",
               type: "message",
-              source: "server",
-              target: "client",
+              sourceNodeId: "server",
+              targetNodeId: "client",
               label: "Response",
               messageType: "return",
             },
@@ -705,7 +843,10 @@ describe("artifact parsing", () => {
           ...diagram.diagram,
           graph: {
             ...diagram.diagram.graph,
-            edges: [{ ...diagram.diagram.graph.edges.at(0), source: "missing" }, diagram.diagram.graph.edges.at(1)],
+            edges: [
+              { ...diagram.diagram.graph.edges.at(0), sourceNodeId: "missing" },
+              diagram.diagram.graph.edges.at(1),
+            ],
           },
         },
       }),

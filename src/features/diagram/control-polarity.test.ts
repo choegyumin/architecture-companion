@@ -9,8 +9,8 @@ import {
 
 describe("getPolarityPairCases", () => {
   const branch = {
-    id: "gate",
-    owner: "root",
+    controlId: "gate",
+    ownerNodeId: "root",
     type: "branch" as const,
     dependsOn: [[]],
     ...calculateConditionPolarityPair("!ready"),
@@ -18,30 +18,36 @@ describe("getPolarityPairCases", () => {
 
   it("reads the stored result without interpreting labels or source truth IDs", () => {
     expect(getPolarityPairCases(branch)).toEqual({
-      onCase: { id: "false", label: "ready" },
-      offCase: { id: "true", label: "!ready" },
+      onCase: { caseId: "false", label: "ready" },
+      offCase: { caseId: "true", label: "!ready" },
     });
     expect(
       getPolarityPairCases({
         ...branch,
         cases: [
-          { id: "a", label: "!opaque" },
-          { id: "b", label: "opaque" },
+          { caseId: "a", label: "!opaque" },
+          { caseId: "b", label: "opaque" },
         ],
       }),
     ).toEqual({
-      onCase: { id: "a", label: "!opaque" },
-      offCase: { id: "b", label: "opaque" },
+      onCase: { caseId: "a", label: "!opaque" },
+      offCase: { caseId: "b", label: "opaque" },
     });
   });
 
   it("does not infer a switch from two cases or a flag on a non-pair", () => {
     expect(getPolarityPairCases({ ...branch, polarityPair: undefined })).toBeUndefined();
     expect(
-      getPolarityPairCases({ ...branch, cases: [...branch.cases, { id: "other", label: "Other" }] }),
+      getPolarityPairCases({ ...branch, cases: [...branch.cases, { caseId: "other", label: "Other" }] }),
     ).toBeUndefined();
     expect(
-      getPolarityPairCases({ id: "gate", owner: "root", type: "conditional", label: "!ready", dependsOn: [[]] }),
+      getPolarityPairCases({
+        controlId: "gate",
+        ownerNodeId: "root",
+        type: "conditional",
+        label: "!ready",
+        dependsOn: [[]],
+      }),
     ).toBeUndefined();
   });
 });
@@ -57,8 +63,8 @@ describe("calculateConditionPolarityPair", () => {
       label: "ready",
       polarityPair: true,
       cases: [
-        { id: onId, label: onLabel },
-        { id: offId, label: offLabel },
+        { caseId: onId, label: onLabel },
+        { caseId: offId, label: offLabel },
       ],
     });
   });
@@ -72,16 +78,16 @@ describe("calculatePolarityPair", () => {
     { on: "(ready)", off: "!(ready)", subjectLabel: "ready", label: "ready" },
   ])("orders $on before its supplied complement without changing IDs or labels", ({ on, off, subjectLabel, label }) => {
     const cases = [
-      Object.freeze({ id: "original-first", label: off, positive: false }),
-      Object.freeze({ id: "original-second", label: on, positive: true }),
+      Object.freeze({ caseId: "original-first", label: off, positive: false }),
+      Object.freeze({ caseId: "original-second", label: on, positive: true }),
     ] as const;
     Object.freeze(cases);
     const expected = {
       label,
       polarityPair: true,
       cases: [
-        { id: "original-second", label: on },
-        { id: "original-first", label: off },
+        { caseId: "original-second", label: on },
+        { caseId: "original-first", label: off },
       ],
     };
     expect(calculatePolarityPair({ cases, subjectLabel })).toEqual(expected);

@@ -6,15 +6,15 @@ import { componentPathEmphasis, selectComponentPath } from "./component-structur
 const graph = projectDecisionNodes({
   groups: [],
   nodes: [
-    { id: "root", type: "default", title: "Root" },
-    { id: "leaf", type: "default", title: "Leaf" },
+    { nodeId: "root", type: "default", title: "Root" },
+    { nodeId: "leaf", type: "default", title: "Leaf" },
   ],
   edges: [
     {
-      id: "render",
+      edgeId: "render",
       type: "control",
-      source: "root",
-      target: "leaf",
+      sourceNodeId: "root",
+      targetNodeId: "leaf",
       activeWhen: [
         [
           { controlId: "outer", value: "true" },
@@ -24,12 +24,18 @@ const graph = projectDecisionNodes({
     },
   ],
   layoutContext: {
-    roots: ["root"],
+    rootNodeIds: ["root"],
     controls: [
-      { id: "outer", owner: "root", type: "branch", dependsOn: [[]], ...calculateConditionPolarityPair("outer") },
       {
-        id: "inner",
-        owner: "root",
+        controlId: "outer",
+        ownerNodeId: "root",
+        type: "branch",
+        dependsOn: [[]],
+        ...calculateConditionPolarityPair("outer"),
+      },
+      {
+        controlId: "inner",
+        ownerNodeId: "root",
         type: "branch",
         dependsOn: [[{ controlId: "outer", value: "true" }]],
         ...calculateConditionPolarityPair("!inner"),

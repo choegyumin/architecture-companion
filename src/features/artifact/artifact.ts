@@ -24,7 +24,7 @@ export const artifactIdSchema = z
 // varying part is the single `diagram` field below, so every envelope field
 // is declared once.
 const artifactBaseShape = {
-  id: artifactIdSchema,
+  artifactId: artifactIdSchema,
   title: z.string().min(1),
   updatedAt: z.string().datetime(),
   vcs: z
@@ -40,8 +40,8 @@ const artifactBaseShape = {
 };
 
 // One layout-graph pair: the layout decides which graph contract applies, and
-// each member carries both, so comparing `layout.id` narrows the graph type.
-// zod cannot discriminate on the nested `layout.id` path, so this is a plain
+// each member carries both, so comparing `layout.layoutId` narrows the graph type.
+// zod cannot discriminate on the nested `layout.layoutId` path, so this is a plain
 // union - a failure reports issues from every member instead of one.
 const diagramMemberSchema = <Layout extends z.ZodTypeAny, Graph extends z.ZodTypeAny>(layout: Layout, graph: Graph) =>
   z.object({ layout, graph }).strict();
@@ -85,16 +85,16 @@ export type Artifact = Omit<ParsedArtifact, "generator"> & {
 // Layout ids sit inside the `diagram` pair, so plain comparisons do not
 // narrow the artifact's diagram union; these guards carry the pairing instead.
 export function isElkLayeredArtifact(artifact: Artifact): artifact is Artifact & { diagram: ElkLayeredDiagram } {
-  return artifact.diagram.layout.id === "elk-layered";
+  return artifact.diagram.layout.layoutId === "elk-layered";
 }
 
 export function isComponentStructureArtifact(
   artifact: Artifact,
 ): artifact is Artifact & { diagram: ComponentStructureDiagram } {
-  return artifact.diagram.layout.id === "component-structure";
+  return artifact.diagram.layout.layoutId === "component-structure";
 }
 
-// zod cannot discriminate on the nested `layout.id` path, and a plain union
+// zod cannot discriminate on the nested `layout.layoutId` path, and a plain union
 // reports only "Invalid input" on failure. Parsing dispatches on the layout
 // id first so failures carry the matching member's specific issues; the full
 // schema still runs afterwards to report envelope problems under their own
@@ -113,12 +113,14 @@ function toIssueMessages(error: z.ZodError): string {
 }
 
 export function parseArtifact(input: unknown): Artifact {
-  const layout = (input as { diagram?: { layout?: { id?: unknown } } } | null)?.diagram?.layout;
-  if (layout != null && typeof layout === "object" && typeof layout.id === "string") {
-    const member = diagramMembersByLayoutId[layout.id as keyof typeof diagramMembersByLayoutId];
+  const layout = (input as { diagram?: { layout?: { layoutId?: unknown } } } | null)?.diagram?.layout;
+  if (layout != null && typeof layout === "object" && typeof layout.layoutId === "string") {
+    const member = diagramMembersByLayoutId[layout.layoutId as keyof typeof diagramMembersByLayoutId];
     // An unknown layout id has no member to report against; name it directly.
     if (member === undefined) {
-      throw new Error(`Invalid artifact: diagram.layout.id: Unsupported layout configuration: ${layout.id}`);
+      throw new Error(
+        `Invalid artifact: diagram.layout.layoutId: Unsupported layout configuration: ${layout.layoutId}`,
+      );
     }
     const diagram = (input as { diagram?: unknown }).diagram;
     const diagramResult = member.safeParse(diagram);

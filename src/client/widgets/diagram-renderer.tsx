@@ -5,7 +5,7 @@ import { ElkLayeredDiagramRenderer } from "@/client/widgets/elk-layered-diagram-
 import { SequenceDiagramRenderer } from "@/client/widgets/sequence-diagram-renderer";
 
 export function DiagramRenderer(props: DiagramRendererProps) {
-  switch (props.artifact.diagram.layout.id) {
+  switch (props.artifact.diagram.layout.layoutId) {
     case "dependency-graph":
       return <DependencyGraphDiagramRenderer key={JSON.stringify(props.artifact)} {...props} />;
     case "elk-layered":

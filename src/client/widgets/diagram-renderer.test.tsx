@@ -16,15 +16,15 @@ vi.mock("@/client/widgets/sequence-diagram-renderer", () => ({
 
 const annotations = {} as AnnotationCanvasController;
 const diagram = {
-  id: "example",
+  artifactId: "example",
   updatedAt: "2026-10-03T09:15:00.000Z",
   title: "Example",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview the selected diagram layout.\n\n## Regeneration\nRebuild the example elements for the selected layout.",
   diagram: {
-    layout: { id: "elk-layered" },
-    graph: { groups: [], nodes: [{ id: "node", type: "default", title: "Node" }], edges: [] },
+    layout: { layoutId: "elk-layered" },
+    graph: { groups: [], nodes: [{ nodeId: "node", type: "default", title: "Node" }], edges: [] },
   },
 } as const;
 
@@ -32,7 +32,7 @@ describe("diagram renderer selection", () => {
   it("selects the dependency renderer by layout ID", () => {
     const dependencyDiagram = {
       ...diagram,
-      diagram: { ...diagram.diagram, layout: { id: "dependency-graph" } },
+      diagram: { ...diagram.diagram, layout: { layoutId: "dependency-graph" } },
     } satisfies Artifact;
 
     render(<DiagramRenderer annotations={annotations} artifact={dependencyDiagram} onOpenSource={vi.fn()} />);
@@ -52,10 +52,12 @@ describe("diagram renderer selection", () => {
     const sequenceDiagram = {
       ...diagram,
       diagram: {
-        layout: { id: "sequence" },
+        layout: { layoutId: "sequence" },
         graph: {
           groups: [],
-          nodes: [{ id: "participant", type: "lifeline", kind: "participant", title: "Participant", activations: [] }],
+          nodes: [
+            { nodeId: "participant", type: "lifeline", kind: "participant", title: "Participant", activations: [] },
+          ],
           edges: [],
         },
       },

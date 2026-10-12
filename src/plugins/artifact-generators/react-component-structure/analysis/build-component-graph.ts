@@ -2123,7 +2123,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       .slice(0, 16);
     const id = `${ownerId}:control:${suffix}`;
     const existing = context.controls.get(id);
-    const base = { id, owner: ownerId, label, dependsOn: unionRulesets(existing?.dependsOn ?? [], when) };
+    const base = {
+      controlId: id,
+      ownerNodeId: ownerId,
+      label,
+      dependsOn: unionRulesets(existing?.dependsOn ?? [], when),
+    };
     context.controls.set(
       id,
       alternatives
@@ -2154,7 +2159,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   // one boolean subject and its negation, so consumers never parse labels to
   // recover the switch shape.
   type BranchAlternatives = Readonly<{
-    cases: { id: string; label: string }[];
+    cases: { caseId: string; label: string }[];
     polarityPair?: true;
   }>;
 
@@ -2406,8 +2411,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               // is not logical negation. Both keep the left operand as subject.
               subjectLabel: label,
               cases: [
-                { id: "left", label, positive: true },
-                { id: "right", label: nullish ? `${label} == null` : negateLabel(label), positive: false },
+                { caseId: "left", label, positive: true },
+                { caseId: "right", label: nullish ? `${label} == null` : negateLabel(label), positive: false },
               ],
             })
           : undefined,
@@ -2547,11 +2552,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           const clauses = statement.caseBlock.clauses;
           if (clauses.length === 0) continue;
           const alternatives = clauses.map((clause, clauseIndex) => ({
-            id: `case:${clauseIndex}`,
+            caseId: `case:${clauseIndex}`,
             label: ts.isCaseClause(clause) ? literalCaseText(clause.expression) : "default",
           }));
           const noDefault = !clauses.some(ts.isDefaultClause);
-          if (noDefault) alternatives.push({ id: `case:${clauses.length}`, label: "default" });
+          if (noDefault) alternatives.push({ caseId: `case:${clauses.length}`, label: "default" });
           const tail = [...statements.slice(index + 1), ...continuation];
           if (alternatives.length === 1) {
             const flow = walk(clauses.at(0)!.statements, next, tail, tail);
@@ -2882,8 +2887,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           const existing = controls.get(id);
           controls.set(id, {
             ...template,
-            id,
-            owner: source.id,
+            controlId: id,
+            ownerNodeId: source.id,
             dependsOn: unionRulesets(existing?.dependsOn ?? [], when),
           });
           return { controlId: id, value };
@@ -3099,7 +3104,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       return relationship.kind === "inline-render"
         ? []
         : relationship.origins.map(({ supplierId, prop }) => ({
-            supplierId,
+            supplierDefinitionId: supplierId,
             supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
             slot: prop,
           }));
@@ -3122,7 +3127,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         ? [
             {
               type: "default",
-              id,
+              nodeId: id,
               title: definition.name,
               description: definition.relativePath,
               links: [{ href: sourceHref(definition.relativePath) }],
@@ -3137,12 +3142,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       .filter(({ target }) => !target.definition)
       .map(({ id, target }): ComponentStructureDiagramNode => ({
         type: "default",
-        id,
+        nodeId: id,
         title: target.title,
         description: `${target.externalPackage} boundary`,
         layoutContext: nodeLayoutContext(id, target.id),
       }));
-    const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ id }) => id));
+    const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ nodeId }) => nodeId));
     const edges: BuilderEdge[] = relationships
       .filter(({ source, target }) => candidateNodeIds.has(source) && candidateNodeIds.has(target))
       .map((relationship): BuilderEdge => ({
@@ -3158,7 +3163,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         },
       }))
       .toSorted((left, right) => left.id.localeCompare(right.id));
-    const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.id.localeCompare(right.id));
+    const nodes = [...localNodes, ...externalNodes].toSorted((left, right) => left.nodeId.localeCompare(right.nodeId));
 
     return { groups: [], nodes, edges, roots, controls };
   }
@@ -3169,18 +3174,18 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     instances: readonly ComponentInstance[],
   ): BuilderGraph {
     const targetsByInstanceId = new Map(instances.map(({ id, target }) => [id, target]));
-    const roots = graph.nodes.filter(({ id, title }) =>
+    const roots = graph.nodes.filter(({ nodeId, title }) =>
       rootPatterns.some(
         (pattern) =>
-          matchesComponentPattern(targetsByInstanceId.get(id)!.id, title, [pattern]) ||
-          matchesComponentPattern(id, title, [pattern]),
+          matchesComponentPattern(targetsByInstanceId.get(nodeId)!.id, title, [pattern]) ||
+          matchesComponentPattern(nodeId, title, [pattern]),
       ),
     );
     if (roots.length === 0) {
       throw new Error(`No visible component matches the --root pattern: ${rootPatterns.join(", ")}`);
     }
 
-    const reachable = new Set(roots.map(({ id }) => id));
+    const reachable = new Set(roots.map(({ nodeId }) => nodeId));
     const targetsBySource = new Map<string, string[]>();
     for (const { source, target } of graph.edges) {
       targetsBySource.set(source, [...(targetsBySource.get(source) ?? []), target]);
@@ -3198,9 +3203,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     return {
       ...graph,
-      nodes: graph.nodes.filter(({ id }) => reachable.has(id)),
+      nodes: graph.nodes.filter(({ nodeId }) => reachable.has(nodeId)),
       edges: graph.edges.filter(({ source, target }) => reachable.has(source) && reachable.has(target)),
-      roots: roots.map(({ id }) => id),
+      roots: roots.map(({ nodeId }) => nodeId),
       controls: graph.controls!,
     };
   }
@@ -3219,9 +3224,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const ruleset = edge.activeWhen ?? [[]];
         const { kind, ...composition } = edge.composition;
         const relationship = {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
+          edgeId: edge.id,
+          sourceNodeId: edge.source,
+          targetNodeId: edge.target,
           ...(kind === "inline-render"
             ? {}
             : {
@@ -3232,7 +3237,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           ? { type: "default", ...relationship }
           : { type: "control", ...relationship, activeWhen: ruleset };
       }),
-      layoutContext: { roots: graph.roots, controls: graph.controls },
+      layoutContext: { rootNodeIds: graph.roots, controls: graph.controls },
     };
   }
 
@@ -3335,7 +3340,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const branchCasesOf = (control: DiagramControl): { trueText: string; falseText: string } | undefined => {
       if (control.type !== "branch" || control.cases.length !== 2) return undefined;
       const [trueCase, falseCase] = control.cases;
-      if (!trueCase || !falseCase || trueCase.id !== "true" || falseCase.id !== "false") return undefined;
+      if (!trueCase || !falseCase || trueCase.caseId !== "true" || falseCase.caseId !== "false") return undefined;
       return { trueText: trueCase.label, falseText: falseCase.label };
     };
 
@@ -3376,8 +3381,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const [onCase, offCase] = control.cases;
         if (
           control.cases.length !== 2 ||
-          onCase?.id !== "true" ||
-          offCase?.id !== "false" ||
+          onCase?.caseId !== "true" ||
+          offCase?.caseId !== "false" ||
           offCase.label !== negateLabel(onCase.label)
         )
           return undefined;
@@ -3404,7 +3409,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       );
       return {
         control,
-        groupKey: `${control.owner}\0discriminant\0${operator.family}\0${structureKey(left)}`,
+        groupKey: `${control.ownerNodeId}\0discriminant\0${operator.family}\0${structureKey(left)}`,
         subject: left.getText(),
         semantics,
       };
@@ -3414,9 +3419,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     for (const control of context.controls.values()) {
       const member = discriminantOf(control);
       if (!member) continue;
-      discriminantMembers.set(control.id, member);
+      discriminantMembers.set(control.controlId, member);
       const group = discriminantGroups.get(member.groupKey) ?? {
-        owner: member.control.owner,
+        owner: member.control.ownerNodeId,
         subject: member.subject,
         members: [],
         positiveLiterals: [],
@@ -3432,14 +3437,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
 
     for (const control of context.controls.values()) {
-      if (discriminantMembers.has(control.id)) continue;
+      if (discriminantMembers.has(control.controlId)) continue;
       const branchCases = branchCasesOf(control);
       if (!branchCases && control.type !== "conditional") continue;
       // A branch's own label is the positive subject, but its true case names
       // the gate as written — that text carries the polarity.
       const polarity = branchCases ? polarityOfLabel(branchCases.trueText) : polarityOf(control);
       if (!polarity) continue;
-      const key = `${control.owner}\0${polarity.group}`;
+      const key = `${control.ownerNodeId}\0${polarity.group}`;
       const members = groups.get(key) ?? [];
       members.push({ control, polarity, ...(branchCases ? { branchCases } : {}) });
       groups.set(key, members);
@@ -3505,7 +3510,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         // A branch member's false arm already names the complement case.
         if (branchCases && !caseTextByKey.has(complementKeyOf(polarity.caseKey)))
           caseTextByKey.set(complementKeyOf(polarity.caseKey), branchCases.falseText);
-        memberIds.add(control.id);
+        memberIds.add(control.controlId);
       }
       const complementText = (caseKey: string): string | undefined => caseTextByKey.get(complementKeyOf(caseKey));
       // A group that never sees a second case stays conditional, so its value
@@ -3523,15 +3528,15 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
                 on: caseTextByKey.get(polarity.caseKey)!,
                 ...(complementText(polarity.caseKey) ? { off: complementText(polarity.caseKey)! } : {}),
               };
-        replacements.set(control.id, { controlId: representative.id, values });
+        replacements.set(control.controlId, { controlId: representative.controlId, values });
       }
-      mergedGroups.set(representative.id, members);
+      mergedGroups.set(representative.controlId, members);
     }
 
     const discriminantByRepresentative = new Map<string, DiscriminantGroup>();
     for (const group of discriminantGroups.values()) {
-      discriminantByRepresentative.set(group.representative.id, group);
-      for (const { control } of group.members) memberIds.add(control.id);
+      discriminantByRepresentative.set(group.representative.controlId, group);
+      for (const { control } of group.members) memberIds.add(control.controlId);
     }
 
     // A discriminant group resolves per rule: one chosen value wins, negations
@@ -3611,7 +3616,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           const group = discriminantGroups.get(slot.groupKey)!;
           const values = resolveDiscriminant(group, slot.state.positives, slot.state.negatives);
           return values.flatMap((value) =>
-            buildRules(index + 1, [...base, { controlId: group.representative.id, value }]),
+            buildRules(index + 1, [...base, { controlId: group.representative.controlId, value }]),
           );
         };
         rewritten.push(...buildRules(0, []));
@@ -3621,19 +3626,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const controls = new Map<string, DiagramControl>();
     for (const control of context.controls.values()) {
-      const members = mergedGroups.get(control.id);
+      const members = mergedGroups.get(control.controlId);
       if (members) {
-        const casesByKey = new Map<string, { id: string; label: string; positive: boolean }>();
+        const casesByKey = new Map<string, { caseId: string; label: string; positive: boolean }>();
         for (const { control: member, polarity, branchCases } of members) {
           if (!casesByKey.has(polarity.caseKey))
             casesByKey.set(polarity.caseKey, {
-              id: branchCases ? branchCases.trueText : member.label,
+              caseId: branchCases ? branchCases.trueText : member.label,
               label: branchCases ? branchCases.trueText : member.label,
               positive: polarity.positive,
             });
           if (branchCases && !casesByKey.has(complementKeyOf(polarity.caseKey)))
             casesByKey.set(complementKeyOf(polarity.caseKey), {
-              id: branchCases.falseText,
+              caseId: branchCases.falseText,
               label: branchCases.falseText,
               positive: !polarity.positive,
             });
@@ -3641,9 +3646,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         // Each group has at most the predicate and its complement. A lone
         // polarity stays conditional; shared calculation orders a full pair.
         const [first, second] = casesByKey.values();
-        controls.set(control.id, {
-          id: control.id,
-          owner: control.owner,
+        controls.set(control.controlId, {
+          controlId: control.controlId,
+          ownerNodeId: control.ownerNodeId,
           ...(second
             ? { type: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
             : { type: "conditional" as const, label: first!.label }),
@@ -3651,31 +3656,37 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         });
         continue;
       }
-      const discriminant = discriminantByRepresentative.get(control.id);
+      const discriminant = discriminantByRepresentative.get(control.controlId);
       if (discriminant) {
         const dependsOn = unionRulesets(
           ...discriminant.members.map(({ control: member }) => rewrite(member.dependsOn)),
         );
         controls.set(
-          control.id,
+          control.controlId,
           discriminant.staysConditional
-            ? { id: control.id, owner: control.owner, label: control.label, type: "conditional", dependsOn }
+            ? {
+                controlId: control.controlId,
+                ownerNodeId: control.ownerNodeId,
+                label: control.label,
+                type: "conditional",
+                dependsOn,
+              }
             : {
-                id: control.id,
-                owner: control.owner,
+                controlId: control.controlId,
+                ownerNodeId: control.ownerNodeId,
                 type: "branch",
                 label: discriminant.subject,
                 cases: [
-                  ...discriminant.positiveLiterals.map((literal) => ({ id: literal, label: literal })),
-                  ...(discriminant.needsRemainder ? [{ id: "otherwise", label: "otherwise" }] : []),
+                  ...discriminant.positiveLiterals.map((literal) => ({ caseId: literal, label: literal })),
+                  ...(discriminant.needsRemainder ? [{ caseId: "otherwise", label: "otherwise" }] : []),
                 ],
                 dependsOn,
               },
         );
         continue;
       }
-      if (memberIds.has(control.id)) continue;
-      controls.set(control.id, { ...control, dependsOn: rewrite(control.dependsOn) });
+      if (memberIds.has(control.controlId)) continue;
+      controls.set(control.controlId, { ...control, dependsOn: rewrite(control.dependsOn) });
     }
     // Gates ordered `A && B` at one site and `B && A` at another make the
     // merged controls prerequisites of each other. Peers gated in conflicting
@@ -3761,9 +3772,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       edges.push(edge);
       edgesBySource.set(edge.source, edges);
     }
-    const visibleIds = new Set(graph.nodes.map(({ id }) => id));
+    const visibleIds = new Set(graph.nodes.map(({ nodeId }) => nodeId));
     const availableControls = new Map(
-      graph.controls!.filter(({ owner }) => visibleIds.has(owner)).map((control) => [control.id, control]),
+      graph
+        .controls!.filter(({ ownerNodeId }) => visibleIds.has(ownerNodeId))
+        .map((control) => [control.controlId, control]),
     );
     const neededControls = new Set<string>();
     function requireControls(ruleset: DiagramRouteRequirementRuleset): void {
@@ -3775,26 +3788,26 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
     }
     for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.activeWhen ?? [[]]);
-    const controls = graph.controls!.filter(({ id }) => neededControls.has(id));
+    const controls = graph.controls!.filter(({ controlId }) => neededControls.has(controlId));
     const controlsByOwner = new Map<string, DiagramControl[]>();
     const controlKeys = new Map<string, string>();
     for (const control of controls) {
-      const owned = controlsByOwner.get(control.owner) ?? [];
-      controlKeys.set(control.id, String(owned.length));
+      const owned = controlsByOwner.get(control.ownerNodeId) ?? [];
+      controlKeys.set(control.controlId, String(owned.length));
       owned.push(control);
-      controlsByOwner.set(control.owner, owned);
+      controlsByOwner.set(control.ownerNodeId, owned);
     }
-    const controlsById = new Map(controls.map((control) => [control.id, control]));
+    const controlsById = new Map(controls.map((control) => [control.controlId, control]));
     const normalizeRulesets = (ruleset: DiagramRouteRequirementRuleset, classes: ReadonlyMap<string, string>) =>
       ruleset.map((path) =>
         path
           .filter(({ controlId }) => controlsById.has(controlId))
           .map(({ controlId, value }) => ({
-            controlId: `${classes.get(controlsById.get(controlId)!.owner)}:${controlKeys.get(controlId)}`,
+            controlId: `${classes.get(controlsById.get(controlId)!.ownerNodeId)}:${controlKeys.get(controlId)}`,
             value,
           })),
       );
-    let classes = new Map(graph.nodes.map(({ id }) => [id, targetsByInstanceId.get(id)!.id]));
+    let classes = new Map(graph.nodes.map(({ nodeId }) => [nodeId, targetsByInstanceId.get(nodeId)!.id]));
 
     // Refine whole outgoing structures to a fixed point, including recursive compositions.
     // The previous class prevents distinct contexts from being merged on a later pass.
@@ -3802,7 +3815,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const representatives = new Map<string, string>();
       const refined = new Map<string, string>();
       for (const node of graph.nodes) {
-        const outgoing = (edgesBySource.get(node.id) ?? []).map((edge) => {
+        const outgoing = (edgesBySource.get(node.nodeId) ?? []).map((edge) => {
           // Stored provenance must not split otherwise equivalent usage contexts.
           const { id, source: _source, target, composition: _composition, ...metadata } = edge;
           const relationship = relationshipsByEdgeId.get(id)!;
@@ -3823,52 +3836,57 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             classes.get(target),
           ]);
         });
-        const ownedControls = (controlsByOwner.get(node.id) ?? []).map(
-          ({ id: _id, owner: _owner, dependsOn, ...metadata }) => ({
+        const ownedControls = (controlsByOwner.get(node.nodeId) ?? []).map(
+          ({ controlId: _controlId, ownerNodeId: _ownerNodeId, dependsOn, ...metadata }) => ({
             ...metadata,
             dependsOn: normalizeRulesets(dependsOn, classes),
           }),
         );
-        const signature = JSON.stringify([classes.get(node.id), ownedControls, [...new Set(outgoing)].toSorted()]);
-        if (!representatives.has(signature)) representatives.set(signature, node.id);
-        refined.set(node.id, representatives.get(signature)!);
+        const signature = JSON.stringify([classes.get(node.nodeId), ownedControls, [...new Set(outgoing)].toSorted()]);
+        if (!representatives.has(signature)) representatives.set(signature, node.nodeId);
+        refined.set(node.nodeId, representatives.get(signature)!);
       }
-      if (graph.nodes.every(({ id }) => refined.get(id) === classes.get(id))) break;
+      if (graph.nodes.every(({ nodeId }) => refined.get(nodeId) === classes.get(nodeId))) break;
       classes = refined;
     }
 
     const classesByDefinition = new Map<string, Set<string>>();
     for (const node of graph.nodes) {
-      const definitionId = targetsByInstanceId.get(node.id)!.id;
+      const definitionId = targetsByInstanceId.get(node.nodeId)!.id;
       const contexts = classesByDefinition.get(definitionId) ?? new Set<string>();
-      contexts.add(classes.get(node.id)!);
+      contexts.add(classes.get(node.nodeId)!);
       classesByDefinition.set(definitionId, contexts);
     }
     const outputIds = new Map(
-      graph.nodes.map(({ id }) => {
-        const definitionId = targetsByInstanceId.get(id)!.id;
-        return [id, classesByDefinition.get(definitionId)!.size === 1 ? definitionId : classes.get(id)!];
+      graph.nodes.map(({ nodeId }) => {
+        const definitionId = targetsByInstanceId.get(nodeId)!.id;
+        return [nodeId, classesByDefinition.get(definitionId)!.size === 1 ? definitionId : classes.get(nodeId)!];
       }),
     );
     const nodes = graph.nodes
-      .filter(({ id }) => classes.get(id) === id)
+      .filter(({ nodeId }) => classes.get(nodeId) === nodeId)
       .map((node) => {
-        if (node.type !== "default") return { ...node, id: outputIds.get(node.id)! };
+        if (node.type !== "default") return { ...node, nodeId: outputIds.get(node.nodeId)! };
         const origins = graph.nodes.flatMap((candidate) =>
-          candidate.type === "default" && classes.get(candidate.id) === node.id ? candidate.layoutContext!.origins : [],
+          candidate.type === "default" && classes.get(candidate.nodeId) === node.nodeId
+            ? candidate.layoutContext!.origins
+            : [],
         );
         return {
           ...node,
-          id: outputIds.get(node.id)!,
+          nodeId: outputIds.get(node.nodeId)!,
           layoutContext: {
             ...node.layoutContext!,
             origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()],
           },
         };
       })
-      .toSorted((left, right) => left.id.localeCompare(right.id));
+      .toSorted((left, right) => left.nodeId.localeCompare(right.nodeId));
     const outputControlIds = new Map(
-      controls.map((control) => [control.id, `${outputIds.get(control.owner)}:control:${controlKeys.get(control.id)}`]),
+      controls.map((control) => [
+        control.controlId,
+        `${outputIds.get(control.ownerNodeId)}:control:${controlKeys.get(control.controlId)}`,
+      ]),
     );
     const rewriteRulesets = (ruleset: DiagramRouteRequirementRuleset): DiagramRouteRequirementRuleset =>
       unionRulesets(
@@ -3880,12 +3898,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       );
     const outputControls = new Map<string, DiagramControl>();
     for (const control of controls) {
-      const id = outputControlIds.get(control.id)!;
+      const id = outputControlIds.get(control.controlId)!;
       const existing = outputControls.get(id);
       outputControls.set(id, {
         ...control,
-        id,
-        owner: outputIds.get(control.owner)!,
+        controlId: id,
+        ownerNodeId: outputIds.get(control.ownerNodeId)!,
         dependsOn: unionRulesets(existing?.dependsOn ?? [], rewriteRulesets(control.dependsOn)),
       });
     }
@@ -3906,7 +3924,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           origins: [
             ...new Map(
               [...(existing?.composition.origins ?? []), ...edge.composition.origins].map((origin) => [
-                JSON.stringify([origin.supplierId, origin.slot]),
+                JSON.stringify([origin.supplierDefinitionId, origin.slot]),
                 origin,
               ]),
             ).values(),

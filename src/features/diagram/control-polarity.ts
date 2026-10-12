@@ -66,7 +66,7 @@ export function calculatePolarityPair({
   const ordered = positiveCase === first ? cases : [second, first];
   return {
     label: subjectLabel ?? positiveLabel(positiveCase.label),
-    cases: ordered.map(({ id, label }) => ({ id, label })),
+    cases: ordered.map(({ caseId, label }) => ({ caseId, label })),
     polarityPair: true as const,
   };
 }
@@ -80,8 +80,8 @@ export function calculateConditionPolarityPair(condition: string) {
   return calculatePolarityPair({
     subjectLabel,
     cases: [
-      { id: "true", label, positive },
-      { id: "false", label: negateLabel(label), positive: !positive },
+      { caseId: "true", label, positive },
+      { caseId: "false", label: negateLabel(label), positive: !positive },
     ],
   });
 }

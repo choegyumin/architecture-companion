@@ -40,7 +40,7 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
     id,
     bounds: getOrThrow(bounds.get(id), `Missing dependency node bounds: ${id}`),
   }));
-  const edgesById = new Map(artifact.diagram.graph.edges.map((edge) => [edge.id, edge]));
+  const edgesById = new Map(artifact.diagram.graph.edges.map((edge) => [edge.edgeId, edge]));
   const placementById = new Map(layout.edges.map((placement) => [placement.id, placement]));
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edgeTargets = new Map<string, AnnotationTarget>();
@@ -89,19 +89,19 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
     };
     if (projection.type === "original") {
       const edge = getOrThrow(edgesById.get(projection.edgeId), `Missing dependency edge: ${projection.edgeId}`);
-      const placement = getOrThrow(placementById.get(edge.id), `Missing dependency edge route: ${edge.id}`);
+      const placement = getOrThrow(placementById.get(edge.edgeId), `Missing dependency edge route: ${edge.edgeId}`);
       const route = routeOriginalDependencyEdge(
         placement.points,
-        getOrThrow(bounds.get(edge.source), `Missing dependency source: ${edge.source}`),
-        getOrThrow(bounds.get(edge.target), `Missing dependency target: ${edge.target}`),
-        cards.filter(({ id }) => id !== edge.source && id !== edge.target).map(({ bounds }) => bounds),
+        getOrThrow(bounds.get(edge.sourceNodeId), `Missing dependency source: ${edge.sourceNodeId}`),
+        getOrThrow(bounds.get(edge.targetNodeId), `Missing dependency target: ${edge.targetNodeId}`),
+        cards.filter(({ id }) => id !== edge.sourceNodeId && id !== edge.targetNodeId).map(({ bounds }) => bounds),
       );
       const display = diagramEdgeDisplay(edge);
       return {
         ...common,
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
+        id: edge.edgeId,
+        source: edge.sourceNodeId,
+        target: edge.targetNodeId,
         ...(display.label ? { label: display.label } : {}),
         data: {
           ...route,

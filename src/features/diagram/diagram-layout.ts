@@ -20,7 +20,7 @@ import {
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 
-export const diagramLayoutConfigSchema = z.discriminatedUnion("id", [
+export const diagramLayoutConfigSchema = z.discriminatedUnion("layoutId", [
   elkLayeredDiagramLayoutConfigSchema,
   sequenceDiagramLayoutConfigSchema,
   dependencyGraphLayoutConfigSchema,
@@ -31,15 +31,15 @@ export type DiagramLayoutConfig = z.infer<typeof diagramLayoutConfigSchema>;
 // Layout ids sit one level below the diagram pair's root, so plain `switch`
 // cannot discriminate the pairing; these guards carry the comparison instead.
 function isElkLayeredDiagramInput(diagram: Diagram): diagram is ElkLayeredDiagram {
-  return diagram.layout.id === "elk-layered";
+  return diagram.layout.layoutId === "elk-layered";
 }
 
 function isSequenceDiagramInput(diagram: Diagram): diagram is SequenceDiagram {
-  return diagram.layout.id === "sequence";
+  return diagram.layout.layoutId === "sequence";
 }
 
 function isDependencyGraphDiagramInput(diagram: Diagram): diagram is DependencyGraphDiagram {
-  return diagram.layout.id === "dependency-graph";
+  return diagram.layout.layoutId === "dependency-graph";
 }
 
 export function layoutDiagram(diagram: Diagram, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {

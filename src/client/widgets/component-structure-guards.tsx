@@ -4,7 +4,10 @@ import {
   routeConditionIncludesBranch,
   routeConditionText,
 } from "@/client/widgets/component-structure-route-conditions";
-import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
+import {
+  type ProjectedComponentStructureGraph,
+  projectedComponentStructureNodeId,
+} from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { clearEdgeHighlight, reportEdgeHighlight } from "@/shared/react-flow/edge-highlight";
@@ -29,12 +32,13 @@ export function collectComponentOrigins(
   for (const node of graph.nodes) {
     const structured = node.type === "default" ? (node.layoutContext?.origins ?? []) : [];
     for (const origin of structured) {
-      add(node.id, `from ${origin.supplierTitle} (${origin.slot})`);
+      add(projectedComponentStructureNodeId(node), `from ${origin.supplierTitle} (${origin.slot})`);
     }
     if (structured.length > 0) continue;
     for (const edge of graph.edges) {
-      if (edge.target !== node.id || !edge.label) continue;
-      add(node.id, edge.label);
+      const nodeId = projectedComponentStructureNodeId(node);
+      if (edge.target !== nodeId || !edge.label) continue;
+      add(nodeId, edge.label);
     }
   }
   return new Map([...entriesByTarget].map(([target, entries]) => [target, [...entries].toSorted()]));
@@ -67,7 +71,7 @@ export function attachGuardLabels({
 }: ComponentGuardLabelsProps): DiagramReactFlowEdge[] {
   const graphEdgeById = new Map(graph.edges.map((edge) => [edge.id, edge]));
   const pointsByEdgeId = new Map(layout.edges.map((edge) => [edge.id, edge.points]));
-  const controlIds = new Set(controls.map((control) => control.id));
+  const controlIds = new Set(controls.map((control) => control.controlId));
   // Route-bearing edges get one combined label; the decoration pass below
   // needs the anchor for each, so collect them first.
   const labeled = edges.flatMap((edge) => {

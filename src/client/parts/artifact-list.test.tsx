@@ -5,16 +5,16 @@ import type { Artifact } from "@/features/artifact/artifact";
 
 function createDiagram(id: string, title: string): Artifact {
   return {
-    id,
+    artifactId: id,
     updatedAt: "2026-10-03T09:15:00.000Z",
     title,
     generator: "built-in:freeform",
     instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} workflow.`,
     diagram: {
-      layout: { id: "elk-layered" },
+      layout: { layoutId: "elk-layered" },
       graph: {
         groups: [],
-        nodes: [{ type: "default", id: `${id}-node`, kind: "step", title: `${title} step` }],
+        nodes: [{ type: "default", nodeId: `${id}-node`, kind: "step", title: `${title} step` }],
         edges: [],
       },
     },

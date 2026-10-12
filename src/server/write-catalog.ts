@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH } from "@/server/read-catalog";
 
 type WritableArtifact = Readonly<{
-  id: string;
+  artifactId: string;
   [key: string]: unknown;
 }>;
 type WritableArtifactCollection = readonly WritableArtifact[];
@@ -22,8 +22,8 @@ const catalogKinds = [
 
 async function writeArtifactFile(scopePath: string, relativePath: string, artifact: WritableArtifact): Promise<void> {
   const directoryPath = join(scopePath, relativePath);
-  const fileName = `${artifact.id}.json`;
-  const temporaryPath = join(directoryPath, `.${artifact.id}-${randomUUID()}.tmp`);
+  const fileName = `${artifact.artifactId}.json`;
+  const temporaryPath = join(directoryPath, `.${artifact.artifactId}-${randomUUID()}.tmp`);
 
   try {
     await writeFile(temporaryPath, JSON.stringify(artifact), { encoding: "utf8", flag: "wx" });
@@ -43,7 +43,7 @@ export async function writeCatalog(scopePath: string, catalog: WritableCatalog):
     const directoryPath = join(scopePath, relativePath);
     await mkdir(directoryPath, { recursive: true });
 
-    const nextFileNames = new Set(catalog[artifacts].map(({ id }) => `${id}.json`));
+    const nextFileNames = new Set(catalog[artifacts].map(({ artifactId }) => `${artifactId}.json`));
     const previousEntries = await readdir(directoryPath).catch((error) => {
       if (error instanceof Error && "code" in error && error.code === "ENOENT") return [] as string[];
       throw error;

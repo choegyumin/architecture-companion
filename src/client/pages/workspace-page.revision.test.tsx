@@ -28,33 +28,33 @@ function catalog(label: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { id: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
           graph: {
             groups: [],
-            nodes: [{ type: "default", id: "submit", kind: "trigger", title: `${label} workflow` }],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
             edges: [],
           },
         },
-        id: "checkout",
+        artifactId: "checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
       },
     ],
     designs: [
       {
-        id: "checkout-structure",
+        artifactId: "checkout-structure",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout structure",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from the current checkout components.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
             groups: [],
             nodes: [
               {
                 type: "default",
-                id: "checkout-page",
+                nodeId: "checkout-page",
                 kind: "component",
                 title: `${label} component`,
                 description: "Coordinates checkout",

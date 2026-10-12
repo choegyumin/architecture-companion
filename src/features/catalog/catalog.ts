@@ -43,8 +43,8 @@ export function parseCatalog(input: unknown): CompanionCatalog {
   ] as const) {
     const ids = new Set<string>();
     for (const artifact of artifacts) {
-      if (ids.has(artifact.id)) issues.push(`Duplicate ${kind} ID: ${artifact.id}`);
-      ids.add(artifact.id);
+      if (ids.has(artifact.artifactId)) issues.push(`Duplicate ${kind} ID: ${artifact.artifactId}`);
+      ids.add(artifact.artifactId);
     }
   }
   if (issues.length > 0) throw new Error(`Invalid catalog: ${issues.join("; ")}`);

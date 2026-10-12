@@ -1,6 +1,9 @@
 import type { ComponentSelection } from "@/client/widgets/component-structure-path-selection";
 import { selectEdgePath } from "@/client/widgets/component-structure-path-selection";
-import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
+import {
+  type ProjectedComponentStructureGraph,
+  projectedComponentStructureNodeId,
+} from "@/features/diagram/decision-nodes";
 import type {
   DiagramControl,
   DiagramRouteRequirementRule,
@@ -11,10 +14,10 @@ import type {
 // requirements and the ruleset joins the rules with ||, so a label states the
 // whole activation condition once instead of scattering pills.
 const requirementText = (controls: readonly DiagramControl[], controlId: string, value: string): string => {
-  const control = controls.find((item) => item.id === controlId);
+  const control = controls.find((item) => item.controlId === controlId);
   if (!control) return value;
   if (control.type === "branch") {
-    return control.cases.find((branchCase) => branchCase.id === value)?.label ?? value;
+    return control.cases.find((branchCase) => branchCase.caseId === value)?.label ?? value;
   }
   // Negate the entire label without interpreting the generator's expression syntax.
   return value === "off" ? `!(${control.label})` : control.label;
@@ -40,7 +43,7 @@ export function routeConditionIncludesBranch(
   guards: DiagramRouteRequirementRuleset,
 ): boolean {
   return guards.some((rule) =>
-    rule.some(({ controlId }) => controls.find((item) => item.id === controlId)?.type === "branch"),
+    rule.some(({ controlId }) => controls.find((item) => item.controlId === controlId)?.type === "branch"),
   );
 }
 
@@ -59,7 +62,7 @@ export type RouteConditionChange = Readonly<{
 
 const requirementValueLabel = (control: DiagramControl, value: string): string => {
   if (control.type !== "branch") return value;
-  return control.cases.find((branchCase) => branchCase.id === value)?.label ?? value;
+  return control.cases.find((branchCase) => branchCase.caseId === value)?.label ?? value;
 };
 
 // The before/after diff hovering an edge asks for: applying that route's rule
@@ -76,16 +79,19 @@ export function describeRouteSelectionChange(
   if (!representative) return [];
   const next = selectEdgePath(graph, selection, edgeId, representative.controlId, representative.value);
   const titleByDefinitionId = new Map(
-    graph.nodes.map((node) => [toDefinitionId(node.id), node.title ?? node.id] as const),
+    graph.nodes.map((node) => {
+      const nodeId = projectedComponentStructureNodeId(node);
+      return [toDefinitionId(nodeId), node.title ?? nodeId] as const;
+    }),
   );
   return graph.controls
-    .filter((control) => next[control.id] !== selection[control.id])
+    .filter((control) => next[control.controlId] !== selection[control.controlId])
     .map((control) => ({
-      controlId: control.id,
+      controlId: control.controlId,
       type: control.type,
       label: control.label,
-      ownerLabel: titleByDefinitionId.get(control.owner) ?? control.owner,
-      before: requirementValueLabel(control, selection[control.id] ?? ""),
-      after: requirementValueLabel(control, next[control.id] ?? ""),
+      ownerLabel: titleByDefinitionId.get(control.ownerNodeId) ?? control.ownerNodeId,
+      before: requirementValueLabel(control, selection[control.controlId] ?? ""),
+      after: requirementValueLabel(control, next[control.controlId] ?? ""),
     }));
 }

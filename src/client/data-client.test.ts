@@ -115,14 +115,14 @@ describe("DataClient", () => {
 
   it("sorts the diagrams of a Review response by title", async () => {
     const diagram = (id: string, title: string) => ({
-      id,
+      artifactId: id,
       updatedAt: "2026-10-03T09:15:00.000Z",
       title,
       generator: "built-in:freeform",
       instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} diagram from its current workflow or component boundary.`,
       diagram: {
-        layout: { id: "elk-layered" },
-        graph: { groups: [], nodes: [{ id: "start", type: "default", title: "Start" }], edges: [] },
+        layout: { layoutId: "elk-layered" },
+        graph: { groups: [], nodes: [{ nodeId: "start", type: "default", title: "Start" }], edges: [] },
       },
     });
     const fetcher: typeof fetch = vi.fn(

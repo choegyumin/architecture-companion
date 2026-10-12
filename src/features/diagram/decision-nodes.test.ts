@@ -7,15 +7,15 @@ import type { ComponentStructureDiagramGraph } from "@/features/diagram/diagram-
 const graph: ComponentStructureDiagramGraph = {
   groups: [],
   nodes: [
-    { id: "root", type: "default", title: "Root" },
-    { id: "leaf", type: "default", title: "Leaf" },
+    { nodeId: "root", type: "default", title: "Root" },
+    { nodeId: "leaf", type: "default", title: "Leaf" },
   ],
   edges: [
     {
-      id: "route",
+      edgeId: "route",
       type: "control",
-      source: "root",
-      target: "leaf",
+      sourceNodeId: "root",
+      targetNodeId: "leaf",
       activeWhen: [
         [{ controlId: "a", value: "a1" }],
         [
@@ -26,20 +26,20 @@ const graph: ComponentStructureDiagramGraph = {
     },
   ],
   layoutContext: {
-    roots: ["root"],
+    rootNodeIds: ["root"],
     controls: [
       {
-        id: "a",
-        owner: "root",
+        controlId: "a",
+        ownerNodeId: "root",
         type: "branch",
         label: "a",
         dependsOn: [[]],
         cases: [
-          { id: "a1", label: "A1" },
-          { id: "a2", label: "A2" },
+          { caseId: "a1", label: "A1" },
+          { caseId: "a2", label: "A2" },
         ],
       },
-      { id: "b", owner: "root", type: "conditional", label: "b", dependsOn: [[]] },
+      { controlId: "b", ownerNodeId: "root", type: "conditional", label: "b", dependsOn: [[]] },
     ],
   },
 };

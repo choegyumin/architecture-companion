@@ -496,21 +496,21 @@ async function verifyInstalledReactComponentGenerator(
   ]);
 
   type InstalledGraph = Readonly<{
-    layoutContext: Readonly<{ roots: readonly string[]; controls: readonly unknown[] }>;
+    layoutContext: Readonly<{ rootNodeIds: readonly string[]; controls: readonly unknown[] }>;
     edges: ReadonlyArray<{
-      source: string;
-      target: string;
+      sourceNodeId: string;
+      targetNodeId: string;
       layoutContext?: {
         composition?: {
           type: string;
           slot?: string;
-          origins: ReadonlyArray<{ supplierId: string; supplierTitle: string; slot: string }>;
+          origins: ReadonlyArray<{ supplierDefinitionId: string; supplierTitle: string; slot: string }>;
         } | null;
       };
     }>;
     groups: readonly unknown[];
     nodes: ReadonlyArray<{
-      id: string;
+      nodeId: string;
       title: string;
       layoutContext?: { origins?: ReadonlyArray<{ supplierTitle?: string; slot: string }> };
     }>;
@@ -542,20 +542,20 @@ async function verifyInstalledReactComponentGenerator(
   }
 
   function edgeFacts(graph: InstalledGraph) {
-    const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+    const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
     return graph.edges
       .map((edge) => ({
-        source: nodesById.get(edge.source)?.title,
-        target: nodesById.get(edge.target)?.title,
+        source: nodesById.get(edge.sourceNodeId)?.title,
+        target: nodesById.get(edge.targetNodeId)?.title,
         // Card origins remain an aggregate alongside per-edge composition metadata.
-        supplies: (nodesById.get(edge.target)?.layoutContext?.origins ?? []).map(({ slot }) => slot).toSorted(),
+        supplies: (nodesById.get(edge.targetNodeId)?.layoutContext?.origins ?? []).map(({ slot }) => slot).toSorted(),
       }))
       .toSorted((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   }
 
   const graph = await generateGraph();
   assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "layoutContext", "nodes"]);
-  assert.deepEqual(graph.layoutContext.roots, ["component:src/app.tsx#App"]);
+  assert.deepEqual(graph.layoutContext.rootNodeIds, ["component:src/app.tsx#App"]);
   assert.deepEqual(graph.layoutContext.controls, []);
   assert.deepEqual(graph.groups, []);
   assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
@@ -564,14 +564,14 @@ async function verifyInstalledReactComponentGenerator(
     { source: "Layout", target: "Content", supplies: ["children"] },
     { source: "Layout", target: "Header", supplies: [] },
   ]);
-  const contentId = graph.nodes.find(({ title }) => title === "Content")!.id;
+  const contentId = graph.nodes.find(({ title }) => title === "Content")!.nodeId;
   for (const edge of graph.edges) {
-    if (edge.target === contentId) {
+    if (edge.targetNodeId === contentId) {
       assert.deepEqual(edge.layoutContext, {
         composition: {
           type: "node",
           slot: "children",
-          origins: [{ supplierId: "component:src/app.tsx#App", supplierTitle: "App", slot: "children" }],
+          origins: [{ supplierDefinitionId: "component:src/app.tsx#App", supplierTitle: "App", slot: "children" }],
         },
       });
     } else {
@@ -581,7 +581,7 @@ async function verifyInstalledReactComponentGenerator(
 
   const externalAliasGraph = await generateGraph([], "external-src");
   assert.deepEqual(
-    externalAliasGraph.nodes.map(({ id }) => id),
+    externalAliasGraph.nodes.map(({ nodeId }) => nodeId),
     ["component:external-src/app.tsx#App", "external:ui-kit#Button"],
   );
   assert.deepEqual(edgeFacts(externalAliasGraph), [{ source: "App", target: "Button", supplies: [] }]);

@@ -23,17 +23,17 @@ function catalog(nodeTitle: string): CompanionCatalog {
   return {
     behaviors: [
       {
-        id: "checkout",
+        artifactId: "checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator: "built-in:freeform",
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
             groups: [],
-            nodes: [{ type: "default", id: "submit", kind: "trigger", title: nodeTitle }],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: nodeTitle }],
             edges: [],
           },
         },

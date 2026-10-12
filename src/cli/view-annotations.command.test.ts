@@ -9,16 +9,16 @@ import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } fro
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  id: "checkout",
+  artifactId: "checkout",
   title: "Workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions:
     "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-  layout: { id: "elk-layered" },
+  layout: { layoutId: "elk-layered" },
   graph: {
     groups: [],
-    nodes: [{ type: "default", id: "submit", kind: "trigger", title: "Checkout requested" }],
+    nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
     edges: [],
   },
 } as const;

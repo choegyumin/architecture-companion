@@ -37,8 +37,8 @@ async function readArtifactFile(scopePath: string, relativePath: string, fileNam
 
   try {
     const artifact = parseArtifact(input);
-    if (artifact.id !== fileName.slice(0, -ARTIFACT_FILE_SUFFIX.length)) {
-      return `Artifact file name does not match the artifact ID: ${filePath} must be ${artifact.id}.json`;
+    if (artifact.artifactId !== fileName.slice(0, -ARTIFACT_FILE_SUFFIX.length)) {
+      return `Artifact file name does not match the artifact ID: ${filePath} must be ${artifact.artifactId}.json`;
     }
     return artifact;
   } catch (error) {

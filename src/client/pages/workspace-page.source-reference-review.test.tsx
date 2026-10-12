@@ -15,7 +15,7 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 const catalog = {
   behaviors: [
     {
-      id: "checkout",
+      artifactId: "checkout",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout workflow",
       generator: "built-in:freeform",
@@ -23,40 +23,40 @@ const catalog = {
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the trigger and confirmation from src/workflow.ts.",
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
           nodes: [
             {
               type: "default",
-              id: "submit",
+              nodeId: "submit",
               kind: "trigger",
               title: "Checkout requested",
               links: [{ href: "source:///src/workflow.ts" }],
             },
-            { type: "default", id: "confirmed", kind: "result", title: "Order confirmed" },
+            { type: "default", nodeId: "confirmed", kind: "result", title: "Order confirmed" },
           ],
-          edges: [{ type: "default", id: "submit-confirmed", source: "submit", target: "confirmed" }],
+          edges: [{ type: "default", edgeId: "submit-confirmed", sourceNodeId: "submit", targetNodeId: "confirmed" }],
         },
       },
     },
   ],
   designs: [
     {
-      id: "structure",
+      artifactId: "structure",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions:
         "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts and its tests.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
           nodes: [
             {
               type: "default",
-              id: "checkout-page",
+              nodeId: "checkout-page",
               kind: "component",
               title: "Checkout page",
               description: "Coordinates checkout",

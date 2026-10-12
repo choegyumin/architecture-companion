@@ -59,17 +59,17 @@ function reviewArtifact(generator: string) {
   return {
     behaviors: [
       {
-        id: "checkout",
+        artifactId: "checkout",
         updatedAt: "2026-10-03T09:15:00.000Z",
         title: "Checkout workflow",
         generator,
         instructions:
           "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary with the selected generator.",
         diagram: {
-          layout: { id: "elk-layered" },
+          layout: { layoutId: "elk-layered" },
           graph: {
             groups: [],
-            nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+            nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
             edges: [],
           },
         },

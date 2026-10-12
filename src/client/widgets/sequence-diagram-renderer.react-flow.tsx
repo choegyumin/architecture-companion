@@ -16,9 +16,9 @@ export function buildSequenceDiagramReactFlowRenderModel(
   const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource);
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const edges = layout.edges.map<MessageReactFlowEdge>((placement) => {
-    const edge = artifact.diagram.graph.edges.find(({ id }) => id === placement.id);
+    const edge = artifact.diagram.graph.edges.find(({ edgeId }) => edgeId === placement.id);
     if (!edge) throw new Error(`Layout result references an unknown diagram edge: ${placement.id}`);
-    if (edge.type !== "message") throw new Error(`Sequence layout references a non-message edge: ${edge.id}`);
+    if (edge.type !== "message") throw new Error(`Sequence layout references a non-message edge: ${edge.edgeId}`);
     return toMessageReactFlowEdge(edge, placement.points, onLinkActivate);
   });
 

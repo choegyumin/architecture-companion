@@ -70,7 +70,10 @@ function DiagramRendererContent({
   );
   const searchLabels = useMemo(
     () =>
-      new Map([...artifact.diagram.graph.nodes, ...artifact.diagram.graph.groups].map(({ id, title }) => [id, title])),
+      new Map([
+        ...artifact.diagram.graph.nodes.map((node) => [node.nodeId, node.title] as const),
+        ...artifact.diagram.graph.groups.map((group) => [group.groupId, group.title] as const),
+      ]),
     [artifact],
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
@@ -143,13 +146,13 @@ function DiagramRendererContent({
     <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
       <ul aria-label="Diagram elements and connections" className="sr-only">
         {artifact.diagram.graph.nodes.map((node) => (
-          <li key={node.id}>
+          <li key={node.nodeId}>
             {node.kind}: {node.title}
           </li>
         ))}
         {artifact.diagram.graph.edges.map((edge) => (
-          <li key={edge.id}>
-            {edge.source} to {edge.target}
+          <li key={edge.edgeId}>
+            {edge.sourceNodeId} to {edge.targetNodeId}
             {diagramEdgeDisplay(edge).label ? (
               <>
                 {": "}

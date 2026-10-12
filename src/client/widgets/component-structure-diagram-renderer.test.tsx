@@ -5,7 +5,7 @@ import { vi } from "vitest";
 
 import { isComponentStructureArtifact, parseArtifact } from "@/features/artifact/artifact";
 import { calculateConditionPolarityPair } from "@/features/diagram/control-polarity";
-import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
+import { projectDecisionNodes, projectedComponentStructureNodeId } from "@/features/diagram/decision-nodes";
 
 import { ComponentStructureDiagramRenderer } from "./component-structure-diagram-renderer";
 import type { DiagramRendererBase } from "./diagram-renderer-base";
@@ -19,7 +19,11 @@ vi.mock("./diagram-renderer-base", () => ({
     const model = buildRenderModel(
       artifact,
       {
-        nodes: graph.nodes.map(({ id }) => ({ id, position: { x: 0, y: 0 }, size: { width: 200, height: 100 } })),
+        nodes: graph.nodes.map((node) => ({
+          id: projectedComponentStructureNodeId(node),
+          position: { x: 0, y: 0 },
+          size: { width: 200, height: 100 },
+        })),
         edges: [],
         groups: [],
         initialView: { mode: "fit" },
@@ -38,38 +42,38 @@ vi.mock("./diagram-renderer-base", () => ({
 
 function renderGate(polarityPair: true | undefined) {
   const artifact = parseArtifact({
-    id: "polarity",
+    artifactId: "polarity",
     title: "Polarity",
     generator: "built-in:freeform",
     updatedAt: "2026-10-12T00:00:00.000Z",
     instructions: "Review a source-negated gate whose false case is ON.",
     diagram: {
-      layout: { id: "component-structure" },
+      layout: { layoutId: "component-structure" },
       graph: {
         groups: [],
-        nodes: ["root", "yes", "no"].map((id) => ({ id, type: "default", title: id })),
+        nodes: ["root", "yes", "no"].map((id) => ({ nodeId: id, type: "default", title: id })),
         edges: [
           {
-            id: "yes",
+            edgeId: "yes",
             type: "control",
-            source: "root",
-            target: "yes",
+            sourceNodeId: "root",
+            targetNodeId: "yes",
             activeWhen: [[{ controlId: "gate", value: "false" }]],
           },
           {
-            id: "no",
+            edgeId: "no",
             type: "control",
-            source: "root",
-            target: "no",
+            sourceNodeId: "root",
+            targetNodeId: "no",
             activeWhen: [[{ controlId: "gate", value: "true" }]],
           },
         ],
         layoutContext: {
-          roots: ["root"],
+          rootNodeIds: ["root"],
           controls: [
             {
-              id: "gate",
-              owner: "root",
+              controlId: "gate",
+              ownerNodeId: "root",
               type: "branch",
               dependsOn: [[]],
               ...calculateConditionPolarityPair("!ready"),

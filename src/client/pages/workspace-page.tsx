@@ -863,8 +863,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   }
 
   const { catalog } = state.review;
-  const activeProcess = catalog.behaviors.find(({ id }) => id === activeProcessId) ?? catalog.behaviors.at(0);
-  const activeDesign = catalog.designs.find(({ id }) => id === activeDesignId) ?? catalog.designs.at(0);
+  const activeProcess =
+    catalog.behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? catalog.behaviors.at(0);
+  const activeDesign = catalog.designs.find(({ artifactId }) => artifactId === activeDesignId) ?? catalog.designs.at(0);
   const activeReviewView: ReviewView | null =
     requestedReviewView === "process" && activeProcess
       ? "process"
@@ -880,7 +881,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       ? {
           activeDiagram: activeProcess,
           ariaLabel: `${activeProcess.title} product behavior diagram`,
-          annotationSurface: { canvasId: `behavior:${activeProcess.id}` },
+          annotationSurface: { canvasId: `behavior:${activeProcess.artifactId}` },
           artifacts: catalog.behaviors,
           heading: "Product Behaviors",
           onSelect: setActiveProcessId,
@@ -889,7 +890,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         ? {
             activeDiagram: activeDesign,
             ariaLabel: `${activeDesign.title} code design diagram`,
-            annotationSurface: { canvasId: `design:${activeDesign.id}` },
+            annotationSurface: { canvasId: `design:${activeDesign.artifactId}` },
             artifacts: catalog.designs,
             heading: "Code Designs",
             onSelect: setActiveDesignId,
@@ -958,7 +959,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             <h2 className="sr-only">{activeDiagramCollection.heading}</h2>
             <div className="grid h-full min-h-0 min-w-0 grid-cols-[16rem_minmax(0,1fr)] gap-3">
               <ArtifactList
-                activeArtifactId={activeDiagramCollection.activeDiagram.id}
+                activeArtifactId={activeDiagramCollection.activeDiagram.artifactId}
                 artifacts={activeDiagramCollection.artifacts}
                 heading={activeDiagramCollection.heading}
                 onSelect={activeDiagramCollection.onSelect}

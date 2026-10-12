@@ -4,21 +4,21 @@ it("displays supplier slots from layoutContext and falls back to authored labels
   const graph = {
     nodes: [
       {
-        id: "supplied",
+        nodeId: "supplied",
         type: "default",
         title: "Supplied",
         layoutContext: {
           definitionId: "definition:Shared",
           origins: [
-            { supplierId: "outside:App", supplierTitle: "App", slot: "header" },
-            { supplierId: "outside:App", supplierTitle: "App", slot: "header" },
-            { supplierId: "outside:Other", supplierTitle: "Other", slot: "footer" },
+            { supplierDefinitionId: "outside:App", supplierTitle: "App", slot: "header" },
+            { supplierDefinitionId: "outside:App", supplierTitle: "App", slot: "header" },
+            { supplierDefinitionId: "outside:Other", supplierTitle: "Other", slot: "footer" },
           ],
         },
       },
-      { id: "authored", type: "default", title: "Authored" },
+      { nodeId: "authored", type: "default", title: "Authored" },
       {
-        id: "empty",
+        nodeId: "empty",
         type: "default",
         title: "Empty",
         layoutContext: { definitionId: "definition:Empty", origins: [] },

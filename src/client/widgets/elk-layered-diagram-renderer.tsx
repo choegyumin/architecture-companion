@@ -5,7 +5,7 @@ import { layoutElkLayeredDiagram } from "@/features/diagram/_layout/elk-layered-
 import type { DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 
 function calculateLayout(artifact: Artifact, nodeSizes: DiagramNodeSizes) {
-  if (artifact.diagram.layout.id !== "elk-layered") throw new Error("Expected an ELK layered diagram layout.");
+  if (artifact.diagram.layout.layoutId !== "elk-layered") throw new Error("Expected an ELK layered diagram layout.");
   return layoutElkLayeredDiagram(artifact.diagram.graph, nodeSizes, artifact.diagram.layout.options);
 }
 

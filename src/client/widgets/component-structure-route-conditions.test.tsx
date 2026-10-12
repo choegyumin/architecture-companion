@@ -12,8 +12,8 @@ import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import type { DiagramControl } from "@/features/diagram/diagram-graph";
 
 const conditional = (id: string, label: string): DiagramControl => ({
-  id,
-  owner: "parent",
+  controlId: id,
+  ownerNodeId: "parent",
   type: "conditional",
   label,
   dependsOn: [[]],
@@ -54,14 +54,14 @@ describe("component structure route conditions", () => {
   it("uses branch case labels even when their IDs are on and off", () => {
     const controls: DiagramControl[] = [
       {
-        id: "branch",
-        owner: "parent",
+        controlId: "branch",
+        ownerNodeId: "parent",
         type: "branch",
         label: "mode",
         dependsOn: [[]],
         cases: [
-          { id: "on", label: "preview" },
-          { id: "off", label: "edit" },
+          { caseId: "on", label: "preview" },
+          { caseId: "off", label: "edit" },
         ],
       },
     ];
@@ -75,15 +75,15 @@ describe("component structure route conditions", () => {
     const graph = projectDecisionNodes({
       groups: [],
       nodes: [
-        { type: "default", id: "parent", title: "MessageEdge" },
-        { type: "default", id: "child", title: "BaseEdge" },
+        { type: "default", nodeId: "parent", title: "MessageEdge" },
+        { type: "default", nodeId: "child", title: "BaseEdge" },
       ],
       edges: [
         {
           type: "control",
-          id: "render",
-          source: "parent",
-          target: "child",
+          edgeId: "render",
+          sourceNodeId: "parent",
+          targetNodeId: "child",
           activeWhen: [
             [
               { controlId: "data", value: "on" },
@@ -94,7 +94,7 @@ describe("component structure route conditions", () => {
         },
       ],
       layoutContext: {
-        roots: ["parent"],
+        rootNodeIds: ["parent"],
         controls: [conditional("data", "data"), conditional("first", "!first"), conditional("last", "!last")],
       },
     });

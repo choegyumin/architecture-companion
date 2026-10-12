@@ -156,7 +156,7 @@ export function toElkChildrenTree<Node extends Readonly<{ id: string; groupId?: 
 ): ElkNode[] {
   const buildGroup = (groupId: string): ElkNode => {
     const children = [
-      ...graph.groups.filter(({ parentId }) => parentId === groupId).map(({ id }) => buildGroup(id)),
+      ...graph.groups.filter(({ parentGroupId }) => parentGroupId === groupId).map(({ groupId: id }) => buildGroup(id)),
       ...graph.nodes.filter(({ groupId: nodeGroupId }) => nodeGroupId === groupId).map(toElkNode),
     ];
     return {
@@ -167,7 +167,7 @@ export function toElkChildrenTree<Node extends Readonly<{ id: string; groupId?: 
     };
   };
   return [
-    ...graph.groups.filter(({ parentId }) => !parentId).map(({ id }) => buildGroup(id)),
+    ...graph.groups.filter(({ parentGroupId }) => !parentGroupId).map(({ groupId: id }) => buildGroup(id)),
     ...graph.nodes.filter(({ groupId }) => !groupId).map(toElkNode),
   ];
 }
@@ -179,19 +179,19 @@ export async function runElkLayout(input: ElkNode): Promise<ElkNode> {
 
 /** Initial view framing for a layered flow: the single node no edge targets, or a fit. */
 export function toElkViewportPolicy(
-  nodes: readonly Readonly<{ id: string }>[],
-  edges: readonly Readonly<{ target: string }>[],
+  nodes: readonly Readonly<{ nodeId: string }>[],
+  edges: readonly Readonly<{ targetNodeId: string }>[],
   direction: ElkCoreDirection,
 ): DiagramViewFramingOptions {
-  const targetIds = new Set(edges.map(({ target }) => target));
-  const roots = nodes.filter(({ id }) => !targetIds.has(id));
+  const targetIds = new Set(edges.map(({ targetNodeId }) => targetNodeId));
+  const roots = nodes.filter(({ nodeId }) => !targetIds.has(nodeId));
   const root = roots.length === 1 ? roots.at(0) : undefined;
   if (!root) return { mode: "fit" };
 
   const isVertical = direction === "UP" || direction === "DOWN";
   return {
     mode: "node",
-    nodeId: root.id,
+    nodeId: root.nodeId,
     x: isVertical ? "center" : "clamp",
     y: isVertical ? "clamp" : "center",
   };

@@ -165,12 +165,12 @@ function expectReadableRoutes(
 // project: groups are selected structurally, never by literal id.
 const focusedDiagram = parseArtifact(artifactJson);
 const focusedSizes = Object.fromEntries(
-  focusedDiagram.diagram.graph.nodes.map(({ id }) => [id, { width: 288, height: 100 }]),
+  focusedDiagram.diagram.graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]),
 );
 const focusedLayout = layoutDependencyGraph(focusedDiagram.diagram.graph, focusedSizes);
 const focusedScenes = focusedDiagram.diagram.graph.groups.map((group) => ({
   title: group.title,
-  projections: projectDependencyEdges(focusedDiagram.diagram.graph, { type: "group", id: group.id }).filter(
+  projections: projectDependencyEdges(focusedDiagram.diagram.graph, { type: "group", id: group.groupId }).filter(
     (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
       projection.type === "aggregate",
   ),

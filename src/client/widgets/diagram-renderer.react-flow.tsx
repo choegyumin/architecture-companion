@@ -5,9 +5,10 @@ import type { MouseEvent } from "react";
 import type { DiagramReactFlowEdge, DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
-import type {
-  ProjectedComponentStructureGraph,
-  ProjectedComponentStructureNode,
+import {
+  type ProjectedComponentStructureGraph,
+  type ProjectedComponentStructureNode,
+  projectedComponentStructureNodeId,
 } from "@/features/diagram/decision-nodes";
 import type {
   DefaultDiagramNode,
@@ -49,7 +50,7 @@ function toDecisionNodeData(
 ): DecisionReactFlowNode["data"] {
   return {
     controlLabel: node.title,
-    ports: node.control.cases.map(({ id }) => id),
+    ports: node.control.cases.map(({ caseId }) => caseId),
   };
 }
 
@@ -130,10 +131,15 @@ function toLifelineNodeData(
 
 type MeasurableDiagramNode = Artifact["diagram"]["graph"]["nodes"][number] | ProjectedComponentStructureNode;
 
+// Stored nodes carry `nodeId`; the projected decision and non-component nodes carry `id`.
+function measurableNodeId(node: MeasurableDiagramNode): string {
+  return node.type === "decision" || node.type === "non-component" ? node.id : node.nodeId;
+}
+
 function toMeasurementNode(node: MeasurableDiagramNode, onOpenSource: (href: string) => void): DiagramReactFlowNode {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const common = {
-    id: node.id,
+    id: measurableNodeId(node),
     position: { x: 0, y: 0 },
     draggable: false,
     focusable: false,
@@ -179,7 +185,7 @@ function toMeasurementNode(node: MeasurableDiagramNode, onOpenSource: (href: str
     data: {
       node: {
         operator: node.operator,
-        branches: node.branches.map(({ id, guard }) => ({ id, guard })),
+        branches: node.branches.map(({ branchId, guard }) => ({ id: branchId, guard })),
       },
     },
     style: {
@@ -208,7 +214,7 @@ export function buildComponentStructureMeasurementNodes(
 
 export function resolveDiagramNodeSizes(
   source:
-    | Readonly<{ graph: { nodes: readonly { id: string }[] } }>
+    | Readonly<{ graph: { nodes: readonly { nodeId: string }[] } }>
     | Readonly<{ nodes: ProjectedComponentStructureGraph["nodes"] }>,
   nodes: readonly Pick<Node, "id" | "measured" | "type">[],
 ): DiagramNodeSizes {
@@ -223,7 +229,10 @@ export function resolveDiagramNodeSizes(
       return [node.id, DEFAULT_NODE_SIZE];
     }),
   );
-  const expectedIds = "graph" in source ? source.graph.nodes.map(({ id }) => id) : source.nodes.map(({ id }) => id);
+  const expectedIds =
+    "graph" in source
+      ? source.graph.nodes.map(({ nodeId }) => nodeId)
+      : source.nodes.map(projectedComponentStructureNodeId);
   const missingId = expectedIds.find((id) => !measuredNodeSizes[id]);
   if (missingId != null) throw new Error(`React Flow did not measure diagram node: ${missingId}`);
 
@@ -239,11 +248,11 @@ function toDiagramReactFlowNodes(
 ): DiagramReactFlowNode[] {
   const onLinkActivate = createDiagramLinkActivationHandler(onOpenSource);
   const placedGroups = layout.groups.map<LabeledGroupReactFlowNode>((placement) => {
-    const group = groups.find(({ id }) => id === placement.id);
+    const group = groups.find(({ groupId }) => groupId === placement.id);
     if (!group) throw new Error(`Layout result references an unknown diagram group: ${placement.id}`);
 
     return {
-      id: group.id,
+      id: group.groupId,
       type: "labeled-group",
       data: {
         label: group.title,
@@ -259,11 +268,11 @@ function toDiagramReactFlowNodes(
     };
   });
   const nodes = layout.nodes.map<DiagramReactFlowNode>((placement) => {
-    const node = graphNodes.find(({ id }) => id === placement.id);
+    const node = graphNodes.find((candidate) => measurableNodeId(candidate) === placement.id);
     if (!node) throw new Error(`Layout result references an unknown diagram node: ${placement.id}`);
 
     const common = {
-      id: node.id,
+      id: measurableNodeId(node),
       position: placement.position,
       ...(placement.parentId ? { parentId: placement.parentId } : {}),
       ...(placement.size ? { style: { width: placement.size.width, height: placement.size.height } } : {}),
@@ -308,7 +317,7 @@ function toDiagramReactFlowNodes(
       data: {
         node: {
           operator: node.operator,
-          branches: node.branches.map(({ id, guard }) => ({ id, guard })),
+          branches: node.branches.map(({ branchId, guard }) => ({ id: branchId, guard })),
         },
         ...(layoutData ? { layout: layoutData } : {}),
       },
@@ -347,9 +356,9 @@ export function toMessageReactFlowEdge(
   onLinkActivate: DiagramLinkActivationHandler,
 ): MessageReactFlowEdge {
   return {
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
+    id: edge.edgeId,
+    source: edge.sourceNodeId,
+    target: edge.targetNodeId,
     focusable: false,
     selectable: false,
     markerEnd: {
@@ -362,13 +371,13 @@ export function toMessageReactFlowEdge(
       ...(edge.messageType === "return" ? { strokeDasharray: "6 4" } : {}),
     },
     type: "message",
-    sourceHandle: `${edge.id}:source`,
-    targetHandle: `${edge.id}:target`,
+    sourceHandle: `${edge.edgeId}:source`,
+    targetHandle: `${edge.edgeId}:target`,
     zIndex: 1,
     data: {
       edge: {
-        source: edge.source,
-        target: edge.target,
+        source: edge.sourceNodeId,
+        target: edge.targetNodeId,
         ...(edge.kind ? { kind: edge.kind } : {}),
         ...(edge.label ? { label: edge.label } : {}),
         ...(edge.href ? { href: edge.href } : {}),

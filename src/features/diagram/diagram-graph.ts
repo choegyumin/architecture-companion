@@ -39,8 +39,8 @@ export type DiagramRouteRequirementRuleset = z.infer<typeof diagramRouteRequirem
 /* === Control === */
 
 const diagramControlBaseShape = {
-  id: diagramIdSchema,
-  owner: diagramIdSchema,
+  controlId: diagramIdSchema,
+  ownerNodeId: diagramIdSchema,
   label: z.string().min(1),
   dependsOn: diagramRouteRequirementRulesetSchema,
 };
@@ -50,7 +50,7 @@ export const diagramControlSchema = z.discriminatedUnion("type", [
     .object({
       ...diagramControlBaseShape,
       type: z.literal("branch"),
-      cases: z.array(z.object({ id: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
+      cases: z.array(z.object({ caseId: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
       /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
       polarityPair: z.literal(true).optional(),
     })
@@ -61,7 +61,7 @@ export type DiagramControl = z.infer<typeof diagramControlSchema>;
 /* === Node === */
 
 const diagramNodeBaseShape = {
-  id: diagramIdSchema,
+  nodeId: diagramIdSchema,
   title: z.string().min(1),
   description: z.string().min(1).optional(),
   details: z.array(z.string().min(1)).optional(),
@@ -87,7 +87,7 @@ const activationEndpointSchema = z
   .strict();
 const activationSchema = z
   .object({
-    id: diagramIdSchema,
+    activationId: diagramIdSchema,
     startsAt: activationEndpointSchema,
     endsAt: activationEndpointSchema,
   })
@@ -106,7 +106,7 @@ export type LifelineDiagramNode = z.infer<typeof lifelineDiagramNodeSchema>;
 
 const fragmentBranchSchema = z
   .object({
-    id: diagramIdSchema,
+    branchId: diagramIdSchema,
     guard: z.string().min(1),
     startMessageId: diagramIdSchema,
     endMessageId: diagramIdSchema,
@@ -135,10 +135,10 @@ export type DiagramNode = z.infer<typeof diagramNodeSchema>;
 
 export const defaultDiagramEdgeSchema = z
   .object({
-    id: diagramIdSchema,
+    edgeId: diagramIdSchema,
     type: z.literal("default"),
-    source: diagramIdSchema,
-    target: diagramIdSchema,
+    sourceNodeId: diagramIdSchema,
+    targetNodeId: diagramIdSchema,
     kind: z.string().min(1).optional(),
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
@@ -150,10 +150,10 @@ export type DefaultDiagramEdge = z.infer<typeof defaultDiagramEdgeSchema>;
 /** A composition gated by controls: the relationship applies when its `activeWhen` ruleset holds. */
 export const controlDiagramEdgeSchema = z
   .object({
-    id: diagramIdSchema,
+    edgeId: diagramIdSchema,
     type: z.literal("control"),
-    source: diagramIdSchema,
-    target: diagramIdSchema,
+    sourceNodeId: diagramIdSchema,
+    targetNodeId: diagramIdSchema,
     activeWhen: diagramRouteRequirementRulesetSchema,
   })
   .strict()
@@ -162,10 +162,10 @@ export type ControlDiagramEdge = z.infer<typeof controlDiagramEdgeSchema>;
 
 export const messageDiagramEdgeSchema = z
   .object({
-    id: diagramIdSchema,
+    edgeId: diagramIdSchema,
     type: z.literal("message"),
-    source: diagramIdSchema,
-    target: diagramIdSchema,
+    sourceNodeId: diagramIdSchema,
+    targetNodeId: diagramIdSchema,
     kind: z.string().min(1).optional(),
     label: z.string().min(1).optional(),
     href: z.string().min(1).optional(),
@@ -191,10 +191,10 @@ export function diagramEdgeDisplay(edge: DiagramEdge): Readonly<{ label?: string
 
 export const diagramGroupSchema = z
   .object({
-    id: diagramIdSchema,
+    groupId: diagramIdSchema,
     title: z.string().min(1),
     description: z.string().min(1).optional(),
-    parentId: diagramIdSchema.optional(),
+    parentGroupId: diagramIdSchema.optional(),
   })
   .strict()
   .meta({ id: "Group" });
@@ -212,38 +212,50 @@ type GraphIssue = Readonly<{ code: "custom"; path?: (string | number)[]; message
 function validateGraphIntegrity(graph: DiagramGraphLike): readonly GraphIssue[] {
   const issues: GraphIssue[] = [];
   const graphElements = [
-    ...graph.groups.map((element, index) => ({ element, path: ["groups", index, "id"] as const })),
-    ...graph.nodes.map((element, index) => ({ element, path: ["nodes", index, "id"] as const })),
-    ...graph.edges.map((element, index) => ({ element, path: ["edges", index, "id"] as const })),
+    ...graph.groups.map((element, index) => ({
+      element,
+      key: element.groupId,
+      path: ["groups", index, "groupId"] as const,
+    })),
+    ...graph.nodes.map((element, index) => ({
+      element,
+      key: element.nodeId,
+      path: ["nodes", index, "nodeId"] as const,
+    })),
+    ...graph.edges.map((element, index) => ({
+      element,
+      key: element.edgeId,
+      path: ["edges", index, "edgeId"] as const,
+    })),
   ];
-  graphElements.forEach(({ element, path }, index) => {
-    if (graphElements.findIndex(({ element: candidate }) => candidate.id === element.id) !== index) {
-      issues.push({ code: "custom", path: [...path], message: `Duplicate diagram element ID: ${element.id}` });
+  graphElements.forEach(({ key, path }, index) => {
+    if (graphElements.findIndex(({ key: candidate }) => candidate === key) !== index) {
+      issues.push({ code: "custom", path: [...path], message: `Duplicate diagram element ID: ${key}` });
     }
   });
 
-  const groupIds = new Set(graph.groups.map(({ id }) => id));
-  const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
-  const groupById = Object.fromEntries(graph.groups.map((group) => [group.id, group]));
+  const groupIds = new Set(graph.groups.map(({ groupId }) => groupId));
+  const nodeById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
+  const groupById = Object.fromEntries(graph.groups.map((group) => [group.groupId, group]));
 
   graph.groups.forEach((group, index) => {
-    if (group.parentId && !groupIds.has(group.parentId)) {
+    if (group.parentGroupId && !groupIds.has(group.parentGroupId)) {
       issues.push({
         code: "custom",
-        path: ["groups", index, "parentId"],
-        message: `Diagram group ${group.id} has unknown parent ${group.parentId}`,
+        path: ["groups", index, "parentGroupId"],
+        message: `Diagram group ${group.groupId} has unknown parent ${group.parentGroupId}`,
       });
     }
   });
 
   const containsGroupCycle = (groupId: string, ancestors: readonly string[]): boolean => {
     const group = groupById[groupId];
-    if (!group?.parentId) return false;
-    if (ancestors.includes(group.parentId)) return true;
-    return containsGroupCycle(group.parentId, [...ancestors, group.parentId]);
+    if (!group?.parentGroupId) return false;
+    if (ancestors.includes(group.parentGroupId)) return true;
+    return containsGroupCycle(group.parentGroupId, [...ancestors, group.parentGroupId]);
   };
 
-  if (graph.groups.some(({ id }) => containsGroupCycle(id, [id]))) {
+  if (graph.groups.some(({ groupId }) => containsGroupCycle(groupId, [groupId]))) {
     issues.push({ code: "custom", path: ["groups"], message: "Diagram group hierarchy contains a cycle" });
   }
 
@@ -252,26 +264,26 @@ function validateGraphIntegrity(graph: DiagramGraphLike): readonly GraphIssue[] 
       issues.push({
         code: "custom",
         path: ["nodes", index, "groupId"],
-        message: `Diagram node ${node.id} belongs to unknown group ${node.groupId}`,
+        message: `Diagram node ${node.nodeId} belongs to unknown group ${node.groupId}`,
       });
     }
   });
 
   graph.edges.forEach((edge, index) => {
-    const source = nodeById.get(edge.source);
-    const target = nodeById.get(edge.target);
+    const source = nodeById.get(edge.sourceNodeId);
+    const target = nodeById.get(edge.targetNodeId);
     if (!source) {
       issues.push({
         code: "custom",
-        path: ["edges", index, "source"],
-        message: `Diagram edge ${edge.id} sources unknown node ${edge.source}`,
+        path: ["edges", index, "sourceNodeId"],
+        message: `Diagram edge ${edge.edgeId} sources unknown node ${edge.sourceNodeId}`,
       });
     }
     if (!target) {
       issues.push({
         code: "custom",
-        path: ["edges", index, "target"],
-        message: `Diagram edge ${edge.id} targets unknown node ${edge.target}`,
+        path: ["edges", index, "targetNodeId"],
+        message: `Diagram edge ${edge.edgeId} targets unknown node ${edge.targetNodeId}`,
       });
     }
     // A message edge connects two lifelines wherever it appears, not only in
@@ -280,15 +292,15 @@ function validateGraphIntegrity(graph: DiagramGraphLike): readonly GraphIssue[] 
       if (source?.type !== "lifeline") {
         issues.push({
           code: "custom",
-          path: ["edges", index, "source"],
-          message: `Message edge ${edge.id} source must be a lifeline`,
+          path: ["edges", index, "sourceNodeId"],
+          message: `Message edge ${edge.edgeId} source must be a lifeline`,
         });
       }
       if (target?.type !== "lifeline") {
         issues.push({
           code: "custom",
-          path: ["edges", index, "target"],
-          message: `Message edge ${edge.id} target must be a lifeline`,
+          path: ["edges", index, "targetNodeId"],
+          message: `Message edge ${edge.edgeId} target must be a lifeline`,
         });
       }
     }
@@ -324,21 +336,21 @@ export type DiagramGraph = z.infer<typeof diagramGraphSchema>;
 function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue[] {
   const issues: GraphIssue[] = [];
   const messageEdges = graph.edges.filter((edge): edge is MessageDiagramEdge => edge.type === "message");
-  const messageById = new Map(messageEdges.map((edge) => [edge.id, edge]));
-  const messageIndexes = new Map(messageEdges.map((edge, index) => [edge.id, index]));
+  const messageById = new Map(messageEdges.map((edge) => [edge.edgeId, edge]));
+  const messageIndexes = new Map(messageEdges.map((edge, index) => [edge.edgeId, index]));
 
   graph.nodes.forEach((node, index) => {
     if (node.type === "lifeline") {
       const activationIds = new Set<string>();
       node.activations.forEach((activation, activationIndex) => {
-        if (activationIds.has(activation.id)) {
+        if (activationIds.has(activation.activationId)) {
           issues.push({
             code: "custom",
-            path: ["nodes", index, "activations", activationIndex, "id"],
-            message: `Duplicate activation ID: ${activation.id}`,
+            path: ["nodes", index, "activations", activationIndex, "activationId"],
+            message: `Duplicate activation ID: ${activation.activationId}`,
           });
         }
-        activationIds.add(activation.id);
+        activationIds.add(activation.activationId);
 
         for (const [boundaryName, boundary] of [
           ["startsAt", activation.startsAt],
@@ -349,17 +361,17 @@ function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue
             issues.push({
               code: "custom",
               path: ["nodes", index, "activations", activationIndex, boundaryName, "messageId"],
-              message: `Activation ${activation.id} references unknown message ${boundary.messageId}`,
+              message: `Activation ${activation.activationId} references unknown message ${boundary.messageId}`,
             });
             continue;
           }
 
-          const endpointNodeId = boundary.endpoint === "source" ? message.source : message.target;
-          if (endpointNodeId !== node.id) {
+          const endpointNodeId = boundary.endpoint === "source" ? message.sourceNodeId : message.targetNodeId;
+          if (endpointNodeId !== node.nodeId) {
             issues.push({
               code: "custom",
               path: ["nodes", index, "activations", activationIndex, boundaryName],
-              message: `Activation ${activation.id} ${boundaryName} does not belong to lifeline ${node.id}`,
+              message: `Activation ${activation.activationId} ${boundaryName} does not belong to lifeline ${node.nodeId}`,
             });
           }
         }
@@ -370,7 +382,7 @@ function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue
           issues.push({
             code: "custom",
             path: ["nodes", index, "activations", activationIndex],
-            message: `Activation ${activation.id} ends before it starts`,
+            message: `Activation ${activation.activationId} ends before it starts`,
           });
         }
       });
@@ -379,14 +391,14 @@ function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue
     if (node.type === "fragment") {
       const branchIds = new Set<string>();
       node.branches.forEach((branch, branchIndex) => {
-        if (branchIds.has(branch.id)) {
+        if (branchIds.has(branch.branchId)) {
           issues.push({
             code: "custom",
-            path: ["nodes", index, "branches", branchIndex, "id"],
-            message: `Duplicate fragment branch ID: ${branch.id}`,
+            path: ["nodes", index, "branches", branchIndex, "branchId"],
+            message: `Duplicate fragment branch ID: ${branch.branchId}`,
           });
         }
-        branchIds.add(branch.id);
+        branchIds.add(branch.branchId);
 
         const startIndex = messageIndexes.get(branch.startMessageId);
         const endIndex = messageIndexes.get(branch.endMessageId);
@@ -395,21 +407,21 @@ function validateSequenceGraph(graph: SequenceDiagramGraph): readonly GraphIssue
             issues.push({
               code: "custom",
               path: ["nodes", index, "branches", branchIndex, "startMessageId"],
-              message: `Fragment branch ${branch.id} references unknown message ${branch.startMessageId}`,
+              message: `Fragment branch ${branch.branchId} references unknown message ${branch.startMessageId}`,
             });
           }
           if (endIndex === undefined) {
             issues.push({
               code: "custom",
               path: ["nodes", index, "branches", branchIndex, "endMessageId"],
-              message: `Fragment branch ${branch.id} references unknown message ${branch.endMessageId}`,
+              message: `Fragment branch ${branch.branchId} references unknown message ${branch.endMessageId}`,
             });
           }
         } else if (startIndex > endIndex) {
           issues.push({
             code: "custom",
             path: ["nodes", index, "branches", branchIndex],
-            message: `Fragment branch ${branch.id} ends before it starts`,
+            message: `Fragment branch ${branch.branchId} ends before it starts`,
           });
         }
       });
@@ -459,7 +471,7 @@ export type DependencyDiagramGraph = z.infer<typeof dependencyDiagramGraphSchema
 
 /** Component provenance: the original supplier and slot, shared by node aggregates and edge compositions. */
 const componentOriginSchema = z
-  .object({ supplierId: diagramIdSchema, supplierTitle: z.string().min(1), slot: z.string().min(1) })
+  .object({ supplierDefinitionId: diagramIdSchema, supplierTitle: z.string().min(1), slot: z.string().min(1) })
   .strict()
   .meta({ id: "ComponentOrigin" });
 
@@ -501,7 +513,7 @@ const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
 /** Graph-level layout context for component structure: its roots and controls. */
 export const componentStructureLayoutContextSchema = z
   .object({
-    roots: z.array(diagramIdSchema).min(1).readonly(),
+    rootNodeIds: z.array(diagramIdSchema).min(1).readonly(),
     controls: z.array(diagramControlSchema).readonly(),
   })
   .strict();
@@ -510,16 +522,16 @@ export type ComponentStructureLayoutContext = z.infer<typeof componentStructureL
 /** Component structure integrity: declared roots and controls agree with the stored relationships. */
 function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph): readonly GraphIssue[] {
   const issues: GraphIssue[] = [];
-  const { roots, controls } = graph.layoutContext;
-  const controlsById = new Map(controls.map((control) => [control.id, control]));
-  const nodeIds = new Set(graph.nodes.map((node) => node.id));
+  const { rootNodeIds: roots, controls } = graph.layoutContext;
+  const controlsById = new Map(controls.map((control) => [control.controlId, control]));
+  const nodeIds = new Set(graph.nodes.map((node) => node.nodeId));
 
   const rootIds = new Set<string>();
   roots.forEach((root, index) => {
     if (!nodeIds.has(root) || rootIds.has(root)) {
       issues.push({
         code: "custom",
-        path: ["layoutContext", "roots", index],
+        path: ["layoutContext", "rootNodeIds", index],
         message: `${nodeIds.has(root) ? "Duplicate" : "Unknown"} component root: ${root}`,
       });
     }
@@ -528,32 +540,32 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
 
   const controlIds = new Set<string>();
   controls.forEach((control, index) => {
-    if (controlIds.has(control.id)) {
+    if (controlIds.has(control.controlId)) {
       issues.push({
         code: "custom",
-        path: ["layoutContext", "controls", index, "id"],
-        message: `Duplicate component control: ${control.id}`,
+        path: ["layoutContext", "controls", index, "controlId"],
+        message: `Duplicate component control: ${control.controlId}`,
       });
     }
-    controlIds.add(control.id);
-    if (!nodeIds.has(control.owner)) {
+    controlIds.add(control.controlId);
+    if (!nodeIds.has(control.ownerNodeId)) {
       issues.push({
         code: "custom",
-        path: ["layoutContext", "controls", index, "owner"],
-        message: `Unknown component control owner: ${control.owner}`,
+        path: ["layoutContext", "controls", index, "ownerNodeId"],
+        message: `Unknown component control owner: ${control.ownerNodeId}`,
       });
     }
     if (control.type === "branch") {
       const caseIds = new Set<string>();
       control.cases.forEach((branchCase, caseIndex) => {
-        if (caseIds.has(branchCase.id)) {
+        if (caseIds.has(branchCase.caseId)) {
           issues.push({
             code: "custom",
-            path: ["layoutContext", "controls", index, "cases", caseIndex, "id"],
-            message: `Duplicate component control case: ${branchCase.id}`,
+            path: ["layoutContext", "controls", index, "cases", caseIndex, "caseId"],
+            message: `Duplicate component control case: ${branchCase.caseId}`,
           });
         }
-        caseIds.add(branchCase.id);
+        caseIds.add(branchCase.caseId);
       });
     }
   });
@@ -581,7 +593,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
         } else if (
           control.type === "conditional"
             ? requirement.value !== "on" && requirement.value !== "off"
-            : !control.cases.some((branchCase) => branchCase.id === requirement.value)
+            : !control.cases.some((branchCase) => branchCase.caseId === requirement.value)
         ) {
           issues.push({
             code: "custom",
@@ -600,13 +612,13 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
     validateRuleset(control.dependsOn, ["layoutContext", "controls", index, "dependsOn"]);
   });
 
-  const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.target));
+  const targetsWithIncoming = new Set(graph.edges.map((edge) => edge.targetNodeId));
   graph.nodes.forEach((node, index) => {
-    if (!targetsWithIncoming.has(node.id) && !rootIds.has(node.id)) {
+    if (!targetsWithIncoming.has(node.nodeId) && !rootIds.has(node.nodeId)) {
       issues.push({
         code: "custom",
-        path: ["nodes", index, "id"],
-        message: `Component node without incoming edges must be a declared root: ${node.id}`,
+        path: ["nodes", index, "nodeId"],
+        message: `Component node without incoming edges must be a declared root: ${node.nodeId}`,
       });
     }
   });

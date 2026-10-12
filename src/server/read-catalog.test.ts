@@ -6,16 +6,16 @@ import { BEHAVIORS_RELATIVE_PATH, DESIGNS_RELATIVE_PATH, readCatalog } from "@/s
 import { writeCatalog } from "@/server/write-catalog";
 
 const checkoutBehavior = {
-  id: "checkout",
+  artifactId: "checkout",
   title: "Checkout workflow",
   updatedAt: "2026-10-03T09:15:00.000Z",
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
   diagram: {
-    layout: { id: "elk-layered" },
+    layout: { layoutId: "elk-layered" },
     graph: {
       groups: [],
-      nodes: [{ id: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+      nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
       edges: [],
     },
   },
@@ -61,7 +61,7 @@ describe("split catalog reading", () => {
 
       await expect(readCatalog(scopePath)).resolves.toMatchObject({
         status: "valid",
-        catalog: { behaviors: [{ id: "checkout" }] },
+        catalog: { behaviors: [{ artifactId: "checkout" }] },
       });
     } finally {
       await rm(scopePath, { recursive: true });
@@ -96,7 +96,7 @@ describe("split catalog reading", () => {
     try {
       await writeCatalog(scopePath, { behaviors: [], designs: [] });
       const designDirectory = join(scopePath, DESIGNS_RELATIVE_PATH);
-      const diagram = (id: string, title: string) => ({ ...checkoutBehavior, id, title });
+      const diagram = (id: string, title: string) => ({ ...checkoutBehavior, artifactId: id, title });
       await Promise.all(
         ["zoom-sync", "alpha-sync"].map((id) =>
           writeFile(join(designDirectory, `${id}.json`), JSON.stringify(diagram(id, id))),
@@ -105,7 +105,7 @@ describe("split catalog reading", () => {
 
       await expect(readCatalog(scopePath)).resolves.toMatchObject({
         status: "valid",
-        catalog: { designs: [{ id: "alpha-sync" }, { id: "zoom-sync" }] },
+        catalog: { designs: [{ artifactId: "alpha-sync" }, { artifactId: "zoom-sync" }] },
       });
     } finally {
       await rm(scopePath, { recursive: true });
