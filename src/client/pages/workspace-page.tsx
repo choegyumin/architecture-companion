@@ -538,12 +538,13 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
   const followSpotlight = useCallback(
     (spotlight: ArtifactSpotlight, catalog: NonNullable<ReviewResponse["catalog"]>) => {
-      if (catalog.behaviors.some(({ id }) => id === spotlight.artifactId)) {
+      const artifact = catalog.artifacts.find(({ artifactId }) => artifactId === spotlight.artifactId);
+      if (artifact?.type === "behavior") {
         setRequestedReviewView("process");
         setActiveProcessId(spotlight.artifactId);
         return;
       }
-      if (catalog.designs.some(({ id }) => id === spotlight.artifactId)) {
+      if (artifact?.type === "design") {
         setRequestedReviewView("design");
         setActiveDesignId(spotlight.artifactId);
       }
@@ -960,7 +961,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const activeSpotlight: SpotlightController | undefined =
     spotlightState &&
     activeDiagramCollection &&
-    spotlightState.spotlight.artifactId === activeDiagramCollection.activeDiagram.id
+    spotlightState.spotlight.artifactId === activeDiagramCollection.activeDiagram.artifactId
       ? {
           spotlight: spotlightState.spotlight,
           stepIndex: spotlightState.stepIndex,

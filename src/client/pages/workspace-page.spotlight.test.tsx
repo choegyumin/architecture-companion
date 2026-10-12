@@ -12,56 +12,64 @@ import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
-      id: "invite-member",
+      artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Invite member",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview member invitations.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
           nodes: [
-            { type: "default", id: "invite", kind: "trigger", title: "Invitation submitted" },
-            { type: "default", id: "delivered", kind: "result", title: "Invitation delivered" },
+            { type: "default", nodeId: "invite", kind: "trigger", title: "Invitation submitted" },
+            { type: "default", nodeId: "delivered", kind: "result", title: "Invitation delivered" },
           ],
-          edges: [{ type: "default", id: "invite-delivered", source: "invite", target: "delivered" }],
+          edges: [{ type: "default", edgeId: "invite-delivered", sourceNodeId: "invite", targetNodeId: "delivered" }],
         },
       },
     },
-  ],
-  designs: [
     {
-      id: "checkout-structure",
+      artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Checkout structure",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview checkout ownership.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
           nodes: [
-            { type: "default", id: "checkout-page", kind: "component", title: "Checkout page" },
-            { type: "default", id: "payment-client", kind: "client", title: "Payment client" },
+            { type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" },
+            { type: "default", nodeId: "payment-client", kind: "client", title: "Payment client" },
           ],
-          edges: [{ type: "default", id: "uses-payment-client", source: "checkout-page", target: "payment-client" }],
+          edges: [
+            {
+              type: "default",
+              edgeId: "uses-payment-client",
+              sourceNodeId: "checkout-page",
+              targetNodeId: "payment-client",
+            },
+          ],
         },
       },
     },
     {
-      id: "settings-structure",
+      artifactId: ".architecture-companion/artifacts/settings-structure.archcomp.json",
+      type: "design",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Settings structure",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview settings ownership.",
       diagram: {
-        layout: { id: "elk-layered" },
+        layout: { layoutId: "elk-layered" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", id: "settings-page", kind: "component", title: "Settings page" }],
+          nodes: [{ type: "default", nodeId: "settings-page", kind: "component", title: "Settings page" }],
           edges: [],
         },
       },
@@ -70,7 +78,7 @@ const catalog = {
 };
 
 const designSpotlight = {
-  artifactId: "checkout-structure",
+  artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
   diagram: {
     steps: [
       { elements: [{ type: "node", id: "checkout-page" }], caption: "Checkout page owns the flow" },
@@ -80,21 +88,22 @@ const designSpotlight = {
 };
 
 const sequenceCatalog = {
-  behaviors: [
+  artifacts: [
     {
-      id: "review-session",
+      artifactId: ".architecture-companion/artifacts/review-session.archcomp.json",
+      type: "behavior",
       updatedAt: "2026-10-03T09:15:00.000Z",
       title: "Review session",
       generator: "built-in:freeform",
       instructions: "## Purpose\nReview the review session flow.",
       diagram: {
-        layout: { id: "sequence" },
+        layout: { layoutId: "sequence" },
         graph: {
           groups: [],
           nodes: [
             {
               type: "lifeline",
-              id: "user",
+              nodeId: "user",
               kind: "actor",
               title: "User",
               links: [],
@@ -102,19 +111,27 @@ const sequenceCatalog = {
             },
             {
               type: "lifeline",
-              id: "server",
+              nodeId: "server",
               kind: "participant",
               title: "Server",
               links: [],
               activations: [],
             },
           ],
-          edges: [{ type: "message", id: "m1", source: "user", target: "server", label: "POST", messageType: "sync" }],
+          edges: [
+            {
+              type: "message",
+              edgeId: "m1",
+              sourceNodeId: "user",
+              targetNodeId: "server",
+              label: "POST",
+              messageType: "sync",
+            },
+          ],
         },
       },
     },
   ],
-  designs: [],
 };
 
 async function renderWorkspace(catalogContents: typeof catalog | typeof sequenceCatalog = catalog) {
@@ -217,7 +234,7 @@ describe("workspace spotlight", () => {
       );
 
       await publishSpotlight(app, {
-        artifactId: "invite-member",
+        artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
         diagram: { steps: [{ elements: [{ type: "edge", id: "invite-delivered" }] }] },
       });
 
@@ -268,7 +285,7 @@ describe("workspace spotlight", () => {
 
     try {
       await publishSpotlight(app, {
-        artifactId: "review-session",
+        artifactId: ".architecture-companion/artifacts/review-session.archcomp.json",
         diagram: { steps: [{ elements: [{ type: "node", id: "user" }], caption: "The user drives the session" }] },
       });
 
