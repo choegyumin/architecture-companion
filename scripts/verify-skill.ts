@@ -703,15 +703,15 @@ async function verifyInstalledCatalogEntry(
     generator: "built-in:freeform",
     instructions: "Review checkout behavior.",
     diagram: {
-      layout: { id: "elk-layered" },
-      graph: { groups: [], nodes: [{ id: "checkout", type: "default", title: "Checkout" }], edges: [] },
+      layout: { layoutId: "elk-layered" },
+      graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
     },
   };
   await writeFixtureFile(scopePath, relativePath, JSON.stringify(artifact));
   const scriptPath = join(skillRoot, "runtime", "cli", "view-catalog.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
   assertSuccessfulCompletion(result, scriptPath);
-  assert.deepEqual(JSON.parse(result.stdout), { artifacts: [{ ...artifact, id: relativePath }] });
+  assert.deepEqual(JSON.parse(result.stdout), { artifacts: [{ ...artifact, artifactId: relativePath }] });
   await rm(join(scopePath, relativePath));
 }
 
