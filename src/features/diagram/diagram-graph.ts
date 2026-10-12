@@ -473,9 +473,16 @@ export type DependencyDiagramGraph = z.infer<typeof dependencyDiagramGraphSchema
 
 /** Component provenance: the original supplier and slot, shared by node aggregates and edge compositions. */
 const componentOriginSchema = z
-  .object({ supplierDefinitionId: diagramIdSchema, supplierTitle: z.string().min(1), slot: z.string().min(1) })
+  .object({ supplierDefinitionId: diagramIdSchema, slot: z.string().min(1) })
   .strict()
   .meta({ id: "ComponentOrigin" });
+
+/** A named definition kept for display even though the graph has no node for it. */
+const auxiliaryDefinitionSchema = z
+  .object({ definitionId: diagramIdSchema, title: z.string().min(1) })
+  .strict()
+  .meta({ id: "AuxiliaryDefinition" });
+export type AuxiliaryDefinition = z.infer<typeof auxiliaryDefinitionSchema>;
 
 const componentStructureNodeLayoutContextSchema = z
   .object({
@@ -517,6 +524,9 @@ export const componentStructureLayoutContextSchema = z
   .object({
     rootNodeIds: z.array(diagramIdSchema).min(1).readonly(),
     controls: z.array(diagramControlSchema).readonly(),
+    // Recommended for referenced definitions without a node; registering a
+    // definition that also has a node is allowed, and so is omitting entries.
+    auxiliaryDefinitions: z.array(auxiliaryDefinitionSchema).readonly().optional(),
   })
   .strict();
 export type ComponentStructureLayoutContext = z.infer<typeof componentStructureLayoutContextSchema>;
@@ -570,6 +580,18 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
         caseIds.add(branchCase.caseId);
       });
     }
+  });
+
+  const registryIds = new Set<string>();
+  (graph.layoutContext.auxiliaryDefinitions ?? []).forEach((auxiliary, index) => {
+    if (registryIds.has(auxiliary.definitionId)) {
+      issues.push({
+        code: "custom",
+        path: ["layoutContext", "auxiliaryDefinitions", index, "definitionId"],
+        message: `Duplicate auxiliary definition: ${auxiliary.definitionId}`,
+      });
+    }
+    registryIds.add(auxiliary.definitionId);
   });
 
   const validateRuleset = (ruleset: DiagramRouteRequirementRuleset, issuePath: (string | number)[]) => {

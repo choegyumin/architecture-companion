@@ -3099,13 +3099,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     controls: DiagramControl[],
     roots: string[],
   ): BuilderGraph {
-    const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
     function compositionOrigins(relationship: Relationship): ComponentComposition["origins"] {
       return relationship.kind === "inline-render"
         ? []
         : relationship.origins.map(({ supplierId, prop }) => ({
             supplierDefinitionId: supplierId,
-            supplierTitle: definitionsById.get(supplierId)?.name ?? supplierId,
             slot: prop,
           }));
     }
@@ -3211,12 +3209,32 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   /** Converts the builder graph to the stored contract: tautological gates become plain default edges, real gates become control edges, and roots and controls move into the graph's layout context. */
-  function toStoredGraph(graph: BuilderGraph): ComponentStructureDiagramGraph {
+  function toStoredGraph(
+    graph: BuilderGraph,
+    supplierTitles: ReadonlyMap<string, string>,
+  ): ComponentStructureDiagramGraph {
     const compositionTypes: Record<SuppliedValueKind, ComponentComposition["type"]> = {
       "node-prop": "node",
       "render-prop": "render",
       "component-prop": "component",
     };
+    const nodeDefinitionIds = new Set(
+      graph.nodes.flatMap((node) => (node.layoutContext ? [node.layoutContext.definitionId] : [])),
+    );
+    const suppliedDefinitionIds = new Set([
+      ...graph.nodes.flatMap((node) =>
+        (node.layoutContext?.origins ?? []).map(({ supplierDefinitionId }) => supplierDefinitionId),
+      ),
+      ...graph.edges.flatMap((edge) =>
+        edge.composition.kind === "inline-render"
+          ? []
+          : edge.composition.origins.map(({ supplierDefinitionId }) => supplierDefinitionId),
+      ),
+    ]);
+    const auxiliaryDefinitions = [...suppliedDefinitionIds]
+      .filter((definitionId) => !nodeDefinitionIds.has(definitionId))
+      .map((definitionId) => ({ definitionId, title: supplierTitles.get(definitionId) ?? definitionId }))
+      .toSorted((left, right) => left.definitionId.localeCompare(right.definitionId));
     return {
       groups: graph.groups,
       nodes: graph.nodes,
@@ -3246,6 +3264,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             ? control
             : { ...control, dependsOn },
         ),
+        // Referenced supplier definitions without a node keep their names here;
+        // the registry is omitted when every supplier stayed in the graph.
+        ...(auxiliaryDefinitions.length > 0 ? { auxiliaryDefinitions } : {}),
       },
     };
   }
@@ -4034,7 +4055,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         : graph;
     // Decision nodes and split segments are display projections now - the
     // stored graph keeps only components, relationships, controls, and roots.
-    return toStoredGraph(mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships));
+    const supplierTitles = new Map(collapsed.instances.map(({ target }) => [target.id, target.title] as const));
+    return toStoredGraph(
+      mergeEquivalentContexts(focused, collapsed.instances, collapsed.relationships),
+      supplierTitles,
+    );
   }
   return buildComponentGraph;
 }

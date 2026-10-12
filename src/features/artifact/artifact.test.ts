@@ -101,8 +101,8 @@ const composition = {
   type: "node",
   slot: "children",
   origins: [
-    { supplierDefinitionId: "outside:App", supplierTitle: "App", slot: "header" },
-    { supplierDefinitionId: "outside:Other", supplierTitle: "Other", slot: "footer" },
+    { supplierDefinitionId: "outside:App", slot: "header" },
+    { supplierDefinitionId: "outside:Other", slot: "footer" },
   ],
 };
 const nodeLayoutContext = { definitionId: "definition:Shared", origins: composition.origins };
@@ -284,8 +284,9 @@ describe("component layout context", () => {
     {},
     { ...nodeLayoutContext, definitionId: "" },
     { definitionId: "definition:Shared" },
-    { ...nodeLayoutContext, origins: [{ supplierDefinitionId: "outside:App", supplierTitle: "App", prop: "header" }] },
+    { ...nodeLayoutContext, origins: [{ supplierDefinitionId: "outside:App", prop: "header" }] },
     { ...nodeLayoutContext, origins: [{ ...composition.origins.at(0), slot: "" }] },
+    { ...nodeLayoutContext, origins: [{ ...composition.origins.at(0), supplierTitle: "App" }] },
     { ...nodeLayoutContext, component: nodeLayoutContext },
   ])("rejects malformed node layout context: %j", (layoutContext) => {
     const graph = {
@@ -346,6 +347,51 @@ describe("component layout context", () => {
       ).toThrow("Invalid artifact");
     }
   });
+
+  it("preserves auxiliary definition titles through JSON", () => {
+    const auxiliaryDefinitions = [
+      { definitionId: "outside:App", title: "App" },
+      { definitionId: "outside:Other", title: "Other" },
+    ];
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      layoutContext: { ...validComponentDiagram.diagram.graph.layoutContext, auxiliaryDefinitions },
+    };
+    const artifact = { ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } };
+    expect(parseArtifact(JSON.parse(JSON.stringify(artifact)))).toEqual(artifact);
+  });
+
+  it("rejects duplicate registry entries", () => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      layoutContext: {
+        ...validComponentDiagram.diagram.graph.layoutContext,
+        auxiliaryDefinitions: [
+          { definitionId: "outside:App", title: "App" },
+          { definitionId: "outside:App", title: "App again" },
+        ],
+      },
+    };
+    expect(() =>
+      parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+    ).toThrow("Duplicate auxiliary definition: outside:App");
+  });
+
+  it.each([
+    [{ definitionId: "outside:App" }],
+    [{ definitionId: "outside:App", title: "App", extra: true }],
+    [{ definitionId: "", title: "App" }],
+    [{ definitionId: "outside:App", title: "" }],
+    "not-an-array",
+  ])("rejects malformed auxiliary definitions: %j", (auxiliaryDefinitions) => {
+    const graph = {
+      ...validComponentDiagram.diagram.graph,
+      layoutContext: { ...validComponentDiagram.diagram.graph.layoutContext, auxiliaryDefinitions },
+    };
+    expect(() =>
+      parseArtifact({ ...validComponentDiagram, diagram: { ...validComponentDiagram.diagram, graph } }),
+    ).toThrow("Invalid artifact");
+  });
 });
 
 describe("component composition metadata", () => {
@@ -398,7 +444,7 @@ describe("component composition metadata", () => {
     { type: "node" },
     { ...composition, unexpected: true },
     { ...composition, origins: [{ ...composition.origins.at(0), supplierDefinitionId: "" }] },
-    { ...composition, origins: [{ ...composition.origins.at(0), supplierTitle: "" }] },
+    { ...composition, origins: [{ ...composition.origins.at(0), supplierTitle: "App" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), slot: "" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), input: "header" }] },
     { ...composition, origins: [{ ...composition.origins.at(0), prop: "header" }] },
@@ -457,9 +503,14 @@ describe("component composition metadata", () => {
     expect(schema.$defs).toMatchObject({
       ComponentOrigin: {
         type: "object",
-        required: ["supplierDefinitionId", "supplierTitle", "slot"],
+        required: ["supplierDefinitionId", "slot"],
         additionalProperties: false,
         properties: { slot: { type: "string", minLength: 1 } },
+      },
+      AuxiliaryDefinition: {
+        type: "object",
+        required: ["definitionId", "title"],
+        additionalProperties: false,
       },
       ComponentComposition: {
         type: "object",

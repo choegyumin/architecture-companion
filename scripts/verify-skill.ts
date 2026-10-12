@@ -504,7 +504,7 @@ async function verifyInstalledReactComponentGenerator(
         composition?: {
           type: string;
           slot?: string;
-          origins: ReadonlyArray<{ supplierDefinitionId: string; supplierTitle: string; slot: string }>;
+          origins: ReadonlyArray<{ supplierDefinitionId: string; slot: string }>;
         } | null;
       };
     }>;
@@ -512,7 +512,7 @@ async function verifyInstalledReactComponentGenerator(
     nodes: ReadonlyArray<{
       nodeId: string;
       title: string;
-      layoutContext?: { origins?: ReadonlyArray<{ supplierTitle?: string; slot: string }> };
+      layoutContext?: { origins?: ReadonlyArray<{ slot: string }> };
     }>;
   }>;
 
@@ -557,6 +557,8 @@ async function verifyInstalledReactComponentGenerator(
   assert.deepEqual(Object.keys(graph).toSorted(), ["edges", "groups", "layoutContext", "nodes"]);
   assert.deepEqual(graph.layoutContext.rootNodeIds, ["component:src/app.tsx#App"]);
   assert.deepEqual(graph.layoutContext.controls, []);
+  // Every supplier stays in the unfocused graph, so the registry stays omitted.
+  assert.equal(Object.hasOwn(graph.layoutContext, "auxiliaryDefinitions"), false);
   assert.deepEqual(graph.groups, []);
   assert.deepEqual(graph.nodes.map(({ title }) => title).toSorted(), ["App", "Content", "Header", "Layout"]);
   assert.deepEqual(edgeFacts(graph), [
@@ -571,7 +573,7 @@ async function verifyInstalledReactComponentGenerator(
         composition: {
           type: "node",
           slot: "children",
-          origins: [{ supplierDefinitionId: "component:src/app.tsx#App", supplierTitle: "App", slot: "children" }],
+          origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
         },
       });
     } else {

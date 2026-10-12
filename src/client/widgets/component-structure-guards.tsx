@@ -21,6 +21,7 @@ export function collectComponentOrigins(
   graph: Readonly<{
     nodes: ProjectedComponentStructureGraph["nodes"];
     edges: readonly Readonly<{ target: string; source: string; label?: string }>[];
+    layoutContext?: { auxiliaryDefinitions?: readonly { definitionId: string; title: string }[] };
   }>,
 ): ReadonlyMap<string, readonly string[]> {
   const entriesByTarget = new Map<string, Set<string>>();
@@ -29,10 +30,26 @@ export function collectComponentOrigins(
     if (known) known.add(entry);
     else entriesByTarget.set(target, new Set([entry]));
   };
+  const registryTitles = new Map(
+    (graph.layoutContext?.auxiliaryDefinitions ?? []).map(({ definitionId, title }) => [definitionId, title]),
+  );
+  const nodeTitlesByDefinitionId = new Map(
+    graph.nodes.flatMap((node) =>
+      node.type === "default" && node.layoutContext ? [[node.layoutContext.definitionId, node.title] as const] : [],
+    ),
+  );
+  // Supplier names are not stored on origins: the registry wins, then any node
+  // carrying the same definition, and only then a fixed label — a supplier can
+  // legitimately sit outside the graph, e.g. when --root focus dropped it.
+  const supplierTitle = (definitionId: string): string =>
+    registryTitles.get(definitionId) ?? nodeTitlesByDefinitionId.get(definitionId) ?? "outside graph";
   for (const node of graph.nodes) {
     const structured = node.type === "default" ? (node.layoutContext?.origins ?? []) : [];
     for (const origin of structured) {
-      add(projectedComponentStructureNodeId(node), `from ${origin.supplierTitle} (${origin.slot})`);
+      add(
+        projectedComponentStructureNodeId(node),
+        `from ${supplierTitle(origin.supplierDefinitionId)} (${origin.slot})`,
+      );
     }
     if (structured.length > 0) continue;
     for (const edge of graph.edges) {

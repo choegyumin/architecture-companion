@@ -825,14 +825,14 @@ describe("component rendering controls", () => {
           type: "node",
           slot: "children",
           origins: expect.arrayContaining([
-            { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
-            { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
+            { supplierDefinitionId: "component:app.tsx#App", slot: "header" },
+            { supplierDefinitionId: "component:app.tsx#App", slot: "footer" },
           ]),
         },
         {
           type: "node",
           slot: "children",
-          origins: [{ supplierDefinitionId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#Other", slot: "header" }],
         },
       ]),
     );
@@ -840,9 +840,9 @@ describe("component rendering controls", () => {
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "header" },
-        { supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "footer" },
-        { supplierDefinitionId: "component:app.tsx#Other", supplierTitle: "Other", slot: "header" },
+        { supplierDefinitionId: "component:app.tsx#App", slot: "header" },
+        { supplierDefinitionId: "component:app.tsx#App", slot: "footer" },
+        { supplierDefinitionId: "component:app.tsx#Other", slot: "header" },
       ]),
     );
   });
@@ -863,9 +863,9 @@ describe("component rendering controls", () => {
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
       expect.arrayContaining([
-        { supplierDefinitionId: "component:app.tsx#First", supplierTitle: "First", slot: "children" },
-        { supplierDefinitionId: "component:app.tsx#First", supplierTitle: "First", slot: "panel" },
-        { supplierDefinitionId: "component:app.tsx#Second", supplierTitle: "Second", slot: "children" },
+        { supplierDefinitionId: "component:app.tsx#First", slot: "children" },
+        { supplierDefinitionId: "component:app.tsx#First", slot: "panel" },
+        { supplierDefinitionId: "component:app.tsx#Second", slot: "children" },
       ]),
     );
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
@@ -890,16 +890,24 @@ describe("component rendering controls", () => {
         composition: {
           type: "node",
           slot: "children",
-          origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#App", slot: "children" }],
         },
       },
     });
     expect(graph.nodes.some(({ nodeId }) => nodeId === "component:app.tsx#App")).toBe(false);
     expect(graph.nodes.find(({ title }) => title === "Leaf")).toMatchObject({
       layoutContext: {
-        origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot: "children" }],
+        origins: [{ supplierDefinitionId: "component:app.tsx#App", slot: "children" }],
       },
     });
+    // The dropped supplier stays nameable through the auxiliary registry.
+    expect(graph.layoutContext.auxiliaryDefinitions).toEqual([{ definitionId: "component:app.tsx#App", title: "App" }]);
+    const unfocused = await graphFor(`
+      function Leaf() { return <span />; }
+      function Shell({ children, visible }) { return <>{visible && children}</>; }
+      export function App({ ready }) { return <Shell>{ready && <Leaf />}</Shell>; }
+    `);
+    expect(Object.hasOwn(unfocused.layoutContext, "auxiliaryDefinitions")).toBe(false);
   });
 
   it("keeps only the created seed as root of a conditional source cycle", async () => {
@@ -1024,7 +1032,7 @@ describe("component rendering controls", () => {
         composition: {
           type: compositionType,
           slot,
-          origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot }],
+          origins: [{ supplierDefinitionId: "component:app.tsx#App", slot }],
         },
       });
       const target = nodes.get(edge.targetNodeId)!;
@@ -1045,7 +1053,7 @@ describe("component rendering controls", () => {
         ),
       ).toEqual(["App", "Consumer"]);
       expect(nodes.get(edge.targetNodeId)).toMatchObject({
-        layoutContext: { origins: [{ supplierDefinitionId: "component:app.tsx#App", supplierTitle: "App", slot }] },
+        layoutContext: { origins: [{ supplierDefinitionId: "component:app.tsx#App", slot }] },
       });
     }
   });

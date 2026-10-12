@@ -1,4 +1,5 @@
 import type {
+  AuxiliaryDefinition,
   ComponentStructureDiagramGraph,
   ComponentStructureDiagramNode,
   DiagramControl,
@@ -57,6 +58,7 @@ export type ProjectedComponentStructureGraph = Readonly<{
   edges: readonly ProjectedComponentStructureEdge[];
   roots: readonly string[];
   controls: readonly DiagramControl[];
+  auxiliaryDefinitions?: readonly AuxiliaryDefinition[];
 }>;
 
 // Each dead case gets its own non-component node: a case that renders nothing
@@ -317,5 +319,8 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
     edges: [...projectedEdges].toSorted((left, right) => left.id.localeCompare(right.id)),
     roots: graph.layoutContext.rootNodeIds,
     controls,
+    ...(graph.layoutContext.auxiliaryDefinitions
+      ? { auxiliaryDefinitions: graph.layoutContext.auxiliaryDefinitions }
+      : {}),
   };
 }

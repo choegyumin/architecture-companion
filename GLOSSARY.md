@@ -127,7 +127,7 @@ One of the values a branch control chooses between. Each case appears as one por
 A label stating the condition under which a path applies. On a sequence diagram it describes a fragment's branch; on a component structure diagram it is a Route Requirement Ruleset derived from the stored relationship's `activeWhen`.
 
 **Layout Context**:
-The layout-specific data of a graph, node, or edge, stored as its `layoutContext`. Which contract the `layoutContext` follows is decided by the artifact's `layout.layoutId`, and it is validated against the schema defined for that layout. It is not a free-form extension object and not runtime state; fields defined for one layout are not arbitrarily valid in another. For example, a component structure diagram stores its root nodes (`rootNodeIds`) and controls in the graph's `layoutContext`.
+The layout-specific data of a graph, node, or edge, stored as its `layoutContext`. Which contract the `layoutContext` follows is decided by the artifact's `layout.layoutId`, and it is validated against the schema defined for that layout. It is not a free-form extension object and not runtime state; fields defined for one layout are not arbitrarily valid in another. For example, a component structure diagram stores its root nodes (`rootNodeIds`), controls, and optionally auxiliary definition names (`auxiliaryDefinitions`) in the graph's `layoutContext`.
 
 #### Sequence Diagrams
 
@@ -167,7 +167,10 @@ A conjunction of control choices under which a component renders. An edge applie
 In a component structure diagram, the projection of a branch control as a decision node, derived for display instead of stored in the graph. Its ports are the control's cases, and one outgoing path leaves through each port.
 
 **Component Origin**:
-The original supplier and slot through which a component was supplied. Per-edge `layoutContext.composition.origins` preserves the relationship's supplier definition IDs, titles, and original slot names. Node `layoutContext.origins` aggregates these origins for the component's card. The node's `layoutContext.definitionId` points to the source definition the node represents; the same definition can appear as several nodes after context expansion, and it is distinct from the node's own graph `nodeId`. Supplier definition IDs are not necessarily visible node instance IDs.
+The original supplier and slot through which a component was supplied. Per-edge `layoutContext.composition.origins` preserves the relationship's supplier definition IDs and original slot names. Node `layoutContext.origins` aggregates these origins for the component's card. The supplier's display name is resolved, not stored: `layoutContext.auxiliaryDefinitions` first, then the title of a node carrying the same `definitionId`, and otherwise the fixed label `outside graph`. The node's `layoutContext.definitionId` points to the source definition the node represents; the same definition can appear as several nodes after context expansion, and it is distinct from the node's own graph `nodeId`. Supplier definition IDs are not necessarily visible node instance IDs.
+
+**Component Definition**:
+A declaration in component source, identified as `component:<scope-relative-file>#<name>` by the React generator. The graph may reference a definition without showing a node for it: origins point at definitions (`supplierDefinitionId`), never at node instances. A definition with one usage context appears as one node whose `nodeId` equals the definition id; additional contexts add `@<hash>` suffixes. Definitions that stay referenced after their nodes drop out — for example under `--root` focus — can be named in the graph's `layoutContext.auxiliaryDefinitions`.
 
 **Control Owner Component**:
 The component whose source defines a control. The owner's card displays the control as a switch or select.

@@ -49,9 +49,22 @@ async function withFixture(
 
 function originSlots(graph: ComponentStructureDiagramGraph, nodeId: string): string[] {
   const node = graph.nodes.find(({ nodeId: id }) => id === nodeId);
-  return node?.type === "default"
-    ? (node.layoutContext?.origins ?? []).map(({ supplierTitle, slot }) => `${supplierTitle}:${slot}`).toSorted()
-    : [];
+  if (node?.type !== "default") return [];
+  // Mirrors the display resolution chain: registry title, then a node carrying
+  // the same definition, then the raw definition id.
+  const titles = new Map([
+    ...(graph.layoutContext.auxiliaryDefinitions ?? []).map(
+      ({ definitionId, title }) => [definitionId, title] as const,
+    ),
+    ...graph.nodes.flatMap((candidate) =>
+      candidate.type === "default" && candidate.layoutContext
+        ? [[candidate.layoutContext.definitionId, candidate.title] as const]
+        : [],
+    ),
+  ]);
+  return (node.layoutContext?.origins ?? [])
+    .map(({ supplierDefinitionId, slot }) => `${titles.get(supplierDefinitionId) ?? supplierDefinitionId}:${slot}`)
+    .toSorted();
 }
 
 function edgeFacts(graph: ComponentStructureDiagramGraph) {
@@ -238,7 +251,7 @@ describe("React component structure generator", () => {
               ].map(([type, slot]) => ({
                 type,
                 slot,
-                origins: [{ supplierDefinitionId: "component:src/app.tsx#App", supplierTitle: "App", slot }],
+                origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot }],
               })),
             ),
           );
