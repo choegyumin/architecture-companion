@@ -40,16 +40,15 @@ it("prints discovered artifact paths and content as one JSON line", async () => 
       graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
     },
   };
-  await writeCatalog(scopePath, { behaviors: [artifact], designs: [] });
+  await writeCatalog(scopePath, { artifacts: [artifact] });
   await executeViewCatalogCommand([scopePath], options);
   expect(output.split("\n")).toHaveLength(2);
-  expect(JSON.parse(output)).toEqual({ behaviors: [artifact], designs: [] });
+  expect(JSON.parse(output)).toEqual({ artifacts: [artifact] });
 });
 
 it("rejects invalid artifacts without printing a misleading empty catalog", async () => {
   await writeCatalog(scopePath, {
-    behaviors: [{ artifactId: ".architecture-companion/artifacts/invalid.archcomp.json", title: "Incomplete" }],
-    designs: [],
+    artifacts: [{ artifactId: ".architecture-companion/artifacts/invalid.archcomp.json", title: "Incomplete" }],
   });
   await expect(executeViewCatalogCommand([scopePath], options)).rejects.toThrow("Catalog is invalid");
   expect(output).toBe("");

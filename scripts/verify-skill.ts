@@ -711,7 +711,7 @@ async function verifyInstalledCatalogEntry(
   const scriptPath = join(skillRoot, "runtime", "cli", "view-catalog.js");
   const result = await runInstalledScript(scriptPath, [scopePath], environment, skillRoot);
   assertSuccessfulCompletion(result, scriptPath);
-  assert.deepEqual(JSON.parse(result.stdout), { behaviors: [{ ...artifact, id: relativePath }], designs: [] });
+  assert.deepEqual(JSON.parse(result.stdout), { artifacts: [{ ...artifact, id: relativePath }] });
   await rm(join(scopePath, relativePath));
 }
 

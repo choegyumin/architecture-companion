@@ -21,26 +21,9 @@ import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
 function catalog(label: string): CompanionCatalog {
   return {
-    behaviors: [
-      {
-        title: "Workflow",
-        generator: "built-in:freeform",
-        instructions:
-          "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
-        diagram: {
-          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
-          graph: {
-            groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
-            edges: [],
-          },
-        },
-        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-        kind: "behavior",
-        updatedAt: "2026-10-03T09:15:00.000Z",
-      },
-    ],
-    designs: [
+    // Artifacts stay in the catalog's path-sorted order so the revision id
+    // computed here matches the one the server derives from the same files.
+    artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
         kind: "design",
@@ -66,6 +49,23 @@ function catalog(label: string): CompanionCatalog {
             edges: [],
           },
         },
+      },
+      {
+        title: "Workflow",
+        generator: "built-in:freeform",
+        instructions:
+          "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
+        diagram: {
+          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          graph: {
+            groups: [],
+            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
+            edges: [],
+          },
+        },
+        artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        kind: "behavior",
+        updatedAt: "2026-10-03T09:15:00.000Z",
       },
     ],
   };

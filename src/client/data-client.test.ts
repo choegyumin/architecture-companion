@@ -135,15 +135,13 @@ describe("DataClient", () => {
           JSON.stringify({
             scope: { isGitRepository: false, path: "/consumer" },
             catalog: {
-              behaviors: [
+              artifacts: [
                 diagram("behavior", ".architecture-companion/artifacts/invite-member.archcomp.json", "Invite member"),
                 diagram(
                   "behavior",
                   ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
                   "Checkout workflow",
                 ),
-              ],
-              designs: [
                 diagram("design", ".architecture-companion/artifacts/structure.archcomp.json", "Structure"),
                 diagram("design", ".architecture-companion/artifacts/catalog.archcomp.json", "Catalog"),
               ],
@@ -155,7 +153,11 @@ describe("DataClient", () => {
 
     const review = await createDataClient(baseUrl, fetcher).getReview();
 
-    expect(review.catalog?.behaviors.map(({ title }) => title)).toEqual(["Checkout workflow", "Invite member"]);
-    expect(review.catalog?.designs.map(({ title }) => title)).toEqual(["Catalog", "Structure"]);
+    expect(review.catalog?.artifacts.map(({ title }) => title)).toEqual([
+      "Catalog",
+      "Checkout workflow",
+      "Invite member",
+      "Structure",
+    ]);
   });
 });

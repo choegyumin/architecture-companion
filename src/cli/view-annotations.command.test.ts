@@ -25,7 +25,7 @@ const checkoutBehavior = {
     },
   },
 } as const;
-const emptyArtifact = { behaviors: [], designs: [] };
+const emptyArtifact = { artifacts: [] };
 const emptyDocument: AnnotationDocument = { annotations: [] };
 
 describe("Active revision Annotation query command", () => {
@@ -125,7 +125,7 @@ describe("Active revision Annotation query command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeCatalog(scopePath, { behaviors: [{ ...checkoutBehavior, unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [{ ...checkoutBehavior, unexpected: true }] });
 
       await expect(
         executeViewAnnotationsCommand([scopePath], {

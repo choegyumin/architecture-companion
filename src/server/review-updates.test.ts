@@ -10,7 +10,7 @@ import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/server/review-updates";
 import { writeCatalog } from "@/server/write-catalog";
 
-function behavior(title: string): CompanionCatalog["behaviors"][number] {
+function behavior(title: string): CompanionCatalog["artifacts"][number] {
   return {
     artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
     kind: "behavior",
@@ -31,7 +31,7 @@ function behavior(title: string): CompanionCatalog["behaviors"][number] {
 }
 
 function catalog(title: string): CompanionCatalog {
-  return { behaviors: [behavior(title)], designs: [] };
+  return { artifacts: [behavior(title)] };
 }
 
 async function writeAnnotations(
@@ -207,7 +207,7 @@ describe("review updates", () => {
       await new Promise((resolve) => setTimeout(resolve, 30));
       expect(updatesSeen).toHaveLength(1);
 
-      await writeCatalog(scopePath, { behaviors: [{ ...behavior("Unsupported"), unexpected: true }], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [{ ...behavior("Unsupported"), unexpected: true }] });
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 2, status: "invalid" }));
       expect(await readCatalog(scopePath)).toMatchObject({
         status: "invalid",
@@ -220,7 +220,7 @@ describe("review updates", () => {
       await vi.waitFor(() => expect(updatesSeen.at(-1)).toEqual({ revision: 3, status: "valid" }));
       expect(await readCatalog(scopePath)).toMatchObject({
         status: "valid",
-        catalog: { behaviors: [{ diagram: { graph: { nodes: [{ title: "Checkout recovered" }] } } }] },
+        catalog: { artifacts: [{ diagram: { graph: { nodes: [{ title: "Checkout recovered" }] } } }] },
       });
     } finally {
       await updates?.close();

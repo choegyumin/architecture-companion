@@ -17,7 +17,7 @@ import { createReviewUpdates } from "@/server/review-updates";
 import { writeCatalog } from "@/server/write-catalog";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
       kind: "behavior",
@@ -36,7 +36,6 @@ const catalog = {
       },
     },
   ],
-  designs: [],
 } satisfies CompanionCatalog;
 
 function annotations(body: string): AnnotationDocument {

@@ -57,7 +57,7 @@ async function writeGenerator(
 
 function reviewArtifact(generator: string) {
   return {
-    behaviors: [
+    artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
         kind: "behavior",
@@ -76,7 +76,6 @@ function reviewArtifact(generator: string) {
         },
       },
     ],
-    designs: [],
   };
 }
 
@@ -154,7 +153,7 @@ describe("coding agent hands off a validated catalog as a review URL", () => {
       const reviewResponse = await getJson(`${server.url}/api/review`);
       expect(reviewResponse.status).toBe(200);
       expect(reviewResponse.body).toMatchObject({
-        catalog: { behaviors: [{ generator: "project:dependency-graph" }] },
+        catalog: { artifacts: [{ generator: "project:dependency-graph" }] },
       });
       expect(serverOutputs).toEqual([`${server.url}\n`]);
       expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);

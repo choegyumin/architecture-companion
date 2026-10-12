@@ -12,15 +12,10 @@ type WritableArtifact = Readonly<{
 type WritableArtifactCollection = readonly WritableArtifact[];
 
 export type WritableCatalog = Readonly<{
-  behaviors: WritableArtifactCollection;
-  designs: WritableArtifactCollection;
+  artifacts: WritableArtifactCollection;
 }>;
 
-async function writeArtifactFile(
-  scopePath: string,
-  artifact: WritableArtifact,
-  kind: "behavior" | "design",
-): Promise<void> {
+async function writeArtifactFile(scopePath: string, artifact: WritableArtifact): Promise<void> {
   const { artifactId, ...document } = artifact;
   const filePath = join(scopePath, artifactIdSchema.parse(artifactId));
   const directoryPath = dirname(filePath);
@@ -28,7 +23,7 @@ async function writeArtifactFile(
   const temporaryPath = join(directoryPath, `.${basename(filePath)}-${randomUUID()}.tmp`);
 
   try {
-    await writeFile(temporaryPath, JSON.stringify({ kind, ...document }), { encoding: "utf8", flag: "wx" });
+    await writeFile(temporaryPath, JSON.stringify(document), { encoding: "utf8", flag: "wx" });
     await rename(temporaryPath, filePath);
   } catch (error) {
     try {
@@ -41,21 +36,16 @@ async function writeArtifactFile(
 }
 
 export async function writeCatalog(scopePath: string, catalog: WritableCatalog): Promise<void> {
-  const nextPaths = new Set(
-    [...catalog.behaviors, ...catalog.designs].map(({ artifactId }) => artifactIdSchema.parse(artifactId)),
-  );
+  const nextPaths = new Set(catalog.artifacts.map(({ artifactId }) => artifactIdSchema.parse(artifactId)));
   const previous = await readCatalog(scopePath);
   if (previous.status === "valid") {
     await Promise.all(
-      [...previous.catalog.behaviors, ...previous.catalog.designs]
+      previous.catalog.artifacts
         .filter(({ artifactId }) => !nextPaths.has(artifactId))
         .map(({ artifactId }) => rm(join(scopePath, artifactId), { force: true })),
     );
   }
 
   await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
-  await Promise.all([
-    ...catalog.behaviors.map((artifact) => writeArtifactFile(scopePath, artifact, "behavior")),
-    ...catalog.designs.map((artifact) => writeArtifactFile(scopePath, artifact, "design")),
-  ]);
+  await Promise.all(catalog.artifacts.map((artifact) => writeArtifactFile(scopePath, artifact)));
 }

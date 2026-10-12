@@ -18,27 +18,10 @@ import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 
+// Artifacts stay in the catalog's path-sorted order so the revision id
+// computed here matches the one the server derives from the same files.
 const catalog: CompanionCatalog = {
-  behaviors: [
-    {
-      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-      kind: "behavior",
-      updatedAt: "2026-10-03T09:15:00.000Z",
-      title: "Workflow",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      diagram: {
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
-          edges: [],
-        },
-      },
-    },
-  ],
-  designs: [
+  artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/catalog-structure.archcomp.json",
       kind: "design",
@@ -69,6 +52,23 @@ const catalog: CompanionCatalog = {
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
+      },
+    },
+    {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
+      updatedAt: "2026-10-03T09:15:00.000Z",
+      title: "Workflow",
+      generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
+      diagram: {
+        layout: { layoutId: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
           edges: [],
         },
       },

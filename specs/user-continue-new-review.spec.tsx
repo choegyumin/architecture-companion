@@ -21,7 +21,7 @@ import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
 function catalog(nodeTitle: string): CompanionCatalog {
   return {
-    behaviors: [
+    artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
         kind: "behavior",
@@ -40,7 +40,6 @@ function catalog(nodeTitle: string): CompanionCatalog {
         },
       },
     ],
-    designs: [],
   };
 }
 

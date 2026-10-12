@@ -83,7 +83,7 @@ Ask whether to save a placement rule in `placementInstructions` only when there 
 
 ## Start the Review UI
 
-1. Check the discovered catalog with `view-catalog.js` and confirm that `behaviors` and `designs` contain at least one artifact between them. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
+1. Check the discovered catalog with `view-catalog.js` and confirm that `artifacts` contains at least one artifact. An empty catalog can pass schema validation, so directory existence or successful validation alone is not enough. Do not share a URL if there are no diagrams.
 
    Reuse the latest validation result if the current catalog has not changed since that validation. Otherwise, validate with the `validate-schemas.js` command above. Do not share a URL for an invalid catalog.
 

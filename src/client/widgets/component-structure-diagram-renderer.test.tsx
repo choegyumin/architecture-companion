@@ -42,6 +42,7 @@ vi.mock("./diagram-renderer-base", () => ({
 
 function renderGate(polarityPair: true | undefined) {
   const document = parseArtifact({
+    kind: "design",
     title: "Polarity",
     generator: "built-in:freeform",
     updatedAt: "2026-10-12T00:00:00.000Z",

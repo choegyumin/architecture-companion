@@ -11,7 +11,7 @@ const baseUrl = "http://architecture-companion.test";
 
 function catalog() {
   return {
-    behaviors: [
+    artifacts: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
         kind: "behavior",
@@ -29,8 +29,6 @@ function catalog() {
           },
         },
       },
-    ],
-    designs: [
       {
         artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
         kind: "design",

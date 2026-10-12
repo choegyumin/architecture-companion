@@ -10,27 +10,10 @@ import { createFileAnnotationRepository } from "@/server/file-annotation-reposit
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
 
+// Artifacts stay in the catalog's path-sorted order so the revision id
+// computed here matches the one the server derives from the same files.
 const catalog: CompanionCatalog = {
-  behaviors: [
-    {
-      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
-      kind: "behavior",
-      updatedAt: "2026-10-03T09:15:00.000Z",
-      title: "Checkout workflow",
-      generator: "built-in:freeform",
-      instructions:
-        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
-      diagram: {
-        layout: { layoutId: "elk-layered" },
-        graph: {
-          groups: [],
-          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
-          edges: [],
-        },
-      },
-    },
-  ],
-  designs: [
+  artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
       kind: "design",
@@ -44,6 +27,23 @@ const catalog: CompanionCatalog = {
         graph: {
           groups: [],
           nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          edges: [],
+        },
+      },
+    },
+    {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      kind: "behavior",
+      updatedAt: "2026-10-03T09:15:00.000Z",
+      title: "Checkout workflow",
+      generator: "built-in:freeform",
+      instructions:
+        "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
+      diagram: {
+        layout: { layoutId: "elk-layered" },
+        graph: {
+          groups: [],
+          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
           edges: [],
         },
       },

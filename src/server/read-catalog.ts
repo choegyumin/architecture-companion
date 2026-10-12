@@ -114,13 +114,12 @@ export async function readCatalog(scopePath: string): Promise<ReadCatalogResult>
   if (paths.length === 0 && !centralDirectoryExists) return { status: "missing" };
 
   const errors: string[] = [];
-  const behaviors: Artifact[] = [];
-  const designs: Artifact[] = [];
+  const artifacts: Artifact[] = [];
   for (const path of paths) {
     const artifact = await readArtifactFile(scopePath, path);
     if (typeof artifact === "string") errors.push(artifact);
-    else (artifact.kind === "behavior" ? behaviors : designs).push(artifact);
+    else artifacts.push(artifact);
   }
   if (errors.length > 0) return { status: "invalid", message: errors.join("; ") };
-  return { status: "valid", catalog: validateCatalog({ behaviors, designs }) };
+  return { status: "valid", catalog: validateCatalog({ artifacts }) };
 }

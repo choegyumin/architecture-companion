@@ -41,7 +41,7 @@ describe("catalog reading", () => {
     await save("src/checkout.archcomp.json");
     expect(await readCatalog(scopePath)).toEqual({
       status: "valid",
-      catalog: { behaviors: [{ ...checkoutBehavior, artifactId: "src/checkout.archcomp.json" }], designs: [] },
+      catalog: { artifacts: [{ ...checkoutBehavior, artifactId: "src/checkout.archcomp.json" }] },
     });
   });
 
@@ -57,8 +57,10 @@ describe("catalog reading", () => {
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
-        behaviors: [{ artifactId: "visible.archcomp.json" }],
-        designs: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/nested/central.json` }],
+        artifacts: [
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/nested/central.json` },
+          { artifactId: "visible.archcomp.json" },
+        ],
       },
     });
   });
@@ -75,8 +77,10 @@ describe("catalog reading", () => {
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
-        behaviors: [{ artifactId: "src/checkout.review.json" }],
-        designs: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/central.json` }],
+        artifacts: [
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/central.json` },
+          { artifactId: "src/checkout.review.json" },
+        ],
       },
     });
   });
@@ -89,7 +93,7 @@ describe("catalog reading", () => {
     await writeFile(join(scopePath, "src/.gitignore"), "!hidden.archcomp.json\nignored.archcomp.json\n");
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
-      catalog: { behaviors: [{ artifactId: "src/hidden.archcomp.json" }, { artifactId: "src/visible.archcomp.json" }] },
+      catalog: { artifacts: [{ artifactId: "src/hidden.archcomp.json" }, { artifactId: "src/visible.archcomp.json" }] },
     });
   });
 
@@ -99,7 +103,7 @@ describe("catalog reading", () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/central.json`);
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
-      catalog: { behaviors: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/central.json` }] },
+      catalog: { artifacts: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/central.json` }] },
     });
   });
 
@@ -117,7 +121,7 @@ describe("catalog reading", () => {
 
   it("returns a valid empty catalog when the central artifact directory exists", async () => {
     await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
-    expect(await readCatalog(scopePath)).toEqual({ status: "valid", catalog: { behaviors: [], designs: [] } });
+    expect(await readCatalog(scopePath)).toEqual({ status: "valid", catalog: { artifacts: [] } });
   });
 
   it("reports missing when no central directory or matching artifact exists", async () => {
@@ -130,31 +134,33 @@ describe("catalog reading", () => {
     await save(path);
     expect(await readCatalog(scopePath)).toEqual({
       status: "valid",
-      catalog: { behaviors: [{ ...checkoutBehavior, artifactId: path }], designs: [] },
+      catalog: { artifacts: [{ ...checkoutBehavior, artifactId: path }] },
     });
   });
 
-  it("groups artifacts by their kind in one central directory", async () => {
+  it("reads both artifact kinds from one central directory", async () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/workflow.json`);
     await save(`${ARTIFACTS_RELATIVE_PATH}/structure.json`, { ...checkoutBehavior, kind: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
-        behaviors: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/workflow.json`, kind: "behavior" }],
-        designs: [{ artifactId: `${ARTIFACTS_RELATIVE_PATH}/structure.json`, kind: "design" }],
+        artifacts: [
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/structure.json`, kind: "design" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/workflow.json`, kind: "behavior" },
+        ],
       },
     });
   });
 
-  it("sorts each collection by artifact path", async () => {
+  it("sorts the catalog by artifact path regardless of kind", async () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/zoom.json`);
-    await save(`${ARTIFACTS_RELATIVE_PATH}/alpha.json`);
+    await save(`${ARTIFACTS_RELATIVE_PATH}/alpha.json`, { ...checkoutBehavior, kind: "design" });
     expect(await readCatalog(scopePath)).toMatchObject({
       status: "valid",
       catalog: {
-        behaviors: [
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/alpha.json` },
-          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/zoom.json` },
+        artifacts: [
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/alpha.json`, kind: "design" },
+          { artifactId: `${ARTIFACTS_RELATIVE_PATH}/zoom.json`, kind: "behavior" },
         ],
       },
     });
@@ -163,7 +169,7 @@ describe("catalog reading", () => {
   it("ignores non-artifact entries in the central directory", async () => {
     await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
     await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "README.md"), "not an artifact");
-    expect(await readCatalog(scopePath)).toEqual({ status: "valid", catalog: { behaviors: [], designs: [] } });
+    expect(await readCatalog(scopePath)).toEqual({ status: "valid", catalog: { artifacts: [] } });
   });
 
   it("reports invalid JSON and invalid artifact data with their paths", async () => {

@@ -40,7 +40,7 @@ describe("Catalog schema validation command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeCatalog(scopePath, { behaviors: [], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [] });
 
       await executeValidateSchemasCommand([scopePath], {
         writeStdout: (output) => outputs.push(output),
@@ -58,7 +58,7 @@ describe("Catalog schema validation command", () => {
     const outputs: string[] = [];
 
     try {
-      await writeCatalog(scopePath, { behaviors: [], designs: [] });
+      await writeCatalog(scopePath, { artifacts: [] });
       await writeFile(nonDirectoryPath, "file");
       await symlink(join(nonDirectoryPath, "child"), join(scopePath, ".git"));
 

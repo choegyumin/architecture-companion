@@ -14,7 +14,7 @@ import { writeCatalog } from "@/server/write-catalog";
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 
 const catalog = {
-  behaviors: [
+  artifacts: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
       kind: "behavior",
@@ -49,8 +49,6 @@ const catalog = {
         },
       },
     },
-  ],
-  designs: [
     {
       artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
       kind: "design",
