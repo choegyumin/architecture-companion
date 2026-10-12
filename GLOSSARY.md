@@ -120,11 +120,8 @@ One of the values a branch control chooses between. Each case appears as one por
 **Guard**:
 A label stating the condition under which a path applies. On a sequence diagram it describes a fragment's branch; on a component structure diagram it is a Route Requirement Ruleset derived from the stored relationship's `activeWhen`.
 
-**Type**:
-A schema-defined classification stored as `type` on nodes, edges, controls, and compositions. The schema validates it as a closed set of values, and it decides the fields specific to that type. A `type` is not required to be a union discriminator that changes the object's field shape: a single object shape can also carry a `type` field with a closed value set, such as a composition's supply method.
-
 **Kind**:
-A free-form display category stored as `kind` on common nodes and edges. It is descriptive text for display only and is never used to select a schema shape or validate a field set.
+A free-form display category stored as `kind` on common nodes and edges. It is descriptive text for display only and is never used as a tagged union's discriminator or for any other structural role such as selecting a schema shape or validating a field set.
 
 **Layout Context**:
 The layout-specific data of a graph, node, or edge, stored as its `layoutContext`. Which contract the `layoutContext` follows is decided by the artifact's `layout.layoutId`, and it is validated against the schema defined for that layout. It is not a free-form extension object and not runtime state; fields defined for one layout are not arbitrarily valid in another. For example, a component structure diagram stores its root nodes (`rootNodeIds`), controls, and optionally auxiliary definition names (`auxiliaryDefinitions`) in the graph's `layoutContext`.
