@@ -12,7 +12,7 @@ Use to review how JavaScript or TypeScript source modules depend on one another 
 ```json
 {
   "generator": "built-in:js-module-dependency-graph",
-  "diagram": { "layout": { "id": "dependency-graph" } }
+  "diagram": { "layout": { "layoutId": "dependency-graph" } }
 }
 ```
 
@@ -59,6 +59,6 @@ When groups exist, the overview hides relationships within top-level groups and 
 On an underlying edge, an absent `kind` indicates a runtime dependency, while a `kind` of `type-only` indicates a dependency that exists only before TypeScript compilation. An aggregated path may contain both types, so do not infer dependency types from its overview display alone.
 
 1. Read the existing diagram file first, then read the temporary candidate graph programmatically. Preserve, modify, or replace the existing graph according to the request, keeping unrelated diagrams and IDs for concepts that retain their meaning.
-2. Preserve or assign the enclosing diagram's `id` and `title`, and apply the **Artifact configuration** above.
+2. Preserve or assign the enclosing diagram's `artifactId` and `title`, and apply the **Artifact configuration** above.
 3. Record the necessary regeneration context according to the skill's shared authoring rules.
 4. Validate the entire artifact using the skill's shared authoring procedure.

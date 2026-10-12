@@ -3,7 +3,7 @@
   "$id": "./artifact.schema.json",
   "type": "object",
   "properties": {
-    "id": {
+    "artifactId": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
@@ -56,7 +56,7 @@
             "layout": {
               "type": "object",
               "properties": {
-                "id": {
+                "layoutId": {
                   "type": "string",
                   "const": "elk-layered"
                 },
@@ -77,7 +77,7 @@
                 }
               },
               "required": [
-                "id"
+                "layoutId"
               ],
               "additionalProperties": false
             },
@@ -97,13 +97,13 @@
             "layout": {
               "type": "object",
               "properties": {
-                "id": {
+                "layoutId": {
                   "type": "string",
                   "const": "sequence"
                 }
               },
               "required": [
-                "id"
+                "layoutId"
               ],
               "additionalProperties": false
             },
@@ -123,13 +123,13 @@
             "layout": {
               "type": "object",
               "properties": {
-                "id": {
+                "layoutId": {
                   "type": "string",
                   "const": "dependency-graph"
                 }
               },
               "required": [
-                "id"
+                "layoutId"
               ],
               "additionalProperties": false
             },
@@ -149,7 +149,7 @@
             "layout": {
               "type": "object",
               "properties": {
-                "id": {
+                "layoutId": {
                   "type": "string",
                   "const": "component-structure"
                 },
@@ -164,7 +164,7 @@
                 }
               },
               "required": [
-                "id"
+                "layoutId"
               ],
               "additionalProperties": false
             },
@@ -182,7 +182,7 @@
     }
   },
   "required": [
-    "id",
+    "artifactId",
     "title",
     "updatedAt",
     "generator",
@@ -299,7 +299,7 @@
     "Group": {
       "type": "object",
       "properties": {
-        "id": {
+        "groupId": {
           "type": "string",
           "minLength": 1
         },
@@ -311,13 +311,13 @@
           "type": "string",
           "minLength": 1
         },
-        "parentId": {
+        "parentGroupId": {
           "type": "string",
           "minLength": 1
         }
       },
       "required": [
-        "id",
+        "groupId",
         "title"
       ],
       "additionalProperties": false
@@ -325,7 +325,7 @@
     "DefaultNode": {
       "type": "object",
       "properties": {
-        "id": {
+        "nodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -364,7 +364,7 @@
         }
       },
       "required": [
-        "id",
+        "nodeId",
         "title",
         "type"
       ],
@@ -373,7 +373,7 @@
     "LifelineNode": {
       "type": "object",
       "properties": {
-        "id": {
+        "nodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -415,7 +415,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": {
+              "activationId": {
                 "type": "string",
                 "minLength": 1
               },
@@ -463,7 +463,7 @@
               }
             },
             "required": [
-              "id",
+              "activationId",
               "startsAt",
               "endsAt"
             ],
@@ -472,7 +472,7 @@
         }
       },
       "required": [
-        "id",
+        "nodeId",
         "title",
         "kind",
         "type",
@@ -483,7 +483,7 @@
     "FragmentNode": {
       "type": "object",
       "properties": {
-        "id": {
+        "nodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -533,7 +533,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": {
+              "branchId": {
                 "type": "string",
                 "minLength": 1
               },
@@ -551,7 +551,7 @@
               }
             },
             "required": [
-              "id",
+              "branchId",
               "guard",
               "startMessageId",
               "endMessageId"
@@ -561,7 +561,7 @@
         }
       },
       "required": [
-        "id",
+        "nodeId",
         "title",
         "kind",
         "type",
@@ -573,7 +573,7 @@
     "DefaultEdge": {
       "type": "object",
       "properties": {
-        "id": {
+        "edgeId": {
           "type": "string",
           "minLength": 1
         },
@@ -581,11 +581,11 @@
           "type": "string",
           "const": "default"
         },
-        "source": {
+        "sourceNodeId": {
           "type": "string",
           "minLength": 1
         },
-        "target": {
+        "targetNodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -603,17 +603,17 @@
         }
       },
       "required": [
-        "id",
+        "edgeId",
         "type",
-        "source",
-        "target"
+        "sourceNodeId",
+        "targetNodeId"
       ],
       "additionalProperties": false
     },
     "ControlEdge": {
       "type": "object",
       "properties": {
-        "id": {
+        "edgeId": {
           "type": "string",
           "minLength": 1
         },
@@ -621,11 +621,11 @@
           "type": "string",
           "const": "control"
         },
-        "source": {
+        "sourceNodeId": {
           "type": "string",
           "minLength": 1
         },
-        "target": {
+        "targetNodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -634,10 +634,10 @@
         }
       },
       "required": [
-        "id",
+        "edgeId",
         "type",
-        "source",
-        "target",
+        "sourceNodeId",
+        "targetNodeId",
         "activeWhen"
       ],
       "additionalProperties": false
@@ -670,7 +670,7 @@
     "MessageEdge": {
       "type": "object",
       "properties": {
-        "id": {
+        "edgeId": {
           "type": "string",
           "minLength": 1
         },
@@ -678,11 +678,11 @@
           "type": "string",
           "const": "message"
         },
-        "source": {
+        "sourceNodeId": {
           "type": "string",
           "minLength": 1
         },
-        "target": {
+        "targetNodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -709,10 +709,10 @@
         }
       },
       "required": [
-        "id",
+        "edgeId",
         "type",
-        "source",
-        "target"
+        "sourceNodeId",
+        "targetNodeId"
       ],
       "additionalProperties": false
     },
@@ -806,7 +806,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "id": {
+              "nodeId": {
                 "type": "string",
                 "minLength": 1
               },
@@ -865,7 +865,7 @@
               }
             },
             "required": [
-              "id",
+              "nodeId",
               "title",
               "type"
             ],
@@ -889,7 +889,7 @@
         "layoutContext": {
           "type": "object",
           "properties": {
-            "roots": {
+            "rootNodeIds": {
               "readOnly": true,
               "minItems": 1,
               "type": "array",
@@ -906,11 +906,11 @@
                   {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "controlId": {
                         "type": "string",
                         "minLength": 1
                       },
-                      "owner": {
+                      "ownerNodeId": {
                         "type": "string",
                         "minLength": 1
                       },
@@ -927,10 +927,9 @@
                       }
                     },
                     "required": [
-                      "id",
-                      "owner",
+                      "controlId",
+                      "ownerNodeId",
                       "label",
-                      "dependsOn",
                       "type"
                     ],
                     "additionalProperties": false
@@ -938,11 +937,11 @@
                   {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "controlId": {
                         "type": "string",
                         "minLength": 1
                       },
-                      "owner": {
+                      "ownerNodeId": {
                         "type": "string",
                         "minLength": 1
                       },
@@ -963,7 +962,7 @@
                         "items": {
                           "type": "object",
                           "properties": {
-                            "id": {
+                            "caseId": {
                               "type": "string",
                               "minLength": 1
                             },
@@ -973,7 +972,7 @@
                             }
                           },
                           "required": [
-                            "id",
+                            "caseId",
                             "label"
                           ],
                           "additionalProperties": false
@@ -985,10 +984,9 @@
                       }
                     },
                     "required": [
-                      "id",
-                      "owner",
+                      "controlId",
+                      "ownerNodeId",
                       "label",
-                      "dependsOn",
                       "type",
                       "cases"
                     ],
@@ -996,10 +994,17 @@
                   }
                 ]
               }
+            },
+            "auxiliaryDefinitions": {
+              "readOnly": true,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/AuxiliaryDefinition"
+              }
             }
           },
           "required": [
-            "roots",
+            "rootNodeIds",
             "controls"
           ],
           "additionalProperties": false
@@ -1016,11 +1021,7 @@
     "ComponentOrigin": {
       "type": "object",
       "properties": {
-        "supplierId": {
-          "type": "string",
-          "minLength": 1
-        },
-        "supplierTitle": {
+        "supplierDefinitionId": {
           "type": "string",
           "minLength": 1
         },
@@ -1030,8 +1031,7 @@
         }
       },
       "required": [
-        "supplierId",
-        "supplierTitle",
+        "supplierDefinitionId",
         "slot"
       ],
       "additionalProperties": false
@@ -1039,7 +1039,7 @@
     "ComponentStructureDefaultEdge": {
       "type": "object",
       "properties": {
-        "id": {
+        "edgeId": {
           "type": "string",
           "minLength": 1
         },
@@ -1047,11 +1047,11 @@
           "type": "string",
           "const": "default"
         },
-        "source": {
+        "sourceNodeId": {
           "type": "string",
           "minLength": 1
         },
-        "target": {
+        "targetNodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -1072,10 +1072,10 @@
         }
       },
       "required": [
-        "id",
+        "edgeId",
         "type",
-        "source",
-        "target"
+        "sourceNodeId",
+        "targetNodeId"
       ],
       "additionalProperties": false
     },
@@ -1126,7 +1126,7 @@
     "ComponentStructureControlEdge": {
       "type": "object",
       "properties": {
-        "id": {
+        "edgeId": {
           "type": "string",
           "minLength": 1
         },
@@ -1134,11 +1134,11 @@
           "type": "string",
           "const": "control"
         },
-        "source": {
+        "sourceNodeId": {
           "type": "string",
           "minLength": 1
         },
-        "target": {
+        "targetNodeId": {
           "type": "string",
           "minLength": 1
         },
@@ -1150,11 +1150,29 @@
         }
       },
       "required": [
-        "id",
+        "edgeId",
         "type",
-        "source",
-        "target",
+        "sourceNodeId",
+        "targetNodeId",
         "activeWhen"
+      ],
+      "additionalProperties": false
+    },
+    "AuxiliaryDefinition": {
+      "type": "object",
+      "properties": {
+        "definitionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "definitionId",
+        "title"
       ],
       "additionalProperties": false
     }

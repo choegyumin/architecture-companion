@@ -658,16 +658,18 @@ async function verifyInstalledJsModuleDependencyGenerator(
 
   const graphPath = output.graphPath as string;
   const graph = JSON.parse(await readRequiredText(graphPath)) as Readonly<{
-    groups?: readonly Readonly<{ id?: unknown }>[];
-    nodes?: readonly Readonly<{ id?: unknown }>[];
-    edges?: readonly Readonly<{ id?: unknown }>[];
+    groups?: readonly Readonly<{ groupId?: unknown }>[];
+    nodes?: readonly Readonly<{ nodeId?: unknown }>[];
+    edges?: readonly Readonly<{ edgeId?: unknown }>[];
   }>;
-  assert.ok(!graph.groups?.some(({ id }) => id === "group:directory:src"));
-  assert.ok(!graph.groups?.some(({ id }) => id === "group:package:."));
-  assert.ok(graph.groups?.some(({ id }) => id === "group:external-packages"));
-  assert.ok(graph.nodes?.some(({ id }) => id === "file:src/index.ts"));
-  assert.ok(graph.nodes?.some(({ id }) => id === "external:installed-package"));
-  assert.ok(graph.edges?.some(({ id }) => id === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"));
+  assert.ok(!graph.groups?.some(({ groupId }) => groupId === "group:directory:src"));
+  assert.ok(!graph.groups?.some(({ groupId }) => groupId === "group:package:."));
+  assert.ok(graph.groups?.some(({ groupId }) => groupId === "group:external-packages"));
+  assert.ok(graph.nodes?.some(({ nodeId }) => nodeId === "file:src/index.ts"));
+  assert.ok(graph.nodes?.some(({ nodeId }) => nodeId === "external:installed-package"));
+  assert.ok(
+    graph.edges?.some(({ edgeId }) => edgeId === "dependency:file%3Asrc%2Findex.ts:file%3Asrc%2Fvalue.ts:runtime"),
+  );
   await rm(dirname(graphPath), { recursive: true });
 }
 
