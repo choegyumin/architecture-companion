@@ -1,9 +1,9 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-12T15:47:49.000Z",
+  "updatedAt": "2026-10-12T17:20:38.675Z",
   "vcs": {
-    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
+    "revision": "11cfe8cb3a3e697b5ea9d8373e803a654b29513f",
     "divergesFromRevision": false
   },
   "generator": "built-in:js-module-dependency-graph",
@@ -70,6 +70,11 @@
           "groupId": "group:directory:src/features/diagram/_layout",
           "title": "_layout",
           "parentGroupId": "group:directory:src/features/diagram"
+        },
+        {
+          "groupId": "group:directory:src/features/spotlight",
+          "title": "spotlight",
+          "parentGroupId": "group:directory:src/features"
         },
         {
           "groupId": "group:directory:src/plugins",
@@ -725,6 +730,18 @@
           ]
         },
         {
+          "nodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "title": "diagram-spotlight.ts",
+          "groupId": "group:directory:src/client/widgets",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/diagram-spotlight.ts"
+            }
+          ]
+        },
+        {
           "nodeId": "file:src/client/widgets/elk-layered-diagram-renderer.edge-paths.ts",
           "title": "elk-layered-diagram-renderer.edge-paths.ts",
           "groupId": "group:directory:src/client/widgets",
@@ -781,6 +798,18 @@
             {
               "text": "source",
               "href": "source:///src/client/widgets/sequence-diagram-renderer.tsx"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "title": "spotlight-indicator.tsx",
+          "groupId": "group:directory:src/client/widgets",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/spotlight-indicator.tsx"
             }
           ]
         },
@@ -965,6 +994,18 @@
           ]
         },
         {
+          "nodeId": "file:src/features/diagram/control-polarity.ts",
+          "title": "control-polarity.ts",
+          "groupId": "group:directory:src/features/diagram",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/control-polarity.ts"
+            }
+          ]
+        },
+        {
           "nodeId": "file:src/features/diagram/decision-nodes.ts",
           "title": "decision-nodes.ts",
           "groupId": "group:directory:src/features/diagram",
@@ -1057,6 +1098,18 @@
             {
               "text": "source",
               "href": "source:///src/features/diagram/diagram-spatial.ts"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/features/spotlight/spotlight.ts",
+          "title": "spotlight.ts",
+          "groupId": "group:directory:src/features/spotlight",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/spotlight/spotlight.ts"
             }
           ]
         },
@@ -1333,6 +1386,30 @@
             {
               "text": "source",
               "href": "source:///src/server/source-open-request.ts"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/server/spotlight-broadcasts.ts",
+          "title": "spotlight-broadcasts.ts",
+          "groupId": "group:directory:src/server",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/spotlight-broadcasts.ts"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/server/spotlight-request.ts",
+          "title": "spotlight-request.ts",
+          "groupId": "group:directory:src/server",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/spotlight-request.ts"
             }
           ]
         },
@@ -2003,6 +2080,12 @@
           "targetNodeId": "file:src/features/catalog/catalog.ts"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/data-client.ts",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Fserver%2Fcreate-app.ts:type-only",
           "type": "default",
           "sourceNodeId": "file:src/client/data-client.ts",
@@ -2102,6 +2185,13 @@
           "targetNodeId": "file:src/client/widgets/diagram-renderer.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "kind": "type-only"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
           "type": "default",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
@@ -2132,6 +2222,13 @@
           "type": "default",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
           "targetNodeId": "file:src/features/catalog/catalog-revision-id.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts",
           "kind": "type-only"
         },
         {
@@ -2449,6 +2546,12 @@
           "targetNodeId": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fcontrol-polarity.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+          "targetNodeId": "file:src/features/diagram/control-polarity.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
@@ -2518,11 +2621,10 @@
           "targetNodeId": "file:src/client/widgets/component-structure-route-conditions.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/component-structure-guards.tsx",
-          "targetNodeId": "file:src/features/diagram/decision-nodes.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/features/diagram/decision-nodes.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-guards.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -2557,11 +2659,16 @@
           "targetNodeId": "file:src/shared/react-flow/polyline-edge-label-placement.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fcontrol-polarity.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/component-structure-path-selection.ts",
-          "targetNodeId": "file:src/features/diagram/decision-nodes.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/features/diagram/control-polarity.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/component-structure-path-selection.ts",
+          "targetNodeId": "file:src/features/diagram/decision-nodes.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-path-selection.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -2577,11 +2684,10 @@
           "targetNodeId": "file:src/client/widgets/component-structure-path-selection.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-route-conditions.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-route-conditions.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/component-structure-route-conditions.ts",
-          "targetNodeId": "file:src/features/diagram/decision-nodes.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/features/diagram/decision-nodes.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-route-conditions.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -2949,6 +3055,18 @@
           "targetNodeId": "file:src/client/widgets/diagram-renderer.react-flow.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-renderer-base.tsx",
+          "targetNodeId": "file:src/client/widgets/diagram-spotlight.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-renderer-base.tsx",
+          "targetNodeId": "file:src/client/widgets/spotlight-indicator.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer-base.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/diagram-renderer-base.tsx",
@@ -3028,11 +3146,10 @@
           "kind": "type-only"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
-          "targetNodeId": "file:src/features/diagram/decision-nodes.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/features/diagram/decision-nodes.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -3119,6 +3236,41 @@
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/diagram-renderer.tsx",
           "targetNodeId": "file:src/client/widgets/sequence-diagram-renderer.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "targetNodeId": "file:src/client/parts/diagram-canvas.tsx",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-renderer.react-flow.tsx:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "targetNodeId": "file:src/client/widgets/diagram-renderer.react-flow.tsx",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "targetNodeId": "file:src/features/annotation/annotation-document.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "targetNodeId": "file:src/features/diagram/diagram-spatial.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdiagram-spotlight.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/diagram-spotlight.ts",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts",
+          "kind": "type-only"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Felk-layered-diagram-renderer.edge-paths.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -3270,6 +3422,31 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:external%3Alucide-react:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "external:lucide-react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "file:src/shared/react-ui/button.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "file:src/shared/react-ui/item.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:external%3Azod:runtime",
           "type": "default",
           "sourceNodeId": "file:src/features/annotation/annotation-document.ts",
@@ -3412,11 +3589,10 @@
           "targetNodeId": "file:src/features/diagram/_layout/elk-core.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:runtime",
           "type": "default",
           "sourceNodeId": "file:src/features/diagram/_layout/component-structure-diagram-layout.ts",
-          "targetNodeId": "file:src/features/diagram/decision-nodes.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/features/diagram/decision-nodes.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2F_layout%2Fcomponent-structure-diagram-layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -3543,6 +3719,13 @@
           "targetNodeId": "file:src/shared/universal/get-or-throw.ts"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fcontrol-polarity.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/features/diagram/control-polarity.ts",
+          "targetNodeId": "file:src/features/diagram/diagram-graph.ts",
+          "kind": "type-only"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fdiagram%2Fdecision-nodes.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
           "type": "default",
           "sourceNodeId": "file:src/features/diagram/decision-nodes.ts",
@@ -3645,6 +3828,31 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:external%3Azod:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/features/spotlight/spotlight.ts",
+          "targetNodeId": "external:zod"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/features/spotlight/spotlight.ts",
+          "targetNodeId": "file:src/features/annotation/annotation-document.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/features/spotlight/spotlight.ts",
+          "targetNodeId": "file:src/features/artifact/artifact.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/features/spotlight/spotlight.ts",
+          "targetNodeId": "file:src/features/catalog/catalog.ts",
+          "kind": "type-only"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
           "type": "default",
           "sourceNodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
@@ -3729,6 +3937,12 @@
           "sourceNodeId": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
           "targetNodeId": "external:typescript",
           "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fcontrol-polarity.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/plugins/artifact-generators/react-component-structure/analysis/build-component-graph.ts",
+          "targetNodeId": "file:src/features/diagram/control-polarity.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Freact-component-structure%2Fanalysis%2Fbuild-component-graph.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -3831,6 +4045,12 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/server/create-app.ts",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
           "type": "default",
           "sourceNodeId": "file:src/server/create-app.ts",
@@ -3891,6 +4111,18 @@
           "type": "default",
           "sourceNodeId": "file:src/server/create-app.ts",
           "targetNodeId": "file:src/server/source-open-request.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fspotlight-broadcasts.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/server/create-app.ts",
+          "targetNodeId": "file:src/server/spotlight-broadcasts.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fspotlight-request.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/server/create-app.ts",
+          "targetNodeId": "file:src/server/spotlight-request.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fshared%2Fnode%2Fopen-local-path.ts:runtime",
@@ -4021,6 +4253,13 @@
           "type": "default",
           "sourceNodeId": "file:src/server/source-open-request.ts",
           "targetNodeId": "file:src/server/local-app-action-request.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fserver%2Fspotlight-broadcasts.ts:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
+          "type": "default",
+          "sourceNodeId": "file:src/server/spotlight-broadcasts.ts",
+          "targetNodeId": "file:src/features/spotlight/spotlight.ts",
+          "kind": "type-only"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fstart-server.ts:external%3A%40hono%2Fnode-server:runtime",

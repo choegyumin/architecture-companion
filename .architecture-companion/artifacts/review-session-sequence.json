@@ -1,13 +1,13 @@
 {
   "type": "design",
   "title": "Review session sequence",
-  "updatedAt": "2026-10-11T22:20:39.828Z",
+  "updatedAt": "2026-10-12T17:20:38.675Z",
   "vcs": {
-    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
+    "revision": "11cfe8cb3a3e697b5ea9d8373e803a654b29513f",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",
-  "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-catalog.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
+  "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, answering a question with an artifact spotlight, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-catalog.ts, src/server/file-annotation-repository.ts, src/features/spotlight/spotlight.ts, src/server/spotlight-broadcasts.ts, src/server/spotlight-request.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer-base.tsx, src/client/widgets/diagram-spotlight.ts, src/client/widgets/spotlight-indicator.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
   "diagram": {
     "layout": {
       "layoutId": "sequence"
@@ -612,6 +612,66 @@
           "targetNodeId": "browser",
           "label": "Render DiagramCanvas",
           "messageType": "async"
+        },
+        {
+          "edgeId": "m18a",
+          "type": "message",
+          "sourceNodeId": "user",
+          "targetNodeId": "agent",
+          "label": "Ask an architecture question",
+          "messageType": "sync"
+        },
+        {
+          "edgeId": "m18b",
+          "type": "message",
+          "sourceNodeId": "agent",
+          "targetNodeId": "server",
+          "label": "POST /api/spotlight",
+          "href": "source:///src/server/create-app.ts",
+          "messageType": "sync"
+        },
+        {
+          "edgeId": "m18c",
+          "type": "message",
+          "sourceNodeId": "server",
+          "targetNodeId": "server",
+          "label": "validateSpotlightAgainstCatalog()",
+          "href": "source:///src/features/spotlight/spotlight.ts",
+          "messageType": "sync"
+        },
+        {
+          "edgeId": "m18d",
+          "type": "message",
+          "sourceNodeId": "server",
+          "targetNodeId": "data-client",
+          "label": "SSE event: spotlight",
+          "href": "source:///src/server/spotlight-broadcasts.ts",
+          "messageType": "async"
+        },
+        {
+          "edgeId": "m18e",
+          "type": "message",
+          "sourceNodeId": "data-client",
+          "targetNodeId": "workspace",
+          "label": "Spotlight steps",
+          "messageType": "async"
+        },
+        {
+          "edgeId": "m18f",
+          "type": "message",
+          "sourceNodeId": "workspace",
+          "targetNodeId": "renderer",
+          "label": "Apply spotlight step emphasis",
+          "href": "source:///src/client/widgets/diagram-spotlight.ts",
+          "messageType": "sync"
+        },
+        {
+          "edgeId": "m18g",
+          "type": "message",
+          "sourceNodeId": "renderer",
+          "targetNodeId": "canvas",
+          "label": "Frame the spotlighted step",
+          "messageType": "sync"
         },
         {
           "edgeId": "m19",
