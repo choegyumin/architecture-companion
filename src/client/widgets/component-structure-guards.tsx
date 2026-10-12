@@ -21,7 +21,7 @@ export function collectComponentOrigins(
   graph: Readonly<{
     nodes: ProjectedComponentStructureGraph["nodes"];
     edges: readonly Readonly<{ target: string; source: string; label?: string }>[];
-    layoutContext?: { auxiliaryDefinitions?: readonly { definitionId: string; title: string }[] };
+    auxiliaryDefinitions?: readonly { definitionId: string; title: string }[];
   }>,
 ): ReadonlyMap<string, readonly string[]> {
   const entriesByTarget = new Map<string, Set<string>>();
@@ -31,7 +31,7 @@ export function collectComponentOrigins(
     else entriesByTarget.set(target, new Set([entry]));
   };
   const registryTitles = new Map(
-    (graph.layoutContext?.auxiliaryDefinitions ?? []).map(({ definitionId, title }) => [definitionId, title]),
+    (graph.auxiliaryDefinitions ?? []).map(({ definitionId, title }) => [definitionId, title]),
   );
   const nodeTitlesByDefinitionId = new Map(
     graph.nodes.flatMap((node) =>

@@ -36,7 +36,7 @@ it("resolves supplier names from the registry, stored nodes, and the outside-gra
       { source: "parent", target: "authored", label: "Authored relationship" },
       { source: "parent", target: "empty", label: "Empty origins relationship" },
     ],
-    layoutContext: { auxiliaryDefinitions: [{ definitionId: "outside:App", title: "App" }] },
+    auxiliaryDefinitions: [{ definitionId: "outside:App", title: "App" }],
   } satisfies Parameters<typeof collectComponentOrigins>[0];
 
   expect(collectComponentOrigins(graph)).toEqual(
@@ -68,9 +68,7 @@ it("prefers an explicit registry entry over a matching node", () => {
       },
     ],
     edges: [],
-    layoutContext: {
-      auxiliaryDefinitions: [{ definitionId: "definition:Inner", title: "Inner from registry" }],
-    },
+    auxiliaryDefinitions: [{ definitionId: "definition:Inner", title: "Inner from registry" }],
   } satisfies Parameters<typeof collectComponentOrigins>[0];
 
   expect(collectComponentOrigins(graph)).toEqual(new Map([["supplied", ["from Inner from registry (children)"]]]));
