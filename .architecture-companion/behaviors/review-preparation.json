@@ -1,5 +1,5 @@
 {
-  "id": "review-preparation",
+  "artifactId": "review-preparation",
   "title": "Prepare Review URL (Skill trigger)",
   "updatedAt": "2026-10-03T09:02:45.000Z",
   "vcs": {
@@ -15,7 +15,7 @@
   ],
   "diagram": {
     "layout": {
-      "id": "elk-layered",
+      "layoutId": "elk-layered",
       "options": {
         "bezierEdges": true
       }
@@ -25,14 +25,14 @@
       "nodes": [
         {
           "type": "default",
-          "id": "agent-receive-review-task",
+          "nodeId": "agent-receive-review-task",
           "kind": "trigger",
           "title": "Receive an architecture review request",
           "description": "The coding agent starts preparing a review for the designated consumer scope."
         },
         {
           "type": "default",
-          "id": "agent-discover-generators",
+          "nodeId": "agent-discover-generators",
           "kind": "action",
           "title": "Discover available generators",
           "description": "The agent harness discovers built-in, global, and project generator manifests.",
@@ -44,7 +44,7 @@
         },
         {
           "type": "default",
-          "id": "agent-write-artifact",
+          "nodeId": "agent-write-artifact",
           "kind": "action",
           "title": "Write the artifact",
           "description": "Write behavior and design diagram files following the common writing rules, the chosen generator's guidance, and the schemas.",
@@ -59,7 +59,7 @@
         },
         {
           "type": "default",
-          "id": "agent-start-runtime",
+          "nodeId": "agent-start-runtime",
           "kind": "action",
           "title": "Run the Architecture Companion server",
           "description": "Start the server for the designated scope and print the loopback URL.",
@@ -74,7 +74,7 @@
         },
         {
           "type": "default",
-          "id": "agent-artifact-valid",
+          "nodeId": "agent-artifact-valid",
           "kind": "condition",
           "title": "Does the artifact contain diagrams and pass validation?",
           "description": "Confirm that at least one diagram exists across behaviors and designs, then validate the artifact with validate-schemas before sharing a URL.",
@@ -89,14 +89,14 @@
         },
         {
           "type": "default",
-          "id": "agent-fix-artifact",
+          "nodeId": "agent-fix-artifact",
           "kind": "action",
           "title": "Complete or fix the artifact",
           "description": "Add the requested diagrams if none exist. Fix validation errors and rerun the command until it prints Artifact is valid."
         },
         {
           "type": "default",
-          "id": "agent-share-url",
+          "nodeId": "agent-share-url",
           "kind": "result",
           "title": "Hand off review URL",
           "description": "Explain what the validated artifact covers and hand the review URL to the reviewer."
@@ -105,47 +105,47 @@
       "edges": [
         {
           "type": "default",
-          "id": "agent-task-to-discovery",
-          "source": "agent-receive-review-task",
-          "target": "agent-discover-generators"
+          "edgeId": "agent-task-to-discovery",
+          "sourceNodeId": "agent-receive-review-task",
+          "targetNodeId": "agent-discover-generators"
         },
         {
           "type": "default",
-          "id": "agent-discovery-to-artifact",
-          "source": "agent-discover-generators",
-          "target": "agent-write-artifact"
+          "edgeId": "agent-discovery-to-artifact",
+          "sourceNodeId": "agent-discover-generators",
+          "targetNodeId": "agent-write-artifact"
         },
         {
           "type": "default",
-          "id": "agent-artifact-to-runtime",
-          "source": "agent-write-artifact",
-          "target": "agent-artifact-valid"
+          "edgeId": "agent-artifact-to-runtime",
+          "sourceNodeId": "agent-write-artifact",
+          "targetNodeId": "agent-artifact-valid"
         },
         {
           "type": "default",
-          "id": "agent-runtime-to-validation",
-          "source": "agent-artifact-valid",
-          "target": "agent-start-runtime",
+          "edgeId": "agent-runtime-to-validation",
+          "sourceNodeId": "agent-artifact-valid",
+          "targetNodeId": "agent-start-runtime",
           "label": "Yes"
         },
         {
           "type": "default",
-          "id": "agent-invalid-to-fix",
-          "source": "agent-artifact-valid",
-          "target": "agent-fix-artifact",
+          "edgeId": "agent-invalid-to-fix",
+          "sourceNodeId": "agent-artifact-valid",
+          "targetNodeId": "agent-fix-artifact",
           "label": "No"
         },
         {
           "type": "default",
-          "id": "agent-fix-to-validation",
-          "source": "agent-fix-artifact",
-          "target": "agent-artifact-valid"
+          "edgeId": "agent-fix-to-validation",
+          "sourceNodeId": "agent-fix-artifact",
+          "targetNodeId": "agent-artifact-valid"
         },
         {
           "type": "default",
-          "id": "agent-valid-to-share",
-          "source": "agent-start-runtime",
-          "target": "agent-share-url"
+          "edgeId": "agent-valid-to-share",
+          "sourceNodeId": "agent-start-runtime",
+          "targetNodeId": "agent-share-url"
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-  "id": "artifact-sync",
+  "artifactId": "artifact-sync",
   "title": "Sync artifact revision",
   "updatedAt": "2026-10-03T09:02:45.000Z",
   "vcs": {
@@ -21,7 +21,7 @@
   ],
   "diagram": {
     "layout": {
-      "id": "elk-layered",
+      "layoutId": "elk-layered",
       "options": {
         "bezierEdges": true
       }
@@ -31,7 +31,7 @@
       "nodes": [
         {
           "type": "default",
-          "id": "revision-detect-change",
+          "nodeId": "revision-detect-change",
           "kind": "trigger",
           "title": "Artifact change detected",
           "description": "File polling and SSE notify the open workspace of artifact changes.",
@@ -46,7 +46,7 @@
         },
         {
           "type": "default",
-          "id": "revision-validate-artifact",
+          "nodeId": "revision-validate-artifact",
           "kind": "condition",
           "title": "Is the changed artifact valid?",
           "description": "The server validates the new artifact's JSON, schemas, and diagram composition.",
@@ -58,7 +58,7 @@
         },
         {
           "type": "default",
-          "id": "revision-keep-current",
+          "nodeId": "revision-keep-current",
           "kind": "result",
           "title": "Keep the last valid artifact",
           "description": "When the change is invalid, show the error and keep the current artifact.",
@@ -70,7 +70,7 @@
         },
         {
           "type": "default",
-          "id": "revision-activate-next",
+          "nodeId": "revision-activate-next",
           "kind": "action",
           "title": "Activate the new revision",
           "description": "Compute the revision ID of the whole valid artifact and replace the current review.",
@@ -85,7 +85,7 @@
         },
         {
           "type": "default",
-          "id": "revision-show-updated",
+          "nodeId": "revision-show-updated",
           "kind": "result",
           "title": "Show the updated artifact",
           "description": "Show the new diagrams and exclude comments from the previous revision from the current canvas."
@@ -94,29 +94,29 @@
       "edges": [
         {
           "type": "default",
-          "id": "revision-detect-to-validate",
-          "source": "revision-detect-change",
-          "target": "revision-validate-artifact"
+          "edgeId": "revision-detect-to-validate",
+          "sourceNodeId": "revision-detect-change",
+          "targetNodeId": "revision-validate-artifact"
         },
         {
           "type": "default",
-          "id": "revision-invalid-to-current",
-          "source": "revision-validate-artifact",
-          "target": "revision-keep-current",
+          "edgeId": "revision-invalid-to-current",
+          "sourceNodeId": "revision-validate-artifact",
+          "targetNodeId": "revision-keep-current",
           "label": "Invalid"
         },
         {
           "type": "default",
-          "id": "revision-valid-to-activate",
-          "source": "revision-validate-artifact",
-          "target": "revision-activate-next",
+          "edgeId": "revision-valid-to-activate",
+          "sourceNodeId": "revision-validate-artifact",
+          "targetNodeId": "revision-activate-next",
           "label": "Valid"
         },
         {
           "type": "default",
-          "id": "revision-activate-to-show",
-          "source": "revision-activate-next",
-          "target": "revision-show-updated"
+          "edgeId": "revision-activate-to-show",
+          "sourceNodeId": "revision-activate-next",
+          "targetNodeId": "revision-show-updated"
         }
       ]
     }
