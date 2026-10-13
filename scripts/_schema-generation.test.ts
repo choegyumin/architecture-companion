@@ -65,6 +65,7 @@ describe("generateSchemaSources", () => {
         "DefaultEdge",
         "DefaultNode",
         "DependencyGraph",
+        "FlowchartGraph",
         "GeneralDiagramGraph",
         "ElkOptions",
         "FragmentNode",
@@ -79,27 +80,28 @@ describe("generateSchemaSources", () => {
       ].toSorted(),
     );
 
-    // One union member per layout, each pairing that layout with its named
-    // graph contract.
+    // One union member per layout — plus one per generator that narrows a
+    // shared layout's graph — each pairing its layout with its named graph
+    // contract.
     const members = ((artifactSchemaJson.properties as JsonObject).diagram as JsonObject).anyOf as JsonObject[];
-    expect(members.map((member) => member.type)).toEqual(["object", "object", "object", "object"]);
-    const graphDefByLayoutId: Record<string, string> = {};
-    for (const member of members) {
+    expect(members.map((member) => member.type)).toEqual(["object", "object", "object", "object", "object"]);
+    const graphDefs = members.map((member) => {
       const layoutId = (((member.properties as JsonObject).layout as JsonObject).properties as JsonObject).layoutId as {
         const: string;
       };
-      graphDefByLayoutId[layoutId.const] = refName((member.properties as JsonObject).graph);
       expect(member).toMatchObject({
         required: ["layout", "graph"],
         additionalProperties: false,
       });
-    }
-    expect(graphDefByLayoutId).toEqual({
-      "component-structure": "ComponentStructureGraph",
-      "dependency-graph": "DependencyGraph",
-      general: "GeneralDiagramGraph",
-      sequence: "SequenceGraph",
+      return [layoutId.const, refName((member.properties as JsonObject).graph)] as const;
     });
+    expect(graphDefs).toEqual([
+      ["general", "GeneralDiagramGraph"],
+      ["general", "FlowchartGraph"],
+      ["sequence", "SequenceGraph"],
+      ["dependency-graph", "DependencyGraph"],
+      ["component-structure", "ComponentStructureGraph"],
+    ]);
   });
 
   it("publishes configuration defaults independently from project instructions", () => {
