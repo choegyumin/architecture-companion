@@ -43,7 +43,7 @@ Ask whether to save a rule in `instructions` only when there is a reason to make
 
 ## Artifact authoring
 
-1. Discover the existing catalog with the command below and read the artifact files first. The returned artifact `id` is its scope-relative file path, not a field stored in the JSON. Determine what to preserve, modify, replace, add, or remove based on the request.
+1. Discover the existing catalog with the command below and read the artifact files first. The returned artifact `artifactId` is its scope-relative file path, not a field stored in the JSON. Determine what to preserve, modify, replace, add, or remove based on the request.
 
    ```sh
    node "<AC>/runtime/cli/view-artifacts.js" "<scope>"
