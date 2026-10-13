@@ -27548,8 +27548,11 @@ var artifactSpotlightSchema = external_exports.object({
 function parseArtifactSpotlight(input2) {
   const result = artifactSpotlightSchema.safeParse(input2);
   if (!result.success) {
-    const messages = result.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid artifact spotlight: ${messages}`, { cause: result.error });
+    const messages = result.error.issues.map(({ message, path }) => {
+      const field = path.map((segment) => typeof segment === "number" ? `[${segment}]` : `.${String(segment)}`).join("");
+      return field.length > 0 ? `${field.slice(1)}: ${message}` : message;
+    });
+    throw new Error(`Invalid artifact spotlight: ${messages.join("; ")}`, { cause: result.error });
   }
   return result.data;
 }
