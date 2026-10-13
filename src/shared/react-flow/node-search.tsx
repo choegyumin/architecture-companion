@@ -27,6 +27,9 @@ export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   getNodeLabel?: (node: NodeType) => string;
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
+  /** When supplied, the caller owns the query, including restoration through navigation. */
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
   startInputAddon?: ReactNode;
   endInputAddon?: ReactNode;
   onSearch?: (searchString: string) => NodeType[];
@@ -49,6 +52,8 @@ export function NodeSearch<NodeType extends Node = Node>({
   getNodeLabel,
   inputRef,
   placeholder = "Search nodes...",
+  searchQuery,
+  onSearchQueryChange,
   startInputAddon = <Search aria-hidden="true" className="size-4" />,
   endInputAddon,
   onSearch,
@@ -58,14 +63,41 @@ export function NodeSearch<NodeType extends Node = Node>({
   onOpenChange,
 }: NodeSearchProps<NodeType>) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult<NodeType>[]>([]);
-  const [searchString, setSearchString] = useState("");
-  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [internalSearchString, setInternalSearchString] = useState("");
+  const searchString = searchQuery ?? internalSearchString;
+  const [selection, setSelection] = useState<{ query: string; id: string | null }>({ query: "", id: null });
+  if (selection.query !== searchString) setSelection({ query: searchString, id: null });
+  const currentId = selection.query === searchString ? selection.id : null;
   const hasWarnedInvalidLabel = useRef(false);
   const arrowKeyRef = useRef<"ArrowDown" | "ArrowUp" | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const { getNodes, fitView } = useReactFlow<NodeType>();
+  const { results: searchResults, invalidIds } = useMemo(() => {
+    if (!searchString) return { results: [], invalidIds: [] };
+    const nodes = onSearch ? onSearch(searchString) : getNodes();
+    const invalidIds: string[] = [];
+    const results: SearchResult<NodeType>[] = [];
+    const search = searchString.toLowerCase();
+    for (const node of nodes) {
+      const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
+      if (typeof label !== "string" && getNodeLabel) {
+        throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
+      }
+      if (typeof label !== "string") invalidIds.push(node.id);
+      const resolvedLabel = typeof label === "string" ? label : node.id;
+      if (onSearch || resolvedLabel.toLowerCase().includes(search)) results.push({ node, label: resolvedLabel });
+    }
+    return { results, invalidIds };
+  }, [getNodeLabel, getNodes, onSearch, searchString]);
+  useEffect(() => {
+    if (hasWarnedInvalidLabel.current || invalidIds.length === 0) return;
+    hasWarnedInvalidLabel.current = true;
+    console.warn(
+      `NodeSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
+      { nodeIds: invalidIds },
+    );
+  }, [invalidIds]);
   const isOpen = (open ?? internalOpen) && Boolean(searchString);
   const currentIndex = searchResults.findIndex(({ node }) => node.id === currentId);
   const matchingNodes = useMemo(() => searchResults.map(({ node }) => node), [searchResults]);
@@ -85,53 +117,22 @@ export function NodeSearch<NodeType extends Node = Node>({
 
   const changeSearchString = useCallback(
     (value: string) => {
-      if (!value) {
-        setSearchString("");
-        setSearchResults([]);
-        setCurrentId(null);
-        changeOpen(false);
-        return;
-      }
-
-      const nodes = onSearch ? onSearch(value) : getNodes();
-      const invalidIds: string[] = [];
-      const results: SearchResult<NodeType>[] = [];
-      const search = value.toLowerCase();
-
-      for (const node of nodes) {
-        const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
-        if (typeof label !== "string" && getNodeLabel) {
-          throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
-        }
-        if (typeof label !== "string") invalidIds.push(node.id);
-
-        const resolvedLabel = typeof label === "string" ? label : node.id;
-        if (onSearch || resolvedLabel.toLowerCase().includes(search)) results.push({ node, label: resolvedLabel });
-      }
-
-      if (!hasWarnedInvalidLabel.current && invalidIds.length > 0) {
-        hasWarnedInvalidLabel.current = true;
-        console.warn(
-          `NodeSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
-          { nodeIds: invalidIds },
-        );
-      }
-      setSearchString(value);
-      setSearchResults(results);
-      setCurrentId(null);
-      changeOpen(true);
+      if (searchQuery === undefined) setInternalSearchString(value);
+      onSearchQueryChange?.(value);
+      setSelection({ query: searchString, id: null });
+      changeOpen(Boolean(value));
     },
-    [changeOpen, getNodeLabel, getNodes, onSearch],
+    [changeOpen, onSearchQueryChange, searchQuery, searchString],
   );
 
   const close = () => {
-    setCurrentId(null);
+    setSelection({ query: searchString, id: null });
     changeOpen(false);
   };
 
   // Every navigation gesture uses this path: arrow keys, pointer highlighting, buttons, Enter, and clicks.
   const visit = (node: NodeType) => {
-    setCurrentId(node.id);
+    setSelection({ query: searchString, id: node.id });
     if (onSelectNode) onSelectNode(node);
     else void fitView({ nodes: [node], duration: 500 });
   };
