@@ -1,28 +1,16 @@
 {
   "type": "design",
   "title": "Module Dependency Graph — Dependency Cruiser",
-  "updatedAt": "2026-10-11T21:44:47.751Z",
+  "updatedAt": "2026-10-13T13:40:35.759Z",
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\n\nReview coupling between subsystems of the dependency-cruiser codebase, spot wide or cyclic reach, and judge whether the folder structure still matches the dependency direction. Each box is a module; an arrow from A to B means A imports B. Folder groups mirror the repository directory tree, so the nesting shows the intended layering of the tool.\n\n## Regeneration\n\nManually transcribed from dependency-cruiser's published self-dependency graph: https://sverweij.github.io/dependency-cruiser/dependency-cruiser-dependency-graph.html. There is no source-repository regeneration procedure; to recreate the artifact, transcribe the published graph again, mirroring its modules, imports, and nested folder groups.",
   "diagram": {
-    "layout": {
-      "layoutId": "dependency-graph"
-    },
+    "layout": { "layoutId": "dependency-graph" },
     "graph": {
       "groups": [
-        {
-          "groupId": "group:directory:bin",
-          "title": "bin"
-        },
-        {
-          "groupId": "group:directory:src",
-          "title": "src"
-        },
-        {
-          "groupId": "group:directory:src/analyze",
-          "title": "analyze",
-          "parentGroupId": "group:directory:src"
-        },
+        { "groupId": "group:directory:bin", "title": "bin" },
+        { "groupId": "group:directory:src", "title": "src" },
+        { "groupId": "group:directory:src/analyze", "title": "analyze", "parentGroupId": "group:directory:src" },
         {
           "groupId": "group:directory:src/analyze/derive",
           "title": "derive",
@@ -33,16 +21,8 @@
           "title": "summarize",
           "parentGroupId": "group:directory:src/analyze"
         },
-        {
-          "groupId": "group:directory:src/cache",
-          "title": "cache",
-          "parentGroupId": "group:directory:src"
-        },
-        {
-          "groupId": "group:directory:src/cli",
-          "title": "cli",
-          "parentGroupId": "group:directory:src"
-        },
+        { "groupId": "group:directory:src/cache", "title": "cache", "parentGroupId": "group:directory:src" },
+        { "groupId": "group:directory:src/cli", "title": "cli", "parentGroupId": "group:directory:src" },
         {
           "groupId": "group:directory:src/cli/init-config",
           "title": "init-config",
@@ -58,31 +38,15 @@
           "title": "performance-log",
           "parentGroupId": "group:directory:src/cli/listeners"
         },
-        {
-          "groupId": "group:directory:src/cli/tools",
-          "title": "tools",
-          "parentGroupId": "group:directory:src/cli"
-        },
-        {
-          "groupId": "group:directory:src/cli/utl",
-          "title": "utl",
-          "parentGroupId": "group:directory:src/cli"
-        },
-        {
-          "groupId": "group:directory:src/config-utl",
-          "title": "config-utl",
-          "parentGroupId": "group:directory:src"
-        },
+        { "groupId": "group:directory:src/cli/tools", "title": "tools", "parentGroupId": "group:directory:src/cli" },
+        { "groupId": "group:directory:src/cli/utl", "title": "utl", "parentGroupId": "group:directory:src/cli" },
+        { "groupId": "group:directory:src/config-utl", "title": "config-utl", "parentGroupId": "group:directory:src" },
         {
           "groupId": "group:directory:src/config-utl/extract-depcruise-config",
           "title": "extract-depcruise-config",
           "parentGroupId": "group:directory:src/config-utl"
         },
-        {
-          "groupId": "group:directory:src/extract",
-          "title": "extract",
-          "parentGroupId": "group:directory:src"
-        },
+        { "groupId": "group:directory:src/extract", "title": "extract", "parentGroupId": "group:directory:src" },
         {
           "groupId": "group:directory:src/extract/acorn",
           "title": "acorn",
@@ -108,16 +72,8 @@
           "title": "tsc",
           "parentGroupId": "group:directory:src/extract"
         },
-        {
-          "groupId": "group:directory:src/graph-utl",
-          "title": "graph-utl",
-          "parentGroupId": "group:directory:src"
-        },
-        {
-          "groupId": "group:directory:src/main",
-          "title": "main",
-          "parentGroupId": "group:directory:src"
-        },
+        { "groupId": "group:directory:src/graph-utl", "title": "graph-utl", "parentGroupId": "group:directory:src" },
+        { "groupId": "group:directory:src/main", "title": "main", "parentGroupId": "group:directory:src" },
         {
           "groupId": "group:directory:src/main/files-and-dirs",
           "title": "files-and-dirs",
@@ -138,3057 +94,2360 @@
           "title": "rule-set",
           "parentGroupId": "group:directory:src/main"
         },
-        {
-          "groupId": "group:directory:src/report",
-          "title": "report",
-          "parentGroupId": "group:directory:src"
-        },
-        {
-          "groupId": "group:directory:src/schema",
-          "title": "schema",
-          "parentGroupId": "group:directory:src"
-        },
-        {
-          "groupId": "group:directory:src/utl",
-          "title": "utl",
-          "parentGroupId": "group:directory:src"
-        },
-        {
-          "groupId": "group:directory:src/validate",
-          "title": "validate",
-          "parentGroupId": "group:directory:src"
-        }
+        { "groupId": "group:directory:src/report", "title": "report", "parentGroupId": "group:directory:src" },
+        { "groupId": "group:directory:src/schema", "title": "schema", "parentGroupId": "group:directory:src" },
+        { "groupId": "group:directory:src/utl", "title": "utl", "parentGroupId": "group:directory:src" },
+        { "groupId": "group:directory:src/validate", "title": "validate", "parentGroupId": "group:directory:src" }
       ],
       "nodes": [
         {
           "nodeId": "file:bin/depcruise-baseline.mjs",
           "title": "depcruise-baseline.mjs",
-          "groupId": "group:directory:bin",
-          "type": "default"
+          "groupId": "group:directory:bin"
         },
         {
           "nodeId": "file:src/cli/assert-node-environment-suitable.mjs",
           "title": "assert-node-environment-suitable.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
+          "groupId": "group:directory:src/cli"
         },
-        {
-          "nodeId": "file:src/cli/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
-        },
+        { "nodeId": "file:src/cli/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/cli" },
         {
           "nodeId": "file:src/cli/format-meta-info.mjs",
           "title": "format-meta-info.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
+          "groupId": "group:directory:src/cli"
         },
         {
           "nodeId": "file:src/cli/normalize-cli-options.mjs",
           "title": "normalize-cli-options.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
+          "groupId": "group:directory:src/cli"
         },
         {
           "nodeId": "file:src/cli/utl/assert-file-existence.mjs",
           "title": "assert-file-existence.mjs",
-          "groupId": "group:directory:src/cli/utl",
-          "type": "default"
+          "groupId": "group:directory:src/cli/utl"
         },
-        {
-          "nodeId": "file:src/cli/utl/io.mjs",
-          "title": "io.mjs",
-          "groupId": "group:directory:src/cli/utl",
-          "type": "default"
-        },
+        { "nodeId": "file:src/cli/utl/io.mjs", "title": "io.mjs", "groupId": "group:directory:src/cli/utl" },
         {
           "nodeId": "file:src/cli/init-config/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/listeners/cli-feedback.mjs",
           "title": "cli-feedback.mjs",
-          "groupId": "group:directory:src/cli/listeners",
-          "type": "default"
+          "groupId": "group:directory:src/cli/listeners"
         },
         {
           "nodeId": "file:src/cli/listeners/ndjson.mjs",
           "title": "ndjson.mjs",
-          "groupId": "group:directory:src/cli/listeners",
-          "type": "default"
+          "groupId": "group:directory:src/cli/listeners"
         },
         {
           "nodeId": "file:src/cli/listeners/performance-log/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/cli/listeners/performance-log",
-          "type": "default"
+          "groupId": "group:directory:src/cli/listeners/performance-log"
         },
         {
           "nodeId": "file:src/config-utl/extract-babel-config.mjs",
           "title": "extract-babel-config.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
         {
           "nodeId": "file:src/config-utl/extract-known-violations.mjs",
           "title": "extract-known-violations.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
         {
           "nodeId": "file:src/config-utl/extract-ts-config.mjs",
           "title": "extract-ts-config.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
         {
           "nodeId": "file:src/config-utl/extract-webpack-resolve-config.mjs",
           "title": "extract-webpack-resolve-config.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
-        {
-          "nodeId": "file:src/main/cruise.mjs",
-          "title": "cruise.mjs",
-          "groupId": "group:directory:src/main",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/utl/object-util.mjs",
-          "title": "object-util.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:bin/depcruise-fmt.mjs",
-          "title": "depcruise-fmt.mjs",
-          "groupId": "group:directory:bin",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/cli/format.mjs",
-          "title": "format.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/main/format.mjs",
-          "title": "format.mjs",
-          "groupId": "group:directory:src/main",
-          "type": "default"
-        },
+        { "nodeId": "file:src/main/cruise.mjs", "title": "cruise.mjs", "groupId": "group:directory:src/main" },
+        { "nodeId": "file:src/utl/object-util.mjs", "title": "object-util.mjs", "groupId": "group:directory:src/utl" },
+        { "nodeId": "file:bin/depcruise-fmt.mjs", "title": "depcruise-fmt.mjs", "groupId": "group:directory:bin" },
+        { "nodeId": "file:src/cli/format.mjs", "title": "format.mjs", "groupId": "group:directory:src/cli" },
+        { "nodeId": "file:src/main/format.mjs", "title": "format.mjs", "groupId": "group:directory:src/main" },
         {
           "nodeId": "file:bin/dependency-cruiser.mjs",
           "title": "dependency-cruiser.mjs",
-          "groupId": "group:directory:bin",
-          "type": "default"
+          "groupId": "group:directory:bin"
         },
         {
           "nodeId": "file:bin/wrap-stream-in-html.mjs",
           "title": "wrap-stream-in-html.mjs",
-          "groupId": "group:directory:bin",
-          "type": "default"
+          "groupId": "group:directory:bin"
         },
         {
           "nodeId": "file:src/cli/tools/wrap-stream-in-html.mjs",
           "title": "wrap-stream-in-html.mjs",
-          "groupId": "group:directory:src/cli/tools",
-          "type": "default"
+          "groupId": "group:directory:src/cli/tools"
         },
-        {
-          "nodeId": "file:src/report/dot-webpage",
-          "title": "dot-webpage",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/dot-webpage", "title": "dot-webpage", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/analyze/add-validations.mjs",
           "title": "add-validations.mjs",
-          "groupId": "group:directory:src/analyze",
-          "type": "default"
+          "groupId": "group:directory:src/analyze"
         },
-        {
-          "nodeId": "file:src/validate/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/validate/index.d.ts",
-          "title": "index.d.ts",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
-        },
+        { "nodeId": "file:src/validate/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/validate" },
+        { "nodeId": "file:src/validate/index.d.ts", "title": "index.d.ts", "groupId": "group:directory:src/validate" },
         {
           "nodeId": "file:src/validate/match-dependency-rule.mjs",
           "title": "match-dependency-rule.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/validate/match-folder-dependency-rule.mjs",
           "title": "match-folder-dependency-rule.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/validate/match-module-rule.mjs",
           "title": "match-module-rule.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/validate/violates-required-rule.mjs",
           "title": "violates-required-rule.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/analyze/analyze-modules.mjs",
           "title": "analyze-modules.mjs",
-          "groupId": "group:directory:src/analyze",
-          "type": "default"
+          "groupId": "group:directory:src/analyze"
         },
         {
           "nodeId": "file:src/analyze/derive/circular.mjs",
           "title": "circular.mjs",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
         {
           "nodeId": "file:src/analyze/derive/dependents.mjs",
           "title": "dependents.mjs",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
         {
           "nodeId": "file:src/analyze/derive/metrics",
           "title": "metrics",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
         {
           "nodeId": "file:src/analyze/derive/orphan",
           "title": "orphan",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
         {
           "nodeId": "file:src/analyze/derive/reachable.mjs",
           "title": "reachable.mjs",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
         {
           "nodeId": "file:src/analyze/soften-known-violations.mjs",
           "title": "soften-known-violations.mjs",
-          "groupId": "group:directory:src/analyze",
-          "type": "default"
+          "groupId": "group:directory:src/analyze"
         },
         {
           "nodeId": "file:src/graph-utl/add-focus.mjs",
           "title": "add-focus.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/indexed-module-graph.mjs",
           "title": "indexed-module-graph.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/module-graph-with-dependency-set.mjs",
           "title": "module-graph-with-dependency-set.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/analyze/derive/module-utl.mjs",
           "title": "module-utl.mjs",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
-        {
-          "nodeId": "file:src/utl/regex-util.mjs",
-          "title": "regex-util.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
-        },
+        { "nodeId": "file:src/utl/regex-util.mjs", "title": "regex-util.mjs", "groupId": "group:directory:src/utl" },
         {
           "nodeId": "file:src/validate/matchers.mjs",
           "title": "matchers.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/analyze/summarize/is-same-violation.mjs",
           "title": "is-same-violation.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/graph-utl/match-facade.mjs",
           "title": "match-facade.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/analyze/derive/folders",
           "title": "folders",
-          "groupId": "group:directory:src/analyze/derive",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/derive"
         },
-        {
-          "nodeId": "file:src/utl/array-util.mjs",
-          "title": "array-util.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/analyze/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/analyze",
-          "type": "default"
-        },
+        { "nodeId": "file:src/utl/array-util.mjs", "title": "array-util.mjs", "groupId": "group:directory:src/utl" },
+        { "nodeId": "file:src/analyze/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/analyze" },
         {
           "nodeId": "file:src/analyze/summarize/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/analyze/summarize/add-rule-set-used.mjs",
           "title": "add-rule-set-used.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/analyze/summarize/get-stats.mjs",
           "title": "get-stats.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/graph-utl/compare.mjs",
           "title": "compare.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/analyze/summarize/summarize-folders.mjs",
           "title": "summarize-folders.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/analyze/summarize/summarize-modules.mjs",
           "title": "summarize-modules.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
         {
           "nodeId": "file:src/analyze/summarize/summarize-options.mjs",
           "title": "summarize-options.mjs",
-          "groupId": "group:directory:src/analyze/summarize",
-          "type": "default"
+          "groupId": "group:directory:src/analyze/summarize"
         },
-        {
-          "nodeId": "file:src/environment.mjs",
-          "title": "environment.mjs",
-          "groupId": "group:directory:src",
-          "type": "default"
-        },
+        { "nodeId": "file:src/environment.mjs", "title": "environment.mjs", "groupId": "group:directory:src" },
         {
           "nodeId": "file:src/graph-utl/rule-set.mjs",
           "title": "rule-set.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/extract/transpile/meta.mjs",
           "title": "meta.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
-        {
-          "nodeId": "file:src/cache/cache.mjs",
-          "title": "cache.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
-        },
+        { "nodeId": "file:src/cache/cache.mjs", "title": "cache.mjs", "groupId": "group:directory:src/cache" },
         {
           "nodeId": "file:src/cache/content-strategy.mjs",
           "title": "content-strategy.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
+          "groupId": "group:directory:src/cache"
         },
         {
           "nodeId": "file:src/cache/metadata-strategy.mjs",
           "title": "metadata-strategy.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
+          "groupId": "group:directory:src/cache"
         },
         {
           "nodeId": "file:src/cache/options-compatible.mjs",
           "title": "options-compatible.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
+          "groupId": "group:directory:src/cache"
         },
         {
           "nodeId": "file:src/cache/find-content-changes.mjs",
           "title": "find-content-changes.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
+          "groupId": "group:directory:src/cache"
         },
-        {
-          "nodeId": "file:src/cache/helpers.mjs",
-          "title": "helpers.mjs",
-          "groupId": "group:directory:src/cache",
-          "type": "default"
-        },
+        { "nodeId": "file:src/cache/helpers.mjs", "title": "helpers.mjs", "groupId": "group:directory:src/cache" },
         {
           "nodeId": "file:src/extract/swc/parse.mjs",
           "title": "parse.mjs",
-          "groupId": "group:directory:src/extract/swc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/swc"
         },
         {
           "nodeId": "file:src/extract/transpile/babel-wrap.mjs",
           "title": "babel-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/coffeescript-wrap.mjs",
           "title": "coffeescript-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/javascript-wrap.mjs",
           "title": "javascript-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/livescript-wrap.mjs",
           "title": "livescript-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/svelte-wrap.mjs",
           "title": "svelte-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/typescript-wrap.mjs",
           "title": "typescript-wrap.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/vue-template-wrap.cjs",
           "title": "vue-template-wrap.cjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/extract/transpile/try-import-available.mjs",
           "title": "try-import-available.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/utl/find-all-files.mjs",
           "title": "find-all-files.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
+          "groupId": "group:directory:src/utl"
         },
         {
           "nodeId": "file:src/utl/path-to-posix.mjs",
           "title": "path-to-posix.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
+          "groupId": "group:directory:src/utl"
         },
-        {
-          "nodeId": "file:src/cli/defaults.mjs",
-          "title": "defaults.mjs",
-          "groupId": "group:directory:src/cli",
-          "type": "default"
-        },
+        { "nodeId": "file:src/cli/defaults.mjs", "title": "defaults.mjs", "groupId": "group:directory:src/cli" },
         {
           "nodeId": "file:src/config-utl/extract-depcruise-config/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/config-utl/extract-depcruise-config",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl/extract-depcruise-config"
         },
         {
           "nodeId": "file:src/main/options/assert-validity.mjs",
           "title": "assert-validity.mjs",
-          "groupId": "group:directory:src/main/options",
-          "type": "default"
+          "groupId": "group:directory:src/main/options"
         },
         {
           "nodeId": "file:src/main/options/normalize.mjs",
           "title": "normalize.mjs",
-          "groupId": "group:directory:src/main/options",
-          "type": "default"
+          "groupId": "group:directory:src/main/options"
         },
         {
           "nodeId": "file:src/main/report-wrap.mjs",
           "title": "report-wrap.mjs",
-          "groupId": "group:directory:src/main",
-          "type": "default"
+          "groupId": "group:directory:src/main"
         },
         {
           "nodeId": "file:src/schema/cruise-result.validate.mjs",
           "title": "cruise-result.validate.mjs",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
-        {
-          "nodeId": "file:src/schema/utl.mjs",
-          "title": "utl.mjs",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
-        },
+        { "nodeId": "file:src/schema/utl.mjs", "title": "utl.mjs", "groupId": "group:directory:src/schema" },
         {
           "nodeId": "file:src/cli/init-config/build-config.mjs",
           "title": "build-config.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/types.d.mts",
           "title": "types.d.mts",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/check-and-warn-inconsistencies.mjs",
           "title": "check-and-warn-inconsistencies.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/environment-helpers.mjs",
           "title": "environment-helpers.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/get-user-input.mjs",
           "title": "get-user-input.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/normalize-init-options.mjs",
           "title": "normalize-init-options.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/write-config.mjs",
           "title": "write-config.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs",
           "title": "write-run-scripts-to-manifest.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/listeners/performance-log/handlers.mjs",
           "title": "handlers.mjs",
-          "groupId": "group:directory:src/cli/listeners/performance-log",
-          "type": "default"
+          "groupId": "group:directory:src/cli/listeners/performance-log"
         },
         {
           "nodeId": "file:src/config-utl/make-absolute.mjs",
           "title": "make-absolute.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
-        {
-          "nodeId": "file:src/utl/try-import.mjs",
-          "title": "try-import.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
-        },
+        { "nodeId": "file:src/utl/try-import.mjs", "title": "try-import.mjs", "groupId": "group:directory:src/utl" },
         {
           "nodeId": "file:src/main/resolve-options/normalize.mjs",
           "title": "normalize.mjs",
-          "groupId": "group:directory:src/main/resolve-options",
-          "type": "default"
+          "groupId": "group:directory:src/main/resolve-options"
         },
-        {
-          "nodeId": "file:src/extract/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
-        },
+        { "nodeId": "file:src/extract/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/extract" },
         {
           "nodeId": "file:src/main/files-and-dirs/normalize.mjs",
           "title": "normalize.mjs",
-          "groupId": "group:directory:src/main/files-and-dirs",
-          "type": "default"
+          "groupId": "group:directory:src/main/files-and-dirs"
         },
         {
           "nodeId": "file:src/main/rule-set/assert-validity.mjs",
           "title": "assert-validity.mjs",
-          "groupId": "group:directory:src/main/rule-set",
-          "type": "default"
+          "groupId": "group:directory:src/main/rule-set"
         },
         {
           "nodeId": "file:src/main/rule-set/normalize.mjs",
           "title": "normalize.mjs",
-          "groupId": "group:directory:src/main/rule-set",
-          "type": "default"
+          "groupId": "group:directory:src/main/rule-set"
         },
         {
           "nodeId": "file:src/cli/init-config/config-template.mjs",
           "title": "config-template.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/utl.mjs",
           "title": "utl.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/cli/init-config/find-extensions.mjs",
           "title": "find-extensions.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/utl/get-extension.mjs",
           "title": "get-extension.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
+          "groupId": "group:directory:src/utl"
         },
         {
           "nodeId": "file:src/cli/init-config/validators.mjs",
           "title": "validators.mjs",
-          "groupId": "group:directory:src/cli/init-config",
-          "type": "default"
+          "groupId": "group:directory:src/cli/init-config"
         },
         {
           "nodeId": "file:src/extract/tsc/parse.mjs",
           "title": "parse.mjs",
-          "groupId": "group:directory:src/extract/tsc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/tsc"
         },
         {
           "nodeId": "file:src/extract/transpile/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/cli/listeners/performance-log/format-helpers.mjs",
           "title": "format-helpers.mjs",
-          "groupId": "group:directory:src/cli/listeners/performance-log",
-          "type": "default"
+          "groupId": "group:directory:src/cli/listeners/performance-log"
         },
         {
           "nodeId": "file:src/config-utl/extract-depcruise-config/merge-configs.mjs",
           "title": "merge-configs.mjs",
-          "groupId": "group:directory:src/config-utl/extract-depcruise-config",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl/extract-depcruise-config"
         },
         {
           "nodeId": "file:src/config-utl/extract-depcruise-config/read-config.mjs",
           "title": "read-config.mjs",
-          "groupId": "group:directory:src/config-utl/extract-depcruise-config",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl/extract-depcruise-config"
         },
         {
           "nodeId": "file:src/extract/resolve/resolve.mjs",
           "title": "resolve.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
-        {
-          "nodeId": "file:src/report/dot",
-          "title": "dot",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/dot", "title": "dot", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/utl/extract-root-module-name.cjs",
           "title": "extract-root-module-name.cjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
+          "groupId": "group:directory:src/utl"
         },
-        {
-          "nodeId": "file:src/extract/helpers.mjs",
-          "title": "helpers.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
-        },
+        { "nodeId": "file:src/extract/helpers.mjs", "title": "helpers.mjs", "groupId": "group:directory:src/extract" },
         {
           "nodeId": "file:src/config-utl/extract-depcruise-options.mjs",
           "title": "extract-depcruise-options.mjs",
-          "groupId": "group:directory:src/config-utl",
-          "type": "default"
+          "groupId": "group:directory:src/config-utl"
         },
         {
           "nodeId": "file:src/extract/acorn/estree-helpers.mjs",
           "title": "estree-helpers.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/extract-amd-deps.mjs",
           "title": "extract-amd-deps.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/extract-cjs-deps.mjs",
           "title": "extract-cjs-deps.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/extract-es6-deps.mjs",
           "title": "extract-es6-deps.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/extract-stats.mjs",
           "title": "extract-stats.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/extract.mjs",
           "title": "extract.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/acorn/parse.mjs",
           "title": "parse.mjs",
-          "groupId": "group:directory:src/extract/acorn",
-          "type": "default"
+          "groupId": "group:directory:src/extract/acorn"
         },
         {
           "nodeId": "file:src/extract/clear-caches.mjs",
           "title": "clear-caches.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
+          "groupId": "group:directory:src/extract"
         },
         {
           "nodeId": "file:src/extract/resolve/external-module-helpers.mjs",
           "title": "external-module-helpers.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/get-manifest.mjs",
           "title": "get-manifest.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/resolve-amd.mjs",
           "title": "resolve-amd.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/module-classifiers.mjs",
           "title": "module-classifiers.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/merge-manifests.mjs",
           "title": "merge-manifests.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/is-built-in.mjs",
           "title": "is-built-in.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/extract-dependencies.mjs",
           "title": "extract-dependencies.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
+          "groupId": "group:directory:src/extract"
         },
         {
           "nodeId": "file:src/extract/resolve/index.mjs",
           "title": "index.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/swc/extract.mjs",
           "title": "extract.mjs",
-          "groupId": "group:directory:src/extract/swc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/swc"
         },
         {
           "nodeId": "file:src/extract/tsc/extract.mjs",
           "title": "extract.mjs",
-          "groupId": "group:directory:src/extract/tsc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/tsc"
         },
         {
           "nodeId": "file:src/extract/resolve/determine-dependency-types.mjs",
           "title": "determine-dependency-types.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/resolve-cjs.mjs",
           "title": "resolve-cjs.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/resolve/resolve-helpers.mjs",
           "title": "resolve-helpers.mjs",
-          "groupId": "group:directory:src/extract/resolve",
-          "type": "default"
+          "groupId": "group:directory:src/extract/resolve"
         },
         {
           "nodeId": "file:src/extract/swc/extract-swc-deps.mjs",
           "title": "extract-swc-deps.mjs",
-          "groupId": "group:directory:src/extract/swc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/swc"
         },
         {
           "nodeId": "file:src/extract/tsc/extract-stats.mjs",
           "title": "extract-stats.mjs",
-          "groupId": "group:directory:src/extract/tsc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/tsc"
         },
         {
           "nodeId": "file:src/extract/tsc/extract-typescript-deps.mjs",
           "title": "extract-typescript-deps.mjs",
-          "groupId": "group:directory:src/extract/tsc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/tsc"
         },
         {
           "nodeId": "file:src/extract/extract-stats.mjs",
           "title": "extract-stats.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
+          "groupId": "group:directory:src/extract"
         },
         {
           "nodeId": "file:src/extract/gather-initial-sources.mjs",
           "title": "gather-initial-sources.mjs",
-          "groupId": "group:directory:src/extract",
-          "type": "default"
+          "groupId": "group:directory:src/extract"
         },
         {
           "nodeId": "file:src/extract/swc/dependency-visitor.mjs",
           "title": "dependency-visitor.mjs",
-          "groupId": "group:directory:src/extract/swc",
-          "type": "default"
+          "groupId": "group:directory:src/extract/swc"
         },
         {
           "nodeId": "file:src/extract/transpile/svelte-preprocess.mjs",
           "title": "svelte-preprocess.mjs",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
-        {
-          "nodeId": "file:src/utl/try-require.cjs",
-          "title": "try-require.cjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
-        },
+        { "nodeId": "file:src/utl/try-require.cjs", "title": "try-require.cjs", "groupId": "group:directory:src/utl" },
         {
           "nodeId": "file:src/extract/transpile/meta.d.ts",
           "title": "meta.d.ts",
-          "groupId": "group:directory:src/extract/transpile",
-          "type": "default"
+          "groupId": "group:directory:src/extract/transpile"
         },
         {
           "nodeId": "file:src/graph-utl/consolidate-module-dependencies.mjs",
           "title": "consolidate-module-dependencies.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/consolidate-modules.mjs",
           "title": "consolidate-modules.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/consolidate-to-folder.mjs",
           "title": "consolidate-to-folder.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/consolidate-to-pattern.mjs",
           "title": "consolidate-to-pattern.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/filter-bank.mjs",
           "title": "filter-bank.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
         {
           "nodeId": "file:src/graph-utl/strip-self-transitions.mjs",
           "title": "strip-self-transitions.mjs",
-          "groupId": "group:directory:src/graph-utl",
-          "type": "default"
+          "groupId": "group:directory:src/graph-utl"
         },
-        {
-          "nodeId": "file:src/report/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/main/helpers.mjs",
-          "title": "helpers.mjs",
-          "groupId": "group:directory:src/main",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/main/helpers.mjs", "title": "helpers.mjs", "groupId": "group:directory:src/main" },
         {
           "nodeId": "file:src/main/options/defaults.mjs",
           "title": "defaults.mjs",
-          "groupId": "group:directory:src/main/options",
-          "type": "default"
+          "groupId": "group:directory:src/main/options"
         },
         {
           "nodeId": "file:src/schema/configuration.validate.mjs",
           "title": "configuration.validate.mjs",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
-        {
-          "nodeId": "file:src/main/index.d.ts",
-          "title": "index.d.ts",
-          "groupId": "group:directory:src/main",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/main/index.mjs",
-          "title": "index.mjs",
-          "groupId": "group:directory:src/main",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/plugins.mjs",
-          "title": "plugins.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/anon",
-          "title": "anon",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/main/index.d.ts", "title": "index.d.ts", "groupId": "group:directory:src/main" },
+        { "nodeId": "file:src/main/index.mjs", "title": "index.mjs", "groupId": "group:directory:src/main" },
+        { "nodeId": "file:src/report/plugins.mjs", "title": "plugins.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/anon", "title": "anon", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/report/azure-devops.mjs",
           "title": "azure-devops.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
+          "groupId": "group:directory:src/report"
         },
-        {
-          "nodeId": "file:src/report/utl",
-          "title": "utl",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/baseline.mjs",
-          "title": "baseline.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/csv.mjs",
-          "title": "csv.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/d2.mjs",
-          "title": "d2.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/error-html",
-          "title": "error-html",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/utl", "title": "utl", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/baseline.mjs", "title": "baseline.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/csv.mjs", "title": "csv.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/d2.mjs", "title": "d2.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/error-html", "title": "error-html", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/report/error-long.mjs",
           "title": "error-long.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
+          "groupId": "group:directory:src/report"
         },
-        {
-          "nodeId": "file:src/report/error.mjs",
-          "title": "error.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/error.mjs", "title": "error.mjs", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/utl/wrap-and-indent.mjs",
           "title": "wrap-and-indent.mjs",
-          "groupId": "group:directory:src/utl",
-          "type": "default"
+          "groupId": "group:directory:src/utl"
         },
-        {
-          "nodeId": "file:src/report/html",
-          "title": "html",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/identity.mjs",
-          "title": "identity.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/json.mjs",
-          "title": "json.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/markdown.mjs",
-          "title": "markdown.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/mermaid.mjs",
-          "title": "mermaid.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/metrics.mjs",
-          "title": "metrics.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/null.mjs",
-          "title": "null.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
-        {
-          "nodeId": "file:src/report/teamcity.mjs",
-          "title": "teamcity.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/html", "title": "html", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/identity.mjs", "title": "identity.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/json.mjs", "title": "json.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/markdown.mjs", "title": "markdown.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/mermaid.mjs", "title": "mermaid.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/metrics.mjs", "title": "metrics.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/null.mjs", "title": "null.mjs", "groupId": "group:directory:src/report" },
+        { "nodeId": "file:src/report/teamcity.mjs", "title": "teamcity.mjs", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/report/teamcity.types.ts",
           "title": "teamcity.types.ts",
-          "groupId": "group:directory:src/report",
-          "type": "default"
+          "groupId": "group:directory:src/report"
         },
-        {
-          "nodeId": "file:src/report/text.mjs",
-          "title": "text.mjs",
-          "groupId": "group:directory:src/report",
-          "type": "default"
-        },
+        { "nodeId": "file:src/report/text.mjs", "title": "text.mjs", "groupId": "group:directory:src/report" },
         {
           "nodeId": "file:src/schema/baseline-violations.schema.json",
           "title": "baseline-violations.schema.json",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
         {
           "nodeId": "file:src/schema/baseline-violations.schema.mjs",
           "title": "baseline-violations.schema.mjs",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
         {
           "nodeId": "file:src/schema/configuration.schema.json",
           "title": "configuration.schema.json",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
         {
           "nodeId": "file:src/schema/cruise-result.schema.json",
           "title": "cruise-result.schema.json",
-          "groupId": "group:directory:src/schema",
-          "type": "default"
+          "groupId": "group:directory:src/schema"
         },
         {
           "nodeId": "file:src/validate/rule-classifiers.mjs",
           "title": "rule-classifiers.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         },
         {
           "nodeId": "file:src/validate/match-module-rule-helpers.mjs",
           "title": "match-module-rule-helpers.mjs",
-          "groupId": "group:directory:src/validate",
-          "type": "default"
+          "groupId": "group:directory:src/validate"
         }
       ],
       "edges": [
         {
           "edgeId": "dependency:file%3Abin%2Fdepcruise-baseline.mjs%3Afile%3Asrc%2Fcli%2Fassert-node-environment-suitable.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/depcruise-baseline.mjs",
           "targetNodeId": "file:src/cli/assert-node-environment-suitable.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fdepcruise-baseline.mjs%3Afile%3Asrc%2Fcli%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/depcruise-baseline.mjs",
           "targetNodeId": "file:src/cli/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Fformat-meta-info.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/format-meta-info.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/normalize-cli-options.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Futl%2Fassert-file-existence.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/utl/assert-file-existence.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Futl%2Fio.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/utl/io.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/init-config/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Flisteners%2Fcli-feedback.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/listeners/cli-feedback.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Flisteners%2Fndjson.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/listeners/ndjson.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fcli%2Flisteners%2Fperformance-log%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/cli/listeners/performance-log/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-babel-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-babel-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-known-violations.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-known-violations.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-ts-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-ts-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-webpack-resolve-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-webpack-resolve-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Fmain%2Fcruise.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/main/cruise.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Findex.mjs%3Afile%3Asrc%2Futl%2Fobject-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/index.mjs",
           "targetNodeId": "file:src/utl/object-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fdepcruise-fmt.mjs%3Afile%3Asrc%2Fcli%2Fassert-node-environment-suitable.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/depcruise-fmt.mjs",
           "targetNodeId": "file:src/cli/assert-node-environment-suitable.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fdepcruise-fmt.mjs%3Afile%3Asrc%2Fcli%2Fformat.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/depcruise-fmt.mjs",
           "targetNodeId": "file:src/cli/format.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fformat.mjs%3Afile%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/format.mjs",
           "targetNodeId": "file:src/cli/normalize-cli-options.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fformat.mjs%3Afile%3Asrc%2Fcli%2Futl%2Fassert-file-existence.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/format.mjs",
           "targetNodeId": "file:src/cli/utl/assert-file-existence.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fformat.mjs%3Afile%3Asrc%2Fcli%2Futl%2Fio.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/format.mjs",
           "targetNodeId": "file:src/cli/utl/io.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fformat.mjs%3Afile%3Asrc%2Fmain%2Fformat.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/format.mjs",
           "targetNodeId": "file:src/main/format.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fdependency-cruiser.mjs%3Afile%3Asrc%2Fcli%2Fassert-node-environment-suitable.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/dependency-cruiser.mjs",
           "targetNodeId": "file:src/cli/assert-node-environment-suitable.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fdependency-cruiser.mjs%3Afile%3Asrc%2Fcli%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/dependency-cruiser.mjs",
           "targetNodeId": "file:src/cli/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Abin%2Fwrap-stream-in-html.mjs%3Afile%3Asrc%2Fcli%2Ftools%2Fwrap-stream-in-html.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:bin/wrap-stream-in-html.mjs",
           "targetNodeId": "file:src/cli/tools/wrap-stream-in-html.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Ftools%2Fwrap-stream-in-html.mjs%3Afile%3Asrc%2Freport%2Fdot-webpage%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/tools/wrap-stream-in-html.mjs",
           "targetNodeId": "file:src/report/dot-webpage"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fadd-validations.mjs%3Afile%3Asrc%2Fvalidate%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/add-validations.mjs",
           "targetNodeId": "file:src/validate/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Findex.mjs%3Afile%3Asrc%2Fvalidate%2Findex.d.ts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/index.mjs",
           "targetNodeId": "file:src/validate/index.d.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Findex.mjs%3Afile%3Asrc%2Fvalidate%2Fmatch-dependency-rule.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/index.mjs",
           "targetNodeId": "file:src/validate/match-dependency-rule.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Findex.mjs%3Afile%3Asrc%2Fvalidate%2Fmatch-folder-dependency-rule.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/index.mjs",
           "targetNodeId": "file:src/validate/match-folder-dependency-rule.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Findex.mjs%3Afile%3Asrc%2Fvalidate%2Fmatch-module-rule.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/index.mjs",
           "targetNodeId": "file:src/validate/match-module-rule.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Findex.mjs%3Afile%3Asrc%2Fvalidate%2Fviolates-required-rule.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/index.mjs",
           "targetNodeId": "file:src/validate/violates-required-rule.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fadd-validations.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/add-validations.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Fcircular.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/derive/circular.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Fdependents.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/derive/dependents.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Fmetrics%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/derive/metrics"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Forphan%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/derive/orphan"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Freachable.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/derive/reachable.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fsoften-known-violations.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/analyze/soften-known-violations.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Afile%3Asrc%2Fgraph-utl%2Fadd-focus.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/analyze-modules.mjs",
           "targetNodeId": "file:src/graph-utl/add-focus.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Fcircular.mjs%3Afile%3Asrc%2Fgraph-utl%2Findexed-module-graph.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/circular.mjs",
           "targetNodeId": "file:src/graph-utl/indexed-module-graph.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Fdependents.mjs%3Afile%3Asrc%2Fgraph-utl%2Fmodule-graph-with-dependency-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/dependents.mjs",
           "targetNodeId": "file:src/graph-utl/module-graph-with-dependency-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Fmetrics%3Afile%3Asrc%2Fgraph-utl%2Findexed-module-graph.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/metrics",
           "targetNodeId": "file:src/graph-utl/indexed-module-graph.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Fmetrics%3Afile%3Asrc%2Fanalyze%2Fderive%2Fmodule-utl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/metrics",
           "targetNodeId": "file:src/analyze/derive/module-utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Forphan%3Afile%3Asrc%2Fgraph-utl%2Fmodule-graph-with-dependency-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/orphan",
           "targetNodeId": "file:src/graph-utl/module-graph-with-dependency-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Freachable.mjs%3Afile%3Asrc%2Fgraph-utl%2Findexed-module-graph.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/reachable.mjs",
           "targetNodeId": "file:src/graph-utl/indexed-module-graph.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Freachable.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/reachable.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Freachable.mjs%3Afile%3Asrc%2Fvalidate%2Fmatchers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/reachable.mjs",
           "targetNodeId": "file:src/validate/matchers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsoften-known-violations.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fis-same-violation.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/soften-known-violations.mjs",
           "targetNodeId": "file:src/analyze/summarize/is-same-violation.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fadd-focus.mjs%3Afile%3Asrc%2Fgraph-utl%2Findexed-module-graph.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/add-focus.mjs",
           "targetNodeId": "file:src/graph-utl/indexed-module-graph.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fadd-focus.mjs%3Afile%3Asrc%2Fgraph-utl%2Fmatch-facade.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/add-focus.mjs",
           "targetNodeId": "file:src/graph-utl/match-facade.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Ffolders%3Afile%3Asrc%2Fvalidate%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/folders",
           "targetNodeId": "file:src/validate/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Ffolders%3Afile%3Asrc%2Fanalyze%2Fderive%2Fcircular.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/folders",
           "targetNodeId": "file:src/analyze/derive/circular.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Ffolders%3Afile%3Asrc%2Fanalyze%2Fderive%2Fmodule-utl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/folders",
           "targetNodeId": "file:src/analyze/derive/module-utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fderive%2Ffolders%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/derive/folders",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatchers.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/matchers.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatchers.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/matchers.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fanalyze-modules.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/index.mjs",
           "targetNodeId": "file:src/analyze/analyze-modules.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fderive%2Ffolders%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/index.mjs",
           "targetNodeId": "file:src/analyze/derive/folders"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fadd-rule-set-used.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/add-rule-set-used.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fget-stats.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/get-stats.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-folders.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/summarize-folders.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-modules.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/summarize-modules.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-options.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/analyze/summarize/summarize-options.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Afile%3Asrc%2Fenvironment.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/index.mjs",
           "targetNodeId": "file:src/environment.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fget-stats.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/get-stats.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-folders.mjs%3Afile%3Asrc%2Fgraph-utl%2Frule-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/summarize-folders.mjs",
           "targetNodeId": "file:src/graph-utl/rule-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-modules.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/summarize-modules.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-modules.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Fis-same-violation.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/summarize-modules.mjs",
           "targetNodeId": "file:src/analyze/summarize/is-same-violation.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-modules.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/summarize-modules.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fanalyze%2Fsummarize%2Fsummarize-modules.mjs%3Afile%3Asrc%2Fgraph-utl%2Frule-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/analyze/summarize/summarize-modules.mjs",
           "targetNodeId": "file:src/graph-utl/rule-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fenvironment.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/environment.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcache.mjs%3Afile%3Asrc%2Fcache%2Fcontent-strategy.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/cache.mjs",
           "targetNodeId": "file:src/cache/content-strategy.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcache.mjs%3Afile%3Asrc%2Fcache%2Fmetadata-strategy.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/cache.mjs",
           "targetNodeId": "file:src/cache/metadata-strategy.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcache.mjs%3Afile%3Asrc%2Fcache%2Foptions-compatible.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/cache.mjs",
           "targetNodeId": "file:src/cache/options-compatible.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcache.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/cache.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcontent-strategy.mjs%3Afile%3Asrc%2Fcache%2Ffind-content-changes.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/content-strategy.mjs",
           "targetNodeId": "file:src/cache/find-content-changes.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fcontent-strategy.mjs%3Afile%3Asrc%2Fcache%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/content-strategy.mjs",
           "targetNodeId": "file:src/cache/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fmetadata-strategy.mjs%3Afile%3Asrc%2Fcache%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/metadata-strategy.mjs",
           "targetNodeId": "file:src/cache/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/swc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fbabel-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/babel-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fcoffeescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/coffeescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fjavascript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/javascript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Flivescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/livescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fsvelte-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/svelte-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Ftypescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/typescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fvue-template-wrap.cjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/vue-template-wrap.cjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Ftry-import-available.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/meta.mjs",
           "targetNodeId": "file:src/extract/transpile/try-import-available.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Ffind-content-changes.mjs%3Afile%3Asrc%2Fcache%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/find-content-changes.mjs",
           "targetNodeId": "file:src/cache/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Ffind-content-changes.mjs%3Afile%3Asrc%2Futl%2Ffind-all-files.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/find-content-changes.mjs",
           "targetNodeId": "file:src/utl/find-all-files.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcache%2Fhelpers.mjs%3Afile%3Asrc%2Fgraph-utl%2Fmatch-facade.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cache/helpers.mjs",
           "targetNodeId": "file:src/graph-utl/match-facade.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Futl%2Ffind-all-files.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/utl/find-all-files.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fmatch-facade.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/match-facade.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fformat-meta-info.mjs%3Afile%3Asrc%2Fenvironment.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/format-meta-info.mjs",
           "targetNodeId": "file:src/environment.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Afile%3Asrc%2Fcli%2Fdefaults.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/normalize-cli-options.mjs",
           "targetNodeId": "file:src/cli/defaults.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-known-violations.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/normalize-cli-options.mjs",
           "targetNodeId": "file:src/config-utl/extract-known-violations.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Afile%3Asrc%2Futl%2Fobject-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/normalize-cli-options.mjs",
           "targetNodeId": "file:src/utl/object-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Fnormalize-cli-options.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/normalize-cli-options.mjs",
           "targetNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fformat.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fassert-validity.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/format.mjs",
           "targetNodeId": "file:src/main/options/assert-validity.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fformat.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/format.mjs",
           "targetNodeId": "file:src/main/options/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fformat.mjs%3Afile%3Asrc%2Fmain%2Freport-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/format.mjs",
           "targetNodeId": "file:src/main/report-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fformat.mjs%3Afile%3Asrc%2Fschema%2Fcruise-result.validate.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/format.mjs",
           "targetNodeId": "file:src/schema/cruise-result.validate.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fformat.mjs%3Afile%3Asrc%2Fschema%2Futl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/format.mjs",
           "targetNodeId": "file:src/schema/utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Fdefaults.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/defaults.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fbuild-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/build-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fcheck-and-warn-inconsistencies.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/check-and-warn-inconsistencies.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fget-user-input.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/get-user-input.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fnormalize-init-options.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/normalize-init-options.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fwrite-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/write-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Findex.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fwrite-run-scripts-to-manifest.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/index.mjs",
           "targetNodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Flisteners%2Fperformance-log%2Findex.mjs%3Afile%3Asrc%2Fcli%2Flisteners%2Fperformance-log%2Fhandlers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/listeners/performance-log/index.mjs",
           "targetNodeId": "file:src/cli/listeners/performance-log/handlers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-babel-config.mjs%3Afile%3Asrc%2Fconfig-utl%2Fmake-absolute.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-babel-config.mjs",
           "targetNodeId": "file:src/config-utl/make-absolute.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-babel-config.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-babel-config.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-known-violations.mjs%3Afile%3Asrc%2Fconfig-utl%2Fmake-absolute.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-known-violations.mjs",
           "targetNodeId": "file:src/config-utl/make-absolute.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-ts-config.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-ts-config.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-webpack-resolve-config.mjs%3Afile%3Asrc%2Fconfig-utl%2Fmake-absolute.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-webpack-resolve-config.mjs",
           "targetNodeId": "file:src/config-utl/make-absolute.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fanalyze%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/analyze/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fcache%2Fcache.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/cache/cache.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Fresolve-options%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/resolve-options/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fextract%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/extract/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Ffiles-and-dirs%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/files-and-dirs/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fassert-validity.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/options/assert-validity.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/options/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Freport-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/report-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/rule-set/assert-validity.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fcruise.mjs%3Afile%3Asrc%2Fmain%2Frule-set%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/cruise.mjs",
           "targetNodeId": "file:src/main/rule-set/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fbuild-config.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fconfig-template.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/build-config.mjs",
           "targetNodeId": "file:src/cli/init-config/config-template.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fbuild-config.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/build-config.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fbuild-config.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Futl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/build-config.mjs",
           "targetNodeId": "file:src/cli/init-config/utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fcheck-and-warn-inconsistencies.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/check-and-warn-inconsistencies.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fcheck-and-warn-inconsistencies.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/check-and-warn-inconsistencies.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Afile%3Asrc%2Fcli%2Fdefaults.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/environment-helpers.mjs",
           "targetNodeId": "file:src/cli/defaults.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Ffind-extensions.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/find-extensions.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Ffind-extensions.mjs%3Afile%3Asrc%2Futl%2Ffind-all-files.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/find-extensions.mjs",
           "targetNodeId": "file:src/utl/find-all-files.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Ffind-extensions.mjs%3Afile%3Asrc%2Futl%2Fget-extension.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/find-extensions.mjs",
           "targetNodeId": "file:src/utl/get-extension.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fget-user-input.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/get-user-input.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fget-user-input.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/get-user-input.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fget-user-input.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fvalidators.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/get-user-input.mjs",
           "targetNodeId": "file:src/cli/init-config/validators.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fget-user-input.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/get-user-input.mjs",
           "targetNodeId": "file:src/extract/tsc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fvalidators.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/validators.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Afile%3Asrc%2Futl%2Fget-extension.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/parse.mjs",
           "targetNodeId": "file:src/utl/get-extension.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/parse.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/parse.mjs",
           "targetNodeId": "file:src/extract/transpile/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fnormalize-init-options.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/normalize-init-options.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fnormalize-init-options.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/normalize-init-options.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fnormalize-init-options.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ffind-extensions.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/normalize-init-options.mjs",
           "targetNodeId": "file:src/cli/init-config/find-extensions.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fwrite-config.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/write-config.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fwrite-run-scripts-to-manifest.mjs%3Afile%3Asrc%2Fcli%2Fdefaults.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs",
           "targetNodeId": "file:src/cli/defaults.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fwrite-run-scripts-to-manifest.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Ftypes.d.mts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs",
           "targetNodeId": "file:src/cli/init-config/types.d.mts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fwrite-run-scripts-to-manifest.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Futl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs",
           "targetNodeId": "file:src/cli/init-config/utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Finit-config%2Fwrite-run-scripts-to-manifest.mjs%3Afile%3Asrc%2Fcli%2Finit-config%2Fenvironment-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/init-config/write-run-scripts-to-manifest.mjs",
           "targetNodeId": "file:src/cli/init-config/environment-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fcli%2Flisteners%2Fperformance-log%2Fhandlers.mjs%3Afile%3Asrc%2Fcli%2Flisteners%2Fperformance-log%2Fformat-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/cli/listeners/performance-log/handlers.mjs",
           "targetNodeId": "file:src/cli/listeners/performance-log/format-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Fmerge-configs.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-depcruise-config/merge-configs.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Fread-config.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs",
           "targetNodeId": "file:src/config-utl/extract-depcruise-config/read-config.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Afile%3Asrc%2Fmain%2Fresolve-options%2Fnormalize.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs",
           "targetNodeId": "file:src/main/resolve-options/normalize.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot-webpage%3Afile%3Asrc%2Freport%2Fdot%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot-webpage",
           "targetNodeId": "file:src/report/dot"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Futl%2Ftry-import.mjs%3Afile%3Asrc%2Futl%2Fextract-root-module-name.cjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/utl/try-import.mjs",
           "targetNodeId": "file:src/utl/extract-root-module-name.cjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Fmerge-configs.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-config/merge-configs.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Afile%3Asrc%2Fextract%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve.mjs",
           "targetNodeId": "file:src/extract/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fresolve-options%2Fnormalize.mjs%3Afile%3Asrc%2Fgraph-utl%2Frule-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/resolve-options/normalize.mjs",
           "targetNodeId": "file:src/graph-utl/rule-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fresolve-options%2Fnormalize.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/resolve-options/normalize.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fconfig-utl%2Fextract-depcruise-options.mjs%3Afile%3Asrc%2Fconfig-utl%2Fextract-depcruise-config%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/config-utl/extract-depcruise-options.mjs",
           "targetNodeId": "file:src/config-utl/extract-depcruise-config/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract-amd-deps.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Festree-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract-amd-deps.mjs",
           "targetNodeId": "file:src/extract/acorn/estree-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract-amd-deps.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract-cjs-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract-amd-deps.mjs",
           "targetNodeId": "file:src/extract/acorn/extract-cjs-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract-cjs-deps.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Festree-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract-cjs-deps.mjs",
           "targetNodeId": "file:src/extract/acorn/estree-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract-es6-deps.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Festree-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract-es6-deps.mjs",
           "targetNodeId": "file:src/extract/acorn/estree-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract-amd-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract.mjs",
           "targetNodeId": "file:src/extract/acorn/extract-amd-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract-cjs-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract.mjs",
           "targetNodeId": "file:src/extract/acorn/extract-cjs-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract-es6-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract.mjs",
           "targetNodeId": "file:src/extract/acorn/extract-es6-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract-stats.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract.mjs",
           "targetNodeId": "file:src/extract/acorn/extract-stats.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/extract.mjs",
           "targetNodeId": "file:src/extract/acorn/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fparse.mjs%3Afile%3Asrc%2Futl%2Fget-extension.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/parse.mjs",
           "targetNodeId": "file:src/utl/get-extension.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Facorn%2Fparse.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/acorn/parse.mjs",
           "targetNodeId": "file:src/extract/transpile/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fbabel-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/babel-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fcoffeescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/coffeescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fjavascript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/javascript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Flivescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/livescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fsvelte-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/svelte-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Ftypescript-wrap.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/typescript-wrap.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fvue-template-wrap.cjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/index.mjs",
           "targetNodeId": "file:src/extract/transpile/vue-template-wrap.cjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/tsc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/acorn/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fexternal-module-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/resolve/external-module-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fget-manifest.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/resolve/get-manifest.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve-amd.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve-amd.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fclear-caches.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/clear-caches.mjs",
           "targetNodeId": "file:src/extract/swc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fexternal-module-helpers.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/external-module-helpers.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fexternal-module-helpers.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/external-module-helpers.mjs",
           "targetNodeId": "file:src/extract/resolve/module-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fget-manifest.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmerge-manifests.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/get-manifest.mjs",
           "targetNodeId": "file:src/extract/resolve/merge-manifests.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-amd.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-amd.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-amd.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fis-built-in.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-amd.mjs",
           "targetNodeId": "file:src/extract/resolve/is-built-in.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fparse.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/parse.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/extract/acorn/extract.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Fextract%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/extract/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/extract/resolve/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fextract.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/extract/swc/extract.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-dependencies.mjs",
           "targetNodeId": "file:src/extract/tsc/extract.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fget-manifest.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/get-manifest.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve-amd.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve-amd.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fdetermine-dependency-types.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/determine-dependency-types.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/module-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve-cjs.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve-cjs.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/index.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/extract.mjs",
           "targetNodeId": "file:src/extract/swc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/extract.mjs",
           "targetNodeId": "file:src/extract/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fextract-swc-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/extract.mjs",
           "targetNodeId": "file:src/extract/swc/extract-swc-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fparse.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/extract.mjs",
           "targetNodeId": "file:src/extract/tsc/parse.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/extract.mjs",
           "targetNodeId": "file:src/extract/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fextract-stats.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/extract.mjs",
           "targetNodeId": "file:src/extract/tsc/extract-stats.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fextract-typescript-deps.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/extract.mjs",
           "targetNodeId": "file:src/extract/tsc/extract-typescript-deps.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-stats.mjs%3Afile%3Asrc%2Fextract%2Facorn%2Fextract.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-stats.mjs",
           "targetNodeId": "file:src/extract/acorn/extract.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fextract-stats.mjs%3Afile%3Asrc%2Fextract%2Ftsc%2Fextract.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/extract-stats.mjs",
           "targetNodeId": "file:src/extract/tsc/extract.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fgather-initial-sources.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/gather-initial-sources.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fgather-initial-sources.mjs%3Afile%3Asrc%2Fgraph-utl%2Fmatch-facade.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/gather-initial-sources.mjs",
           "targetNodeId": "file:src/graph-utl/match-facade.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fgather-initial-sources.mjs%3Afile%3Asrc%2Futl%2Fget-extension.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/gather-initial-sources.mjs",
           "targetNodeId": "file:src/utl/get-extension.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fgather-initial-sources.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/gather-initial-sources.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fclear-caches.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/index.mjs",
           "targetNodeId": "file:src/extract/clear-caches.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fextract-dependencies.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/index.mjs",
           "targetNodeId": "file:src/extract/extract-dependencies.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fextract-stats.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/index.mjs",
           "targetNodeId": "file:src/extract/extract-stats.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Findex.mjs%3Afile%3Asrc%2Fextract%2Fgather-initial-sources.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/index.mjs",
           "targetNodeId": "file:src/extract/gather-initial-sources.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fdetermine-dependency-types.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fexternal-module-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/determine-dependency-types.mjs",
           "targetNodeId": "file:src/extract/resolve/external-module-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fdetermine-dependency-types.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/determine-dependency-types.mjs",
           "targetNodeId": "file:src/extract/resolve/module-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/module-classifiers.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Afile%3Asrc%2Futl%2Fget-extension.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/module-classifiers.mjs",
           "targetNodeId": "file:src/utl/get-extension.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fmerge-manifests.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/merge-manifests.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-cjs.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fresolve.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-cjs.mjs",
           "targetNodeId": "file:src/extract/resolve/resolve.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-cjs.mjs%3Afile%3Asrc%2Futl%2Fpath-to-posix.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-cjs.mjs",
           "targetNodeId": "file:src/utl/path-to-posix.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-cjs.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-cjs.mjs",
           "targetNodeId": "file:src/extract/resolve/module-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-cjs.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fis-built-in.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-cjs.mjs",
           "targetNodeId": "file:src/extract/resolve/is-built-in.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-helpers.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fexternal-module-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-helpers.mjs",
           "targetNodeId": "file:src/extract/resolve/external-module-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fresolve%2Fresolve-helpers.mjs%3Afile%3Asrc%2Fextract%2Fresolve%2Fmodule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/resolve/resolve-helpers.mjs",
           "targetNodeId": "file:src/extract/resolve/module-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fdependency-visitor.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/dependency-visitor.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Fswc%2Fextract-swc-deps.mjs%3Afile%3Asrc%2Fextract%2Fswc%2Fdependency-visitor.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/swc/extract-swc-deps.mjs",
           "targetNodeId": "file:src/extract/swc/dependency-visitor.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fbabel-wrap.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/babel-wrap.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fcoffeescript-wrap.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/coffeescript-wrap.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Flivescript-wrap.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/livescript-wrap.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fsvelte-wrap.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/svelte-wrap.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fsvelte-wrap.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fsvelte-preprocess.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/svelte-wrap.mjs",
           "targetNodeId": "file:src/extract/transpile/svelte-preprocess.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Ftypescript-wrap.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/typescript-wrap.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftranspile%2Fvue-template-wrap.cjs%3Afile%3Asrc%2Futl%2Ftry-require.cjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/transpile/vue-template-wrap.cjs",
           "targetNodeId": "file:src/utl/try-require.cjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Futl%2Ftry-require.cjs%3Afile%3Asrc%2Futl%2Fextract-root-module-name.cjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/utl/try-require.cjs",
           "targetNodeId": "file:src/utl/extract-root-module-name.cjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fextract%2Ftsc%2Fextract-typescript-deps.mjs%3Afile%3Asrc%2Futl%2Ftry-import.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/extract/tsc/extract-typescript-deps.mjs",
           "targetNodeId": "file:src/utl/try-import.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-module-dependencies.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-module-dependencies.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-module-dependencies.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-module-dependencies.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-modules.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-modules.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-modules.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-modules.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-to-folder.mjs%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-module-dependencies.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-to-folder.mjs",
           "targetNodeId": "file:src/graph-utl/consolidate-module-dependencies.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-to-folder.mjs%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-modules.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-to-folder.mjs",
           "targetNodeId": "file:src/graph-utl/consolidate-modules.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-to-pattern.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-to-pattern.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-to-pattern.mjs%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-module-dependencies.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-to-pattern.mjs",
           "targetNodeId": "file:src/graph-utl/consolidate-module-dependencies.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Fconsolidate-to-pattern.mjs%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-modules.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/consolidate-to-pattern.mjs",
           "targetNodeId": "file:src/graph-utl/consolidate-modules.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Ffilter-bank.mjs%3Afile%3Asrc%2Fgraph-utl%2Fadd-focus.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/filter-bank.mjs",
           "targetNodeId": "file:src/graph-utl/add-focus.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Ffilter-bank.mjs%3Afile%3Asrc%2Fgraph-utl%2Findexed-module-graph.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/filter-bank.mjs",
           "targetNodeId": "file:src/graph-utl/indexed-module-graph.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fgraph-utl%2Ffilter-bank.mjs%3Afile%3Asrc%2Fgraph-utl%2Fmatch-facade.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/graph-utl/filter-bank.mjs",
           "targetNodeId": "file:src/graph-utl/match-facade.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Foptions%2Fassert-validity.mjs%3Afile%3Asrc%2Freport%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/options/assert-validity.mjs",
           "targetNodeId": "file:src/report/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Foptions%2Fnormalize.mjs%3Afile%3Asrc%2Futl%2Farray-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/options/normalize.mjs",
           "targetNodeId": "file:src/utl/array-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Foptions%2Fnormalize.mjs%3Afile%3Asrc%2Fmain%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/options/normalize.mjs",
           "targetNodeId": "file:src/main/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Foptions%2Fnormalize.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fdefaults.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/options/normalize.mjs",
           "targetNodeId": "file:src/main/options/defaults.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Fanalyze%2Fsummarize%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/analyze/summarize/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-to-pattern.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/graph-utl/consolidate-to-pattern.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Fgraph-utl%2Ffilter-bank.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/graph-utl/filter-bank.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Fgraph-utl%2Fstrip-self-transitions.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/graph-utl/strip-self-transitions.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Freport-wrap.mjs%3Afile%3Asrc%2Freport%2Findex.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/report-wrap.mjs",
           "targetNodeId": "file:src/report/index.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Afile%3Asrc%2Futl%2Fobject-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/assert-validity.mjs",
           "targetNodeId": "file:src/utl/object-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Afile%3Asrc%2Fmain%2Foptions%2Fassert-validity.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/assert-validity.mjs",
           "targetNodeId": "file:src/main/options/assert-validity.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Afile%3Asrc%2Fschema%2Futl.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/assert-validity.mjs",
           "targetNodeId": "file:src/schema/utl.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Afile%3Asrc%2Fmain%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/assert-validity.mjs",
           "targetNodeId": "file:src/main/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fassert-validity.mjs%3Afile%3Asrc%2Fschema%2Fconfiguration.validate.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/assert-validity.mjs",
           "targetNodeId": "file:src/schema/configuration.validate.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Frule-set%2Fnormalize.mjs%3Afile%3Asrc%2Fmain%2Fhelpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/rule-set/normalize.mjs",
           "targetNodeId": "file:src/main/helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Fhelpers.mjs%3Afile%3Asrc%2Futl%2Fobject-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/helpers.mjs",
           "targetNodeId": "file:src/utl/object-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Findex.mjs%3Afile%3Asrc%2Fextract%2Ftranspile%2Fmeta.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/index.mjs",
           "targetNodeId": "file:src/extract/transpile/meta.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Findex.mjs%3Afile%3Asrc%2Fmain%2Fformat.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/index.mjs",
           "targetNodeId": "file:src/main/format.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fmain%2Findex.mjs%3Afile%3Asrc%2Fmain%2Fcruise.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/main/index.mjs",
           "targetNodeId": "file:src/main/cruise.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Findex.mjs%3Afile%3Asrc%2Freport%2Fplugins.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/index.mjs",
           "targetNodeId": "file:src/report/plugins.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fazure-devops.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/azure-devops.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fbaseline.mjs%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/baseline.mjs",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fcsv.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/csv.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fd2.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/d2.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Futl%2Fobject-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/utl/object-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-to-folder.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/graph-utl/consolidate-to-folder.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Fgraph-utl%2Fconsolidate-to-pattern.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/graph-utl/consolidate-to-pattern.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Fgraph-utl%2Ffilter-bank.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/graph-utl/filter-bank.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Fgraph-utl%2Fstrip-self-transitions.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/graph-utl/strip-self-transitions.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fdot%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/dot",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror-html%3Afile%3Asrc%2Fgraph-utl%2Fcompare.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error-html",
           "targetNodeId": "file:src/graph-utl/compare.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror-html%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error-html",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror-long.mjs%3Afile%3Asrc%2Freport%2Ferror.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error-long.mjs",
           "targetNodeId": "file:src/report/error.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror.mjs%3Afile%3Asrc%2Fgraph-utl%2Frule-set.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error.mjs",
           "targetNodeId": "file:src/graph-utl/rule-set.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Ferror.mjs%3Afile%3Asrc%2Futl%2Fwrap-and-indent.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/error.mjs",
           "targetNodeId": "file:src/utl/wrap-and-indent.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fhtml%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/html",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fmarkdown.mjs%3Afile%3Asrc%2Freport%2Ferror-html%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/markdown.mjs",
           "targetNodeId": "file:src/report/error-html"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fmetrics.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/metrics.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fteamcity.mjs%3Afile%3Asrc%2Freport%2Futl%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/teamcity.mjs",
           "targetNodeId": "file:src/report/utl"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Freport%2Fteamcity.mjs%3Afile%3Asrc%2Freport%2Fteamcity.types.ts%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/report/teamcity.mjs",
           "targetNodeId": "file:src/report/teamcity.types.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-dependency-rule.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-dependency-rule.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-dependency-rule.mjs%3Afile%3Asrc%2Fvalidate%2Fmatchers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-dependency-rule.mjs",
           "targetNodeId": "file:src/validate/matchers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-dependency-rule.mjs%3Afile%3Asrc%2Fvalidate%2Frule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-dependency-rule.mjs",
           "targetNodeId": "file:src/validate/rule-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-folder-dependency-rule.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-folder-dependency-rule.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-folder-dependency-rule.mjs%3Afile%3Asrc%2Fvalidate%2Fmatchers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-folder-dependency-rule.mjs",
           "targetNodeId": "file:src/validate/matchers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-folder-dependency-rule.mjs%3Afile%3Asrc%2Fvalidate%2Frule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-folder-dependency-rule.mjs",
           "targetNodeId": "file:src/validate/rule-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-module-rule.mjs%3Afile%3Asrc%2Fvalidate%2Frule-classifiers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-module-rule.mjs",
           "targetNodeId": "file:src/validate/rule-classifiers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-module-rule.mjs%3Afile%3Asrc%2Fvalidate%2Fmatch-module-rule-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-module-rule.mjs",
           "targetNodeId": "file:src/validate/match-module-rule-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fviolates-required-rule.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/violates-required-rule.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fviolates-required-rule.mjs%3Afile%3Asrc%2Fvalidate%2Fmatchers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/violates-required-rule.mjs",
           "targetNodeId": "file:src/validate/matchers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fviolates-required-rule.mjs%3Afile%3Asrc%2Fvalidate%2Fmatch-module-rule-helpers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/violates-required-rule.mjs",
           "targetNodeId": "file:src/validate/match-module-rule-helpers.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-module-rule-helpers.mjs%3Afile%3Asrc%2Futl%2Fregex-util.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-module-rule-helpers.mjs",
           "targetNodeId": "file:src/utl/regex-util.mjs"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fvalidate%2Fmatch-module-rule-helpers.mjs%3Afile%3Asrc%2Fvalidate%2Fmatchers.mjs%3Aruntime",
-          "type": "default",
           "sourceNodeId": "file:src/validate/match-module-rule-helpers.mjs",
           "targetNodeId": "file:src/validate/matchers.mjs"
         }

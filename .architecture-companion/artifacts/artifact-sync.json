@@ -1,119 +1,80 @@
 {
   "type": "behavior",
   "title": "Sync catalog revision",
-  "updatedAt": "2026-10-11T22:20:39.828Z",
-  "vcs": {
-    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
-    "divergesFromRevision": false
-  },
+  "updatedAt": "2026-10-13T13:40:35.759Z",
+  "vcs": { "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d", "divergesFromRevision": false },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how an open Review UI responds to catalog changes while retaining the last valid artifact and isolating comments by revision.\n\n## Regeneration\nInspect src/server/review-updates.ts, src/server/read-catalog.ts, src/server/create-catalog-revision-id.ts, src/client/data-client.ts, and src/client/pages/workspace-page.tsx. Check the revision-update scenarios in specs/user-continue-new-review.spec.tsx and the server and workspace revision tests. Reconstruct the product flow from change detection through validation, branching into retaining the current artifact or activating and displaying the new revision.",
   "links": [
-    {
-      "href": "source:///specs/user-continue-new-review.spec.tsx"
-    },
-    {
-      "href": "source:///src/server/create-app.catalog-revision.test.ts"
-    },
-    {
-      "href": "source:///src/client/pages/workspace-page.revision.test.tsx"
-    }
+    { "href": "source:///specs/user-continue-new-review.spec.tsx" },
+    { "href": "source:///src/server/create-app.catalog-revision.test.ts" },
+    { "href": "source:///src/client/pages/workspace-page.revision.test.tsx" }
   ],
   "diagram": {
-    "layout": {
-      "layoutId": "elk-layered",
-      "options": {
-        "bezierEdges": true
-      }
-    },
+    "layout": { "layoutId": "general", "options": { "bezierEdges": true } },
     "graph": {
       "groups": [],
       "nodes": [
         {
-          "type": "default",
           "nodeId": "revision-detect-change",
-          "kind": "trigger",
           "title": "Catalog change detected",
           "description": "Scope-wide artifact polling and SSE notify the open workspace when discovered artifact paths or contents change.",
+          "kind": "trigger",
           "links": [
-            {
-              "href": "source:///src/server/review-updates.ts"
-            },
-            {
-              "href": "source:///src/client/data-client.ts"
-            }
+            { "href": "source:///src/server/review-updates.ts" },
+            { "href": "source:///src/client/data-client.ts" }
           ]
         },
         {
-          "type": "default",
           "nodeId": "revision-validate-artifact",
-          "kind": "condition",
           "title": "Is the changed catalog valid?",
           "description": "The server validates discovered JSON artifacts, their kinds, path identities, and diagram composition.",
-          "links": [
-            {
-              "href": "source:///src/server/read-catalog.ts"
-            }
-          ]
+          "kind": "condition",
+          "links": [{ "href": "source:///src/server/read-catalog.ts" }]
         },
         {
-          "type": "default",
           "nodeId": "revision-keep-current",
-          "kind": "result",
           "title": "Keep the last valid catalog",
           "description": "When a discovered artifact or the catalog configuration is invalid, show the error and keep the current catalog.",
-          "links": [
-            {
-              "href": "source:///src/client/pages/workspace-page.tsx"
-            }
-          ]
+          "kind": "result",
+          "links": [{ "href": "source:///src/client/pages/workspace-page.tsx" }]
         },
         {
-          "type": "default",
           "nodeId": "revision-activate-next",
-          "kind": "action",
           "title": "Activate the new revision",
           "description": "Compute the revision ID of the complete valid catalog, including scope-relative artifact identities, and replace the current review.",
+          "kind": "action",
           "links": [
-            {
-              "href": "source:///src/server/create-catalog-revision-id.ts"
-            },
-            {
-              "href": "source:///src/client/pages/workspace-page.tsx"
-            }
+            { "href": "source:///src/server/create-catalog-revision-id.ts" },
+            { "href": "source:///src/client/pages/workspace-page.tsx" }
           ]
         },
         {
-          "type": "default",
           "nodeId": "revision-show-updated",
-          "kind": "result",
           "title": "Show the updated catalog",
-          "description": "Show the new diagrams and exclude Annotations from the previous catalog revision."
+          "description": "Show the new diagrams and exclude Annotations from the previous catalog revision.",
+          "kind": "result"
         }
       ],
       "edges": [
         {
-          "type": "default",
           "edgeId": "revision-detect-to-validate",
           "sourceNodeId": "revision-detect-change",
           "targetNodeId": "revision-validate-artifact"
         },
         {
-          "type": "default",
           "edgeId": "revision-invalid-to-current",
           "sourceNodeId": "revision-validate-artifact",
           "targetNodeId": "revision-keep-current",
           "label": "Invalid"
         },
         {
-          "type": "default",
           "edgeId": "revision-valid-to-activate",
           "sourceNodeId": "revision-validate-artifact",
           "targetNodeId": "revision-activate-next",
           "label": "Valid"
         },
         {
-          "type": "default",
           "edgeId": "revision-activate-to-show",
           "sourceNodeId": "revision-activate-next",
           "targetNodeId": "revision-show-updated"
