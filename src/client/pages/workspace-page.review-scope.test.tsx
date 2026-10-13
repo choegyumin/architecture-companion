@@ -48,7 +48,7 @@ describe("local review scope", () => {
 
     render(<WorkspacePage client={client} />);
 
-    expect(screen.getByText("Loading review…")).toBeInTheDocument();
+    expect(await screen.findByText("Loading review…")).toBeInTheDocument();
     expect(await screen.findByRole("alert")).toHaveTextContent("Connection refused");
   });
 

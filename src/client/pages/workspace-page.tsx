@@ -1,6 +1,18 @@
 import { addEventListener } from "@base-ui/utils/addEventListener";
+import {
+  createBrowserHistory,
+  createRootRouteWithContext,
+  createRoute,
+  createRouter,
+  type RouterHistory,
+  RouterProvider,
+  useNavigate,
+  useParams,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { z } from "zod";
 
 import type { DataClient } from "@/client/data-client";
 import type {
@@ -15,6 +27,7 @@ import type { AnnotationAnchor, AnnotationDocument } from "@/features/annotation
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
+import { artifactStem } from "@/features/artifact/artifact";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
@@ -147,6 +160,7 @@ const initialAnnotationState: AnnotationState = {
 
 type WorkspacePageProps = Readonly<{
   client: DataClient;
+  history?: RouterHistory;
 }>;
 
 type WorkspaceShellProps = Readonly<{
@@ -407,13 +421,13 @@ async function loadReviewBundle(client: DataClient, isCurrent: () => boolean): P
   return undefined;
 }
 
-export function WorkspacePage({ client }: WorkspacePageProps) {
+function WorkspaceRoute() {
+  const { client } = useRouteContext({ strict: false }) as { client: DataClient };
+  const navigate = useNavigate();
+  const { stem } = useParams({ strict: false }) as { stem?: string };
   const [state, dispatchReview] = useReducer(reviewReducer, { status: "loading" });
   const [annotationState, dispatchAnnotation] = useReducer(annotationReducer, initialAnnotationState);
   const [sourceError, setSourceError] = useState<string>();
-  const [requestedReviewView, setRequestedReviewView] = useState<ReviewView>("process");
-  const [activeProcessId, setActiveProcessId] = useState("");
-  const [activeDesignId, setActiveDesignId] = useState("");
   const [spotlightState, setSpotlightState] = useState<SpotlightState>();
   const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
@@ -527,29 +541,67 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   useEffect(() => addEventListener(document, "keyup", handleAnnotationModeKeyUp), [handleAnnotationModeKeyUp]);
   useEffect(() => addEventListener(globalThis.window, "blur", handleAnnotationModeBlur), [handleAnnotationModeBlur]);
 
-  // A spotlight ping switches to its artifact exactly once. The ping usually
-  // arrives after the catalog has loaded; one that races the initial load is
-  // held in the pending ref and followed when that load completes.
-  const latestReviewRef = useRef(state);
-  useEffect(() => {
-    latestReviewRef.current = state;
-  }, [state]);
-  const pendingSpotlightFollowRef = useRef<ArtifactSpotlight | undefined>(undefined);
+  // The URL names the active artifact; everything below derives from it. A
+  // missing or unknown stem renders the first artifact, and the redirect
+  // effect mirrors that fallback into the URL.
+  const reviewCatalog = state.status === "ready" ? state.review.catalog : null;
+  const activeArtifact = useMemo(() => {
+    if (!reviewCatalog) return undefined;
+    return (
+      (stem !== undefined
+        ? reviewCatalog.artifacts.find(({ artifactId }) => artifactStem(artifactId) === stem)
+        : undefined) ??
+      reviewCatalog.artifacts.find(({ type }) => type === "behavior") ??
+      reviewCatalog.artifacts.find(({ type }) => type === "design")
+    );
+  }, [reviewCatalog, stem]);
+  const activeStem = activeArtifact ? artifactStem(activeArtifact.artifactId) : undefined;
 
-  const followSpotlight = useCallback(
-    (spotlight: ArtifactSpotlight, catalog: NonNullable<ReviewResponse["catalog"]>) => {
-      const artifact = catalog.artifacts.find(({ artifactId }) => artifactId === spotlight.artifactId);
-      if (artifact?.type === "behavior") {
-        setRequestedReviewView("process");
-        setActiveProcessId(spotlight.artifactId);
-        return;
+  // Selecting an artifact pushes a fresh URL: the query and spotlight params
+  // belong to the artifact they were created on. The selection also becomes
+  // the remembered artifact of its category for view switches.
+  const [rememberedArtifactIds, setRememberedArtifactIds] = useState<Partial<Record<"behavior" | "design", string>>>(
+    {},
+  );
+  const selectArtifact = useCallback(
+    (artifactId: string) => {
+      const type = reviewCatalog?.artifacts.find(({ artifactId: id }) => id === artifactId)?.type;
+      if (type) {
+        setRememberedArtifactIds((current) =>
+          current[type] === artifactId ? current : { ...current, [type]: artifactId },
+        );
       }
-      if (artifact?.type === "design") {
-        setRequestedReviewView("design");
-        setActiveDesignId(spotlight.artifactId);
-      }
+      void navigate({ params: { stem: artifactStem(artifactId) }, search: {}, to: "/artifacts/$stem" });
     },
-    [],
+    [navigate, reviewCatalog],
+  );
+
+  useEffect(() => {
+    if (!activeStem || stem === activeStem) return;
+    void navigate({ params: { stem: activeStem }, replace: true, search: true, to: "/artifacts/$stem" });
+  }, [activeStem, navigate, stem]);
+
+  // The review view is derived from the active artifact, so switching views
+  // navigates to the remembered artifact of that category, or its first one.
+  const changeReviewView = useCallback(
+    (view: string) => {
+      if (!reviewCatalog || (view !== "process" && view !== "design")) return;
+      const wantedType = view === "process" ? "behavior" : "design";
+      const target =
+        rememberedArtifactIds[wantedType] ??
+        reviewCatalog.artifacts.find(({ type }) => type === wantedType)?.artifactId;
+      if (target) selectArtifact(target);
+    },
+    [reviewCatalog, rememberedArtifactIds, selectArtifact],
+  );
+
+  // A spotlight ping switches to its artifact through the URL; the stem comes
+  // from the ping itself, so no catalog knowledge is needed here.
+  const followSpotlight = useCallback(
+    (spotlight: ArtifactSpotlight) => {
+      void navigate({ params: { stem: artifactStem(spotlight.artifactId) }, search: {}, to: "/artifacts/$stem" });
+    },
+    [navigate],
   );
 
   useEffect(() => {
@@ -567,12 +619,6 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
 
         dispatchAnnotation({ type: "annotations-refreshed", annotations: bundle.annotations });
         dispatchReview({ type: "load-succeeded", mode, bundle });
-
-        const pending = pendingSpotlightFollowRef.current;
-        if (pending && bundle.review.catalog) {
-          pendingSpotlightFollowRef.current = undefined;
-          followSpotlight(pending, bundle.review.catalog);
-        }
       } catch (error) {
         if (cancelled || request !== latestRequest) return;
 
@@ -591,10 +637,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
         dispatchReview({ type: "load-failed", mode: "refresh", message: error.message });
       },
       (spotlight) => {
-        const review = latestReviewRef.current;
-        const catalog = review.status === "ready" ? review.review.catalog : null;
-        if (catalog) followSpotlight(spotlight, catalog);
-        else pendingSpotlightFollowRef.current = spotlight;
+        followSpotlight(spotlight);
         setSpotlightState({ spotlight, stepIndex: 0 });
       },
     );
@@ -926,38 +969,31 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const { catalog } = state.review;
   const behaviors = catalog.artifacts.filter(({ type }) => type === "behavior");
   const designs = catalog.artifacts.filter(({ type }) => type === "design");
-  const activeProcess = behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? behaviors.at(0);
-  const activeDesign = designs.find(({ artifactId }) => artifactId === activeDesignId) ?? designs.at(0);
-  const activeReviewView: ReviewView | null =
-    requestedReviewView === "process" && activeProcess
+  const activeReviewView: ReviewView | null = activeArtifact
+    ? activeArtifact.type === "behavior"
       ? "process"
-      : requestedReviewView === "design" && activeDesign
-        ? "design"
-        : activeProcess
-          ? "process"
-          : activeDesign
-            ? "design"
-            : null;
+      : "design"
+    : null;
   const activeDiagramCollection =
-    activeReviewView === "process" && activeProcess
-      ? {
-          activeDiagram: activeProcess,
-          ariaLabel: `${activeProcess.title} product behavior diagram`,
-          annotationSurface: { canvasId: `behavior:${activeProcess.artifactId}` },
-          artifacts: behaviors,
-          heading: "Product Behaviors",
-          onSelect: setActiveProcessId,
-        }
-      : activeReviewView === "design" && activeDesign
+    activeArtifact && activeReviewView
+      ? activeReviewView === "process"
         ? {
-            activeDiagram: activeDesign,
-            ariaLabel: `${activeDesign.title} code design diagram`,
-            annotationSurface: { canvasId: `design:${activeDesign.artifactId}` },
+            activeDiagram: activeArtifact,
+            ariaLabel: `${activeArtifact.title} product behavior diagram`,
+            annotationSurface: { canvasId: `behavior:${activeArtifact.artifactId}` },
+            artifacts: behaviors,
+            heading: "Product Behaviors",
+            onSelect: selectArtifact,
+          }
+        : {
+            activeDiagram: activeArtifact,
+            ariaLabel: `${activeArtifact.title} code design diagram`,
+            annotationSurface: { canvasId: `design:${activeArtifact.artifactId}` },
             artifacts: designs,
             heading: "Code Designs",
-            onSelect: setActiveDesignId,
+            onSelect: selectArtifact,
           }
-        : undefined;
+      : undefined;
   const activeSpotlight: SpotlightController | undefined =
     spotlightState &&
     activeDiagramCollection &&
@@ -995,13 +1031,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     saveEdit: saveAnnotationEdit,
   };
   return (
-    <Tabs
-      className="contents"
-      value={activeReviewView}
-      onValueChange={(value) => {
-        if (value === "process" || value === "design") setRequestedReviewView(value);
-      }}
-    >
+    <Tabs className="contents" value={activeReviewView} onValueChange={changeReviewView}>
       <WorkspaceShell
         actions={
           <Toggle
@@ -1068,4 +1098,36 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       </WorkspaceShell>
     </Tabs>
   );
+}
+
+// The URL is the single source of truth for workspace state: the path names
+// the active artifact by its stem and the search carries the node-search
+// query and the active spotlight. The page mounts at the root route; the
+// child routes only carry the path so the same component never remounts
+// across navigations.
+const workspaceSearchSchema = z.object({
+  q: z.string().optional(),
+  spotlight: z.string().optional(),
+});
+
+const rootRoute = createRootRouteWithContext<Readonly<{ client: DataClient }>>()({
+  validateSearch: workspaceSearchSchema,
+  component: WorkspaceRoute,
+});
+
+const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: "/" });
+const artifactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/artifacts/$stem" });
+const routeTree = rootRoute.addChildren([indexRoute, artifactRoute]);
+
+function createWorkspaceRouter(client: DataClient, history?: RouterHistory) {
+  return createRouter({
+    context: { client },
+    history: history ?? createBrowserHistory(),
+    routeTree,
+  });
+}
+
+export function WorkspacePage({ client, history }: WorkspacePageProps) {
+  const router = useMemo(() => createWorkspaceRouter(client, history), [client, history]);
+  return <RouterProvider router={router} />;
 }

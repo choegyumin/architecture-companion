@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { artifactStem, type Artifact, artifactIdSchema, parseArtifact } from "@/features/artifact/artifact";
+import { type Artifact, artifactIdSchema, artifactStem, parseArtifact } from "@/features/artifact/artifact";
 
 export const catalogConfigSchema = z
   .object({
