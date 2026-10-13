@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createMemoryHistory } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
@@ -156,6 +156,34 @@ describe("workspace URL routing", () => {
         expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp");
         expect(screen.getByRole("tab", { name: "Code Design" })).toHaveAttribute("aria-selected", "true");
       });
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("mirrors the node search query in the URL and drops it on artifact moves", async () => {
+    const user = userEvent.setup();
+    const { history, cleanup } = await renderWorkspace("/");
+
+    try {
+      await screen.findByRole("button", { name: "Invite member" });
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+
+      await user.type(input, "Inv");
+      await waitFor(() => expect(history.location.search).toBe("?q=Inv"));
+
+      // Confirming the match closes the popup while keeping the query.
+      await user.click(screen.getByRole("option", { name: "Invitation submitted" }));
+      await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole("tab", { name: "Code Design" }));
+      await waitFor(() => expect(history.location.search).toBe(""));
+
+      // History back restores the query param; the input mirror is covered by
+      // the NodeSearch tests (happy-dom does not re-fire React Flow onInit on
+      // remount, so the search box itself is gone here).
+      history.back();
+      await waitFor(() => expect(history.location.search).toBe("?q=Inv"));
     } finally {
       await cleanup();
     }

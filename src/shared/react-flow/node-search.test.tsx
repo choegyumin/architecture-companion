@@ -306,4 +306,36 @@ describe("NodeSearch", () => {
     expect(report.mock.calls.some(([reported]) => reported === error)).toBe(true);
     expect(warn).not.toHaveBeenCalled();
   });
+
+  it("reports query changes to a controlled caller", async () => {
+    const user = userEvent.setup();
+    const onSearchQueryChange = vi.fn();
+    render(<NodeSearch searchQuery="" onSearchQueryChange={onSearchQueryChange} />);
+
+    await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "alp");
+
+    expect(onSearchQueryChange).toHaveBeenLastCalledWith("alp");
+    expect(screen.getByRole("combobox", { name: "Search nodes" })).toHaveValue("alp");
+    expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+  });
+
+  it("restores a controlled query as if it were typed", () => {
+    render(<NodeSearch searchQuery="alp" />);
+
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    expect(input).toHaveValue("alp");
+    expect(input).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+  });
+
+  it("follows an externally changed query", () => {
+    const { rerender } = render(<NodeSearch searchQuery="alp" />);
+
+    rerender(<NodeSearch searchQuery="bet" />);
+
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    expect(input).toHaveValue("bet");
+    expect(screen.getByRole("option", { name: "Beta" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Alpha" })).not.toBeInTheDocument();
+  });
 });

@@ -9,6 +9,7 @@ import {
   useNavigate,
   useParams,
   useRouteContext,
+  useSearch,
 } from "@tanstack/react-router";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
@@ -425,6 +426,7 @@ function WorkspaceRoute() {
   const { client } = useRouteContext({ strict: false }) as { client: DataClient };
   const navigate = useNavigate();
   const { stem } = useParams({ strict: false }) as { stem?: string };
+  const { q: searchQuery } = useSearch({ strict: false }) as { q?: string; spotlight?: string };
   const [state, dispatchReview] = useReducer(reviewReducer, { status: "loading" });
   const [annotationState, dispatchAnnotation] = useReducer(annotationReducer, initialAnnotationState);
   const [sourceError, setSourceError] = useState<string>();
@@ -580,6 +582,23 @@ function WorkspaceRoute() {
     if (!activeStem || stem === activeStem) return;
     void navigate({ params: { stem: activeStem }, replace: true, search: true, to: "/artifacts/$stem" });
   }, [activeStem, navigate, stem]);
+
+  // Typing replaces the URL on every keystroke — the URL is the state, no
+  // debounce — and preserves the spotlight param.
+  const changeSearchQuery = useCallback(
+    (value: string) => {
+      void navigate({
+        params: { stem: activeStem },
+        replace: true,
+        search: (previous: { q?: string; spotlight?: string }) => ({
+          q: value === "" ? undefined : value,
+          spotlight: previous.spotlight,
+        }),
+        to: "/artifacts/$stem",
+      });
+    },
+    [activeStem, navigate],
+  );
 
   // The review view is derived from the active artifact, so switching views
   // navigates to the remembered artifact of that category, or its first one.
@@ -1074,6 +1093,8 @@ function WorkspaceRoute() {
                   artifact={activeDiagramCollection.activeDiagram}
                   commentEnabled={annotationState.isModeEnabled}
                   onOpenSource={openSource}
+                  onSearchQueryChange={changeSearchQuery}
+                  searchQuery={searchQuery ?? ""}
                   spotlight={activeSpotlight}
                 />
               </div>

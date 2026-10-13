@@ -25,6 +25,8 @@ export type DiagramRendererProps = Readonly<{
   ariaLabel?: string;
   commentEnabled?: boolean;
   onOpenSource: (href: string) => void;
+  onSearchQueryChange?: (value: string) => void;
+  searchQuery?: string;
   spotlight?: SpotlightController;
 }>;
 
@@ -60,6 +62,8 @@ function DiagramRendererContent({
   children,
   artifact,
   onOpenSource,
+  onSearchQueryChange,
+  searchQuery,
   spotlight,
   calculateLayout,
   buildMeasurementNodes = buildDiagramMeasurementNodes,
@@ -151,6 +155,12 @@ function DiagramRendererContent({
   );
   const displayModel = spotlit?.model ?? (rendered?.status === "ready" ? rendered.model : undefined);
   const spotlightLayout = state.status === "ready" ? state.layout : undefined;
+  // NodeSearch memoizes its results on this getter, so it keeps a stable
+  // identity while the search matches re-render the canvas.
+  const getNodeLabel = useMemo(
+    () => (displayModel ? (node: DiagramReactFlowNode) => searchLabels.get(node.id) ?? "" : undefined),
+    [displayModel, searchLabels],
+  );
 
   // The canvas reframes whenever this object changes, so it is memoized to
   // keep identity churn in the workspace from re-triggering the framing.
@@ -193,7 +203,7 @@ function DiagramRendererContent({
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
         edges={displayModel ? [...displayModel.edges] : []}
         focusView={spotlightFocusView}
-        getNodeLabel={displayModel ? (node) => searchLabels.get(node.id) ?? "" : undefined}
+        getNodeLabel={getNodeLabel}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
@@ -214,6 +224,8 @@ function DiagramRendererContent({
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
         onNodesChange={onNodesChange}
+        onSearchQueryChange={onSearchQueryChange}
+        searchQuery={searchQuery}
         initialView={state.status === "ready" ? state.layout.initialView : undefined}
       >
         <BaseOverlayPanel>{(overlay) => <AnnotationLayer {...overlay} controller={annotations} />}</BaseOverlayPanel>
@@ -244,6 +256,8 @@ export function DiagramRendererBase({
   children,
   artifact,
   onOpenSource,
+  onSearchQueryChange,
+  searchQuery,
   spotlight,
   calculateLayout,
   buildMeasurementNodes,
@@ -261,6 +275,8 @@ export function DiagramRendererBase({
         annotations={annotations}
         artifact={artifact}
         onOpenSource={onOpenSource}
+        onSearchQueryChange={onSearchQueryChange}
+        searchQuery={searchQuery}
         spotlight={spotlight}
         calculateLayout={calculateLayout}
         buildMeasurementNodes={buildMeasurementNodes}

@@ -34,6 +34,9 @@ export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
   onSelectNode?: (node: NodeType) => void;
   /** Visible matches and the visited match, for presentation without viewport movement. */
   onMatchesChange?: (nodes: readonly NodeType[], currentNode: NodeType | null) => void;
+  /** Controlled query — the URL mirror. When given, typing reports through onSearchQueryChange and an external change arrives as if typed here. */
+  searchQuery?: string;
+  onSearchQueryChange?: (searchString: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }>;
@@ -54,22 +57,77 @@ export function NodeSearch<NodeType extends Node = Node>({
   onSearch,
   onSelectNode,
   onMatchesChange,
+  searchQuery,
+  onSearchQueryChange,
   open,
   onOpenChange,
 }: NodeSearchProps<NodeType>) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult<NodeType>[]>([]);
-  const [searchString, setSearchString] = useState("");
+  const [typedQuery, setTypedQuery] = useState<string | null>(null);
+  const [externalQuery, setExternalQuery] = useState(searchQuery);
+  const [internalOpen, setInternalOpen] = useState(Boolean(searchQuery));
   const [currentId, setCurrentId] = useState<string | null>(null);
   const hasWarnedInvalidLabel = useRef(false);
   const arrowKeyRef = useRef<"ArrowDown" | "ArrowUp" | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const { getNodes, fitView } = useReactFlow<NodeType>();
+  // useReactFlow gives no identity guarantee for its members: an unstable
+  // getNodes in the results memo below would recompute the results on every
+  // render and loop the match reporting. The mount-time getter is held
+  // instead — it still reads the live node store when invoked.
+  const [stableGetNodes] = useState(() => getNodes);
+  // An external query change (a URL navigation) replaces whatever was typed
+  // and arrives as if it were typed here; adjusting state during render keeps
+  // the mirror immediate without an effect pass.
+  if (searchQuery !== externalQuery) {
+    setExternalQuery(searchQuery);
+    setTypedQuery(null);
+    setInternalOpen(Boolean(searchQuery));
+  }
+  const searchString = typedQuery ?? externalQuery ?? "";
+  const search = useMemo<Readonly<{ results: SearchResult<NodeType>[]; invalidIds: string[] }>>(() => {
+    if (!searchString) return { results: [], invalidIds: [] };
+
+    // A broken label getter is a caller bug; computing during render means
+    // its error must not take the render down, so it is reported the way
+    // event-handler errors surface instead of thrown.
+    try {
+      const nodes = onSearch ? onSearch(searchString) : stableGetNodes();
+      const invalidIds: string[] = [];
+      const results: SearchResult<NodeType>[] = [];
+      const query = searchString.toLowerCase();
+
+      for (const node of nodes) {
+        const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
+        if (typeof label !== "string" && getNodeLabel) {
+          throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
+        }
+        if (typeof label !== "string") invalidIds.push(node.id);
+
+        const resolvedLabel = typeof label === "string" ? label : node.id;
+        if (onSearch || resolvedLabel.toLowerCase().includes(query)) results.push({ node, label: resolvedLabel });
+      }
+
+      return { results, invalidIds };
+    } catch (error) {
+      console.error(error);
+      return { results: [], invalidIds: [] };
+    }
+  }, [searchString, getNodeLabel, onSearch, stableGetNodes]);
+  const searchResults = search.results;
   const isOpen = (open ?? internalOpen) && Boolean(searchString);
   const currentIndex = searchResults.findIndex(({ node }) => node.id === currentId);
   const matchingNodes = useMemo(() => searchResults.map(({ node }) => node), [searchResults]);
   const currentNode = currentIndex === -1 ? null : searchResults[currentIndex].node;
+
+  useEffect(() => {
+    if (search.invalidIds.length === 0 || hasWarnedInvalidLabel.current) return;
+    hasWarnedInvalidLabel.current = true;
+    console.warn(
+      `NodeSearch: Could not resolve a string label for ${search.invalidIds.length} ${search.invalidIds.length === 1 ? "node" : "nodes"}.`,
+      { nodeIds: search.invalidIds },
+    );
+  }, [search]);
 
   useEffect(() => {
     onMatchesChange?.(isOpen ? matchingNodes : [], isOpen ? currentNode : null);
@@ -85,43 +143,13 @@ export function NodeSearch<NodeType extends Node = Node>({
 
   const changeSearchString = useCallback(
     (value: string) => {
-      if (!value) {
-        setSearchString("");
-        setSearchResults([]);
-        setCurrentId(null);
-        changeOpen(false);
-        return;
-      }
-
-      const nodes = onSearch ? onSearch(value) : getNodes();
-      const invalidIds: string[] = [];
-      const results: SearchResult<NodeType>[] = [];
-      const search = value.toLowerCase();
-
-      for (const node of nodes) {
-        const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
-        if (typeof label !== "string" && getNodeLabel) {
-          throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
-        }
-        if (typeof label !== "string") invalidIds.push(node.id);
-
-        const resolvedLabel = typeof label === "string" ? label : node.id;
-        if (onSearch || resolvedLabel.toLowerCase().includes(search)) results.push({ node, label: resolvedLabel });
-      }
-
-      if (!hasWarnedInvalidLabel.current && invalidIds.length > 0) {
-        hasWarnedInvalidLabel.current = true;
-        console.warn(
-          `NodeSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
-          { nodeIds: invalidIds },
-        );
-      }
-      setSearchString(value);
-      setSearchResults(results);
+      setTypedQuery(value);
+      onSearchQueryChange?.(value);
       setCurrentId(null);
-      changeOpen(true);
+      if (!value) changeOpen(false);
+      else if (open === undefined) setInternalOpen(true);
     },
-    [changeOpen, getNodeLabel, getNodes, onSearch],
+    [changeOpen, onSearchQueryChange, open],
   );
 
   const close = () => {

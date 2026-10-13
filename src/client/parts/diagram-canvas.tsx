@@ -103,12 +103,14 @@ type DiagramCanvasProps = Readonly<{
   onNodeActivate?: (nodeId: string) => void;
   onPaneActivate?: () => void;
   onNodesChange?: OnNodesChange<DiagramReactFlowNode>;
+  onSearchQueryChange?: (value: string) => void;
   /**
    * Maps a highlight origin to the edges it lights. Unset defaults to the
    * origin's own route (node origins light nothing); a renderer that tracks
    * its own graph can widen the highlight to a whole path.
    */
   resolveEdgeHighlight?: (origin: EdgeHighlightOrigin) => ReadonlySet<string>;
+  searchQuery?: string;
   initialView?: DiagramViewFramingOptions;
 }>;
 
@@ -124,7 +126,9 @@ export function DiagramCanvas({
   onNodeActivate,
   onPaneActivate,
   onNodesChange,
+  onSearchQueryChange,
   resolveEdgeHighlight,
+  searchQuery,
   initialView,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
@@ -387,6 +391,8 @@ export function DiagramCanvas({
               inputRef={searchInputRef}
               onSelectNode={handleSearchSelect}
               onMatchesChange={handleSearchMatchesChange}
+              onSearchQueryChange={onSearchQueryChange}
+              searchQuery={searchQuery}
               endInputAddon={
                 <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">{isMacOS ? "⌘K" : "Ctrl+K"}</kbd>
               }
