@@ -7,6 +7,7 @@ import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parseArtifactGeneratorManifest } from "@/features/artifact-generator/artifact-generator-manifest";
+import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 import { buildComponentGraph } from "@/plugins/artifact-generators/react-component-structure/analysis/build-component-graph";
 import { isMissingPathError, isPathInside } from "@/shared/node/path";
 
@@ -608,11 +609,19 @@ async function verifyInstalledReactComponentGenerator(
     { source: "OptionalList", target: "Row", supplies: [] },
     { source: "ReadOnlyList", target: "Row", supplies: [] },
   ]);
+  assert.ok(
+    arrayRenderingGraph.nodes.every((node) => !Object.hasOwn(node, "type")),
+    "Default node types must be omitted.",
+  );
+  assert.ok(
+    arrayRenderingGraph.edges.every((edge) => !Object.hasOwn(edge, "type")),
+    "Default edge types must be omitted.",
+  );
   const sourceAnalyzerGraph = await buildComponentGraph({ scopePath, sourcePaths: ["array-render-src"] });
   assert.deepEqual(
+    componentStructureDiagramGraphSchema.parse(arrayRenderingGraph),
     sourceAnalyzerGraph,
-    arrayRenderingGraph,
-    "Installed React generator must produce the same array-render graph as the source analyzer.",
+    "Installed React generator must normalize to the same array-render graph as the source analyzer.",
   );
 
   for (const filtered of [
