@@ -1,169 +1,117 @@
 {
   "type": "behavior",
   "title": "Prepare Review URL (Skill trigger)",
-  "updatedAt": "2026-10-12T15:47:49.000Z",
-  "vcs": {
-    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
-    "divergesFromRevision": false
-  },
+  "updatedAt": "2026-10-13T13:40:35.759Z",
+  "vcs": { "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d", "divergesFromRevision": false },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview how the coding agent prepares a non-empty, validated artifact and hands its local review URL to the reviewer.\n\n## Regeneration\nInspect skills/architecture-companion/SKILL.md, specs/agent-handoff-architecture.spec.ts, and the view-artifacts, view-generators, validate-schemas, and serve CLI commands. Reconstruct the new-artifact preparation flow from catalog discovery and placement selection through generator discovery and authoring through the non-empty artifact check, validation and correction loop, server startup, and URL handoff. Keep this diagram focused on preparation rather than the subsequent interactive review.",
-  "links": [
-    {
-      "href": "source:///specs/agent-handoff-architecture.spec.ts"
-    }
-  ],
+  "links": [{ "href": "source:///specs/agent-handoff-architecture.spec.ts" }],
   "diagram": {
-    "layout": {
-      "layoutId": "elk-layered",
-      "options": {
-        "bezierEdges": true
-      }
-    },
+    "layout": { "layoutId": "general", "options": { "bezierEdges": true } },
     "graph": {
       "groups": [],
       "nodes": [
         {
-          "type": "default",
           "nodeId": "agent-receive-review-task",
-          "kind": "trigger",
           "title": "Receive an architecture review request",
-          "description": "The coding agent starts preparing a review for the designated consumer scope."
+          "description": "The coding agent starts preparing a review for the designated consumer scope.",
+          "kind": "trigger"
         },
         {
-          "type": "default",
           "nodeId": "agent-discover-generators",
-          "kind": "action",
           "title": "Discover available generators",
           "description": "The agent harness discovers built-in, global, and project generator manifests.",
-          "links": [
-            {
-              "href": "source:///src/cli/view-generators.command.ts"
-            }
-          ]
+          "kind": "action",
+          "links": [{ "href": "source:///src/cli/view-generators.command.ts" }]
         },
         {
-          "type": "default",
           "nodeId": "agent-write-artifact",
-          "kind": "action",
           "title": "Write the artifact",
           "description": "Write JSON artifacts with an explicit behavior or design kind, using the current request, saved placement instructions, and existing conventions. Create the initial config with **/*.archcomp.json when needed.",
+          "kind": "action",
           "links": [
-            {
-              "href": "source:///skills/architecture-companion/schemas/artifact.schema.json"
-            },
-            {
-              "href": "source:///skills/architecture-companion/artifact-writing.md"
-            }
+            { "href": "source:///skills/architecture-companion/schemas/artifact.schema.json" },
+            { "href": "source:///skills/architecture-companion/artifact-writing.md" }
           ]
         },
         {
-          "type": "default",
           "nodeId": "agent-start-runtime",
-          "kind": "action",
           "title": "Run the Architecture Companion server",
           "description": "Start the server for the designated scope and print the loopback URL.",
+          "kind": "action",
           "links": [
-            {
-              "href": "source:///src/cli/serve.command.ts"
-            },
-            {
-              "href": "source:///src/server/start-server.ts"
-            }
+            { "href": "source:///src/cli/serve.command.ts" },
+            { "href": "source:///src/server/start-server.ts" }
           ]
         },
         {
-          "type": "default",
           "nodeId": "agent-artifact-valid",
-          "kind": "condition",
           "title": "Does the artifact contain diagrams and pass validation?",
           "description": "Use view-artifacts to confirm at least one discovered artifact exists, then validate the entire catalog before sharing a URL.",
+          "kind": "condition",
           "links": [
-            {
-              "href": "source:///src/cli/validate-schemas.command.ts"
-            },
-            {
-              "href": "source:///skills/architecture-companion/SKILL.md"
-            }
+            { "href": "source:///src/cli/validate-schemas.command.ts" },
+            { "href": "source:///skills/architecture-companion/SKILL.md" }
           ]
         },
         {
-          "type": "default",
           "nodeId": "agent-fix-artifact",
-          "kind": "action",
           "title": "Complete or fix the artifact",
-          "description": "Add the requested diagrams if none exist. Fix validation errors and rerun validate-schemas until it prints Catalog is valid."
+          "description": "Add the requested diagrams if none exist. Fix validation errors and rerun validate-schemas until it prints Catalog is valid.",
+          "kind": "action"
         },
         {
-          "type": "default",
           "nodeId": "agent-share-url",
-          "kind": "result",
           "title": "Hand off review URL",
-          "description": "Explain what the validated catalog covers and hand the review URL to the reviewer."
+          "description": "Explain what the validated catalog covers and hand the review URL to the reviewer.",
+          "kind": "result"
         },
         {
-          "type": "default",
           "nodeId": "agent-discover-artifacts",
-          "kind": "action",
           "title": "Read the catalog and placement context",
           "description": "Discover central and co-located artifacts with view-artifacts. Read configuration and user rules; ask about placement only when this is a new environment without an existing instruction or artifact.",
+          "kind": "action",
           "links": [
-            {
-              "href": "source:///src/cli/view-artifacts.command.ts"
-            },
-            {
-              "href": "source:///skills/architecture-companion/SKILL.md"
-            }
+            { "href": "source:///src/cli/view-artifacts.command.ts" },
+            { "href": "source:///skills/architecture-companion/SKILL.md" }
           ]
         }
       ],
       "edges": [
         {
-          "type": "default",
           "edgeId": "agent-task-to-discovery",
           "sourceNodeId": "agent-receive-review-task",
           "targetNodeId": "agent-discover-artifacts"
         },
         {
-          "type": "default",
           "edgeId": "agent-discovery-to-artifact",
           "sourceNodeId": "agent-discover-generators",
           "targetNodeId": "agent-write-artifact"
         },
         {
-          "type": "default",
           "edgeId": "agent-artifact-to-runtime",
           "sourceNodeId": "agent-write-artifact",
           "targetNodeId": "agent-artifact-valid"
         },
         {
-          "type": "default",
           "edgeId": "agent-runtime-to-validation",
           "sourceNodeId": "agent-artifact-valid",
           "targetNodeId": "agent-start-runtime",
           "label": "Yes"
         },
         {
-          "type": "default",
           "edgeId": "agent-invalid-to-fix",
           "sourceNodeId": "agent-artifact-valid",
           "targetNodeId": "agent-fix-artifact",
           "label": "No"
         },
         {
-          "type": "default",
           "edgeId": "agent-fix-to-validation",
           "sourceNodeId": "agent-fix-artifact",
           "targetNodeId": "agent-artifact-valid"
         },
+        { "edgeId": "agent-valid-to-share", "sourceNodeId": "agent-start-runtime", "targetNodeId": "agent-share-url" },
         {
-          "type": "default",
-          "edgeId": "agent-valid-to-share",
-          "sourceNodeId": "agent-start-runtime",
-          "targetNodeId": "agent-share-url"
-        },
-        {
-          "type": "default",
           "edgeId": "agent-artifacts-to-generators",
           "sourceNodeId": "agent-discover-artifacts",
           "targetNodeId": "agent-discover-generators"

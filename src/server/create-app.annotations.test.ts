@@ -12,7 +12,8 @@ import {
   type RevisionAnnotationRepository,
 } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 const emptyDocument: AnnotationDocument = { annotations: [] };
@@ -29,7 +30,7 @@ function catalog(title: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],

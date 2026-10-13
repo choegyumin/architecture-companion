@@ -125,7 +125,7 @@ describe("DataClient", () => {
       generator: "built-in:freeform",
       instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} diagram from its current workflow or component boundary.`,
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: { groups: [], nodes: [{ nodeId: "start", type: "default", title: "Start" }], edges: [] },
       },
     });

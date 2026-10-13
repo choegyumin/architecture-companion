@@ -10,9 +10,9 @@ import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../tests/helpers/write-catalog";
 
 const catalog = {
   artifacts: [
@@ -25,7 +25,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],

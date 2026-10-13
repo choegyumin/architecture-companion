@@ -15,9 +15,9 @@ import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repo
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 function catalog(label: string): CompanionCatalog {
   return {
@@ -33,7 +33,7 @@ function catalog(label: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from the current checkout components.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [
@@ -56,7 +56,10 @@ function catalog(label: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          layout: {
+            layoutId: "general",
+            options: { nudgeObstacleNodes: false, bezierEdges: false, elk: { direction: "RIGHT" } },
+          },
           graph: {
             groups: [],
             nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],

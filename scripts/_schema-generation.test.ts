@@ -65,10 +65,12 @@ describe("generateSchemaSources", () => {
         "DefaultEdge",
         "DefaultNode",
         "DependencyGraph",
-        "DiagramGraph",
+        "GeneralDiagramGraph",
         "ElkOptions",
         "FragmentNode",
-        "Group",
+        "DefaultGroup",
+        "BoundingGroup",
+        "DiamondNode",
         "LifelineNode",
         "Link",
         "MessageEdge",
@@ -95,7 +97,7 @@ describe("generateSchemaSources", () => {
     expect(graphDefByLayoutId).toEqual({
       "component-structure": "ComponentStructureGraph",
       "dependency-graph": "DependencyGraph",
-      "elk-layered": "DiagramGraph",
+      general: "GeneralDiagramGraph",
       sequence: "SequenceGraph",
     });
   });

@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeViewArtifactsCommand } from "@/cli/view-artifacts.command";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 let scopePath: string;
 let output: string;
@@ -36,7 +37,7 @@ it("prints discovered artifact paths and content as one JSON line", async () => 
     generator: "built-in:freeform",
     instructions: "Review checkout behavior.",
     diagram: {
-      layout: { layoutId: "elk-layered" },
+      layout: { layoutId: "general" },
       graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
     },
   };

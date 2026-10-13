@@ -1,387 +1,210 @@
 {
   "type": "design",
   "title": "Review session sequence",
-  "updatedAt": "2026-10-11T22:20:39.828Z",
-  "vcs": {
-    "revision": "f6c29af9291dc6add9a92a733ec8a568c578b28d",
-    "divergesFromRevision": false
-  },
+  "updatedAt": "2026-10-13T13:45:35.613Z",
+  "vcs": { "revision": "e7794fd70b01fdbfe7abd3b37d2fe42d5c8cc8b5", "divergesFromRevision": false },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-catalog.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
   "diagram": {
-    "layout": {
-      "layoutId": "sequence"
-    },
+    "layout": { "layoutId": "sequence" },
     "graph": {
       "groups": [],
       "nodes": [
-        {
-          "nodeId": "user",
-          "kind": "actor",
-          "title": "User",
-          "links": [],
-          "type": "lifeline",
-          "activations": []
-        },
+        { "nodeId": "user", "title": "User", "kind": "actor", "type": "lifeline", "links": [], "activations": [] },
         {
           "nodeId": "agent",
-          "kind": "actor",
           "title": "Agent",
-          "links": [
-            {
-              "href": "source:///skills/architecture-companion/SKILL.md"
-            }
-          ],
+          "kind": "actor",
           "type": "lifeline",
+          "links": [{ "href": "source:///skills/architecture-companion/SKILL.md" }],
           "activations": [
             {
               "activationId": "act-agent",
-              "startsAt": {
-                "messageId": "m00",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m04a",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m00", "endpoint": "target" },
+              "endsAt": { "messageId": "m04a", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "cli",
-          "kind": "participant",
           "title": "CLI",
-          "links": [
-            {
-              "href": "source:///src/cli/serve.ts"
-            },
-            {
-              "href": "source:///src/cli/serve.command.ts"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/cli/serve.ts" }, { "href": "source:///src/cli/serve.command.ts" }],
           "activations": [
             {
               "activationId": "act-cli",
-              "startsAt": {
-                "messageId": "m01",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m04",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m01", "endpoint": "target" },
+              "endsAt": { "messageId": "m04", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "browser",
-          "kind": "participant",
           "title": "Browser",
-          "links": [
-            {
-              "href": "source:///src/client/main.tsx"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/client/main.tsx" }],
           "activations": [
             {
               "activationId": "act-browser-boot",
-              "startsAt": {
-                "messageId": "m05",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m06",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m05", "endpoint": "target" },
+              "endsAt": { "messageId": "m06", "endpoint": "source" }
             },
             {
               "activationId": "act-browser-source",
-              "startsAt": {
-                "messageId": "m19",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m20",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m19", "endpoint": "target" },
+              "endsAt": { "messageId": "m20", "endpoint": "source" }
             },
             {
               "activationId": "act-browser-comment",
-              "startsAt": {
-                "messageId": "m24",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m25",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m24", "endpoint": "target" },
+              "endsAt": { "messageId": "m25", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "workspace",
-          "kind": "participant",
           "title": "WorkspacePage",
-          "links": [
-            {
-              "href": "source:///src/client/pages/workspace-page.tsx"
-            },
-            {
-              "href": "source:///src/client/parts/artifact-list.tsx"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [
+            { "href": "source:///src/client/pages/workspace-page.tsx" },
+            { "href": "source:///src/client/parts/artifact-list.tsx" }
+          ],
           "activations": [
             {
               "activationId": "act-workspace",
-              "startsAt": {
-                "messageId": "m06",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m26",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m06", "endpoint": "target" },
+              "endsAt": { "messageId": "m26", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "data-client",
-          "kind": "participant",
           "title": "DataClient",
-          "links": [
-            {
-              "href": "source:///src/client/data-client.ts"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/client/data-client.ts" }],
           "activations": [
             {
               "activationId": "act-data-client-load",
-              "startsAt": {
-                "messageId": "m07",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m12f",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m07", "endpoint": "target" },
+              "endsAt": { "messageId": "m12f", "endpoint": "source" }
             },
             {
               "activationId": "act-data-client-source",
-              "startsAt": {
-                "messageId": "m20a",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m21",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m20a", "endpoint": "target" },
+              "endsAt": { "messageId": "m21", "endpoint": "source" }
             },
             {
               "activationId": "act-data-client-annotation",
-              "startsAt": {
-                "messageId": "m26",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m27",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m26", "endpoint": "target" },
+              "endsAt": { "messageId": "m27", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "server",
-          "kind": "participant",
           "title": "Hono server",
-          "links": [
-            {
-              "href": "source:///src/server/create-app.ts"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/server/create-app.ts" }],
           "activations": [
             {
               "activationId": "act-server-review",
-              "startsAt": {
-                "messageId": "m08",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m11",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m08", "endpoint": "target" },
+              "endsAt": { "messageId": "m11", "endpoint": "source" }
             },
             {
               "activationId": "act-server-annotations",
-              "startsAt": {
-                "messageId": "m12b",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m12e",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m12b", "endpoint": "target" },
+              "endsAt": { "messageId": "m12e", "endpoint": "source" }
             },
             {
               "activationId": "act-server-source",
-              "startsAt": {
-                "messageId": "m21",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m23",
-                "endpoint": "target"
-              }
+              "startsAt": { "messageId": "m21", "endpoint": "target" },
+              "endsAt": { "messageId": "m23", "endpoint": "target" }
             },
             {
               "activationId": "act-server-annotation",
-              "startsAt": {
-                "messageId": "m27",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m28",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m27", "endpoint": "target" },
+              "endsAt": { "messageId": "m28", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "filesystem",
-          "kind": "participant",
           "title": "Filesystem",
-          "links": [
-            {
-              "href": "source:///src/server/read-catalog.ts"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/server/read-catalog.ts" }],
           "activations": [
             {
               "activationId": "act-filesystem-read",
-              "startsAt": {
-                "messageId": "m09",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m10",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m09", "endpoint": "target" },
+              "endsAt": { "messageId": "m10", "endpoint": "source" }
             },
             {
               "activationId": "act-filesystem-annotations",
-              "startsAt": {
-                "messageId": "m12c",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m12d",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m12c", "endpoint": "target" },
+              "endsAt": { "messageId": "m12d", "endpoint": "source" }
             },
             {
               "activationId": "act-filesystem-open",
-              "startsAt": {
-                "messageId": "m22",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m23",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m22", "endpoint": "target" },
+              "endsAt": { "messageId": "m23", "endpoint": "source" }
             },
             {
               "activationId": "act-filesystem-save",
-              "startsAt": {
-                "messageId": "m28",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m28",
-                "endpoint": "target"
-              }
+              "startsAt": { "messageId": "m28", "endpoint": "target" },
+              "endsAt": { "messageId": "m28", "endpoint": "target" }
             }
           ]
         },
         {
           "nodeId": "renderer",
-          "kind": "participant",
           "title": "DiagramRenderer",
-          "links": [
-            {
-              "href": "source:///src/client/widgets/diagram-renderer.tsx"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/client/widgets/diagram-renderer.tsx" }],
           "activations": [
             {
               "activationId": "act-renderer",
-              "startsAt": {
-                "messageId": "m13",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m17",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m13", "endpoint": "target" },
+              "endsAt": { "messageId": "m17", "endpoint": "source" }
             }
           ]
         },
         {
           "nodeId": "canvas",
-          "kind": "participant",
           "title": "DiagramCanvas",
-          "links": [
-            {
-              "href": "source:///src/client/parts/diagram-canvas.tsx"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [{ "href": "source:///src/client/parts/diagram-canvas.tsx" }],
           "activations": [
             {
               "activationId": "act-canvas",
-              "startsAt": {
-                "messageId": "m14",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m17",
-                "endpoint": "target"
-              }
+              "startsAt": { "messageId": "m14", "endpoint": "target" },
+              "endsAt": { "messageId": "m17", "endpoint": "target" }
             }
           ]
         },
         {
           "nodeId": "layout",
-          "kind": "participant",
           "title": "Diagram layout",
-          "links": [
-            {
-              "href": "source:///src/features/diagram/_layout/dependency-graph-layout.ts"
-            },
-            {
-              "href": "source:///src/features/diagram/_layout/elk-layered-diagram-layout.ts"
-            },
-            {
-              "href": "source:///src/features/diagram/_layout/sequence-diagram-layout.ts"
-            }
-          ],
+          "kind": "participant",
           "type": "lifeline",
+          "links": [
+            { "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.layout.ts" },
+            { "href": "source:///src/client/widgets/general-diagram-renderer.layout.ts" },
+            { "href": "source:///src/client/widgets/sequence-diagram-renderer.layout.ts" }
+          ],
           "activations": [
             {
               "activationId": "act-layout",
-              "startsAt": {
-                "messageId": "m15",
-                "endpoint": "target"
-              },
-              "endsAt": {
-                "messageId": "m16",
-                "endpoint": "source"
-              }
+              "startsAt": { "messageId": "m15", "endpoint": "target" },
+              "endsAt": { "messageId": "m16", "endpoint": "source" }
             }
           ]
         }
@@ -392,16 +215,14 @@
           "type": "message",
           "sourceNodeId": "user",
           "targetNodeId": "agent",
-          "label": "Architecture review request",
-          "messageType": "sync"
+          "label": "Architecture review request"
         },
         {
           "edgeId": "m01",
           "type": "message",
           "sourceNodeId": "agent",
           "targetNodeId": "cli",
-          "label": "Run Architecture Companion",
-          "messageType": "sync"
+          "label": "Run Architecture Companion"
         },
         {
           "edgeId": "m02",
@@ -409,8 +230,7 @@
           "sourceNodeId": "cli",
           "targetNodeId": "cli",
           "label": "resolveCompanionScopePath()",
-          "href": "source:///src/server/resolve-companion-scope.ts",
-          "messageType": "sync"
+          "href": "source:///src/server/resolve-companion-scope.ts"
         },
         {
           "edgeId": "m03",
@@ -418,8 +238,7 @@
           "sourceNodeId": "cli",
           "targetNodeId": "server",
           "label": "startServer()",
-          "href": "source:///src/server/start-server.ts",
-          "messageType": "sync"
+          "href": "source:///src/server/start-server.ts"
         },
         {
           "edgeId": "m04",
@@ -442,24 +261,21 @@
           "type": "message",
           "sourceNodeId": "user",
           "targetNodeId": "browser",
-          "label": "Open the received URL",
-          "messageType": "sync"
+          "label": "Open the received URL"
         },
         {
           "edgeId": "m06",
           "type": "message",
           "sourceNodeId": "browser",
           "targetNodeId": "workspace",
-          "label": "Mount WorkspacePage",
-          "messageType": "sync"
+          "label": "Mount WorkspacePage"
         },
         {
           "edgeId": "m06a",
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "data-client",
-          "label": "Subscribe to review updates",
-          "messageType": "sync"
+          "label": "Subscribe to review updates"
         },
         {
           "edgeId": "m06b",
@@ -474,24 +290,21 @@
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "data-client",
-          "label": "Load review data",
-          "messageType": "sync"
+          "label": "Load review data"
         },
         {
           "edgeId": "m08",
           "type": "message",
           "sourceNodeId": "data-client",
           "targetNodeId": "server",
-          "label": "GET /api/review",
-          "messageType": "sync"
+          "label": "GET /api/review"
         },
         {
           "edgeId": "m09",
           "type": "message",
           "sourceNodeId": "server",
           "targetNodeId": "filesystem",
-          "label": "Read config and discovered JSON artifact files",
-          "messageType": "sync"
+          "label": "Read config and discovered JSON artifact files"
         },
         {
           "edgeId": "m10",
@@ -522,24 +335,21 @@
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "data-client",
-          "label": "Load Annotations",
-          "messageType": "sync"
+          "label": "Load Annotations"
         },
         {
           "edgeId": "m12b",
           "type": "message",
           "sourceNodeId": "data-client",
           "targetNodeId": "server",
-          "label": "GET /api/annotations",
-          "messageType": "sync"
+          "label": "GET /api/annotations"
         },
         {
           "edgeId": "m12c",
           "type": "message",
           "sourceNodeId": "server",
           "targetNodeId": "filesystem",
-          "label": "Read Annotation document",
-          "messageType": "sync"
+          "label": "Read Annotation document"
         },
         {
           "edgeId": "m12d",
@@ -570,24 +380,21 @@
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "renderer",
-          "label": "Render the active Diagram",
-          "messageType": "sync"
+          "label": "Render the active Diagram"
         },
         {
           "edgeId": "m14",
           "type": "message",
           "sourceNodeId": "renderer",
           "targetNodeId": "canvas",
-          "label": "Render measurement nodes",
-          "messageType": "sync"
+          "label": "Render measurement nodes"
         },
         {
           "edgeId": "m15",
           "type": "message",
           "sourceNodeId": "renderer",
           "targetNodeId": "layout",
-          "label": "Calculate layout from graph and measured node sizes",
-          "messageType": "sync"
+          "label": "Calculate layout from graph and measured node sizes"
         },
         {
           "edgeId": "m16",
@@ -602,8 +409,7 @@
           "type": "message",
           "sourceNodeId": "renderer",
           "targetNodeId": "canvas",
-          "label": "Render the React Flow model",
-          "messageType": "sync"
+          "label": "Render the React Flow model"
         },
         {
           "edgeId": "m18",
@@ -618,24 +424,21 @@
           "type": "message",
           "sourceNodeId": "user",
           "targetNodeId": "browser",
-          "label": "Click a source link",
-          "messageType": "sync"
+          "label": "Click a source link"
         },
         {
           "edgeId": "m20",
           "type": "message",
           "sourceNodeId": "browser",
           "targetNodeId": "workspace",
-          "label": "Open source",
-          "messageType": "sync"
+          "label": "Open source"
         },
         {
           "edgeId": "m20a",
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "data-client",
-          "label": "openSource()",
-          "messageType": "sync"
+          "label": "openSource()"
         },
         {
           "edgeId": "m21",
@@ -643,16 +446,14 @@
           "sourceNodeId": "data-client",
           "targetNodeId": "server",
           "label": "POST /api/source/open",
-          "href": "source:///src/server/open-source-reference.ts",
-          "messageType": "sync"
+          "href": "source:///src/server/open-source-reference.ts"
         },
         {
           "edgeId": "m22",
           "type": "message",
           "sourceNodeId": "server",
           "targetNodeId": "filesystem",
-          "label": "Open the validated source",
-          "messageType": "sync"
+          "label": "Open the validated source"
         },
         {
           "edgeId": "m23",
@@ -667,32 +468,28 @@
           "type": "message",
           "sourceNodeId": "user",
           "targetNodeId": "browser",
-          "label": "Leave a comment",
-          "messageType": "sync"
+          "label": "Leave a comment"
         },
         {
           "edgeId": "m25",
           "type": "message",
           "sourceNodeId": "browser",
           "targetNodeId": "workspace",
-          "label": "Run Annotation controller actions",
-          "messageType": "sync"
+          "label": "Run Annotation controller actions"
         },
         {
           "edgeId": "m26",
           "type": "message",
           "sourceNodeId": "workspace",
           "targetNodeId": "data-client",
-          "label": "Save Annotations",
-          "messageType": "sync"
+          "label": "Save Annotations"
         },
         {
           "edgeId": "m27",
           "type": "message",
           "sourceNodeId": "data-client",
           "targetNodeId": "server",
-          "label": "PUT /api/annotations",
-          "messageType": "sync"
+          "label": "PUT /api/annotations"
         },
         {
           "edgeId": "m28",
@@ -700,8 +497,7 @@
           "sourceNodeId": "server",
           "targetNodeId": "filesystem",
           "label": "Save Annotation document",
-          "href": "source:///src/server/file-annotation-repository.ts",
-          "messageType": "sync"
+          "href": "source:///src/server/file-annotation-repository.ts"
         }
       ]
     }

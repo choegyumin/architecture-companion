@@ -145,11 +145,11 @@ var require_ignore = __commonJS({
             return null;
           }
           if (end > nameStart && pattern[end - 1] === ":") {
-            const expanded2 = POSIX_CLASSES[pattern.slice(nameStart, end - 1)];
-            if (expanded2 === UNDEFINED) {
+            const expanded = POSIX_CLASSES[pattern.slice(nameStart, end - 1)];
+            if (expanded === UNDEFINED) {
               return null;
             }
-            body += expanded2;
+            body += expanded;
             prev = EMPTY;
             index = end;
           } else {
@@ -23790,74 +23790,6 @@ import { createHash } from "crypto";
 // src/features/artifact-generator/artifact-generator-reference.ts
 var artifactGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
-// src/features/diagram/_layout/elk-core.ts
-var DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"];
-var EDGE_ROUTINGS = ["ORTHOGONAL", "POLY_LINE", "SPLINES"];
-var NODE_PLACEMENT_STRATEGIES = ["BRANDES_KOEPF", "LINEAR_SEGMENTS", "SIMPLE", "MIN_WIDTH", "INTERACTIVE"];
-var VERIFIED_ELK_OPTION_KEYS = ["direction", "layered.edgeRouting", "layered.nodePlacement.strategy"];
-var DESIGN_OWNED_ELK_OPTION = /^elk\.(padding$|spacing\.|layered\.spacing\.)/;
-var elkOptionMapSchema = external_exports.object({
-  direction: external_exports.enum(DIRECTIONS).optional(),
-  "layered.edgeRouting": external_exports.enum(EDGE_ROUTINGS).optional(),
-  "layered.nodePlacement.strategy": external_exports.enum(NODE_PLACEMENT_STRATEGIES).optional()
-}).catchall(external_exports.string()).superRefine((options, ctx) => {
-  for (const key of Object.keys(options)) {
-    if (VERIFIED_ELK_OPTION_KEYS.includes(key)) continue;
-    if (!key.startsWith("_.")) {
-      ctx.addIssue({
-        code: "custom",
-        path: [key],
-        message: "Unverified elk options must use the raw `_.` prefix with the full option id."
-      });
-      continue;
-    }
-    if (DESIGN_OWNED_ELK_OPTION.test(`elk.${key.slice(2)}`)) {
-      ctx.addIssue({
-        code: "custom",
-        path: [key],
-        message: "Padding and spacing options are design-owned and cannot be set."
-      });
-    }
-  }
-}).meta({ id: "ElkOptions" });
-var GROUP_PADDING = { top: 96, right: 32, bottom: 32, left: 32 };
-var EMPTY_GROUP_SIZE = {
-  width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
-  height: GROUP_PADDING.top + GROUP_PADDING.bottom
-};
-
-// src/features/diagram/_layout/component-structure-diagram-layout.ts
-var componentStructureDiagramLayoutConfigSchema = external_exports.object({
-  layoutId: external_exports.literal("component-structure"),
-  options: external_exports.object({
-    elk: elkOptionMapSchema.optional()
-  }).strict().optional()
-}).strict();
-
-// src/features/diagram/_layout/dependency-graph-layout.ts
-var dependencyGraphLayoutConfigSchema = external_exports.object({ layoutId: external_exports.literal("dependency-graph") }).strict();
-var GROUP_PADDING2 = { top: 96, right: 80, bottom: 80, left: 80 };
-var EMPTY_GROUP_SIZE2 = {
-  width: 288 + GROUP_PADDING2.left + GROUP_PADDING2.right,
-  height: GROUP_PADDING2.top + GROUP_PADDING2.bottom
-};
-
-// src/features/diagram/_layout/elk-layered-diagram-layout.ts
-var elkLayeredDiagramLayoutConfigSchema = external_exports.object({
-  layoutId: external_exports.literal("elk-layered"),
-  options: external_exports.object({
-    nudgeObstacleNodes: external_exports.boolean().optional(),
-    bezierEdges: external_exports.boolean().optional(),
-    elk: elkOptionMapSchema.optional()
-  }).strict().optional()
-}).strict();
-
-// src/features/diagram/_layout/sequence-diagram-layout.ts
-var sequenceDiagramLayoutConfigSchema = external_exports.object({ layoutId: external_exports.literal("sequence") }).strict();
-var ROW_HEIGHT = 72;
-var FRAGMENT_GUARD_MESSAGE_GAP = 32;
-var FRAGMENT_TOP_MARGIN = ROW_HEIGHT / 2 + FRAGMENT_GUARD_MESSAGE_GAP;
-
 // src/features/diagram/diagram-graph.ts
 var diagramIdSchema = external_exports.string().min(1);
 var diagramLinkSchema = external_exports.object({
@@ -23873,7 +23805,7 @@ var diagramControlBaseShape = {
   label: external_exports.string().min(1),
   // Omitted `dependsOn` equals [[]]: the control has no prerequisites. An
   // explicit [] stays invalid because an empty OR never holds.
-  dependsOn: diagramRouteRequirementRulesetSchema.optional()
+  dependsOn: diagramRouteRequirementRulesetSchema.default([[]])
 };
 var diagramControlSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({ ...diagramControlBaseShape, type: external_exports.literal("conditional") }).strict(),
@@ -23882,20 +23814,20 @@ var diagramControlSchema = external_exports.discriminatedUnion("type", [
     type: external_exports.literal("branch"),
     cases: external_exports.array(external_exports.object({ caseId: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
     /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
-    polarityPair: external_exports.literal(true).optional()
+    polarityPair: external_exports.boolean().default(false)
   }).strict()
 ]);
 var diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: external_exports.string().min(1),
-  description: external_exports.string().min(1).optional(),
-  details: external_exports.array(external_exports.string().min(1)).optional(),
   groupId: diagramIdSchema.optional()
 };
 var defaultDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1).optional(),
-  type: external_exports.literal("default"),
+  type: external_exports.literal("default").default("default"),
   links: external_exports.array(diagramLinkSchema).optional()
 }).strict().meta({ id: "DefaultNode" });
 var activationEndpointSchema = external_exports.object({
@@ -23909,6 +23841,8 @@ var activationSchema = external_exports.object({
 }).strict();
 var lifelineDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1),
   type: external_exports.literal("lifeline"),
   links: external_exports.array(diagramLinkSchema).optional(),
@@ -23922,19 +23856,23 @@ var fragmentBranchSchema = external_exports.object({
 }).strict();
 var fragmentDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1),
   type: external_exports.literal("fragment"),
   operator: external_exports.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
   branches: external_exports.array(fragmentBranchSchema).min(1)
 }).strict().meta({ id: "FragmentNode" });
+var diamondDiagramNodeSchema = external_exports.object({ ...diagramNodeBaseShape, type: external_exports.literal("diamond") }).strict().meta({ id: "DiamondNode" });
 var diagramNodeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
+  diamondDiagramNodeSchema,
   lifelineDiagramNodeSchema,
   fragmentDiagramNodeSchema
 ]);
 var defaultDiagramEdgeSchema = external_exports.object({
   edgeId: diagramIdSchema,
-  type: external_exports.literal("default"),
+  type: external_exports.literal("default").default("default"),
   sourceNodeId: diagramIdSchema,
   targetNodeId: diagramIdSchema,
   kind: external_exports.string().min(1).optional(),
@@ -23963,12 +23901,23 @@ var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
   controlDiagramEdgeSchema,
   messageDiagramEdgeSchema
 ]);
-var diagramGroupSchema = external_exports.object({
+var diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: external_exports.string().min(1),
-  description: external_exports.string().min(1).optional(),
   parentGroupId: diagramIdSchema.optional()
-}).strict().meta({ id: "Group" });
+};
+var defaultDiagramGroupSchema = external_exports.object({
+  ...diagramGroupBaseShape,
+  type: external_exports.literal("default").default("default"),
+  description: external_exports.string().min(1).optional()
+}).strict().meta({ id: "DefaultGroup" });
+var boundingDiagramGroupSchema = external_exports.object({
+  ...diagramGroupBaseShape,
+  type: external_exports.literal("bounding"),
+  description: external_exports.string().min(1).optional(),
+  hideTitle: external_exports.boolean().default(false)
+}).strict().meta({ id: "BoundingGroup" });
+var diagramGroupSchema = external_exports.discriminatedUnion("type", [defaultDiagramGroupSchema, boundingDiagramGroupSchema]);
 function validateGraphIntegrity(graph) {
   const issues = [];
   const graphElements = [
@@ -24064,9 +24013,9 @@ var graphBaseShape = {
   nodes: external_exports.array(diagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(diagramEdgeSchema).readonly()
 };
-var diagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
+var generalDiagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-}).meta({ id: "DiagramGraph" });
+}).meta({ id: "GeneralDiagramGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
@@ -24172,6 +24121,7 @@ var sequenceDiagramGraphSchema = external_exports.object({
 }).meta({ id: "SequenceGraph" });
 var dependencyDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
+  groups: external_exports.array(defaultDiagramGroupSchema).readonly(),
   nodes: external_exports.array(defaultDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
 }).strict().superRefine((graph, context) => {
@@ -24191,15 +24141,15 @@ var componentCompositionSchema = external_exports.object({
   slot: external_exports.string().min(1).optional(),
   origins: external_exports.array(componentOriginSchema)
 }).strict().meta({ id: "ComponentComposition" });
-var componentStructureEdgeLayoutContextSchema = external_exports.object({ composition: componentCompositionSchema.nullable().optional() }).strict().meta({ id: "ComponentStructureEdgeLayoutContext" });
-var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureDefaultEdge" });
-var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureControlEdge" });
+var componentStructureEdgeLayoutContextSchema = external_exports.object({ composition: componentCompositionSchema.nullable().default(null) }).strict().meta({ id: "ComponentStructureEdgeLayoutContext" });
+var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) }).meta({ id: "ComponentStructureDefaultEdge" });
+var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) }).meta({ id: "ComponentStructureControlEdge" });
 var componentStructureLayoutContextSchema = external_exports.object({
   rootNodeIds: external_exports.array(diagramIdSchema).min(1).readonly(),
   controls: external_exports.array(diagramControlSchema).readonly(),
   // Recommended for referenced definitions without a node; registering a
   // definition that also has a node is allowed, and so is omitting entries.
-  auxiliaryDefinitions: external_exports.array(auxiliaryDefinitionSchema).readonly().optional()
+  auxiliaryDefinitions: external_exports.array(auxiliaryDefinitionSchema).readonly().default([])
 }).strict();
 function validateComponentStructureGraph(graph) {
   const issues = [];
@@ -24329,12 +24279,71 @@ function validateComponentStructureGraph(graph) {
 }
 var componentStructureDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
+  groups: external_exports.array(defaultDiagramGroupSchema).readonly(),
   nodes: external_exports.array(componentStructureDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(external_exports.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema])).readonly(),
   layoutContext: componentStructureLayoutContextSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
 }).meta({ id: "ComponentStructureGraph" });
+
+// src/features/diagram/elk-core.ts
+var DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"];
+var EDGE_ROUTINGS = ["ORTHOGONAL", "POLY_LINE", "SPLINES"];
+var NODE_PLACEMENT_STRATEGIES = ["BRANDES_KOEPF", "LINEAR_SEGMENTS", "SIMPLE", "MIN_WIDTH", "INTERACTIVE"];
+var VERIFIED_ELK_OPTION_KEYS = ["direction", "layered.edgeRouting", "layered.nodePlacement.strategy"];
+var DESIGN_OWNED_ELK_OPTION = /^elk\.(padding$|spacing\.|layered\.spacing\.)/;
+var elkOptionMapSchema = external_exports.object({
+  direction: external_exports.enum(DIRECTIONS).optional(),
+  "layered.edgeRouting": external_exports.enum(EDGE_ROUTINGS).optional(),
+  "layered.nodePlacement.strategy": external_exports.enum(NODE_PLACEMENT_STRATEGIES).optional()
+}).catchall(external_exports.string()).superRefine((options, ctx) => {
+  for (const key of Object.keys(options)) {
+    if (VERIFIED_ELK_OPTION_KEYS.includes(key)) continue;
+    if (!key.startsWith("_.")) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: "Unverified elk options must use the raw `_.` prefix with the full option id."
+      });
+      continue;
+    }
+    if (DESIGN_OWNED_ELK_OPTION.test(`elk.${key.slice(2)}`)) {
+      ctx.addIssue({
+        code: "custom",
+        path: [key],
+        message: "Padding and spacing options are design-owned and cannot be set."
+      });
+    }
+  }
+}).meta({ id: "ElkOptions" });
+var GROUP_PADDING = { top: 96, right: 32, bottom: 32, left: 32 };
+var EMPTY_GROUP_SIZE = {
+  width: 288 + GROUP_PADDING.left + GROUP_PADDING.right,
+  height: GROUP_PADDING.top + GROUP_PADDING.bottom
+};
+
+// src/features/diagram/diagram-layout.ts
+var generalDiagramLayoutConfigSchema = external_exports.object({
+  layoutId: external_exports.literal("general"),
+  options: external_exports.object({
+    nudgeObstacleNodes: external_exports.boolean().default(false),
+    bezierEdges: external_exports.boolean().default(false),
+    elk: elkOptionMapSchema.optional()
+  }).strict().optional()
+}).strict();
+var sequenceDiagramLayoutConfigSchema = external_exports.object({ layoutId: external_exports.literal("sequence") }).strict();
+var dependencyGraphLayoutConfigSchema = external_exports.object({ layoutId: external_exports.literal("dependency-graph") }).strict();
+var componentStructureDiagramLayoutConfigSchema = external_exports.object({
+  layoutId: external_exports.literal("component-structure"),
+  options: external_exports.object({ elk: elkOptionMapSchema.optional() }).strict().optional()
+}).strict();
+var diagramLayoutConfigSchema = external_exports.discriminatedUnion("layoutId", [
+  generalDiagramLayoutConfigSchema,
+  sequenceDiagramLayoutConfigSchema,
+  dependencyGraphLayoutConfigSchema,
+  componentStructureDiagramLayoutConfigSchema
+]);
 
 // src/features/artifact/artifact.ts
 var artifactIdSchema = external_exports.string().min(1).refine(
@@ -24354,7 +24363,7 @@ var artifactBaseShape = {
   links: external_exports.array(diagramLinkSchema).readonly().optional()
 };
 var diagramMemberSchema = (layout, graph) => external_exports.object({ layout, graph }).strict();
-var elkLayeredDiagramSchema = diagramMemberSchema(elkLayeredDiagramLayoutConfigSchema, diagramGraphSchema);
+var generalDiagramSchema = diagramMemberSchema(generalDiagramLayoutConfigSchema, generalDiagramGraphSchema);
 var sequenceDiagramSchema = diagramMemberSchema(sequenceDiagramLayoutConfigSchema, sequenceDiagramGraphSchema);
 var dependencyGraphDiagramSchema = diagramMemberSchema(
   dependencyGraphLayoutConfigSchema,
@@ -24365,7 +24374,7 @@ var componentStructureDiagramSchema = diagramMemberSchema(
   componentStructureDiagramGraphSchema
 );
 var diagramSchema = external_exports.union([
-  elkLayeredDiagramSchema,
+  generalDiagramSchema,
   sequenceDiagramSchema,
   dependencyGraphDiagramSchema,
   componentStructureDiagramSchema
@@ -24375,7 +24384,7 @@ var artifactSchema = external_exports.object({
   diagram: diagramSchema
 }).strict();
 var diagramMembersByLayoutId = {
-  "elk-layered": elkLayeredDiagramSchema,
+  general: generalDiagramSchema,
   sequence: sequenceDiagramSchema,
   "dependency-graph": dependencyGraphDiagramSchema,
   "component-structure": componentStructureDiagramSchema

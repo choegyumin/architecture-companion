@@ -61,15 +61,17 @@
               "properties": {
                 "layoutId": {
                   "type": "string",
-                  "const": "elk-layered"
+                  "const": "general"
                 },
                 "options": {
                   "type": "object",
                   "properties": {
                     "nudgeObstacleNodes": {
+                      "default": false,
                       "type": "boolean"
                     },
                     "bezierEdges": {
+                      "default": false,
                       "type": "boolean"
                     },
                     "elk": {
@@ -85,7 +87,7 @@
               "additionalProperties": false
             },
             "graph": {
-              "$ref": "#/$defs/DiagramGraph"
+              "$ref": "#/$defs/GeneralDiagramGraph"
             }
           },
           "required": [
@@ -246,14 +248,21 @@
         "type": "string"
       }
     },
-    "DiagramGraph": {
+    "GeneralDiagramGraph": {
       "type": "object",
       "properties": {
         "groups": {
           "readOnly": true,
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Group"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultGroup"
+              },
+              {
+                "$ref": "#/$defs/BoundingGroup"
+              }
+            ]
           }
         },
         "nodes": {
@@ -264,6 +273,9 @@
             "oneOf": [
               {
                 "$ref": "#/$defs/DefaultNode"
+              },
+              {
+                "$ref": "#/$defs/DiamondNode"
               },
               {
                 "$ref": "#/$defs/LifelineNode"
@@ -299,7 +311,7 @@
       ],
       "additionalProperties": false
     },
-    "Group": {
+    "DefaultGroup": {
       "type": "object",
       "properties": {
         "groupId": {
@@ -310,11 +322,16 @@
           "type": "string",
           "minLength": 1
         },
-        "description": {
+        "parentGroupId": {
           "type": "string",
           "minLength": 1
         },
-        "parentGroupId": {
+        "type": {
+          "default": "default",
+          "type": "string",
+          "const": "default"
+        },
+        "description": {
           "type": "string",
           "minLength": 1
         }
@@ -322,6 +339,41 @@
       "required": [
         "groupId",
         "title"
+      ],
+      "additionalProperties": false
+    },
+    "BoundingGroup": {
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentGroupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "bounding"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hideTitle": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "groupId",
+        "title",
+        "type"
       ],
       "additionalProperties": false
     },
@@ -336,6 +388,10 @@
           "type": "string",
           "minLength": 1
         },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
         "description": {
           "type": "string",
           "minLength": 1
@@ -347,15 +403,12 @@
             "minLength": 1
           }
         },
-        "groupId": {
-          "type": "string",
-          "minLength": 1
-        },
         "kind": {
           "type": "string",
           "minLength": 1
         },
         "type": {
+          "default": "default",
           "type": "string",
           "const": "default"
         },
@@ -364,6 +417,32 @@
           "items": {
             "$ref": "#/$defs/Link"
           }
+        }
+      },
+      "required": [
+        "nodeId",
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "DiamondNode": {
+      "type": "object",
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "diamond"
         }
       },
       "required": [
@@ -384,6 +463,10 @@
           "type": "string",
           "minLength": 1
         },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
         "description": {
           "type": "string",
           "minLength": 1
@@ -394,10 +477,6 @@
             "type": "string",
             "minLength": 1
           }
-        },
-        "groupId": {
-          "type": "string",
-          "minLength": 1
         },
         "kind": {
           "type": "string",
@@ -494,6 +573,10 @@
           "type": "string",
           "minLength": 1
         },
+        "groupId": {
+          "type": "string",
+          "minLength": 1
+        },
         "description": {
           "type": "string",
           "minLength": 1
@@ -504,10 +587,6 @@
             "type": "string",
             "minLength": 1
           }
-        },
-        "groupId": {
-          "type": "string",
-          "minLength": 1
         },
         "kind": {
           "type": "string",
@@ -581,6 +660,7 @@
           "minLength": 1
         },
         "type": {
+          "default": "default",
           "type": "string",
           "const": "default"
         },
@@ -607,7 +687,6 @@
       },
       "required": [
         "edgeId",
-        "type",
         "sourceNodeId",
         "targetNodeId"
       ],
@@ -726,7 +805,14 @@
           "readOnly": true,
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Group"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultGroup"
+              },
+              {
+                "$ref": "#/$defs/BoundingGroup"
+              }
+            ]
           }
         },
         "nodes": {
@@ -766,7 +852,7 @@
           "readOnly": true,
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Group"
+            "$ref": "#/$defs/DefaultGroup"
           }
         },
         "nodes": {
@@ -799,7 +885,7 @@
           "readOnly": true,
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Group"
+            "$ref": "#/$defs/DefaultGroup"
           }
         },
         "nodes": {
@@ -817,6 +903,10 @@
                 "type": "string",
                 "minLength": 1
               },
+              "groupId": {
+                "type": "string",
+                "minLength": 1
+              },
               "description": {
                 "type": "string",
                 "minLength": 1
@@ -828,15 +918,12 @@
                   "minLength": 1
                 }
               },
-              "groupId": {
-                "type": "string",
-                "minLength": 1
-              },
               "kind": {
                 "type": "string",
                 "minLength": 1
               },
               "type": {
+                "default": "default",
                 "type": "string",
                 "const": "default"
               },
@@ -869,8 +956,7 @@
             },
             "required": [
               "nodeId",
-              "title",
-              "type"
+              "title"
             ],
             "additionalProperties": false
           }
@@ -922,6 +1008,9 @@
                         "minLength": 1
                       },
                       "dependsOn": {
+                        "default": [
+                          []
+                        ],
                         "$ref": "#/$defs/RouteRequirementRuleset"
                       },
                       "type": {
@@ -953,6 +1042,9 @@
                         "minLength": 1
                       },
                       "dependsOn": {
+                        "default": [
+                          []
+                        ],
                         "$ref": "#/$defs/RouteRequirementRuleset"
                       },
                       "type": {
@@ -982,8 +1074,8 @@
                         }
                       },
                       "polarityPair": {
-                        "type": "boolean",
-                        "const": true
+                        "default": false,
+                        "type": "boolean"
                       }
                     },
                     "required": [
@@ -999,6 +1091,7 @@
               }
             },
             "auxiliaryDefinitions": {
+              "default": [],
               "readOnly": true,
               "type": "array",
               "items": {
@@ -1047,6 +1140,7 @@
           "minLength": 1
         },
         "type": {
+          "default": "default",
           "type": "string",
           "const": "default"
         },
@@ -1071,12 +1165,12 @@
           "minLength": 1
         },
         "layoutContext": {
+          "default": {},
           "$ref": "#/$defs/ComponentStructureEdgeLayoutContext"
         }
       },
       "required": [
         "edgeId",
-        "type",
         "sourceNodeId",
         "targetNodeId"
       ],
@@ -1086,6 +1180,7 @@
       "type": "object",
       "properties": {
         "composition": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/$defs/ComponentComposition"
@@ -1149,6 +1244,7 @@
           "$ref": "#/$defs/RouteRequirementRuleset"
         },
         "layoutContext": {
+          "default": {},
           "$ref": "#/$defs/ComponentStructureEdgeLayoutContext"
         }
       },

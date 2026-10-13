@@ -8,9 +8,9 @@ import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 const catalog = {
   artifacts: [
@@ -24,7 +24,7 @@ const catalog = {
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the trigger and confirmation from src/workflow.ts.",
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [
@@ -50,7 +50,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts and its tests.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [

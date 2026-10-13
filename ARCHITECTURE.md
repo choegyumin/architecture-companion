@@ -1,4 +1,4 @@
-# Architecture — Layers and Dependency Boundaries
+# Architecture
 
 ## Directory Structure
 
@@ -24,7 +24,7 @@ src/
     react-flow/     # React Flow presentation elements unaware of application policy
 ```
 
-## Dependency Rules
+## Layers and Dependency Rules
 
 The diagrams and rules below describe permitted import directions between modules in this repository. Arrows do not represent HTTP/SSE communication flows, and an edge between directories does not permit all imports between their nested modules.
 
@@ -104,3 +104,10 @@ flowchart TB
 - `src/` — tests that target a single source file. They live next to the source file, share its name, and use the `.test` suffix: `<source>.test.ts`. They may be split into several files by the concern they verify: `<source>.<concern>.test.ts`.
 - `tests/` — scene tests that no single source file describes. They use dot-free kebab-case names with the `.test` suffix: `scene-test-name.test.ts`.
 - `specs/` — user journey tests. They use kebab-case names with the `.spec` suffix: `user-journey-name.spec.ts`.
+
+## Diagram Rendering Relationships
+
+- **Graph element types and display components do not have a one-to-one relationship.** An element's `type` distinguishes stored data. `DiamondNode` displays both nodes stored in an Artifact with `type: "diamond"` and Decision Nodes derived from Branch Controls by the Component Structure Renderer. The latter are not stored as nodes in the Artifact; the Renderer supplies their branching semantics.
+- **Name diagram element components according to their roles.** Name general-purpose display components after their shape or presentation (`RectangleNode`, `DiamondNode`), and components dedicated to a specific meaning after that meaning.
+- **Renderers and Layouts have a one-to-one relationship.** Keep each pair in `client/widgets` as `<layout>-diagram-renderer.tsx` and `<layout>-diagram-renderer.layout.ts`.
+- **Layouts use ELKjs as a tool when needed.** ELKjs—accessed through ELK Core in the source code—supports placement calculations but is not itself the Layout paired with a Renderer.

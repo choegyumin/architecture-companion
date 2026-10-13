@@ -44,7 +44,7 @@ const diagramControlBaseShape = {
   label: z.string().min(1),
   // Omitted `dependsOn` equals [[]]: the control has no prerequisites. An
   // explicit [] stays invalid because an empty OR never holds.
-  dependsOn: diagramRouteRequirementRulesetSchema.optional(),
+  dependsOn: diagramRouteRequirementRulesetSchema.default([[]]),
 };
 export const diagramControlSchema = z.discriminatedUnion("type", [
   z.object({ ...diagramControlBaseShape, type: z.literal("conditional") }).strict(),
@@ -54,7 +54,7 @@ export const diagramControlSchema = z.discriminatedUnion("type", [
       type: z.literal("branch"),
       cases: z.array(z.object({ caseId: diagramIdSchema, label: z.string().min(1) }).strict()).min(2),
       /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
-      polarityPair: z.literal(true).optional(),
+      polarityPair: z.boolean().default(false),
     })
     .strict(),
 ]);
@@ -65,16 +65,16 @@ export type DiagramControl = z.infer<typeof diagramControlSchema>;
 const diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: z.string().min(1),
-  description: z.string().min(1).optional(),
-  details: z.array(z.string().min(1)).optional(),
   groupId: diagramIdSchema.optional(),
 };
 
 export const defaultDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    description: z.string().min(1).optional(),
+    details: z.array(z.string().min(1)).optional(),
     kind: z.string().min(1).optional(),
-    type: z.literal("default"),
+    type: z.literal("default").default("default"),
     links: z.array(diagramLinkSchema).optional(),
   })
   .strict()
@@ -97,6 +97,8 @@ const activationSchema = z
 export const lifelineDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    description: z.string().min(1).optional(),
+    details: z.array(z.string().min(1)).optional(),
     kind: z.string().min(1),
     type: z.literal("lifeline"),
     links: z.array(diagramLinkSchema).optional(),
@@ -117,6 +119,8 @@ const fragmentBranchSchema = z
 export const fragmentDiagramNodeSchema = z
   .object({
     ...diagramNodeBaseShape,
+    description: z.string().min(1).optional(),
+    details: z.array(z.string().min(1)).optional(),
     kind: z.string().min(1),
     type: z.literal("fragment"),
     operator: z.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
@@ -126,8 +130,15 @@ export const fragmentDiagramNodeSchema = z
   .meta({ id: "FragmentNode" });
 export type FragmentDiagramNode = z.infer<typeof fragmentDiagramNodeSchema>;
 
+export const diamondDiagramNodeSchema = z
+  .object({ ...diagramNodeBaseShape, type: z.literal("diamond") })
+  .strict()
+  .meta({ id: "DiamondNode" });
+export type DiamondDiagramNode = z.infer<typeof diamondDiagramNodeSchema>;
+
 export const diagramNodeSchema = z.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
+  diamondDiagramNodeSchema,
   lifelineDiagramNodeSchema,
   fragmentDiagramNodeSchema,
 ]);
@@ -138,7 +149,7 @@ export type DiagramNode = z.infer<typeof diagramNodeSchema>;
 export const defaultDiagramEdgeSchema = z
   .object({
     edgeId: diagramIdSchema,
-    type: z.literal("default"),
+    type: z.literal("default").default("default"),
     sourceNodeId: diagramIdSchema,
     targetNodeId: diagramIdSchema,
     kind: z.string().min(1).optional(),
@@ -191,15 +202,34 @@ export function diagramEdgeDisplay(edge: DiagramEdge): Readonly<{ label?: string
 
 /* === Group === */
 
-export const diagramGroupSchema = z
+const diagramGroupBaseShape = {
+  groupId: diagramIdSchema,
+  title: z.string().min(1),
+  parentGroupId: diagramIdSchema.optional(),
+};
+
+export const defaultDiagramGroupSchema = z
   .object({
-    groupId: diagramIdSchema,
-    title: z.string().min(1),
+    ...diagramGroupBaseShape,
+    type: z.literal("default").default("default"),
     description: z.string().min(1).optional(),
-    parentGroupId: diagramIdSchema.optional(),
   })
   .strict()
-  .meta({ id: "Group" });
+  .meta({ id: "DefaultGroup" });
+export type DefaultDiagramGroup = z.infer<typeof defaultDiagramGroupSchema>;
+
+export const boundingDiagramGroupSchema = z
+  .object({
+    ...diagramGroupBaseShape,
+    type: z.literal("bounding"),
+    description: z.string().min(1).optional(),
+    hideTitle: z.boolean().default(false),
+  })
+  .strict()
+  .meta({ id: "BoundingGroup" });
+export type BoundingDiagramGroup = z.infer<typeof boundingDiagramGroupSchema>;
+
+export const diagramGroupSchema = z.discriminatedUnion("type", [defaultDiagramGroupSchema, boundingDiagramGroupSchema]);
 export type DiagramGroup = z.infer<typeof diagramGroupSchema>;
 
 /* === Graph === */
@@ -323,14 +353,14 @@ const graphBaseShape = {
 };
 
 /** The general graph contract: any node and edge kinds the diagram schemas define. */
-export const diagramGraphSchema = z
+export const generalDiagramGraphSchema = z
   .object(graphBaseShape)
   .strict()
   .superRefine((graph, context) => {
     for (const issue of validateGraphIntegrity(graph)) context.addIssue(issue);
   })
-  .meta({ id: "DiagramGraph" });
-export type DiagramGraph = z.infer<typeof diagramGraphSchema>;
+  .meta({ id: "GeneralDiagramGraph" });
+export type GeneralDiagramGraph = z.infer<typeof generalDiagramGraphSchema>;
 
 /* === Layout-specific graphs === */
 
@@ -461,6 +491,7 @@ export type SequenceDiagramGraph = z.infer<typeof sequenceDiagramGraphSchema>;
 export const dependencyDiagramGraphSchema = z
   .object({
     ...graphBaseShape,
+    groups: z.array(defaultDiagramGroupSchema).readonly(),
     nodes: z.array(defaultDiagramNodeSchema).min(1).readonly(),
     edges: z.array(defaultDiagramEdgeSchema).readonly(),
   })
@@ -509,14 +540,14 @@ export type ComponentComposition = z.infer<typeof componentCompositionSchema>;
 
 /** Omitted or null composition means direct rendering; objects describe other supply methods. */
 const componentStructureEdgeLayoutContextSchema = z
-  .object({ composition: componentCompositionSchema.nullable().optional() })
+  .object({ composition: componentCompositionSchema.nullable().default(null) })
   .strict()
   .meta({ id: "ComponentStructureEdgeLayoutContext" });
 const componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema
-  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() })
+  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) })
   .meta({ id: "ComponentStructureDefaultEdge" });
 const componentStructureControlEdgeSchema = controlDiagramEdgeSchema
-  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() })
+  .extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) })
   .meta({ id: "ComponentStructureControlEdge" });
 
 /** Graph-level layout context for component structure: its roots and controls. */
@@ -526,7 +557,7 @@ export const componentStructureLayoutContextSchema = z
     controls: z.array(diagramControlSchema).readonly(),
     // Recommended for referenced definitions without a node; registering a
     // definition that also has a node is allowed, and so is omitting entries.
-    auxiliaryDefinitions: z.array(auxiliaryDefinitionSchema).readonly().optional(),
+    auxiliaryDefinitions: z.array(auxiliaryDefinitionSchema).readonly().default([]),
   })
   .strict();
 export type ComponentStructureLayoutContext = z.infer<typeof componentStructureLayoutContextSchema>;
@@ -673,6 +704,7 @@ function validateComponentStructureGraph(graph: ComponentStructureDiagramGraph):
 export const componentStructureDiagramGraphSchema = z
   .object({
     ...graphBaseShape,
+    groups: z.array(defaultDiagramGroupSchema).readonly(),
     nodes: z.array(componentStructureDiagramNodeSchema).min(1).readonly(),
     edges: z
       .array(z.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema]))
@@ -685,3 +717,73 @@ export const componentStructureDiagramGraphSchema = z
   })
   .meta({ id: "ComponentStructureGraph" });
 export type ComponentStructureDiagramGraph = z.infer<typeof componentStructureDiagramGraphSchema>;
+
+/* === Serialization === */
+
+export function toDiagramGraphInput(
+  graph: ComponentStructureDiagramGraph,
+): z.input<typeof componentStructureDiagramGraphSchema>;
+export function toDiagramGraphInput(graph: SequenceDiagramGraph): z.input<typeof sequenceDiagramGraphSchema>;
+export function toDiagramGraphInput(graph: DependencyDiagramGraph): z.input<typeof dependencyDiagramGraphSchema>;
+export function toDiagramGraphInput(graph: GeneralDiagramGraph): z.input<typeof generalDiagramGraphSchema>;
+export function toDiagramGraphInput(
+  graph: GeneralDiagramGraph | ComponentStructureDiagramGraph,
+): z.input<typeof generalDiagramGraphSchema> | z.input<typeof componentStructureDiagramGraphSchema> {
+  if ("layoutContext" in graph) {
+    const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
+    return {
+      groups: graph.groups.map(({ type: _type, ...group }) => group),
+      nodes: graph.nodes.map(({ type: _type, ...node }) => node),
+      edges: graph.edges.map(({ layoutContext: edgeContext, ...edge }) => {
+        const context = edgeContext.composition === null ? {} : { layoutContext: edgeContext };
+        if (edge.type === "default") {
+          const { type: _type, ...relationship } = edge;
+          return { ...relationship, ...context };
+        }
+        return { ...edge, ...context };
+      }),
+      layoutContext: {
+        ...layoutContext,
+        controls: controls.map(({ dependsOn, ...control }) => {
+          const prerequisites = dependsOn.length === 1 && dependsOn.at(0)!.length === 0 ? {} : { dependsOn };
+          if (control.type === "branch" && !control.polarityPair) {
+            const { polarityPair: _polarityPair, ...branch } = control;
+            return { ...branch, ...prerequisites };
+          }
+          return { ...control, ...prerequisites };
+        }),
+        ...(auxiliaryDefinitions.length > 0 ? { auxiliaryDefinitions } : {}),
+      },
+    };
+  }
+
+  return {
+    groups: graph.groups.map((group) => {
+      if (group.type === "default") {
+        const { type: _type, ...input } = group;
+        return input;
+      }
+      if (!group.hideTitle) {
+        const { hideTitle: _hideTitle, ...input } = group;
+        return input;
+      }
+      return group;
+    }),
+    nodes: graph.nodes.map((node) => {
+      if (node.type !== "default") return node;
+      const { type: _type, ...input } = node;
+      return input;
+    }),
+    edges: graph.edges.map((edge) => {
+      if (edge.type === "default") {
+        const { type: _type, ...input } = edge;
+        return input;
+      }
+      if (edge.type === "message" && edge.messageType === "sync") {
+        const { messageType: _messageType, ...input } = edge;
+        return input;
+      }
+      return edge;
+    }),
+  };
+}

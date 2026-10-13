@@ -14,9 +14,9 @@ import { createApp } from "@/server/create-app";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 // Artifacts stay in the catalog's path-sorted order so the revision id
 // computed here matches the one the server derives from the same files.
@@ -31,7 +31,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview the catalog entry point.\n\n## Regeneration\nRebuild the catalog page boundary.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "catalog-page", kind: "component", title: "Catalog page" }],
@@ -48,7 +48,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" }],
@@ -65,7 +65,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],

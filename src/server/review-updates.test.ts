@@ -8,7 +8,8 @@ import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 import { createReviewUpdates, type ReviewUpdate, type ReviewUpdates } from "@/server/review-updates";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 function behavior(title: string): CompanionCatalog["artifacts"][number] {
   return {
@@ -20,7 +21,10 @@ function behavior(title: string): CompanionCatalog["artifacts"][number] {
     instructions:
       "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
     diagram: {
-      layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+      layout: {
+        layoutId: "general",
+        options: { nudgeObstacleNodes: false, bezierEdges: false, elk: { direction: "RIGHT" } },
+      },
       graph: {
         groups: [],
         nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title }],

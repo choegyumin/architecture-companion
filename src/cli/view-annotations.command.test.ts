@@ -6,7 +6,8 @@ import { executeViewAnnotationsCommand } from "@/cli/view-annotations.command";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const checkoutBehavior = {
   artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
@@ -17,7 +18,7 @@ const checkoutBehavior = {
   instructions:
     "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: {
       groups: [],
       nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],

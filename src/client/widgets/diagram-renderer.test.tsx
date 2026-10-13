@@ -7,8 +7,8 @@ import type { Artifact } from "@/features/artifact/artifact";
 vi.mock("@/client/widgets/dependency-graph-diagram-renderer", () => ({
   DependencyGraphDiagramRenderer: () => <span>Dependency graph renderer</span>,
 }));
-vi.mock("@/client/widgets/elk-layered-diagram-renderer", () => ({
-  ElkLayeredDiagramRenderer: () => <span>ELK layout renderer</span>,
+vi.mock("@/client/widgets/general-diagram-renderer", () => ({
+  GeneralDiagramRenderer: () => <span>General layout renderer</span>,
 }));
 vi.mock("@/client/widgets/sequence-diagram-renderer", () => ({
   SequenceDiagramRenderer: () => <span>Sequence layout renderer</span>,
@@ -24,7 +24,7 @@ const diagram = {
   instructions:
     "## Purpose\nReview the selected diagram layout.\n\n## Regeneration\nRebuild the example elements for the selected layout.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: { groups: [], nodes: [{ nodeId: "node", type: "default", title: "Node" }], edges: [] },
   },
 } as const;
@@ -39,13 +39,13 @@ describe("diagram renderer selection", () => {
     render(<DiagramRenderer annotations={annotations} artifact={dependencyDiagram} onOpenSource={vi.fn()} />);
 
     expect(screen.getByText("Dependency graph renderer")).toBeInTheDocument();
-    expect(screen.queryByText("ELK layout renderer")).not.toBeInTheDocument();
+    expect(screen.queryByText("General layout renderer")).not.toBeInTheDocument();
   });
 
-  it("selects the ELK renderer by layout ID", () => {
+  it("selects the general renderer by layout ID", () => {
     render(<DiagramRenderer annotations={annotations} artifact={diagram} onOpenSource={vi.fn()} />);
 
-    expect(screen.getByText("ELK layout renderer")).toBeInTheDocument();
+    expect(screen.getByText("General layout renderer")).toBeInTheDocument();
     expect(screen.queryByText("Sequence layout renderer")).not.toBeInTheDocument();
   });
 
@@ -67,6 +67,6 @@ describe("diagram renderer selection", () => {
     render(<DiagramRenderer annotations={annotations} artifact={sequenceDiagram} onOpenSource={vi.fn()} />);
 
     expect(screen.getByText("Sequence layout renderer")).toBeInTheDocument();
-    expect(screen.queryByText("ELK layout renderer")).not.toBeInTheDocument();
+    expect(screen.queryByText("General layout renderer")).not.toBeInTheDocument();
   });
 });

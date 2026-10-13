@@ -24,7 +24,10 @@ const validBehavior = {
   instructions:
     "## Purpose\nReview checkout payment flow.\n\n## Regeneration\nRebuild submission, validation, capture, and confirmation steps.",
   diagram: {
-    layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+    layout: {
+      layoutId: "general",
+      options: { nudgeObstacleNodes: false, bezierEdges: false, elk: { direction: "RIGHT" } },
+    },
     graph: {
       groups: [],
       nodes: [
@@ -229,7 +232,7 @@ describe("catalog parsing", () => {
       instructions:
         "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the checkout page and its dependencies.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [

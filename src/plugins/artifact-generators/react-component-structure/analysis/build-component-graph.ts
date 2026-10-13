@@ -5,22 +5,18 @@ import { basename, extname, relative, resolve } from "node:path";
 import ignore from "ignore";
 import micromatch from "micromatch";
 import type ts from "typescript";
+import type z from "zod";
 
+import { createPolarityPair } from "@/features/diagram/control-polarity";
 import {
-  calculateConditionPolarityPair,
-  calculatePolarityPair,
-  negateLabel,
-  normalizedLabel,
-} from "@/features/diagram/control-polarity";
-import type {
-  ComponentComposition,
-  ComponentStructureDiagramGraph,
-  ComponentStructureDiagramNode,
-  DiagramControl,
-  DiagramGroup,
-  DiagramRouteRequirement,
-  DiagramRouteRequirementRule,
-  DiagramRouteRequirementRuleset,
+  type ComponentComposition,
+  type ComponentStructureDiagramGraph,
+  componentStructureDiagramGraphSchema,
+  type ComponentStructureDiagramNode,
+  type diagramControlSchema,
+  type DiagramRouteRequirement,
+  type DiagramRouteRequirementRule,
+  type DiagramRouteRequirementRuleset,
 } from "@/features/diagram/diagram-graph";
 import { combineRulesets, unionRulesets } from "@/features/diagram/diagram-route-requirement-rules";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
@@ -32,6 +28,63 @@ import { loadTypeScript } from "./load-typescript";
 
 export type ReactComponentRelationshipKind = "inline-render" | "node-prop" | "render-prop" | "component-prop";
 
+type GeneratedControl = z.input<typeof diagramControlSchema>;
+
+// Condition labels use ! notation; source-language analysis supplies the
+// polarity and subject to the shared stored-pair constructor.
+function normalizedLabel(label: string): string {
+  let text = label.trim();
+  for (;;) {
+    if (text.startsWith("!(") && text.endsWith(")")) {
+      const inner = text.slice(2, -1).trim();
+      // Only a double negation folds; `!(a || b)` keeps its negation.
+      if (!inner.startsWith("!") || inner.length === 1) return text;
+      text = normalizedLabel(inner.slice(1).trim());
+      continue;
+    }
+    if (text.startsWith("!!")) {
+      text = text.slice(2).trim();
+      continue;
+    }
+    return text;
+  }
+}
+
+function negateLabel(label: string): string {
+  const text = normalizedLabel(label);
+  if (text.startsWith("!") && !text.startsWith("!=")) return normalizedLabel(text.slice(1).trim());
+  return /[<>=+\-*%&|?]|\s/.test(text) ? `!(${text})` : `!${text}`;
+}
+
+function positiveLabel(label: string): string {
+  let text = normalizedLabel(label);
+  for (;;) {
+    if (text.startsWith("!(") && text.endsWith(")")) {
+      text = normalizedLabel(text.slice(2, -1).trim());
+      continue;
+    }
+    if (text.startsWith("!") && !text.startsWith("!=") && text.length > 1) {
+      text = normalizedLabel(text.slice(1).trim());
+      continue;
+    }
+    return text;
+  }
+}
+
+// true/false retain the source gate's meaning, not the switch position.
+function inferPolarityPairFromCondition(condition: string) {
+  const label = normalizedLabel(condition);
+  const subjectLabel = positiveLabel(label);
+  const positive = label === subjectLabel;
+  return createPolarityPair({
+    subjectLabel,
+    cases: [
+      { caseId: "true", label, positive },
+      { caseId: "false", label: negateLabel(label), positive: !positive },
+    ],
+  });
+}
+
 /**
  * Builder-internal graph shape: gated relationships stay one edge kind with
  * an `activeWhen` until serialization, and roots and controls ride the top
@@ -39,11 +92,11 @@ export type ReactComponentRelationshipKind = "inline-render" | "node-prop" | "re
  * contract at the end.
  */
 type BuilderGraph = Readonly<{
-  groups: readonly DiagramGroup[];
+  groups: ComponentStructureDiagramGraph["groups"];
   nodes: readonly ComponentStructureDiagramNode[];
   edges: readonly BuilderEdge[];
   roots: readonly string[];
-  controls: readonly DiagramControl[];
+  controls: readonly GeneratedControl[];
 }>;
 type BuilderEdge = Readonly<{
   type: "default";
@@ -190,7 +243,7 @@ type AnalysisContext = Readonly<{
   uses: Map<string, ComponentUse>;
   directUseIdsByOwner: Map<string, string[]>;
   analyzedUseIds: Set<string>;
-  controls: Map<string, DiagramControl>;
+  controls: Map<string, GeneratedControl>;
   useRulesets: Map<string, DiagramRouteRequirementRuleset>;
   propBindings: ReadonlyMap<string, PropBindings>;
 }>;
@@ -2319,7 +2372,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
       }
       const label = normalizedLabel(unwrapped.condition.getText());
-      const pair = emptyTrue || emptyFalse ? undefined : calculateConditionPolarityPair(label);
+      const pair = emptyTrue || emptyFalse ? undefined : inferPolarityPairFromCondition(label);
       const select = controlRuleset(
         unwrapped,
         ownerId,
@@ -2406,7 +2459,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         ruleset,
         context,
         hasLeftOutput
-          ? calculatePolarityPair({
+          ? createPolarityPair({
               // The source operator defines the complement: nullish absence
               // is not logical negation. Both keep the left operand as subject.
               subjectLabel: label,
@@ -2525,7 +2578,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             }
           }
           const label = normalizedLabel(statement.expression.getText());
-          const pair = trueOutput && falseOutput ? calculateConditionPolarityPair(label) : undefined;
+          const pair = trueOutput && falseOutput ? inferPolarityPairFromCondition(label) : undefined;
           const select = controlRuleset(
             statement,
             ownerId,
@@ -2860,14 +2913,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   ): Readonly<{
     instances: readonly ComponentInstance[];
     relationships: readonly Relationship[];
-    controls: DiagramControl[];
+    controls: GeneratedControl[];
     roots: string[];
   }> {
     const definitionsById = new Map(definitions.map((definition) => [definition.id, definition]));
     const visibleInstances = new Map<string, ComponentInstance>();
     const visibleDefinitionIds = new Set<string>();
     const relationships = new Map<string, Relationship>();
-    const controls = new Map<string, DiagramControl>();
+    const controls = new Map<string, GeneratedControl>();
     const roots: string[] = [];
 
     function instantiateRuleset(
@@ -3096,7 +3149,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     definitions: readonly ComponentDefinition[],
     instances: readonly ComponentInstance[],
     relationships: readonly Relationship[],
-    controls: DiagramControl[],
+    controls: GeneratedControl[],
     roots: string[],
   ): BuilderGraph {
     function compositionOrigins(relationship: Relationship): ComponentComposition["origins"] {
@@ -3235,7 +3288,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       .filter((definitionId) => !nodeDefinitionIds.has(definitionId))
       .map((definitionId) => ({ definitionId, title: supplierTitles.get(definitionId) ?? definitionId }))
       .toSorted((left, right) => left.definitionId.localeCompare(right.definitionId));
-    return {
+    return componentStructureDiagramGraphSchema.parse({
       groups: graph.groups,
       nodes: graph.nodes,
       edges: graph.edges.map((edge) => {
@@ -3257,18 +3310,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }),
       layoutContext: {
         rootNodeIds: graph.roots,
-        // The contract treats an omitted dependsOn as [[]], so the empty
-        // ruleset is dropped here like other stored defaults.
-        controls: graph.controls.map(({ dependsOn, ...control }) =>
-          dependsOn !== undefined && dependsOn.length === 1 && dependsOn.at(0)?.length === 0
-            ? control
-            : { ...control, dependsOn },
-        ),
-        // Referenced supplier definitions without a node keep their names here;
-        // the registry is omitted when every supplier stayed in the graph.
-        ...(auxiliaryDefinitions.length > 0 ? { auxiliaryDefinitions } : {}),
+        controls: graph.controls,
+        // Referenced supplier definitions without a node keep their names here.
+        auxiliaryDefinitions,
       },
-    };
+    } satisfies z.input<typeof componentStructureDiagramGraphSchema>);
   }
 
   /**
@@ -3362,12 +3408,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           : {}),
       };
     };
-    const polarityOf = (control: DiagramControl): Polarity | undefined => polarityOfLabel(control.label);
+    const polarityOf = (control: GeneratedControl): Polarity | undefined => polarityOfLabel(control.label);
 
     // A native boolean gate branch (`hide ? A : B` with both arms rendering):
     // its two cases spell one subject and its negation, so it folds with the
     // conditionals over that subject instead of living as its own switch.
-    const branchCasesOf = (control: DiagramControl): { trueText: string; falseText: string } | undefined => {
+    const branchCasesOf = (control: GeneratedControl): { trueText: string; falseText: string } | undefined => {
       if (control.type !== "branch" || control.cases.length !== 2) return undefined;
       const [trueCase, falseCase] = control.cases;
       if (!trueCase || !falseCase || trueCase.caseId !== "true" || falseCase.caseId !== "false") return undefined;
@@ -3375,7 +3421,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     };
 
     type Member = Readonly<{
-      control: DiagramControl;
+      control: GeneratedControl;
       polarity: Polarity;
       branchCases?: { trueText: string; falseText: string };
     }>;
@@ -3389,7 +3435,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     // is the subject, not the source expressions.
     type DiscriminantSemantics = Readonly<{ literal: string; positive: boolean }>;
     type DiscriminantMember = Readonly<{
-      control: DiagramControl;
+      control: GeneratedControl;
       groupKey: string;
       subject: string;
       semantics: ReadonlyMap<string, DiscriminantSemantics>;
@@ -3400,11 +3446,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       members: DiscriminantMember[];
       positiveLiterals: string[];
       needsRemainder: boolean;
-      representative: DiagramControl;
+      representative: GeneratedControl;
       staysConditional: boolean;
     };
     const EQUALITY_FAMILIES = new Set(["equal", "loosely-equal"]);
-    const discriminantOf = (control: DiagramControl): DiscriminantMember | undefined => {
+    const discriminantOf = (control: GeneratedControl): DiscriminantMember | undefined => {
       let label: string | undefined;
       let values: readonly string[];
       if (control.type === "branch") {
@@ -3654,7 +3700,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       return rewritten;
     };
 
-    const controls = new Map<string, DiagramControl>();
+    const controls = new Map<string, GeneratedControl>();
     for (const control of context.controls.values()) {
       const members = mergedGroups.get(control.controlId);
       if (members) {
@@ -3680,7 +3726,13 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           controlId: control.controlId,
           ownerNodeId: control.ownerNodeId,
           ...(second
-            ? { type: "branch" as const, ...calculatePolarityPair({ cases: [first!, second] }) }
+            ? {
+                type: "branch" as const,
+                ...createPolarityPair({
+                  cases: [first!, second],
+                  subjectLabel: positiveLabel((first!.positive ? first! : second).label),
+                }),
+              }
             : { type: "conditional" as const, label: first!.label }),
           dependsOn: unionRulesets(...members.map(({ control: member }) => rewrite(member.dependsOn ?? [[]]))),
         });
@@ -3723,7 +3775,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     // orders are not prerequisites — the later control drops the requirement
     // that closes the cycle, in source order, until the graph is acyclic.
     const creationOrder = new Map([...controls.keys()].map((id, index) => [id, index]));
-    const dependents = (control: DiagramControl) => [
+    const dependents = (control: GeneratedControl) => [
       ...new Set((control.dependsOn ?? []).flat().map(({ controlId }) => controlId)),
     ];
     for (;;) {
@@ -3819,7 +3871,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     }
     for (const edge of graph.edges) if (edge.type === "default") requireControls(edge.activeWhen ?? [[]]);
     const controls = graph.controls!.filter(({ controlId }) => neededControls.has(controlId));
-    const controlsByOwner = new Map<string, DiagramControl[]>();
+    const controlsByOwner = new Map<string, GeneratedControl[]>();
     const controlKeys = new Map<string, string>();
     for (const control of controls) {
       const owned = controlsByOwner.get(control.ownerNodeId) ?? [];
@@ -3926,7 +3978,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             .map(({ controlId, value }) => ({ controlId: outputControlIds.get(controlId)!, value })),
         ),
       );
-    const outputControls = new Map<string, DiagramControl>();
+    const outputControls = new Map<string, GeneratedControl>();
     for (const control of controls) {
       const id = outputControlIds.get(control.controlId)!;
       const existing = outputControls.get(id);

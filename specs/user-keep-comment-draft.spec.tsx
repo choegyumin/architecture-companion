@@ -14,7 +14,8 @@ import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../tests/helpers/write-catalog";
 
 const catalog = {
   artifacts: [
@@ -27,7 +28,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],

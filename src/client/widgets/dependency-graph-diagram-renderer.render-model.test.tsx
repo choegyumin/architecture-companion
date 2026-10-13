@@ -1,0 +1,272 @@
+import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer";
+import { layoutDependencyGraph } from "@/client/widgets/dependency-graph-diagram-renderer.layout";
+import { annotationTargetSchema } from "@/features/annotation/annotation-document";
+import type { Artifact } from "@/features/artifact/artifact";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
+
+const diagram = {
+  artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
+  type: "design",
+  updatedAt: "2026-10-03T09:15:00.000Z",
+  title: "Dependencies",
+  generator: "built-in:freeform",
+  instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",
+  diagram: {
+    layout: { layoutId: "dependency-graph" },
+    graph: dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "app", title: "App" },
+        { groupId: "nested", title: "Nested", parentGroupId: "app" },
+        { groupId: "library", title: "Library" },
+      ],
+      nodes: [
+        { nodeId: "a", type: "default", title: "A", groupId: "app" },
+        { nodeId: "b", type: "default", title: "B", groupId: "nested" },
+        { nodeId: "c", type: "default", title: "C", groupId: "library" },
+      ],
+      edges: [
+        { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c", label: "Uses C" },
+        { edgeId: "b-c", type: "default", sourceNodeId: "b", targetNodeId: "c" },
+        { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
+      ],
+    }),
+  },
+} satisfies Artifact;
+
+const sizes = {
+  a: { width: 288, height: 144 },
+  b: { width: 288, height: 144 },
+  c: { width: 288, height: 144 },
+};
+
+describe("dependency graph React Flow adapter", () => {
+  it("renders directed aggregates with original membership, shape focus and comment snapshots", async () => {
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const onAggregateActivate = vi.fn();
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      onAggregateActivate,
+      nodesActivatable: true,
+    });
+    const aggregate = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
+    if (aggregate?.type !== "connection") throw new Error("Missing aggregate route");
+    const app = model.nodes.find((node) => node.id === "app");
+    if (app?.type !== "labeled-group") throw new Error("Missing group");
+    const card = model.nodes.find((node) => node.id === "a");
+    if (card?.type !== "rectangle") throw new Error("Missing card");
+
+    expect(model.edges).toHaveLength(2);
+    expect(aggregate.markerEnd).toMatchObject({ color: "var(--diagram-edge)" });
+    expect(aggregate.style).toMatchObject({ stroke: "var(--diagram-edge)" });
+    expect(aggregate.data?.path).toMatch(/^M .+ L /);
+    expect(aggregate.data?.path).not.toContain(" C ");
+    expect(model.edgeTargets?.get(aggregate.id)).toEqual({
+      type: "edge-set",
+      sourceId: "app",
+      targetId: "library",
+      edgeIds: ["a-c", "b-c"],
+    });
+    expect(app.data.activatable).toBe(true);
+    expect(card.data.activatable).toBe(true);
+    expect(app.data).not.toHaveProperty("onTitleActivate");
+    expect(aggregate.data?.eyebrow).toBe("×2");
+    expect(aggregate.data?.labelAction?.ariaLabel).toBe("Show 2 edges from app to library");
+    aggregate.data?.labelAction?.onActivate();
+    expect(onAggregateActivate).toHaveBeenCalledWith(["a-c", "b-c"]);
+
+    const commentModel = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn());
+    const commentAggregate = commentModel.edges.at(0);
+    if (commentAggregate?.type !== "connection") throw new Error("Missing comment aggregate");
+    expect(commentAggregate.data?.eyebrow).toBe("×2");
+    expect(commentAggregate.data?.labelAction).toBeUndefined();
+    expect(commentModel.nodes.find((node) => node.id === "app")?.data).not.toHaveProperty("activatable");
+    expect(commentModel.nodes.find((node) => node.id === "a")?.data).not.toHaveProperty("activatable");
+  });
+
+  it("renders an inert dashed bounding group for a mixed group's loose nodes between group and cards", async () => {
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const onAggregateActivate = vi.fn();
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), { onAggregateActivate });
+    const bounding = model.nodes.find((node) => node.id === "bundle:app");
+    if (bounding?.type !== "bounding-group") throw new Error("Missing bounding group");
+    expect(bounding.style).toMatchObject({ pointerEvents: "none" });
+    expect(bounding.parentId).toBe("app");
+    expect(bounding.selectable).toBe(false);
+    const order = model.nodes.map(({ id }) => id);
+    expect(order.indexOf("bundle:app")).toBeGreaterThan(order.indexOf("app"));
+    expect(order.indexOf("bundle:app")).toBeLessThan(order.indexOf("a"));
+    expect(model.nodes.find((node) => node.id === "bundle:library")).toBeUndefined();
+
+    const internal = model.edges.find((edge) => edge.source === "nested" && edge.target === bounding.id);
+    if (internal?.type !== "connection") throw new Error("Missing internal bundle aggregate");
+    expect(internal.data?.path).toMatch(/^M .+ L /);
+    expect(internal.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(annotationTargetSchema.parse(model.edgeTargets?.get(internal.id))).toEqual({
+      type: "edge-set",
+      sourceId: "nested",
+      targetId: "bundle:app",
+      edgeIds: ["b-a"],
+    });
+    internal.data?.labelAction?.onActivate();
+    expect(onAggregateActivate).toHaveBeenCalledWith(["b-a"]);
+    const expanded = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      focus: { type: "aggregate", edgeIds: ["b-a"] },
+    });
+    expect(expanded.edges.map(({ id, source, target }) => ({ id, source, target }))).toEqual([
+      { id: "b-a", source: "b", target: "a" },
+    ]);
+
+    // Neither original edges nor aggregates targeting the whole group show a bundle outline.
+    for (const focus of [
+      { type: "node", id: "c" },
+      { type: "group", id: "app" },
+    ] as const) {
+      const focused = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), { focus });
+      expect(focused.nodes.find((node) => node.id === "bundle:app")).toBeUndefined();
+    }
+  });
+
+  it("keeps bundle endpoints distinct from artifact node and edge IDs", async () => {
+    const colliding = {
+      ...diagram,
+      diagram: {
+        ...diagram.diagram,
+        graph: dependencyDiagramGraphSchema.parse({
+          ...diagram.diagram.graph,
+          nodes: [...diagram.diagram.graph.nodes, { nodeId: "bundle:app", type: "default", title: "Root file" }],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "bundle:app:", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+          ],
+        }),
+      },
+    } satisfies Artifact;
+    const layout = await layoutDependencyGraph(colliding.diagram.graph, { ...sizes, "bundle:app": sizes.a });
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(colliding, layout, vi.fn());
+    expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("rectangle");
+    expect(model.nodes.find(({ id }) => id === "bundle:app::")?.type).toBe("bounding-group");
+    expect(model.edges.some(({ source, target }) => source === "bundle:app::" && target === "nested")).toBe(true);
+    expect(model.edges.some(({ source, target }) => source === "nested" && target === "bundle:app::")).toBe(true);
+    expect(new Set(model.nodes.map(({ id }) => id)).size).toBe(model.nodes.length);
+  });
+
+  it("renders only selected original edges and preserves their individual targets", async () => {
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      focus: { type: "aggregate", edgeIds: ["b-c", "a-c"] },
+    });
+
+    expect(model.edges.map(({ id }) => id)).toEqual(["b-c", "a-c"]);
+    expect(model.edges.every((edge) => edge.type === "connection" && edge.data?.path.includes(" C "))).toBe(true);
+    expect(model.edges.find(({ id }) => id === "a-c")?.label).toBe("Uses C");
+    expect(model.edgeTargets?.size).toBe(0);
+  });
+
+  it("routes original and aggregate relations by their rendered endpoints during group focus", async () => {
+    const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn(), {
+      focus: { type: "group", id: "app" },
+    });
+    const internal = model.edges.find((edge) => edge.id === "b-a");
+    const boundary = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
+
+    expect(internal?.type === "connection" && internal.data?.path).toContain(" C ");
+    expect(boundary?.type === "connection" && boundary.data?.path).not.toContain(" C ");
+    expect(boundary?.type === "connection" && boundary.data?.path).toContain(" L ");
+  });
+
+  it("routes a focused group's boundary to direct sibling nodes in both directions", async () => {
+    const withSibling = {
+      ...diagram,
+      diagram: {
+        ...diagram.diagram,
+        graph: dependencyDiagramGraphSchema.parse({
+          ...diagram.diagram.graph,
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+          ],
+        }),
+      },
+    } satisfies Artifact;
+    const layout = await layoutDependencyGraph(withSibling.diagram.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(withSibling, layout, vi.fn(), {
+      focus: { type: "group", id: "nested" },
+    });
+    const outgoing = model.edges.find((edge) => edge.source === "nested" && edge.target === "a");
+    const incoming = model.edges.find((edge) => edge.source === "a" && edge.target === "nested");
+    if (outgoing?.type !== "connection" || incoming?.type !== "connection") throw new Error("Missing sibling boundary");
+
+    expect(outgoing.data?.path).toMatch(/^M .+ L /);
+    expect(incoming.data?.path).toMatch(/^M .+ L /);
+    expect(outgoing.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(incoming.data?.path).not.toMatch(/NaN|Infinity| C /);
+    expect(model.edgeTargets?.get(outgoing.id)).toMatchObject({ sourceId: "nested", targetId: "a", edgeIds: ["b-a"] });
+    expect(model.edgeTargets?.get(incoming.id)).toMatchObject({ sourceId: "a", targetId: "nested", edgeIds: ["a-b"] });
+  });
+
+  it("uses separate orthogonal group–node routes for both directions", async () => {
+    const withRoot = {
+      ...diagram,
+      diagram: {
+        ...diagram.diagram,
+        graph: dependencyDiagramGraphSchema.parse({
+          ...diagram.diagram.graph,
+          nodes: [...diagram.diagram.graph.nodes, { nodeId: "root", type: "default", title: "Root" }],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "a-root", type: "default", sourceNodeId: "a", targetNodeId: "root" },
+            { edgeId: "root-a", type: "default", sourceNodeId: "root", targetNodeId: "a" },
+          ],
+        }),
+      },
+    } satisfies Artifact;
+    const layout = await layoutDependencyGraph(withRoot.diagram.graph, { ...sizes, root: sizes.a });
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(withRoot, layout, vi.fn());
+    const forward = model.edges.find((edge) => edge.source === "app" && edge.target === "root");
+    const reverse = model.edges.find((edge) => edge.source === "root" && edge.target === "app");
+
+    expect(forward?.type === "connection" && forward.data?.path).toMatch(/^M (?!.* C ).+ L /);
+    expect(reverse?.type === "connection" && reverse.data?.path).toMatch(/^M (?!.* C ).+ L /);
+    expect(forward?.type === "connection" && model.edgeTargets?.get(forward.id)).toMatchObject({ edgeIds: ["a-root"] });
+    expect(reverse?.type === "connection" && model.edgeTargets?.get(reverse.id)).toMatchObject({ edgeIds: ["root-a"] });
+  });
+
+  it("uses F curves for node–node aggregates between ungrouped root nodes", async () => {
+    const roots = {
+      ...diagram,
+      diagram: {
+        ...diagram.diagram,
+        graph: dependencyDiagramGraphSchema.parse({
+          ...diagram.diagram.graph,
+          nodes: [
+            ...diagram.diagram.graph.nodes,
+            { nodeId: "root-one", type: "default", title: "Root One" },
+            { nodeId: "root-two", type: "default", title: "Root Two" },
+          ],
+          edges: [
+            ...diagram.diagram.graph.edges,
+            { edgeId: "one-two", type: "default", sourceNodeId: "root-one", targetNodeId: "root-two" },
+            { edgeId: "two-one", type: "default", sourceNodeId: "root-two", targetNodeId: "root-one" },
+          ],
+        }),
+      },
+    } satisfies Artifact;
+    const layout = await layoutDependencyGraph(roots.diagram.graph, {
+      ...sizes,
+      "root-one": sizes.a,
+      "root-two": sizes.a,
+    });
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(roots, layout, vi.fn());
+    const forward = model.edges.find((edge) => edge.source === "root-one" && edge.target === "root-two");
+    const reverse = model.edges.find((edge) => edge.source === "root-two" && edge.target === "root-one");
+
+    expect(forward?.type === "connection" && forward.data?.path).toContain(" C ");
+    expect(reverse?.type === "connection" && reverse.data?.path).toContain(" C ");
+    expect(forward?.type === "connection" && model.edgeTargets?.get(forward.id)).toMatchObject({
+      edgeIds: ["one-two"],
+    });
+    expect(reverse?.type === "connection" && model.edgeTargets?.get(reverse.id)).toMatchObject({
+      edgeIds: ["two-one"],
+    });
+  });
+});

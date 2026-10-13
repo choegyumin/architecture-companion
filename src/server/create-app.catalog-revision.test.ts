@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 
@@ -18,7 +19,7 @@ function catalog(title: string) {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          layout: { layoutId: "general", options: { elk: { direction: "RIGHT" } } },
           graph: {
             groups: [],
             nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title }],

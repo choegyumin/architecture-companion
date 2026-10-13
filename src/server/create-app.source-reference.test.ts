@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { isSourceOpenRequestAllowed } from "@/server/source-open-request";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 
@@ -21,7 +22,7 @@ function catalog() {
         instructions:
           "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
@@ -38,7 +39,7 @@ function catalog() {
         instructions:
           "## Purpose\nReview checkout input ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [

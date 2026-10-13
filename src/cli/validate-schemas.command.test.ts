@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const checkoutBehavior = {
   type: "behavior",
@@ -14,7 +15,7 @@ const checkoutBehavior = {
   instructions:
     "## Purpose\nReview order submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: {
       groups: [],
       nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Submit order" }],

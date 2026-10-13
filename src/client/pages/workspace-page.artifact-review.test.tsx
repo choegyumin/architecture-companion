@@ -10,7 +10,8 @@ import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 const checkoutDiagram = {
   artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
@@ -21,7 +22,7 @@ const checkoutDiagram = {
   instructions:
     "## Purpose\nReview checkout component ownership.\n\n## Regeneration\nRebuild the page, payment form, and client relations.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: {
       groups: [{ groupId: "checkout-feature", title: "Checkout feature" }],
       nodes: [
@@ -82,7 +83,7 @@ const catalogDiagram = {
   generator: "built-in:freeform",
   instructions: "## Purpose\nReview product browsing ownership.\n\n## Regeneration\nRebuild the catalog page boundary.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: {
       groups: [],
       nodes: [
@@ -105,7 +106,7 @@ const checkoutWorkflow = {
   instructions:
     "## Purpose\nReview checkout confirmation.\n\n## Regeneration\nRebuild the submission and confirmation steps.",
   diagram: {
-    layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+    layout: { layoutId: "general", options: { elk: { direction: "RIGHT" } } },
     graph: {
       groups: [],
       nodes: [
@@ -134,7 +135,7 @@ const processArtifact = {
       instructions:
         "## Purpose\nReview member invitations.\n\n## Regeneration\nRebuild submission, eligibility, sending, and delivery steps.",
       diagram: {
-        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        layout: { layoutId: "general", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
           nodes: [
@@ -166,7 +167,7 @@ const processArtifact = {
       instructions:
         "## Purpose\nReview member removal.\n\n## Regeneration\nRebuild the removal trigger from the member workflow.",
       diagram: {
-        layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+        layout: { layoutId: "general", options: { elk: { direction: "RIGHT" } } },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "remove", kind: "trigger", title: "Member removal requested" }],
@@ -246,7 +247,7 @@ describe("design (architecture·implementation) review", () => {
           ...checkoutDiagram,
           diagram: {
             ...checkoutDiagram.diagram,
-            layout: { layoutId: "elk-layered", options: { elk: { direction: "DIAGONAL" } } },
+            layout: { layoutId: "general", options: { elk: { direction: "DIAGONAL" } } },
           },
         },
       ],

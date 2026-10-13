@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 
+import { toDiagramGraphInput } from "@/features/diagram/diagram-graph";
+
 import { buildModuleGraph, type ModuleGraphOptions } from "../analysis/build-module-graph";
 
 export type JsModuleDependencyGraphCommandEnvironment = Readonly<{
@@ -17,7 +19,7 @@ export async function writeJsModuleDependencyGraph(options: ModuleGraphOptions):
   const graph = await buildModuleGraph(options);
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "architecture-companion-js-module-dependency-graph-"));
   const graphPath = join(temporaryDirectory, "graph.json");
-  await writeFile(graphPath, `${JSON.stringify(graph, null, 2)}\n`);
+  await writeFile(graphPath, `${JSON.stringify(toDiagramGraphInput(graph), null, 2)}\n`);
   return graphPath;
 }
 

@@ -7,7 +7,8 @@ import { executeServeCommand } from "@/cli/serve.command";
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
 import { executeViewGeneratorsCommand } from "@/cli/view-generators.command";
 import type { StartedServer } from "@/server/start-server";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../tests/helpers/write-catalog";
 
 const spawnProcess = vi.hoisted(() =>
   vi.fn(() => {
@@ -67,7 +68,7 @@ function reviewArtifact(generator: string) {
         instructions:
           "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary with the selected generator.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],

@@ -103,7 +103,7 @@ A diamond-shaped node where one path branches into alternatives; each outgoing p
 An area that organizes related nodes and nested groups into a hierarchy.
 
 **Bounding Group**:
-A visual boundary outlining a collection of nodes. It is a display element, distinct from a group in the underlying graph.
+A visual boundary enclosing multiple nodes as one area on screen. A group defines which nodes and nested groups belong where; a bounding group indicates which nodes are visually enclosed together.
 
 **Edge**:
 A graph element representing a relationship or interaction between two nodes.

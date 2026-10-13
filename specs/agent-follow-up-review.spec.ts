@@ -8,7 +8,8 @@ import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { createFileAnnotationRepository } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../tests/helpers/write-catalog";
 
 // Artifacts stay in the catalog's path-sorted order so the revision id
 // computed here matches the one the server derives from the same files.
@@ -23,7 +24,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
@@ -40,7 +41,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
