@@ -37,5 +37,5 @@ The user's message in the coding harness determines the action to take. Annotati
 
 - Apply only Annotations from the active revision that are relevant to the requested scope. Ask only when Comments conflict and the user's message does not resolve their priority.
 - If the user explicitly refers to saved Annotations but the active document is empty or the target does not exist, report the mismatch.
-- Answer explanation requests without changing the artifact. Do not automatically interpret requests for code or documentation changes as requests for diagram changes.
+- Answer explanation requests without changing the artifact. Do not automatically interpret requests for code or documentation changes as requests for diagram changes. When the Review UI is open and an explanation would benefit from showing specific elements, follow **Spotlight** in `SKILL.md`.
 - Even when changing diagrams, do not copy Annotations from the previous revision to the new one or transform their coordinates. Do not apply targets or Comments from an old revision to the current catalog by guesswork.

@@ -20,6 +20,7 @@ For follow-up requests after a Review UI review, start with **Review follow-up**
 | Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/artifact.schema.json`, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
 | Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                            |
 | Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                 |
+| Point the reviewer at specific elements in an open Review UI    | Spotlight           | `spotlight.md`                                                                                                          |
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
@@ -96,6 +97,23 @@ Ask whether to save a rule in `instructions` only when there is a reason to make
    Once ready, the server prints a single line to stdout with a URL in the form `http://127.0.0.1:<port>`. This command does not open a browser.
 
 3. Briefly describe what the catalog covers and share the URL. Tell the user to leave Annotations and Comments in the UI, then send a follow-up request through the coding harness. Do not use polling or blocking tool calls to wait for that request.
+
+## Spotlight
+
+1. Confirm a server from **Start the Review UI** serves the same `<scope>` and that the reviewer has the Review UI open in a browser. A spotlight reaches only browsers connected at the moment it is sent.
+
+2. Send the spotlight to that server's URL. Read `<AC>/spotlight.md` first for the request shape, element targeting, and caption conventions.
+
+   ```sh
+   curl -X POST "<url>/api/spotlight" -H "Content-Type: application/json" -d @- <<'JSON'
+   {
+     "artifactId": "<artifact-id>",
+     "diagram": { "steps": [{ "elements": [], "caption": "..." }] }
+   }
+   JSON
+   ```
+
+   A `201` reply means connected Review UIs received it. A `422` reply names a catalog mismatch to fix.
 
 ## Review follow-up
 
