@@ -26910,16 +26910,6 @@ function parseRevisionAnnotations(input2) {
   return parseWithMessage(revisionAnnotationsSchema, input2, "Invalid revision annotations.");
 }
 
-// src/server/create-annotation-etag.ts
-import { createHash } from "crypto";
-function createAnnotationEtag(revisionAnnotations) {
-  const digest = createHash("sha256").update(JSON.stringify(revisionAnnotations)).digest("hex");
-  return `"sha256:${digest}"`;
-}
-
-// src/server/create-catalog-revision-id.ts
-import { createHash as createHash2 } from "crypto";
-
 // src/features/artifact-generator/artifact-generator-reference.ts
 var artifactGeneratorReferenceSchema = external_exports.string().regex(/^(?:built-in|project|global):[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
@@ -27541,6 +27531,81 @@ function parseArtifact(input2) {
   return result.data;
 }
 
+// src/features/spotlight/spotlight.ts
+var spotlightStepSchema = external_exports.object({
+  elements: external_exports.array(annotationTargetSchema),
+  // Every step must explain itself; the agent instruction tells agents
+  // without anything to say to send the fixed fallback caption.
+  caption: external_exports.string()
+}).strict();
+var spotlightDiagramViewSchema = external_exports.object({
+  steps: external_exports.array(spotlightStepSchema).min(1)
+}).strict();
+var artifactSpotlightSchema = external_exports.object({
+  artifactId: artifactIdSchema,
+  diagram: spotlightDiagramViewSchema
+}).strict();
+function parseArtifactSpotlight(input2) {
+  const result = artifactSpotlightSchema.safeParse(input2);
+  if (!result.success) {
+    const messages = result.error.issues.map(({ message }) => message).join("; ");
+    throw new Error(`Invalid artifact spotlight: ${messages}`, { cause: result.error });
+  }
+  return result.data;
+}
+function validateSpotlightAgainstCatalog(catalog, spotlight) {
+  const artifact = catalog.artifacts.find(({ artifactId }) => artifactId === spotlight.artifactId);
+  if (!artifact) {
+    return { status: "invalid", message: `Spotlight references an unknown artifact: ${spotlight.artifactId}` };
+  }
+  const groupIds = new Set(artifact.diagram.graph.groups.map(({ groupId }) => groupId));
+  const nodeIds = new Set(artifact.diagram.graph.nodes.map(({ nodeId }) => nodeId));
+  const edgeIds = new Set(artifact.diagram.graph.edges.map(({ edgeId }) => edgeId));
+  const endpointIds = /* @__PURE__ */ new Set([...groupIds, ...nodeIds]);
+  const problems = [];
+  spotlight.diagram.steps.forEach((step, stepIndex) => {
+    const stepLabel = `Step ${stepIndex + 1}`;
+    for (const element of step.elements) {
+      if (element.type === "group" && !groupIds.has(element.id)) {
+        problems.push(`${stepLabel}: unknown diagram group: ${element.id}`);
+      }
+      if (element.type === "node" && !nodeIds.has(element.id)) {
+        problems.push(`${stepLabel}: unknown diagram node: ${element.id}`);
+      }
+      if (element.type === "edge" && !edgeIds.has(element.id)) {
+        problems.push(`${stepLabel}: unknown diagram edge: ${element.id}`);
+      }
+      if (element.type === "edge-set") {
+        if (!endpointIds.has(element.sourceId) || !endpointIds.has(element.targetId)) {
+          problems.push(
+            `${stepLabel}: edge-set endpoints must be existing groups or nodes: from ${element.sourceId} to ${element.targetId}`
+          );
+        }
+        for (const edgeId of element.edgeIds) {
+          if (!edgeIds.has(edgeId)) problems.push(`${stepLabel}: unknown diagram edge: ${edgeId}`);
+        }
+      }
+    }
+  });
+  if (problems.length > 0) {
+    return {
+      status: "invalid",
+      message: `Spotlight does not match artifact ${spotlight.artifactId}: ${problems.join("; ")}`
+    };
+  }
+  return { status: "ok" };
+}
+
+// src/server/create-annotation-etag.ts
+import { createHash } from "crypto";
+function createAnnotationEtag(revisionAnnotations) {
+  const digest = createHash("sha256").update(JSON.stringify(revisionAnnotations)).digest("hex");
+  return `"sha256:${digest}"`;
+}
+
+// src/server/create-catalog-revision-id.ts
+import { createHash as createHash2 } from "crypto";
+
 // src/features/catalog/catalog.ts
 var catalogConfigSchema = external_exports.object({
   include: external_exports.array(external_exports.string().min(1)).default(["**/*.archcomp.json"]),
@@ -28048,6 +28113,28 @@ function isSourceOpenRequestAllowed(request) {
   return isLocalAppActionRequestAllowed({ ...request, expectedAction: "open-source" });
 }
 
+// src/server/spotlight-broadcasts.ts
+function createSpotlightBroadcasts() {
+  let listeners = [];
+  return {
+    publish: (spotlight) => {
+      listeners.forEach((listener) => listener(spotlight));
+    },
+    subscribe: (listener) => {
+      listeners = [...listeners, listener];
+      return () => {
+        listeners = listeners.filter((candidate) => candidate !== listener);
+      };
+    }
+  };
+}
+
+// src/server/spotlight-request.ts
+function isSpotlightRequestAllowed(request) {
+  if (request.fetchSite === "cross-site") return false;
+  return request.origin === null || request.origin === request.requestOrigin;
+}
+
 // src/shared/node/open-local-path.ts
 import { spawn } from "child_process";
 var defaultSpawnProcess = (command, args, options) => spawn(command, [...args], options);
@@ -28100,6 +28187,7 @@ function createApp(scope, dependencies = {}) {
   const openPath = dependencies.openPath ?? defaultOpenPath;
   const reviewUpdates = dependencies.reviewUpdates;
   const annotationRepository = dependencies.annotationRepository ?? createFileAnnotationRepository(scope.path);
+  const spotlightBroadcasts = dependencies.spotlightBroadcasts ?? createSpotlightBroadcasts();
   return new Hono2().get("/api/review", async (context) => {
     const result = await readCatalog(scope.path);
     if (result.status === "invalid") {
@@ -28124,21 +28212,66 @@ function createApp(scope, dependencies = {}) {
     "/api/review/events",
     (context) => streamSSE(context, async (stream2) => {
       let pendingWrite = Promise.resolve();
-      const publish = (data) => {
+      const writeEvent = (event, data) => {
         pendingWrite = pendingWrite.then(async () => {
-          await stream2.writeSSE({ event: "review", data: JSON.stringify(data) });
+          await stream2.writeSSE({ event, data: JSON.stringify(data) });
         });
       };
       await new Promise((resolve) => {
-        const unsubscribe = reviewUpdates?.subscribe(publish) ?? (() => void 0);
+        const unsubscribeReview = reviewUpdates?.subscribe((update) => writeEvent("review", update)) ?? (() => void 0);
+        const unsubscribeSpotlight = spotlightBroadcasts.subscribe((spotlight) => writeEvent("spotlight", spotlight));
         stream2.onAbort(() => {
-          unsubscribe();
+          unsubscribeReview();
+          unsubscribeSpotlight();
           resolve();
         });
-        publish({ revision: 0 });
+        writeEvent("review", { revision: 0 });
       });
       await pendingWrite;
     })
+  ).post(
+    "/api/spotlight",
+    async (context, next) => {
+      const allowed = isSpotlightRequestAllowed({
+        origin: context.req.raw.headers.get("origin"),
+        requestOrigin: new URL(context.req.url).origin,
+        fetchSite: context.req.raw.headers.get("sec-fetch-site")
+      });
+      if (!allowed) {
+        return context.json(
+          { error: { message: "Spotlight requests must come from local tooling or the companion page." } },
+          403
+        );
+      }
+      await next();
+    },
+    validator("json", (input2, context) => {
+      try {
+        return parseArtifactSpotlight(input2);
+      } catch (error62) {
+        const message = error62 instanceof Error ? error62.message : "Artifact spotlight is invalid.";
+        return context.json({ error: { message } }, 422);
+      }
+    }),
+    async (context) => {
+      const spotlight = context.req.valid("json");
+      const result = await readCatalog(scope.path);
+      if (result.status === "invalid") {
+        return context.json({ error: { message: result.message } }, 422);
+      }
+      if (result.status === "missing") {
+        return context.json(
+          { error: { message: "Catalog is unavailable. Spotlight has no artifact to address." } },
+          404
+        );
+      }
+      const validation = validateSpotlightAgainstCatalog(result.catalog, spotlight);
+      if (validation.status === "invalid") {
+        return context.json({ error: { message: validation.message } }, 422);
+      }
+      spotlightBroadcasts.publish(spotlight);
+      return context.json({ spotlight }, 201);
+    }
   ).get("/api/annotations", async (context) => {
     const result = await readActiveRevisionAnnotations(scope.path, annotationRepository);
     if (result.status === "invalid") {
