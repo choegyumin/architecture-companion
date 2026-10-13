@@ -10,26 +10,32 @@ import { DiagramCanvas } from "@/client/parts/diagram-canvas";
 const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
   const viewport = { x: 0, y: 0, zoom: 1 };
+  const nodesBounds = { x: 0, y: 0, width: 2000, height: 3000 };
   const fitView = vi.fn(async () => {
     Object.assign(viewport, { x: 24, y: 24, zoom: 0.1 });
     return true;
   });
+  const setViewport = vi.fn(async (next: Viewport) => {
+    Object.assign(viewport, next);
+    return true;
+  });
+  const nodes: { id: string; type: string; parentId?: string; className?: string }[] = [];
   return {
     platform: { os: { mac: false } },
     flowInstance: {
       screenToFlowPosition,
       fitView,
       getViewport: () => ({ ...viewport }),
+      getInternalNode: (id: string) => nodes.find((node) => node.id === id) ?? null,
       getNodes: () => [],
-      getNodesBounds: () => ({ x: 0, y: 0, width: 2000, height: 3000 }),
-      setViewport: async (next: Viewport) => {
-        Object.assign(viewport, next);
-        return true;
-      },
+      getNodesBounds: () => ({ ...nodesBounds }),
+      setViewport,
     },
-    nodes: [] as { id: string; type: string; parentId?: string; className?: string }[],
+    nodes,
+    nodesBounds,
     screenToFlowPosition,
     fitView,
+    setViewport,
   };
 });
 
@@ -59,7 +65,8 @@ vi.mock("@xyflow/react", () => ({
     onNodeClick?: (event: MouseEvent<Element>, node: { id: string; type: string }) => void;
     onPaneClick?: (event: MouseEvent<Element>) => void;
   }) => {
-    mocks.nodes = [...nodes];
+    mocks.nodes.length = 0;
+    mocks.nodes.push(...nodes);
     useEffect(() => {
       onInit(mocks.flowInstance);
     }, [onInit]);
@@ -100,20 +107,23 @@ describe("diagram canvas", () => {
     mocks.platform.os.mac = false;
     mocks.screenToFlowPosition.mockClear();
     mocks.fitView.mockClear();
+    mocks.setViewport.mockClear();
+    mocks.nodes.length = 0;
+    Object.assign(mocks.nodesBounds, { x: 0, y: 0, width: 2000, height: 3000 });
     await mocks.flowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
+    mocks.setViewport.mockClear();
   });
 
-  it("keeps the spotlight frame through initial layout and dismissal until the user requests Fit View", async () => {
+  it("reserves the spotlight panel strip in every camera move while a spotlight is open", async () => {
     vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame"] });
     try {
       const initialView = { mode: "fit" } as const;
+      const focusView = {
+        key: "first-step",
+        target: { kind: "bounds", x: 100, y: 600, width: 200, height: 48 },
+      } as const;
       const { rerender } = render(
-        <DiagramCanvas
-          edges={[]}
-          nodes={[]}
-          initialView={initialView}
-          focusView={{ key: "first-step", target: { kind: "bounds", x: 100, y: 600, width: 200, height: 48 } }}
-        />,
+        <DiagramCanvas edges={[]} nodes={[]} initialView={initialView} focusView={focusView} />,
       );
       Object.defineProperties(screen.getByRole("group", { name: "Artifact canvas" }), {
         clientWidth: { value: 800 },
@@ -121,17 +131,31 @@ describe("diagram canvas", () => {
       });
       await act(() => vi.advanceTimersByTimeAsync(1000));
 
-      expect(mocks.flowInstance.getViewport()).toEqual({ x: 200, y: -324, zoom: 1 });
+      // Step framing centers on the usable width (800 - 360 = 440).
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 20, y: -324, zoom: 1 });
 
       rerender(<DiagramCanvas edges={[]} nodes={[]} initialView={initialView} />);
       await act(() => vi.advanceTimersByTimeAsync(1000));
 
-      expect(mocks.flowInstance.getViewport()).toEqual({ x: 200, y: -324, zoom: 1 });
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 20, y: -324, zoom: 1 });
 
       fireEvent.click(screen.getByRole("button", { name: "Fit View" }));
       await act(async () => undefined);
 
+      // Without a spotlight, Fit View uses the full width again.
       expect(mocks.flowInstance.getViewport()).toEqual({ x: 24, y: 24, zoom: 0.1 });
+
+      rerender(<DiagramCanvas edges={[]} nodes={[]} initialView={initialView} focusView={focusView} />);
+      await act(() => vi.advanceTimersByTimeAsync(1000));
+
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 20, y: -324, zoom: 1 });
+
+      fireEvent.click(screen.getByRole("button", { name: "Fit View" }));
+      await act(async () => undefined);
+
+      // The whole diagram fits the zoomed-out height, so only the center
+      // shifts onto the usable width: x moves by half the reserve.
+      expect(mocks.flowInstance.getViewport()).toEqual({ x: 204, y: 24, zoom: 0.1 });
     } finally {
       vi.useRealTimers();
     }
@@ -297,53 +321,44 @@ describe("diagram canvas", () => {
         onNodeActivate={onNodeActivate}
       />,
     );
+    Object.defineProperties(screen.getByRole("group", { name: "Artifact canvas" }), {
+      clientWidth: { value: 800 },
+      clientHeight: { value: 600 },
+    });
     const input = await screen.findByRole("combobox", { name: "Search nodes" });
     const file = screen.getByLabelText("React Flow node file");
     const group = screen.getByLabelText("React Flow node group");
+
+    // Every selection frames the same mocked node bounds in an 800x600
+    // viewport: zoom min(752/2000, 552/3000) = 0.184, centered.
+    const expectedViewport = { x: 216, y: 24, zoom: 0.184 };
 
     await user.type(input, "RENDER");
     expect(screen.getAllByRole("option", { name: "Render" })).toHaveLength(2);
     expect(file).toHaveClass("existing-class", "is-search-match");
     expect(group).toHaveClass("is-search-match");
     expect(file).not.toHaveClass("is-search-current");
-    expect(mocks.fitView).not.toHaveBeenCalled();
+    expect(mocks.setViewport).not.toHaveBeenCalled();
     expect(onNodeActivate).not.toHaveBeenCalled();
     expect(onGroupActivate).not.toHaveBeenCalled();
 
     await user.keyboard("{ArrowDown}");
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "file" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
+    expect(mocks.setViewport).toHaveBeenCalledExactlyOnceWith(expectedViewport, { duration: 500 });
     expect(file).toHaveClass("is-search-current");
     expect(group).not.toHaveClass("is-search-current");
 
     await user.keyboard("{ArrowDown}");
     expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "group" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
+    expect(mocks.setViewport).toHaveBeenCalledTimes(2);
+    expect(mocks.setViewport).toHaveBeenLastCalledWith(expectedViewport, { duration: 500 });
     expect(group).toHaveClass("is-search-current");
     expect(file).not.toHaveClass("is-search-current");
     expect(input).toHaveValue("RENDER");
 
     await user.keyboard("{Enter}");
-    expect(mocks.fitView).toHaveBeenCalledTimes(3);
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "group" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
+    expect(mocks.setViewport).toHaveBeenCalledTimes(3);
+    expect(mocks.setViewport).toHaveBeenLastCalledWith(expectedViewport, { duration: 500 });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveValue("RENDER");
     expect(file).not.toHaveClass("is-search-match", "is-search-current");
@@ -353,13 +368,8 @@ describe("diagram canvas", () => {
     await user.click(input);
     const [firstOption] = screen.getAllByRole("option", { name: "Render" });
     await user.click(firstOption);
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "file" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
+    expect(mocks.setViewport).toHaveBeenCalledTimes(4);
+    expect(mocks.setViewport).toHaveBeenLastCalledWith(expectedViewport, { duration: 500 });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveValue("RENDER");
     expect(input).toHaveFocus();
@@ -375,7 +385,7 @@ describe("diagram canvas", () => {
     await user.clear(input);
     await user.type(input, "bounding-group");
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
-    expect(mocks.fitView).toHaveBeenCalledTimes(4);
+    expect(mocks.setViewport).toHaveBeenCalledTimes(4);
   });
 
   it.each([

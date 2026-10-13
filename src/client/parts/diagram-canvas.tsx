@@ -28,10 +28,10 @@ import {
 } from "react";
 
 import {
-  DIAGRAM_FIT_VIEW_OPTIONS,
   DIAGRAM_MIN_ZOOM,
   fitViewFraming,
   focusBoundsFraming,
+  SPOTLIGHT_VIEWPORT_RESERVE,
 } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
@@ -212,10 +212,13 @@ export function DiagramCanvas({
     );
   }, [nodes, searchEnabled, searchMatches]);
 
-  const fitView = useCallback(async () => {
-    if (!flowInstance || !initialView || !canvasRef.current) return;
-    await fitViewFraming(flowInstance, initialView, canvasRef.current);
-  }, [flowInstance, initialView]);
+  const fitView = useCallback(
+    async (rightReserve = 0) => {
+      if (!flowInstance || !initialView || !canvasRef.current) return;
+      await fitViewFraming(flowInstance, initialView, canvasRef.current, rightReserve);
+    },
+    [flowInstance, initialView],
+  );
 
   const latestFocusView = useRef(focusView);
   useEffect(() => {
@@ -240,18 +243,18 @@ export function DiagramCanvas({
   const focusSpotlightView = useCallback(async () => {
     if (!flowInstance || !focusView || !canvasRef.current) return;
     if (focusView.target.kind === "bounds") {
-      await focusBoundsFraming(flowInstance, focusView.target, canvasRef.current);
+      await focusBoundsFraming(flowInstance, focusView.target, canvasRef.current, SPOTLIGHT_VIEWPORT_RESERVE);
       return;
     }
     if (focusView.target.nodeIds.length > 0) {
-      await flowInstance.fitView({
-        ...DIAGRAM_FIT_VIEW_OPTIONS,
-        duration: 500,
-        nodes: focusView.target.nodeIds.map((id) => ({ id })),
-      });
+      const framedNodes = focusView.target.nodeIds
+        .map((id) => flowInstance.getInternalNode(id))
+        .filter((node): node is NonNullable<typeof node> => node != null);
+      const bounds = flowInstance.getNodesBounds(framedNodes);
+      await focusBoundsFraming(flowInstance, bounds, canvasRef.current, SPOTLIGHT_VIEWPORT_RESERVE);
       return;
     }
-    await fitView();
+    await fitView(SPOTLIGHT_VIEWPORT_RESERVE);
   }, [flowInstance, focusView, fitView]);
 
   useEffect(() => {
@@ -317,10 +320,13 @@ export function DiagramCanvas({
   }
 
   function handleSearchSelect(node: DiagramReactFlowNode): void {
-    if (!flowInstance) return;
+    if (!flowInstance || !canvasRef.current) return;
     if (node.type === "card") onNodeActivate?.(node.id);
     if (node.type === "labeled-group") onGroupActivate?.(node.id);
-    void flowInstance.fitView({ ...DIAGRAM_FIT_VIEW_OPTIONS, nodes: [{ id: node.id }], duration: 500 });
+    const internalNode = flowInstance.getInternalNode(node.id);
+    if (!internalNode) return;
+    const bounds = flowInstance.getNodesBounds([internalNode]);
+    void focusBoundsFraming(flowInstance, bounds, canvasRef.current, focusView ? SPOTLIGHT_VIEWPORT_RESERVE : 0);
   }
 
   return (
@@ -366,7 +372,11 @@ export function DiagramCanvas({
       >
         <Background />
         <Controls showFitView={false} showInteractive={false}>
-          <ControlButton aria-label="Fit View" onClick={() => void fitView()} title="Fit View">
+          <ControlButton
+            aria-label="Fit View"
+            onClick={() => void fitView(focusView ? SPOTLIGHT_VIEWPORT_RESERVE : 0)}
+            title="Fit View"
+          >
             <Maximize aria-hidden="true" />
           </ControlButton>
         </Controls>

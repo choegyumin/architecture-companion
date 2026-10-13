@@ -20,6 +20,15 @@ describe("focusBoundsFraming", () => {
     expect(setViewport).toHaveBeenCalledWith({ x: 450, y: 375, zoom: 1 }, { duration: 500 });
   });
 
+  it("reserves the right strip for the spotlight panel when framing bounds", async () => {
+    const { instance, setViewport } = createInstance();
+
+    await focusBoundsFraming(instance, { x: 0, y: 0, width: 100, height: 50 }, createViewport(1000, 800), 360);
+
+    // Centers on the usable width (1000 - 360 = 640), not the full canvas.
+    expect(setViewport).toHaveBeenCalledWith({ x: 270, y: 375, zoom: 1 }, { duration: 500 });
+  });
+
   it("zooms out for bounds larger than the viewport", async () => {
     const { instance, setViewport } = createInstance();
 
