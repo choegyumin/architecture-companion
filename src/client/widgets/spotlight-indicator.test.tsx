@@ -57,12 +57,20 @@ describe("SpotlightIndicator", () => {
     expect(screen.getByRole("button", { name: "Next step" })).toBeDisabled();
   });
 
-  it("hides navigation for a single step and shows only progress", () => {
+  it("keeps a single step without navigation or a step count", () => {
     renderIndicator(spotlight([{ elements: [], caption: "Look here" }]), 0);
 
     expect(screen.getByRole("status")).toHaveTextContent("Look here");
     expect(screen.queryByRole("button", { name: "Previous step" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Next step" })).not.toBeInTheDocument();
+    expect(screen.queryByText("1/1")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close spotlight" })).toBeInTheDocument();
+  });
+
+  it("shows only the control bar for a single captionless step", () => {
+    renderIndicator(spotlight([{ elements: [] }]), 0);
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close spotlight" })).toBeInTheDocument();
   });
 
@@ -76,5 +84,56 @@ describe("SpotlightIndicator", () => {
 
     await user.click(screen.getByRole("button", { name: "Close spotlight" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("moves between steps with the arrow keys", async () => {
+    const user = userEvent.setup();
+    const onStepChange = vi.fn();
+    renderIndicator(spotlight([{ elements: [] }, { elements: [] }, { elements: [] }]), 1, {
+      onStepChange,
+      onClose: () => undefined,
+    });
+
+    await user.keyboard("{ArrowRight}");
+    expect(onStepChange).toHaveBeenLastCalledWith(2);
+
+    await user.keyboard("{ArrowLeft}");
+    expect(onStepChange).toHaveBeenLastCalledWith(0);
+  });
+
+  it("ignores arrow keys at the ends, with modifiers, and from text fields", async () => {
+    const user = userEvent.setup();
+    const onStepChange = vi.fn();
+    render(
+      <>
+        <input aria-label="Search" />
+        <textarea aria-label="Note" />
+        <SpotlightIndicator
+          spotlight={spotlight([{ elements: [] }, { elements: [] }])}
+          stepIndex={0}
+          onStepChange={onStepChange}
+          onClose={() => undefined}
+        />
+      </>,
+    );
+
+    await user.keyboard("{ArrowLeft}");
+    expect(onStepChange).not.toHaveBeenCalled();
+
+    await user.keyboard("{ArrowRight}");
+    expect(onStepChange).toHaveBeenLastCalledWith(1);
+
+    await user.keyboard("{Meta>}{ArrowRight}{/Meta}");
+    expect(onStepChange).toHaveBeenCalledTimes(1);
+
+    const input = screen.getByLabelText("Search");
+    await user.click(input);
+    await user.keyboard("{ArrowRight}");
+    expect(onStepChange).toHaveBeenCalledTimes(1);
+
+    const note = screen.getByLabelText("Note");
+    await user.click(note);
+    await user.keyboard("{ArrowLeft}");
+    expect(onStepChange).toHaveBeenCalledTimes(1);
   });
 });
