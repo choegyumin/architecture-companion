@@ -12,7 +12,7 @@ Use for questions that no specialized generator covers. Manually author the smal
 ```json
 {
   "generator": "built-in:freeform",
-  "diagram": { "layout": { "id": "elk-layered" } }
+  "diagram": { "layout": { "layoutId": "general" } }
 }
 ```
 

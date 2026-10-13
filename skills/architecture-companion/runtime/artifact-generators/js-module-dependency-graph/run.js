@@ -256822,10 +256822,6 @@ import { tmpdir as tmpdir2 } from "os";
 import { join as join17 } from "path";
 import { parseArgs } from "util";
 
-// src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts
-import { readFile as readFile3 } from "fs/promises";
-import { basename, dirname as dirname8, join as join16, relative as relative8 } from "path";
-
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/external.js
 var external_exports = {};
 __export(external_exports, {
@@ -276509,7 +276505,7 @@ var diagramControlBaseShape = {
   label: external_exports.string().min(1),
   // Omitted `dependsOn` equals [[]]: the control has no prerequisites. An
   // explicit [] stays invalid because an empty OR never holds.
-  dependsOn: diagramRouteRequirementRulesetSchema.optional()
+  dependsOn: diagramRouteRequirementRulesetSchema.default([[]])
 };
 var diagramControlSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({ ...diagramControlBaseShape, type: external_exports.literal("conditional") }).strict(),
@@ -276518,20 +276514,20 @@ var diagramControlSchema = external_exports.discriminatedUnion("type", [
     type: external_exports.literal("branch"),
     cases: external_exports.array(external_exports.object({ caseId: diagramIdSchema, label: external_exports.string().min(1) }).strict()).min(2),
     /** A boolean pair normalized to [ON, OFF] order. Case IDs keep their source meaning; consumers read the stored order rather than parsing labels. */
-    polarityPair: external_exports.literal(true).optional()
+    polarityPair: external_exports.boolean().default(false)
   }).strict()
 ]);
 var diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: external_exports.string().min(1),
-  description: external_exports.string().min(1).optional(),
-  details: external_exports.array(external_exports.string().min(1)).optional(),
   groupId: diagramIdSchema.optional()
 };
 var defaultDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1).optional(),
-  type: external_exports.literal("default"),
+  type: external_exports.literal("default").default("default"),
   links: external_exports.array(diagramLinkSchema).optional()
 }).strict().meta({ id: "DefaultNode" });
 var activationEndpointSchema = external_exports.object({
@@ -276545,6 +276541,8 @@ var activationSchema = external_exports.object({
 }).strict();
 var lifelineDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1),
   type: external_exports.literal("lifeline"),
   links: external_exports.array(diagramLinkSchema).optional(),
@@ -276558,19 +276556,23 @@ var fragmentBranchSchema = external_exports.object({
 }).strict();
 var fragmentDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
+  description: external_exports.string().min(1).optional(),
+  details: external_exports.array(external_exports.string().min(1)).optional(),
   kind: external_exports.string().min(1),
   type: external_exports.literal("fragment"),
   operator: external_exports.enum(["alt", "opt", "loop", "par", "break", "critical", "assert", "neg"]),
   branches: external_exports.array(fragmentBranchSchema).min(1)
 }).strict().meta({ id: "FragmentNode" });
+var diamondDiagramNodeSchema = external_exports.object({ ...diagramNodeBaseShape, type: external_exports.literal("diamond") }).strict().meta({ id: "DiamondNode" });
 var diagramNodeSchema = external_exports.discriminatedUnion("type", [
   defaultDiagramNodeSchema,
+  diamondDiagramNodeSchema,
   lifelineDiagramNodeSchema,
   fragmentDiagramNodeSchema
 ]);
 var defaultDiagramEdgeSchema = external_exports.object({
   edgeId: diagramIdSchema,
-  type: external_exports.literal("default"),
+  type: external_exports.literal("default").default("default"),
   sourceNodeId: diagramIdSchema,
   targetNodeId: diagramIdSchema,
   kind: external_exports.string().min(1).optional(),
@@ -276599,12 +276601,23 @@ var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
   controlDiagramEdgeSchema,
   messageDiagramEdgeSchema
 ]);
-var diagramGroupSchema = external_exports.object({
+var diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: external_exports.string().min(1),
-  description: external_exports.string().min(1).optional(),
   parentGroupId: diagramIdSchema.optional()
-}).strict().meta({ id: "Group" });
+};
+var defaultDiagramGroupSchema = external_exports.object({
+  ...diagramGroupBaseShape,
+  type: external_exports.literal("default").default("default"),
+  description: external_exports.string().min(1).optional()
+}).strict().meta({ id: "DefaultGroup" });
+var boundingDiagramGroupSchema = external_exports.object({
+  ...diagramGroupBaseShape,
+  type: external_exports.literal("bounding"),
+  description: external_exports.string().min(1).optional(),
+  hideTitle: external_exports.boolean().default(false)
+}).strict().meta({ id: "BoundingGroup" });
+var diagramGroupSchema = external_exports.discriminatedUnion("type", [defaultDiagramGroupSchema, boundingDiagramGroupSchema]);
 function validateGraphIntegrity(graph) {
   const issues = [];
   const graphElements = [
@@ -276700,9 +276713,9 @@ var graphBaseShape = {
   nodes: external_exports.array(diagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(diagramEdgeSchema).readonly()
 };
-var diagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
+var generalDiagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
-}).meta({ id: "DiagramGraph" });
+}).meta({ id: "GeneralDiagramGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
@@ -276808,6 +276821,7 @@ var sequenceDiagramGraphSchema = external_exports.object({
 }).meta({ id: "SequenceGraph" });
 var dependencyDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
+  groups: external_exports.array(defaultDiagramGroupSchema).readonly(),
   nodes: external_exports.array(defaultDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
 }).strict().superRefine((graph, context) => {
@@ -276827,15 +276841,15 @@ var componentCompositionSchema = external_exports.object({
   slot: external_exports.string().min(1).optional(),
   origins: external_exports.array(componentOriginSchema)
 }).strict().meta({ id: "ComponentComposition" });
-var componentStructureEdgeLayoutContextSchema = external_exports.object({ composition: componentCompositionSchema.nullable().optional() }).strict().meta({ id: "ComponentStructureEdgeLayoutContext" });
-var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureDefaultEdge" });
-var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.optional() }).meta({ id: "ComponentStructureControlEdge" });
+var componentStructureEdgeLayoutContextSchema = external_exports.object({ composition: componentCompositionSchema.nullable().default(null) }).strict().meta({ id: "ComponentStructureEdgeLayoutContext" });
+var componentStructureDefaultEdgeSchema = defaultDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) }).meta({ id: "ComponentStructureDefaultEdge" });
+var componentStructureControlEdgeSchema = controlDiagramEdgeSchema.extend({ layoutContext: componentStructureEdgeLayoutContextSchema.prefault({}) }).meta({ id: "ComponentStructureControlEdge" });
 var componentStructureLayoutContextSchema = external_exports.object({
   rootNodeIds: external_exports.array(diagramIdSchema).min(1).readonly(),
   controls: external_exports.array(diagramControlSchema).readonly(),
   // Recommended for referenced definitions without a node; registering a
   // definition that also has a node is allowed, and so is omitting entries.
-  auxiliaryDefinitions: external_exports.array(auxiliaryDefinitionSchema).readonly().optional()
+  auxiliaryDefinitions: external_exports.array(auxiliaryDefinitionSchema).readonly().default([])
 }).strict();
 function validateComponentStructureGraph(graph) {
   const issues = [];
@@ -276965,12 +276979,75 @@ function validateComponentStructureGraph(graph) {
 }
 var componentStructureDiagramGraphSchema = external_exports.object({
   ...graphBaseShape,
+  groups: external_exports.array(defaultDiagramGroupSchema).readonly(),
   nodes: external_exports.array(componentStructureDiagramNodeSchema).min(1).readonly(),
   edges: external_exports.array(external_exports.discriminatedUnion("type", [componentStructureDefaultEdgeSchema, componentStructureControlEdgeSchema])).readonly(),
   layoutContext: componentStructureLayoutContextSchema
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
 }).meta({ id: "ComponentStructureGraph" });
+function toDiagramGraphInput(graph) {
+  if ("layoutContext" in graph) {
+    const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
+    return {
+      groups: graph.groups.map(({ type: _type, ...group }) => group),
+      nodes: graph.nodes.map(({ type: _type, ...node2 }) => node2),
+      edges: graph.edges.map(({ layoutContext: edgeContext, ...edge }) => {
+        const context = edgeContext.composition === null ? {} : { layoutContext: edgeContext };
+        if (edge.type === "default") {
+          const { type: _type, ...relationship } = edge;
+          return { ...relationship, ...context };
+        }
+        return { ...edge, ...context };
+      }),
+      layoutContext: {
+        ...layoutContext,
+        controls: controls.map(({ dependsOn, ...control }) => {
+          const prerequisites = dependsOn.length === 1 && dependsOn.at(0).length === 0 ? {} : { dependsOn };
+          if (control.type === "branch" && !control.polarityPair) {
+            const { polarityPair: _polarityPair, ...branch } = control;
+            return { ...branch, ...prerequisites };
+          }
+          return { ...control, ...prerequisites };
+        }),
+        ...auxiliaryDefinitions.length > 0 ? { auxiliaryDefinitions } : {}
+      }
+    };
+  }
+  return {
+    groups: graph.groups.map((group) => {
+      if (group.type === "default") {
+        const { type: _type, ...input2 } = group;
+        return input2;
+      }
+      if (!group.hideTitle) {
+        const { hideTitle: _hideTitle, ...input2 } = group;
+        return input2;
+      }
+      return group;
+    }),
+    nodes: graph.nodes.map((node2) => {
+      if (node2.type !== "default") return node2;
+      const { type: _type, ...input2 } = node2;
+      return input2;
+    }),
+    edges: graph.edges.map((edge) => {
+      if (edge.type === "default") {
+        const { type: _type, ...input2 } = edge;
+        return input2;
+      }
+      if (edge.type === "message" && edge.messageType === "sync") {
+        const { messageType: _messageType, ...input2 } = edge;
+        return input2;
+      }
+      return edge;
+    })
+  };
+}
+
+// src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts
+import { readFile as readFile3 } from "fs/promises";
+import { basename, dirname as dirname8, join as join16, relative as relative8 } from "path";
 
 // src/shared/node/path.ts
 import { isAbsolute, relative, sep } from "path";
@@ -278060,7 +278137,7 @@ async function buildDiagramGraph(scopePath, discoveredSources, analyzedModules) 
       });
     }
   }
-  return diagramGraphSchema.parse({
+  return dependencyDiagramGraphSchema.parse({
     groups: [...groups.values()].toSorted(compareById("groupId")),
     nodes: [...externalNodes.values(), ...nodes].toSorted(compareById("nodeId")),
     edges: [...edges.values()].toSorted(compareById("edgeId"))
@@ -278080,7 +278157,7 @@ async function writeJsModuleDependencyGraph(options) {
   const graph = await buildModuleGraph(options);
   const temporaryDirectory = await mkdtemp2(join17(tmpdir2(), "architecture-companion-js-module-dependency-graph-"));
   const graphPath = join17(temporaryDirectory, "graph.json");
-  await writeFile3(graphPath, `${JSON.stringify(graph, null, 2)}
+  await writeFile3(graphPath, `${JSON.stringify(toDiagramGraphInput(graph), null, 2)}
 `);
   return graphPath;
 }
