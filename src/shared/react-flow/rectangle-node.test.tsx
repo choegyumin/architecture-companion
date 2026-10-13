@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type NodeProps, ReactFlowProvider } from "@xyflow/react";
 
-import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
+import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
 
-describe("CardNode", () => {
+describe("RectangleNode", () => {
   it("highlights an activatable card while leaving its source link functional", () => {
     const onLinkActivate = vi.fn((event: { preventDefault: () => void }) => event.preventDefault());
     const props = {
@@ -14,11 +14,11 @@ describe("CardNode", () => {
         links: [{ href: "source:///src/file.ts", label: "Open source" }],
         onLinkActivate,
       },
-    } as unknown as NodeProps<CardReactFlowNode>;
+    } as unknown as NodeProps<RectangleReactFlowNode>;
 
     render(
       <ReactFlowProvider>
-        <CardNode {...props} />
+        <RectangleNode {...props} />
       </ReactFlowProvider>,
     );
 
@@ -28,11 +28,11 @@ describe("CardNode", () => {
   });
 
   it("does not highlight a card without focus activation", () => {
-    const props = { id: "file", data: { label: "File" } } as unknown as NodeProps<CardReactFlowNode>;
+    const props = { id: "file", data: { label: "File" } } as unknown as NodeProps<RectangleReactFlowNode>;
 
     render(
       <ReactFlowProvider>
-        <CardNode {...props} />
+        <RectangleNode {...props} />
       </ReactFlowProvider>,
     );
 

@@ -24,7 +24,7 @@ const catalog = {
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the trigger and confirmation from src/workflow.ts.",
       links: [{ href: "source:///specs/user-review-architecture.spec.tsx" }],
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [
@@ -50,7 +50,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout ownership.\n\n## Regeneration\nRebuild the page boundary from src/checkout-page.ts and its tests.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [

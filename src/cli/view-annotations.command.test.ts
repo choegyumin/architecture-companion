@@ -17,7 +17,7 @@ const checkoutBehavior = {
   instructions:
     "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
   diagram: {
-    layout: { layoutId: "elk-layered" },
+    layout: { layoutId: "general" },
     graph: {
       groups: [],
       nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],

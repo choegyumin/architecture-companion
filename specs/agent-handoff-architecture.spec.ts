@@ -67,7 +67,7 @@ function reviewArtifact(generator: string) {
         instructions:
           "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary with the selected generator.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],

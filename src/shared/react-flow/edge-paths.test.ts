@@ -1,4 +1,4 @@
-import { toBezierPath, toPolylinePath, toSplinePath } from "@/client/widgets/elk-layered-diagram-renderer.edge-paths";
+import { toBezierPath, toPolylinePath, toSplinePath } from "@/shared/react-flow/edge-paths";
 
 describe("toPolylinePath", () => {
   it("joins every point with line segments", () => {

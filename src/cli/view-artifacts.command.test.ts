@@ -36,7 +36,7 @@ it("prints discovered artifact paths and content as one JSON line", async () => 
     generator: "built-in:freeform",
     instructions: "Review checkout behavior.",
     diagram: {
-      layout: { layoutId: "elk-layered" },
+      layout: { layoutId: "general" },
       graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
     },
   };

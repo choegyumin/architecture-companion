@@ -12,7 +12,7 @@ function createDiagram(id: string, title: string): Artifact {
     generator: "built-in:freeform",
     instructions: `## Purpose\nReview ${title}.\n\n## Regeneration\nRebuild the ${id} workflow.`,
     diagram: {
-      layout: { layoutId: "elk-layered" },
+      layout: { layoutId: "general" },
       graph: {
         groups: [],
         nodes: [{ type: "default", nodeId: `${id}-node`, kind: "step", title: `${title} step` }],

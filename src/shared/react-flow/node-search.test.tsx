@@ -22,10 +22,10 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
   useReactFlow: () => mocks,
 }));
 
-const alpha: Node = { id: "alpha", type: "card", position: { x: 0, y: 0 }, data: { label: "Alpha" } };
-const beta: Node = { id: "beta", type: "card", position: { x: 0, y: 0 }, data: { label: "Beta" } };
-type TitledNode = Node<{ label: string; title: string }, "card">;
-const titled: TitledNode = { ...alpha, type: "card", data: { label: "Hidden", title: "Readable title" } };
+const alpha: Node = { id: "alpha", type: "rectangle", position: { x: 0, y: 0 }, data: { label: "Alpha" } };
+const beta: Node = { id: "beta", type: "rectangle", position: { x: 0, y: 0 }, data: { label: "Beta" } };
+type TitledNode = Node<{ label: string; title: string }, "rectangle">;
+const titled: TitledNode = { ...alpha, type: "rectangle", data: { label: "Hidden", title: "Readable title" } };
 
 describe("NodeSearch", () => {
   beforeEach(() => {

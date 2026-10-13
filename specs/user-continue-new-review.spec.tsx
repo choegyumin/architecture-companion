@@ -31,7 +31,7 @@ function catalog(nodeTitle: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: nodeTitle }],

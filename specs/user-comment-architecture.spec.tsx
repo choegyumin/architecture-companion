@@ -25,7 +25,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],

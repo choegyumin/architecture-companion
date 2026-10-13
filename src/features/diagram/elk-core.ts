@@ -1,7 +1,7 @@
 import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import z from "zod";
 
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import type { GeneralDiagramGraph } from "@/features/diagram/diagram-graph";
 import type {
   DiagramLayoutEdge,
   DiagramLayoutGroup,
@@ -150,7 +150,7 @@ export function toPlainElkNode(
 
 /** Builds the nested ELK children tree for a graph's groups and nodes, using `toElkNode` for each node. */
 export function toElkChildrenTree<Node extends Readonly<{ id: string; groupId?: string }>>(
-  graph: Readonly<{ groups: DiagramGraph["groups"]; nodes: readonly Node[] }>,
+  graph: Readonly<{ groups: GeneralDiagramGraph["groups"]; nodes: readonly Node[] }>,
   direction: ElkCoreDirection,
   toElkNode: (node: Node) => ElkNode,
 ): ElkNode[] {

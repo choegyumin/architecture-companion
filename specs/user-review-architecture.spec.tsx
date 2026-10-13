@@ -24,7 +24,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview checkout requests.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout requested" }],
@@ -41,7 +41,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview order cancellation.\n\n## Regeneration\nRebuild the cancellation trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "cancel", kind: "trigger", title: "Cancellation requested" }],
@@ -58,7 +58,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" }],
@@ -75,7 +75,7 @@ const catalog = {
       instructions:
         "## Purpose\nReview product browsing.\n\n## Regeneration\nRebuild the page boundary from src/catalog-page.ts.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [

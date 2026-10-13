@@ -29,7 +29,7 @@ function catalog(title: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered" },
+          layout: { layoutId: "general" },
           graph: {
             groups: [],
             nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],

@@ -7,17 +7,17 @@ import { Button } from "@/shared/react-ui/button";
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
-type CardNodeLink = Readonly<{
+type RectangleNodeLink = Readonly<{
   href: string;
   label?: ReactNode;
 }>;
 
-type CardNodeData = Readonly<{
+type RectangleNodeData = Readonly<{
   label: ReactNode;
   eyebrow?: ReactNode;
   description?: ReactNode;
   details?: readonly ReactNode[];
-  links?: readonly CardNodeLink[];
+  links?: readonly RectangleNodeLink[];
   onLinkActivate?: LinkActivationHandler;
   activatable?: boolean;
   accessibleDescription?: string;
@@ -26,14 +26,14 @@ type CardNodeData = Readonly<{
   className?: string;
 }>;
 
-export type CardReactFlowNode = Node<CardNodeData, "card">;
+export type RectangleReactFlowNode = Node<RectangleNodeData, "rectangle">;
 
-export function CardNode({
+export function RectangleNode({
   data,
   isConnectable,
   sourcePosition = Position.Right,
   targetPosition = Position.Left,
-}: NodeProps<CardReactFlowNode>) {
+}: NodeProps<RectangleReactFlowNode>) {
   const accessibleLabel = [data.eyebrow, data.label]
     .filter((content): content is string => typeof content === "string")
     .join(": ");

@@ -23,7 +23,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview the checkout entry point.\n\n## Regeneration\nRebuild the checkout page boundary.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
@@ -40,7 +40,7 @@ const catalog: CompanionCatalog = {
       instructions:
         "## Purpose\nReview checkout submission.\n\n## Regeneration\nRebuild the checkout trigger from the order flow.",
       diagram: {
-        layout: { layoutId: "elk-layered" },
+        layout: { layoutId: "general" },
         graph: {
           groups: [],
           nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
