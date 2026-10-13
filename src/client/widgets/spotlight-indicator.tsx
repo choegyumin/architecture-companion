@@ -49,7 +49,7 @@ export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose
       className="absolute top-4 right-4 max-h-[50%] w-80 py-0"
       role="status"
       size="xs"
-      variant="floating"
+      variant="default"
     >
       <div className="flex items-center p-1.5">
         <Focus aria-hidden="true" className="mx-1 size-4 shrink-0 text-muted-foreground" />
