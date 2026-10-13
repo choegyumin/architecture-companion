@@ -2,11 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { act, render, screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient, type DataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
@@ -16,6 +15,7 @@ import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
 
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
@@ -135,7 +135,7 @@ async function createReview(initialLabel: string, initialDocument?: AnnotationDo
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
   );
-  const review = render(<WorkspacePage client={client} />);
+  const review = await renderWorkspace(client);
 
   return {
     cleanup: async () => {
@@ -163,7 +163,7 @@ describe("external catalog review", () => {
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
         app.request(input, init),
       );
-      const review = render(<WorkspacePage client={client} />);
+      const review = await renderWorkspace(client);
 
       try {
         expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
@@ -245,7 +245,7 @@ describe("external catalog review", () => {
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
     } as unknown as DataClient;
-    const review = render(<WorkspacePage client={client} />);
+    const review = await renderWorkspace(client);
 
     try {
       expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();
@@ -278,7 +278,7 @@ describe("external catalog review", () => {
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
     } as unknown as DataClient;
-    const review = render(<WorkspacePage client={client} />);
+    const review = await renderWorkspace(client);
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -305,7 +305,7 @@ describe("external catalog review", () => {
       openSource: vi.fn(),
       subscribeToReviewUpdates: () => () => undefined,
     } as unknown as DataClient;
-    const review = render(<WorkspacePage client={client} />);
+    const review = await renderWorkspace(client);
 
     try {
       expect(await screen.findByRole("alert")).toHaveTextContent("Catalog is invalid.");
@@ -340,7 +340,7 @@ describe("external catalog review", () => {
         return () => undefined;
       },
     } as unknown as DataClient;
-    const review = render(<WorkspacePage client={client} />);
+    const review = await renderWorkspace(client);
 
     try {
       expect(await findDiagramNode("Initial workflow")).toBeInTheDocument();

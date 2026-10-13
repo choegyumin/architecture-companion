@@ -1,6 +1,15 @@
 import { Panel, ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
 import { ExternalLink, FileCode2 } from "lucide-react";
-import { type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
@@ -25,6 +34,8 @@ export type DiagramRendererProps = Readonly<{
   ariaLabel?: string;
   commentEnabled?: boolean;
   onOpenSource: (href: string) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }>;
 
 type DiagramViewProps = DiagramRendererProps &
@@ -113,6 +124,8 @@ function DiagramViewContent({
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
+  searchQuery,
+  onSearchQueryChange,
 }: DiagramContentProps) {
   const measurementNodes = useMemo(
     () => buildMeasurementNodes(artifact, onOpenSource),
@@ -126,6 +139,7 @@ function DiagramViewContent({
       ]),
     [artifact],
   );
+  const getNodeLabel = useCallback((node: DiagramReactFlowNode) => searchLabels.get(node.id) ?? "", [searchLabels]);
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
@@ -219,7 +233,9 @@ function DiagramViewContent({
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
         edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
-        getNodeLabel={rendered?.status === "ready" ? (node) => searchLabels.get(node.id) ?? "" : undefined}
+        getNodeLabel={rendered?.status === "ready" ? getNodeLabel : undefined}
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
         nodes={nodes}
         onCanvasClick={
           annotations.isCommentMode
@@ -275,6 +291,8 @@ export function DiagramView({
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
+  searchQuery,
+  onSearchQueryChange,
 }: DiagramViewProps) {
   const measurementKey = JSON.stringify(artifact);
 
@@ -291,6 +309,8 @@ export function DiagramView({
         onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
       >
         {children}
       </DiagramViewContent>

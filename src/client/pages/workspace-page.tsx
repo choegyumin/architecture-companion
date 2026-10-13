@@ -1,5 +1,6 @@
 import { addEventListener } from "@base-ui/utils/addEventListener";
 import { platform } from "@base-ui/utils/platform";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
@@ -402,9 +403,29 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const [state, dispatchReview] = useReducer(reviewReducer, { status: "loading" });
   const [annotationState, dispatchAnnotation] = useReducer(annotationReducer, initialAnnotationState);
   const [sourceError, setSourceError] = useState<string>();
-  const [requestedReviewView, setRequestedReviewView] = useState<ReviewView>("process");
-  const [activeProcessId, setActiveProcessId] = useState("");
-  const [activeDesignId, setActiveDesignId] = useState("");
+  const navigate = useNavigate();
+  const { _splat: artifactId } = useParams({ strict: false });
+  const search = useSearch({ strict: false });
+  const catalog = state.status === "ready" ? state.review.catalog : null;
+  const behaviors = catalog?.artifacts.filter(({ type }) => type === "behavior") ?? [];
+  const designs = catalog?.artifacts.filter(({ type }) => type === "design") ?? [];
+  const activeArtifact =
+    catalog?.artifacts.find((artifact) => artifact.artifactId === artifactId) ?? behaviors.at(0) ?? designs.at(0);
+
+  useEffect(() => {
+    if (!activeArtifact || (artifactId === activeArtifact.artifactId && search.q !== "")) return;
+    void navigate({
+      to: "/artifacts/$",
+      params: { _splat: activeArtifact.artifactId },
+      search: (previous) => ({ ...previous, q: previous.q || undefined }),
+      replace: true,
+    });
+  }, [activeArtifact, artifactId, navigate, search.q]);
+
+  function selectArtifact(nextId: string): void {
+    if (nextId === activeArtifact?.artifactId) return;
+    void navigate({ to: "/artifacts/$", params: { _splat: nextId }, search: {} });
+  }
   const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
   const pressedKeys = useRef<ReadonlySet<string>>(new Set());
@@ -865,21 +886,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     );
   }
 
-  const { catalog } = state.review;
-  const behaviors = catalog.artifacts.filter(({ type }) => type === "behavior");
-  const designs = catalog.artifacts.filter(({ type }) => type === "design");
-  const activeProcess = behaviors.find(({ artifactId }) => artifactId === activeProcessId) ?? behaviors.at(0);
-  const activeDesign = designs.find(({ artifactId }) => artifactId === activeDesignId) ?? designs.at(0);
-  const activeReviewView: ReviewView | null =
-    requestedReviewView === "process" && activeProcess
-      ? "process"
-      : requestedReviewView === "design" && activeDesign
-        ? "design"
-        : activeProcess
-          ? "process"
-          : activeDesign
-            ? "design"
-            : null;
+  const activeProcess = activeArtifact?.type === "behavior" ? activeArtifact : undefined;
+  const activeDesign = activeArtifact?.type === "design" ? activeArtifact : undefined;
+  const activeReviewView: ReviewView | null = activeProcess ? "process" : activeDesign ? "design" : null;
   const activeDiagramCollection =
     activeReviewView === "process" && activeProcess
       ? {
@@ -888,7 +897,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
           annotationSurface: { canvasId: `behavior:${activeProcess.artifactId}` },
           artifacts: behaviors,
           heading: "Product Behaviors",
-          onSelect: setActiveProcessId,
+          onSelect: selectArtifact,
         }
       : activeReviewView === "design" && activeDesign
         ? {
@@ -897,7 +906,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             annotationSurface: { canvasId: `design:${activeDesign.artifactId}` },
             artifacts: designs,
             heading: "Code Designs",
-            onSelect: setActiveDesignId,
+            onSelect: selectArtifact,
           }
         : undefined;
   const annotationController: AnnotationReviewController = {
@@ -930,7 +939,8 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       className="contents"
       value={activeReviewView}
       onValueChange={(value) => {
-        if (value === "process" || value === "design") setRequestedReviewView(value);
+        const first = value === "process" ? behaviors.at(0) : value === "design" ? designs.at(0) : undefined;
+        if (first) selectArtifact(first.artifactId);
       }}
     >
       <WorkspaceShell
@@ -987,6 +997,15 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                   artifact={activeDiagramCollection.activeDiagram}
                   commentEnabled={annotationState.isModeEnabled}
                   onOpenSource={openSource}
+                  searchQuery={search.q ?? ""}
+                  onSearchQueryChange={(query) => {
+                    void navigate({
+                      to: "/artifacts/$",
+                      params: { _splat: activeDiagramCollection.activeDiagram.artifactId },
+                      search: (previous) => ({ ...previous, q: query || undefined }),
+                      replace: true,
+                    });
+                  }}
                 />
               </div>
             </div>

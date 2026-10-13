@@ -84,6 +84,8 @@ type DiagramCanvasProps = Readonly<{
   className?: string;
   edges: DiagramReactFlowEdge[];
   getNodeLabel?: (node: DiagramReactFlowNode) => string;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
   nodes: DiagramReactFlowNode[];
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
   onGroupActivate?: (groupId: string) => void;
@@ -104,6 +106,8 @@ export function DiagramCanvas({
   className,
   edges,
   getNodeLabel,
+  searchQuery,
+  onSearchQueryChange,
   nodes,
   onCanvasClick,
   onGroupActivate,
@@ -178,7 +182,15 @@ export function DiagramCanvas({
 
   const handleSearchMatchesChange = useCallback(
     (matches: readonly DiagramReactFlowNode[], currentNode: DiagramReactFlowNode | null) => {
-      setSearchMatches({ ids: new Set(matches.map((node) => node.id)), currentId: currentNode?.id ?? null });
+      const ids = new Set(matches.map((node) => node.id));
+      const currentId = currentNode?.id ?? null;
+      setSearchMatches((previous) =>
+        previous.currentId === currentId &&
+        previous.ids.size === ids.size &&
+        [...ids].every((id) => previous.ids.has(id))
+          ? previous
+          : { ids, currentId },
+      );
     },
     [],
   );
@@ -309,6 +321,8 @@ export function DiagramCanvas({
           <Panel className="nodrag nopan nowheel" position="top-left">
             <NodeSearch<DiagramReactFlowNode>
               getNodeLabel={getNodeLabel}
+              searchQuery={searchQuery}
+              onSearchQueryChange={onSearchQueryChange}
               inputRef={searchInputRef}
               onSelectNode={handleSearchSelect}
               onMatchesChange={handleSearchMatchesChange}

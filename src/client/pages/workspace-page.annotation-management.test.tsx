@@ -2,12 +2,10 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OverlayProvider } from "overlay-kit";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
@@ -15,6 +13,7 @@ import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
@@ -128,14 +127,6 @@ async function getCanvas(regionName: string): Promise<HTMLElement> {
   return within(region).getByRole("group", { name: "Artifact canvas" });
 }
 
-function renderWorkspace(client: ReturnType<typeof createClient>) {
-  return render(
-    <OverlayProvider>
-      <WorkspacePage client={client} />
-    </OverlayProvider>,
-  );
-}
-
 async function placeComment(target: Element, body: string, point: Readonly<{ x: number; y: number }>) {
   fireEvent.click(target, { clientX: point.x, clientY: point.y });
   const composer = await screen.findByRole("form", { name: "Add comment" });
@@ -155,7 +146,7 @@ async function unblockCommentWrites(scopePath: string): Promise<void> {
 describe("WorkspacePage comment management", () => {
   it("can cancel a comment draft in progress", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       const commentTool = await screen.findByRole("button", { name: "Comment" });
@@ -181,7 +172,7 @@ describe("WorkspacePage comment management", () => {
 
   it("confirms before closing a changed draft with Escape", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -209,7 +200,7 @@ describe("WorkspacePage comment management", () => {
 
   it("confirms before canceling a changed comment edit", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -238,7 +229,7 @@ describe("WorkspacePage comment management", () => {
 
   it("confirms before replacing a changed draft with a new position", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -264,7 +255,7 @@ describe("WorkspacePage comment management", () => {
   it("separates comments per diagram", async () => {
     const { scopePath, scope } = await createReview();
     const client = createClient(createApp(scope));
-    const review = renderWorkspace(client);
+    const review = await renderWorkspace(client);
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -299,7 +290,7 @@ describe("WorkspacePage comment management", () => {
 
   it("can save new content after canceling a comment edit", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -333,7 +324,7 @@ describe("WorkspacePage comment management", () => {
   it("restores a moved comment position in a reopened review", async () => {
     const { scopePath, scope } = await createReview();
     const client = createClient(createApp(scope));
-    let review = renderWorkspace(client);
+    let review = await renderWorkspace(client);
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -343,7 +334,7 @@ describe("WorkspacePage comment management", () => {
       });
 
       review.unmount();
-      review = renderWorkspace(createClient(createApp(scope)));
+      review = await renderWorkspace(createClient(createApp(scope)));
       await getCanvas("Workflow product behavior diagram");
       const pin = await screen.findByRole("button", { name: "Comment: Review workflow trigger" });
       const pointBeforeMove = (await getAnnotationDocument(client)).annotations.at(0)?.anchor.point;
@@ -358,7 +349,7 @@ describe("WorkspacePage comment management", () => {
       const pointAfterMove = (await getAnnotationDocument(client)).annotations.at(0)?.anchor.point;
 
       review.unmount();
-      review = renderWorkspace(createClient(createApp(scope)));
+      review = await renderWorkspace(createClient(createApp(scope)));
       await getCanvas("Workflow product behavior diagram");
       expect(await screen.findByRole("button", { name: "Comment: Review workflow trigger" })).toBeInTheDocument();
       expect((await getAnnotationDocument(client)).annotations.at(0)?.anchor.point).toEqual(pointAfterMove);
@@ -370,7 +361,7 @@ describe("WorkspacePage comment management", () => {
 
   it("does not restore a deleted comment in a reopened review", async () => {
     const { scopePath, scope } = await createReview();
-    let review = renderWorkspace(createClient(createApp(scope)));
+    let review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -379,7 +370,7 @@ describe("WorkspacePage comment management", () => {
         y: 90,
       });
       review.unmount();
-      review = renderWorkspace(createClient(createApp(scope)));
+      review = await renderWorkspace(createClient(createApp(scope)));
       await getCanvas("Workflow product behavior diagram");
 
       await userEvent.click(await screen.findByRole("button", { name: "Comment: Review workflow trigger" }));
@@ -390,7 +381,7 @@ describe("WorkspacePage comment management", () => {
       );
 
       review.unmount();
-      review = renderWorkspace(createClient(createApp(scope)));
+      review = await renderWorkspace(createClient(createApp(scope)));
       await getCanvas("Workflow product behavior diagram");
       await screen.findByRole("button", { name: "Comment" });
       expect(screen.queryByRole("button", { name: "Comment: Review workflow trigger" })).not.toBeInTheDocument();
@@ -404,7 +395,7 @@ describe("WorkspacePage comment management", () => {
 describe("WorkspacePage comment save failures", () => {
   it("keeps the drafted text when saving a comment fails", async () => {
     const { scopePath, scope } = await createReview();
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       const canvas = await getCanvas("Workflow product behavior diagram");
@@ -427,7 +418,7 @@ describe("WorkspacePage comment save failures", () => {
 
   it("keeps the last saved text and the edit when updating fails, then retries", async () => {
     const { scopePath, scope } = await createReview(savedFeedbackDocument("Saved feedback"));
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await getCanvas("Workflow product behavior diagram");
@@ -455,7 +446,7 @@ describe("WorkspacePage comment save failures", () => {
 
   it("keeps the edited text and the error when deleting a comment fails", async () => {
     const { scopePath, scope } = await createReview(savedFeedbackDocument("Saved feedback"));
-    const review = renderWorkspace(createClient(createApp(scope)));
+    const review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await getCanvas("Workflow product behavior diagram");

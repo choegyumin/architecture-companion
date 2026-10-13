@@ -2,11 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
@@ -15,6 +14,7 @@ import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repo
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates } from "@/server/review-updates";
 
+import { renderWorkspace } from "../tests/helpers/render-workspace";
 import { writeCatalog } from "../tests/helpers/write-catalog";
 
 const catalog = {
@@ -77,7 +77,7 @@ describe("reviewer keeps their own input after an external comment change", () =
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
         app.request(input, init),
       );
-      const review = render(<WorkspacePage client={client} />);
+      const review = await renderWorkspace(client);
 
       try {
         await userEvent.click(await screen.findByRole("button", { name: "Comment: Original feedback" }));

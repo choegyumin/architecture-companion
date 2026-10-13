@@ -2,12 +2,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
 
 function isReviewEventRequest(input: RequestInfo | URL): boolean {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -25,7 +26,7 @@ describe("local review scope", () => {
         app.request(input, init),
       );
 
-      render(<WorkspacePage client={client} />);
+      await renderWorkspace(client);
 
       expect(await screen.findByRole("heading", { name: /Architecture Companion/ })).toHaveTextContent(
         basename(temporaryRoot),
@@ -46,7 +47,7 @@ describe("local review scope", () => {
       throw new Error("Connection refused");
     });
 
-    render(<WorkspacePage client={client} />);
+    await renderWorkspace(client);
 
     expect(screen.getByText("Loading review…")).toBeInTheDocument();
     expect(await screen.findByRole("alert")).toHaveTextContent("Connection refused");
@@ -58,7 +59,7 @@ describe("local review scope", () => {
       return new Response(null, { status: 503 });
     });
 
-    render(<WorkspacePage client={client} />);
+    await renderWorkspace(client);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Review request failed with status 503.");
   });
