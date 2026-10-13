@@ -276716,6 +276716,13 @@ var graphBaseShape = {
 var generalDiagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
 }).meta({ id: "GeneralDiagramGraph" });
+var flowchartDiagramGraphSchema = external_exports.object({
+  ...graphBaseShape,
+  nodes: external_exports.array(external_exports.discriminatedUnion("type", [defaultDiagramNodeSchema, diamondDiagramNodeSchema])).min(1).readonly(),
+  edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
+}).strict().superRefine((graph, context) => {
+  for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
+}).meta({ id: "FlowchartGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
