@@ -76,4 +76,80 @@ describe("projectDecisionNodes", () => {
     expect(dead).toMatchObject({ source: "a", sourcePort: "a2" });
     expect(dead?.guards).toEqual([[{ controlId: "a", value: "a2" }]]);
   });
+
+  it("carries the originating stored edge id on every hop it was cut into", () => {
+    expect(entry?.originEdgeIds).toEqual(["route"]);
+    expect(arm?.originEdgeIds).toEqual(["route"]);
+  });
+
+  it("marks a dead case as rendering nothing stored", () => {
+    const dead = projected.edges.find((edge) => edge.target === "a:a2:non-component");
+    expect(dead?.originEdgeIds).toEqual([]);
+  });
+});
+
+// Whole edges, collapsed segments, and their provenance union: two stored
+// edges whose rules cut into the same hops, plus one unconditioned edge that
+// stays whole.
+const provenanceGraph = componentStructureDiagramGraphSchema.parse({
+  groups: [],
+  nodes: [
+    { nodeId: "root", type: "default", title: "Root" },
+    { nodeId: "leaf", type: "default", title: "Leaf" },
+  ],
+  edges: [
+    {
+      edgeId: "one",
+      type: "control",
+      sourceNodeId: "root",
+      targetNodeId: "leaf",
+      activeWhen: [[{ controlId: "a", value: "a1" }]],
+    },
+    {
+      edgeId: "two",
+      type: "control",
+      sourceNodeId: "root",
+      targetNodeId: "leaf",
+      activeWhen: [
+        [
+          { controlId: "b", value: "on" },
+          { controlId: "a", value: "a1" },
+        ],
+      ],
+    },
+    { edgeId: "plain", sourceNodeId: "root", targetNodeId: "leaf" },
+  ],
+  layoutContext: {
+    rootNodeIds: ["root"],
+    controls: [
+      {
+        controlId: "a",
+        ownerNodeId: "root",
+        type: "branch",
+        label: "a",
+        dependsOn: [[]],
+        cases: [
+          { caseId: "a1", label: "A1" },
+          { caseId: "a2", label: "A2" },
+        ],
+      },
+      { controlId: "b", ownerNodeId: "root", type: "conditional", label: "b", dependsOn: [[]] },
+    ],
+  },
+});
+
+describe("projectDecisionNodes stored-edge provenance", () => {
+  const provenanceProjected = projectDecisionNodes(provenanceGraph);
+
+  it("unions the stored edge ids that collapse into one segment", () => {
+    const segment = provenanceProjected.edges.find((edge) => edge.source === "root" && edge.target === "a");
+    expect(segment?.originEdgeIds).toEqual(["one", "two"]);
+  });
+
+  it("keeps a whole edge's origin to its own stored id", () => {
+    const whole = provenanceProjected.edges.find(
+      (edge) => edge.source === "root" && edge.target === "leaf" && edge.sourcePort == null,
+    );
+    expect(whole?.originEdgeIds).toEqual(["plain"]);
+  });
 });

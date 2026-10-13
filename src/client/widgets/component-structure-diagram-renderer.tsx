@@ -204,7 +204,8 @@ function edgeRuleset(edge: ComponentStructureDiagramGraph["edges"][number]): Dia
  * route to their own non-component node instead of disappearing: rendering
  * nothing is still a rendering path, so the option stays selectable.
  * Conditional controls gain no node — their guards ride the edge labels of
- * the hop they constrain.
+ * the hop they constrain. Every projected edge also records which stored
+ * edges it renders, so synthetic projected ids never pass as stored ones.
  */
 export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): ProjectedComponentStructureGraph {
   const controls = graph.layoutContext.controls;
@@ -219,7 +220,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
   }
 
   const wholeEdges = new Map<string, ProjectedComponentStructureEdge>();
-  const segments = new Map<string, Segment>();
+  const segments = new Map<string, Segment & { originEdgeIds: string[] }>();
   for (const edge of graph.edges) {
     const ruleset = edgeRuleset(edge);
     const branchless = ruleset.filter((rule) => !rule.some(({ controlId }) => branchControlIds.has(controlId)));
@@ -238,6 +239,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
           ? { activeWhen: branchless.length === ruleset.length ? edge.activeWhen : branchless }
           : {}),
         guards: branchless.flatMap((rule) => combineRulesets([rule], missingGuardRules(rule, rule, controlsById))),
+        originEdgeIds: [edge.edgeId],
       });
     }
     for (const rule of branched) {
@@ -249,6 +251,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
             ...segment,
             guards: unionRulesets(segment.guards),
             activeWhen: unionRulesets(segment.activeWhen),
+            originEdgeIds: [edge.edgeId],
           });
           continue;
         }
@@ -256,6 +259,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
           ...existing,
           guards: unionRulesets(existing.guards, segment.guards),
           activeWhen: unionRulesets(existing.activeWhen, segment.activeWhen),
+          originEdgeIds: [...existing.originEdgeIds, edge.edgeId],
         });
       }
     }
@@ -264,7 +268,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
   // Dead cases: a case no relationship in the graph requires renders no
   // component, so it routes to its own non-component node and stays
   // selectable. The nodes are per case, never merged.
-  const deadCases: Segment[] = [];
+  const deadCases: (Segment & { originEdgeIds: readonly string[] })[] = [];
   const nonComponentNodes: ProjectedNonComponentNode[] = [];
   for (const control of branchControls) {
     for (const branchCase of control.cases) {
@@ -278,6 +282,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
           ...rule,
           { controlId: control.controlId, value: branchCase.caseId },
         ]),
+        originEdgeIds: [],
       });
       nonComponentNodes.push({
         type: "non-component",
@@ -305,6 +310,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
       ? { activeWhen: segment.activeWhen }
       : {}),
     guards: segment.guards,
+    originEdgeIds: [...new Set(segment.originEdgeIds)].toSorted(),
   }));
 
   const nodes = [...graph.nodes, ...decisionNodes, ...nonComponentNodes];
@@ -1314,6 +1320,10 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         ...model,
         nodes: decorateNodes(model.nodes, selection),
         edges,
+        // Every projected edge reports which stored edges it renders — empty
+        // for dead cases — so highlight origins never fall back to treating a
+        // synthetic projected id as a stored one.
+        graphEdgeIds: new Map(projected.edges.map((edge) => [edge.id, edge.originEdgeIds])),
       };
     },
     [controls, decorateNodes, onSelect, projected, selection],

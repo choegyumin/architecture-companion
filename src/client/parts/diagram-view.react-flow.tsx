@@ -45,6 +45,12 @@ export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
   edges: readonly DiagramReactFlowEdge[];
   edgeTargets?: ReadonlyMap<string, AnnotationTarget>;
+  /**
+   * Maps a render edge id to the stored edge ids it renders. Unset leaves the
+   * resolution to the consumer; an empty list marks an edge that renders
+   * nothing stored.
+   */
+  graphEdgeIds?: ReadonlyMap<string, readonly string[]>;
 }>;
 
 export function toRectangleNodeData(
