@@ -1,13 +1,13 @@
-import type { DiagramLayoutPoint } from "@/features/diagram/diagram-spatial";
+type Point = Readonly<{ x: number; y: number }>;
 
-export function toPolylinePath(points: readonly DiagramLayoutPoint[]): string {
+export function toPolylinePath(points: readonly Point[]): string {
   return points.map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 }
 
 // Converts a routed polyline into a Catmull-Rom spline drawn as SVG cubic
 // bezier segments: the curve passes through every point while the segment
 // tangents stay continuous, which smooths layered elbow routes into arcs.
-export function toSplinePath(points: readonly DiagramLayoutPoint[]): string {
+export function toSplinePath(points: readonly Point[]): string {
   const start = points.at(0);
   const second = points.at(1);
   if (!start || !second) throw new Error("A spline edge path requires at least two points.");
@@ -36,9 +36,9 @@ export function toSplinePath(points: readonly DiagramLayoutPoint[]): string {
 
 // Draws a border-to-border segment as a natural cubic bezier: handles stick to
 // the segment's dominant axis, so edges leave and enter cards along the flow
-// direction and sway smoothly instead of following the routed polyline. Edges
-// that kept more points (unresolvable, message) fall back to spline smoothing.
-export function toBezierPath(points: readonly DiagramLayoutPoint[]): string {
+// direction and sway smoothly instead of following the routed polyline. Routes
+// with more than two points fall back to spline smoothing.
+export function toBezierPath(points: readonly Point[]): string {
   const start = points.at(0);
   const end = points.at(1);
   if (!start || !end) throw new Error("A bezier edge path requires at least two points.");

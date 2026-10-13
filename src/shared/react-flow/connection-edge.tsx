@@ -1,11 +1,12 @@
 import { BaseEdge, type Edge, EdgeLabelRenderer, type EdgeProps, type XYPosition } from "@xyflow/react";
 import type { MouseEvent, ReactNode } from "react";
 
+import { cn } from "@/shared/react/class-name";
 import { BaseEdgeLabel, EDGE_LABEL_Z_INDEX } from "@/shared/react-flow/base-edge-label";
 
 type LinkActivationHandler = (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
 
-type RouteEdgeLabelAnchor = Readonly<{
+type ConnectionEdgeLabelAnchor = Readonly<{
   /** Which edge of the label meets the anchor; labels grow away from it. */
   anchorSide?: "top" | "bottom";
   control: ReactNode;
@@ -20,19 +21,21 @@ const ANCHOR_TRANSFORM = {
   top: "translate(-50%, 0)",
 } as const;
 
-type RouteEdgeData = Readonly<{
+type ConnectionEdgeData = Readonly<{
   path: string;
   labelPosition: XYPosition;
+  labelTransform?: string;
+  labelClassName?: string;
   eyebrow?: ReactNode;
   href?: string;
   onLinkActivate?: LinkActivationHandler;
   labelAction?: Readonly<{ ariaLabel: string; onActivate: () => void }>;
-  labelControls?: readonly RouteEdgeLabelAnchor[];
+  labelControls?: readonly ConnectionEdgeLabelAnchor[];
 }>;
 
-export type RouteReactFlowEdge = Edge<RouteEdgeData, "route">;
+export type ConnectionReactFlowEdge = Edge<ConnectionEdgeData, "connection">;
 
-export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: EdgeProps<RouteReactFlowEdge>) {
+export function ConnectionEdge({ id, data, label, markerEnd, markerStart, style }: EdgeProps<ConnectionReactFlowEdge>) {
   if (!data?.path) return null;
 
   const labelStyle = {
@@ -40,7 +43,7 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
     opacity: style?.opacity,
     pointerEvents: "all" as const,
     top: data.labelPosition.y,
-    transform: "translate(-50%, -50%)",
+    transform: data.labelTransform ?? "translate(-50%, -50%)",
     zIndex: EDGE_LABEL_Z_INDEX,
   };
   const eyebrow =
@@ -73,21 +76,24 @@ export function RouteEdge({ id, data, label, markerEnd, markerStart, style }: Ed
           {anchoredControls.length > 0 ? (
             anchoredControls
           ) : data.labelAction ? (
-            <button
-              aria-label={data.labelAction.ariaLabel}
-              className="nodrag nopan absolute w-max cursor-pointer rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm hover:border-primary/60"
-              onClick={(event) => {
-                event.stopPropagation();
-                data.labelAction?.onActivate();
-              }}
+            <BaseEdgeLabel
+              ariaLabel={data.labelAction.ariaLabel}
+              className={cn("absolute w-max text-center", data.labelClassName)}
+              onSelect={data.labelAction.onActivate}
               style={labelStyle}
-              type="button"
-            >
-              {eyebrow}
-            </button>
+              text={
+                <>
+                  {eyebrow}
+                  {label}
+                </>
+              }
+            />
           ) : (
             <div
-              className="nodrag nopan absolute w-max rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm"
+              className={cn(
+                "nodrag nopan absolute w-max rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm",
+                data.labelClassName,
+              )}
               style={labelStyle}
             >
               {eyebrow}

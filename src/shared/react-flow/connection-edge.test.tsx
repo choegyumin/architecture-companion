@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { Position } from "@xyflow/react";
 import type { ReactNode } from "react";
 
-import { RouteEdge } from "@/shared/react-flow/route-edge";
+import { ConnectionEdge } from "@/shared/react-flow/connection-edge";
 
 vi.mock("@xyflow/react", () => ({
   BaseEdge: ({ path }: { path: string }) => (
@@ -18,7 +18,7 @@ describe("route edge", () => {
   it("renders the supplied SVG path and label position without computing them from points", () => {
     const onLinkActivate = vi.fn();
     render(
-      <RouteEdge
+      <ConnectionEdge
         data={{
           path: "M 0 0 C 20 10 40 90 100 100",
           labelPosition: { x: 70, y: 25 },
@@ -36,7 +36,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={100}
         targetY={100}
-        type="route"
+        type="connection"
       />,
     );
 
@@ -52,7 +52,7 @@ describe("route edge", () => {
   it("makes the entire aggregate label shape the focus button, not the edge path", () => {
     const onActivate = vi.fn();
     render(
-      <RouteEdge
+      <ConnectionEdge
         data={{
           path: "M 0 0 L 100 100",
           labelPosition: { x: 50, y: 50 },
@@ -68,7 +68,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={100}
         targetY={100}
-        type="route"
+        type="connection"
       />,
     );
 
@@ -85,7 +85,7 @@ describe("route edge", () => {
   it("renders a label control at its anchor with full opacity", () => {
     const control = <button type="button">Render path</button>;
     render(
-      <RouteEdge
+      <ConnectionEdge
         data={{
           path: "M 0 0 L 100 100",
           labelPosition: { x: 50, y: 50 },
@@ -101,7 +101,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={100}
         targetY={100}
-        type="route"
+        type="connection"
       />,
     );
 
@@ -111,7 +111,7 @@ describe("route edge", () => {
 
   it("renders several label controls at their own anchors", () => {
     render(
-      <RouteEdge
+      <ConnectionEdge
         data={{
           path: "M 0 0 L 100 100",
           labelPosition: { x: 50, y: 50 },
@@ -129,7 +129,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={100}
         targetY={100}
-        type="route"
+        type="connection"
       />,
     );
 
@@ -142,7 +142,7 @@ describe("route edge", () => {
 
   it("grows a label away from the anchor when an anchor side is given", () => {
     render(
-      <RouteEdge
+      <ConnectionEdge
         data={{
           path: "M 0 0 L 100 100",
           labelPosition: { x: 50, y: 50 },
@@ -160,7 +160,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={100}
         targetY={100}
-        type="route"
+        type="connection"
       />,
     );
 
@@ -172,9 +172,37 @@ describe("route edge", () => {
     });
   });
 
+  it("applies supplied message-style label geometry without interpreting the edge", () => {
+    render(
+      <ConnectionEdge
+        data={{
+          path: "M 100 200 L 160 200 L 160 240 L 100 240",
+          labelPosition: { x: 160, y: 188 },
+          labelTransform: "translate(-50%, -100%)",
+          labelClassName: "border-0 text-left shadow-none",
+        }}
+        id="self"
+        label="Retry"
+        source="client"
+        sourcePosition={Position.Right}
+        sourceX={100}
+        sourceY={200}
+        target="client"
+        targetPosition={Position.Left}
+        targetX={100}
+        targetY={240}
+        type="connection"
+      />,
+    );
+    const host = screen.getByText("Retry").closest(".absolute");
+    expect(host).toHaveStyle({ left: "160px", top: "188px", transform: "translate(-50%, -100%)" });
+    expect(host).toHaveClass("border-0", "text-left", "shadow-none");
+    expect(screen.getByTestId("edge-path")).toHaveAttribute("d", "M 100 200 L 160 200 L 160 240 L 100 240");
+  });
+
   it("does not render an empty path", () => {
     const { container } = render(
-      <RouteEdge
+      <ConnectionEdge
         data={{ path: "", labelPosition: { x: 0, y: 0 } }}
         id="edge"
         source="source"
@@ -185,7 +213,7 @@ describe("route edge", () => {
         targetPosition={Position.Left}
         targetX={0}
         targetY={0}
-        type="route"
+        type="connection"
       />,
     );
 

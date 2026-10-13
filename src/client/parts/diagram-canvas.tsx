@@ -32,8 +32,8 @@ import type { AnnotationTarget } from "@/features/annotation/annotation-document
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
-import { CardNode, type CardReactFlowNode } from "@/shared/react-flow/card-node";
-import { DecisionNode, type DecisionReactFlowNode } from "@/shared/react-flow/decision-node";
+import { ConnectionEdge, type ConnectionReactFlowEdge } from "@/shared/react-flow/connection-edge";
+import { DiamondNode, type DiamondReactFlowNode } from "@/shared/react-flow/diamond-node";
 import {
   defaultEdgeHighlight,
   EDGE_HIGHLIGHT_CLASS,
@@ -44,19 +44,18 @@ import {
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
-import { MessageEdge, type MessageReactFlowEdge } from "@/shared/react-flow/message-edge";
 import { NodeSearch } from "@/shared/react-flow/node-search";
-import { RouteEdge, type RouteReactFlowEdge } from "@/shared/react-flow/route-edge";
+import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
 import { useTheme } from "@/shared/react-ui/theme-context";
 
 export type DiagramReactFlowNode =
-  | CardReactFlowNode
+  | RectangleReactFlowNode
   | LabeledGroupReactFlowNode
   | LifelineReactFlowNode
   | FragmentReactFlowNode
   | BoundingGroupReactFlowNode
-  | DecisionReactFlowNode;
-export type DiagramReactFlowEdge = RouteReactFlowEdge | MessageReactFlowEdge;
+  | DiamondReactFlowNode;
+export type DiagramReactFlowEdge = ConnectionReactFlowEdge;
 
 type NodeRendererRegistry<NodeType extends Node> = {
   [Type in Extract<NodeType["type"], string>]: ComponentType<NodeProps<Extract<NodeType, { type: Type }>>>;
@@ -66,16 +65,15 @@ type EdgeRendererRegistry<EdgeType extends Edge> = {
 };
 
 const diagramNodeTypes = {
-  card: CardNode,
-  decision: DecisionNode,
+  rectangle: RectangleNode,
+  diamond: DiamondNode,
   "labeled-group": LabeledGroupNode,
   fragment: FragmentNode,
   lifeline: LifelineNode,
   "bounding-group": BoundingGroupNode,
 } satisfies NodeRendererRegistry<DiagramReactFlowNode>;
 const diagramEdgeTypes = {
-  message: MessageEdge,
-  route: RouteEdge,
+  connection: ConnectionEdge,
 } satisfies EdgeRendererRegistry<DiagramReactFlowEdge>;
 const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
@@ -237,21 +235,25 @@ export function DiagramCanvas({
     const clickedNode = event.target instanceof Element ? event.target.closest(".react-flow__node") : null;
     const clickedNodeId = clickedNode?.getAttribute("data-id");
     if (clickedNodeId && clickedNodeId !== node.id) return;
-    // Bounding groups are decoration over the group: they have no element id to
-    // activate or annotate, so clicks must not resolve to them.
-    if (node.type === "bounding-group") return;
+    // Unlabeled bounding groups are derived decoration, not graph elements.
+    if (node.type === "bounding-group" && node.data.label == null) return;
     if (onCanvasClick) {
-      handleCanvasClick(event, { type: node.type === "labeled-group" ? "group" : "node", id: node.id });
+      handleCanvasClick(event, {
+        type: node.type === "labeled-group" || node.type === "bounding-group" ? "group" : "node",
+        id: node.id,
+      });
     } else if (!isInteractiveClick(event)) {
-      if (node.type === "card") onNodeActivate?.(node.id);
-      if (node.type === "labeled-group") onGroupActivate?.(node.id);
+      if (node.type === "rectangle" || node.type === "diamond") onNodeActivate?.(node.id);
+      if (node.type === "labeled-group" || (node.type === "bounding-group" && node.data.label != null))
+        onGroupActivate?.(node.id);
     }
   }
 
   function handleSearchSelect(node: DiagramReactFlowNode): void {
     if (!flowInstance) return;
-    if (node.type === "card") onNodeActivate?.(node.id);
-    if (node.type === "labeled-group") onGroupActivate?.(node.id);
+    if (node.type === "rectangle" || node.type === "diamond") onNodeActivate?.(node.id);
+    if (node.type === "labeled-group" || (node.type === "bounding-group" && node.data.label != null))
+      onGroupActivate?.(node.id);
     void flowInstance.fitView({ ...DIAGRAM_FIT_VIEW_OPTIONS, nodes: [{ id: node.id }], duration: 500 });
   }
 

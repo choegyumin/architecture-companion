@@ -1,21 +1,23 @@
-import { ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Panel, ReactFlowProvider, useNodesState, useReactFlow } from "@xyflow/react";
+import { ExternalLink, FileCode2 } from "lucide-react";
+import { type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
 import { DiagramCanvas, type DiagramReactFlowEdge, type DiagramReactFlowNode } from "@/client/parts/diagram-canvas";
-import { DiagramLinksPanel } from "@/client/widgets/diagram-links-panel";
 import {
   buildDiagramMeasurementNodes,
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
-} from "@/client/widgets/diagram-renderer.react-flow";
+} from "@/client/parts/diagram-view.react-flow";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
-import { diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
+import { diagramEdgeDisplay, type DiagramLink } from "@/features/diagram/diagram-graph";
+import { getDiagramLinkLabel, isSourceLinkHref } from "@/features/diagram/diagram-link";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { cn } from "@/shared/react/class-name";
 import { BaseOverlayPanel } from "@/shared/react-flow/base-overlay-panel";
+import { Button } from "@/shared/react-ui/button";
 
 export type DiagramRendererProps = Readonly<{
   annotations: AnnotationCanvasController;
@@ -25,7 +27,7 @@ export type DiagramRendererProps = Readonly<{
   onOpenSource: (href: string) => void;
 }>;
 
-type DiagramRendererBaseProps = DiagramRendererProps &
+type DiagramViewProps = DiagramRendererProps &
   Readonly<{
     calculateLayout: (artifact: Artifact, nodeSizes: DiagramNodeSizes) => Promise<DiagramLayout>;
     children?: ReactNode;
@@ -49,9 +51,57 @@ type DiagramLayoutState =
     }>
   | Readonly<{ status: "error"; message: string }>;
 
-type DiagramContentProps = DiagramRendererBaseProps & Readonly<{ ariaLabel: string }>;
+type DiagramContentProps = DiagramViewProps & Readonly<{ ariaLabel: string }>;
 
-function DiagramRendererContent({
+type DiagramLinksPanelProps = Readonly<{
+  links: readonly DiagramLink[];
+  onOpenSource: (href: string) => void;
+}>;
+
+function DiagramLinksPanel({ links, onOpenSource }: DiagramLinksPanelProps) {
+  if (links.length === 0) return null;
+
+  const onLinkActivate = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!isSourceLinkHref(href)) return;
+    event.preventDefault();
+    onOpenSource(href);
+  };
+
+  return (
+    <Panel className="mb-8!" position="bottom-right">
+      <nav aria-label="Artifact links" className="flex max-w-xs flex-col gap-1.5">
+        {links.map((link, index) => {
+          const Icon = isSourceLinkHref(link.href) ? FileCode2 : ExternalLink;
+          const label = getDiagramLinkLabel(link);
+
+          return (
+            <Button
+              className="nodrag nopan justify-start"
+              key={`${link.href}:${index}`}
+              nativeButton={false}
+              render={
+                <a
+                  href={link.href}
+                  onClick={(event) => onLinkActivate(event, link.href)}
+                  rel="noreferrer"
+                  target="_blank"
+                />
+              }
+              size="xs"
+              title={label}
+              variant="outline"
+            >
+              <Icon aria-hidden="true" data-icon="inline-start" />
+              <span className="min-w-0 truncate">Open {label}</span>
+            </Button>
+          );
+        })}
+      </nav>
+    </Panel>
+  );
+}
+
+function DiagramViewContent({
   ariaLabel,
   annotations,
   children,
@@ -80,11 +130,11 @@ function DiagramRendererContent({
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
   const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
-  const latestLayoutInputs = useRef({ artifact, getNodes, calculateLayout });
+  const latestLayoutInputs = useRef({ artifact, getNodes, calculateLayout, measurementNodes });
 
   useEffect(() => {
-    latestLayoutInputs.current = { artifact, getNodes, calculateLayout };
-  }, [artifact, getNodes, calculateLayout]);
+    latestLayoutInputs.current = { artifact, getNodes, calculateLayout, measurementNodes };
+  }, [artifact, getNodes, calculateLayout, measurementNodes]);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,10 +144,13 @@ function DiagramRendererContent({
     const runLayout = () => {
       if (cancelled || hasStartedLayout.current) return;
       hasStartedLayout.current = true;
-      const { artifact, getNodes, calculateLayout } = latestLayoutInputs.current;
+      const { artifact, getNodes, calculateLayout, measurementNodes } = latestLayoutInputs.current;
       let measuredNodeSizes: ReturnType<typeof resolveDiagramNodeSizes>;
       try {
-        measuredNodeSizes = resolveDiagramNodeSizes(artifact.diagram, getNodes());
+        measuredNodeSizes = resolveDiagramNodeSizes(
+          measurementNodes.map(({ id }) => id),
+          getNodes(),
+        );
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Diagram measurement failed.";
         setState({ status: "error", message });
@@ -147,7 +200,8 @@ function DiagramRendererContent({
       <ul aria-label="Diagram elements and connections" className="sr-only">
         {artifact.diagram.graph.nodes.map((node) => (
           <li key={node.nodeId}>
-            {node.kind}: {node.title}
+            {"kind" in node && node.kind ? `${node.kind}: ` : ""}
+            {node.title}
           </li>
         ))}
         {artifact.diagram.graph.edges.map((edge) => (
@@ -209,7 +263,7 @@ function DiagramRendererContent({
   );
 }
 
-export function DiagramRendererBase({
+export function DiagramView({
   ariaLabel,
   annotations,
   children,
@@ -221,12 +275,12 @@ export function DiagramRendererBase({
   onGroupActivate,
   onNodeActivate,
   onPaneActivate,
-}: DiagramRendererBaseProps) {
+}: DiagramViewProps) {
   const measurementKey = JSON.stringify(artifact);
 
   return (
     <ReactFlowProvider key={measurementKey}>
-      <DiagramRendererContent
+      <DiagramViewContent
         ariaLabel={ariaLabel ?? `${artifact.title} diagram`}
         annotations={annotations}
         artifact={artifact}
@@ -239,7 +293,7 @@ export function DiagramRendererBase({
         onPaneActivate={onPaneActivate}
       >
         {children}
-      </DiagramRendererContent>
+      </DiagramViewContent>
     </ReactFlowProvider>
   );
 }

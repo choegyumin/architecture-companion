@@ -108,14 +108,14 @@ describe("diagram canvas", () => {
             id: "checkout-edge",
             source: "checkout-page",
             target: "checkout-page",
-            type: "route",
+            type: "connection",
             data: { path: "M 0 0 L 100 100", labelPosition: { x: 50, y: 50 } },
           },
         ]}
         nodes={[
           {
             id: "checkout-page",
-            type: "card",
+            type: "rectangle",
             position: { x: 0, y: 0 },
             data: { label: "Checkout page" },
           },
@@ -141,6 +141,40 @@ describe("diagram canvas", () => {
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
   });
 
+  it("annotates authored diamonds and bounding groups but ignores derived outlines", async () => {
+    const onCanvasClick = vi.fn();
+    render(
+      <DiagramCanvas
+        edges={[]}
+        nodes={[
+          { id: "choice", type: "diamond", position: { x: 0, y: 0 }, data: { label: "Continue?" } },
+          {
+            id: "boundary",
+            type: "bounding-group",
+            position: { x: 0, y: 0 },
+            data: { label: "Boundary", hideTitle: true },
+          },
+          { id: "derived", type: "bounding-group", position: { x: 0, y: 0 }, data: {} },
+        ]}
+        onCanvasClick={onCanvasClick}
+      />,
+    );
+    await screen.findByLabelText("React Flow pane");
+    fireEvent.click(screen.getByLabelText("React Flow node choice"));
+    fireEvent.click(screen.getByLabelText("React Flow node boundary"));
+    fireEvent.click(screen.getByLabelText("React Flow node derived"));
+    expect(onCanvasClick.mock.calls).toEqual([
+      [
+        { x: 12, y: 34 },
+        { type: "node", id: "choice" },
+      ],
+      [
+        { x: 12, y: 34 },
+        { type: "group", id: "boundary" },
+      ],
+    ]);
+  });
+
   it("focuses node and group shapes, and clears focus on the blank pane", async () => {
     const onNodeActivate = vi.fn();
     const onGroupActivate = vi.fn();
@@ -149,7 +183,7 @@ describe("diagram canvas", () => {
       <DiagramCanvas
         edges={[]}
         nodes={[
-          { id: "file", type: "card", position: { x: 0, y: 0 }, data: { label: "File" } },
+          { id: "file", type: "rectangle", position: { x: 0, y: 0 }, data: { label: "File" } },
           { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Group" } },
         ]}
         onGroupActivate={onGroupActivate}
@@ -185,7 +219,7 @@ describe("diagram canvas", () => {
           },
           {
             id: "child-node",
-            type: "card",
+            type: "rectangle",
             parentId: "parent",
             position: { x: 0, y: 0 },
             data: { label: "Child node" },
@@ -235,7 +269,7 @@ describe("diagram canvas", () => {
         nodes={[
           {
             id: "file",
-            type: "card",
+            type: "rectangle",
             className: "existing-class",
             position: { x: 0, y: 0 },
             data: { label: "Render" },
