@@ -23,7 +23,7 @@ Preserve artifacts unrelated to the request. Keep existing IDs for graph element
 
 Architecture Companion calculates coordinates and dimensions, so do not store them in the artifact.
 
-Omit fields whose values equal the input schema's defaults; parsing restores them for the viewer. In particular, omit Node/Edge/Group `type: "default"`, `messageType: "sync"`, false `polarityPair`/`hideTitle`/`nudgeObstacleNodes`/`bezierEdges`, `dependsOn: [[]]`, and `auxiliaryDefinitions: []`. On Component Structure edges, omit `layoutContext` when its only value would be `composition: null`. Do not replace absent ELK options with explicit defaults: raw `_.` options depend on whether a verified option is present. Non-default discriminators, including `diamond` and `bounding` in `general`, remain explicit.
+When directly authoring or modifying a field, omit it if its value equals the default declared in the input schema. Do not fill fields with assumed defaults when the schema declares none. However, do not recheck or clean up generator output solely to omit default values.
 
 ## Authoring metadata
 
@@ -80,16 +80,16 @@ Preserve instructions that remain valid when source changes affect only the grap
 
 Not every field allowed by the schema is displayed. Put explanations needed for review in fields that are actually shown for the underlying elements.
 
-| Element          | Displayed fields to use for explanations  | Authoring notes                                                                                |
-| ---------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Group            | `title`, `description`                    |                                                                                                |
-| `default` node   | `title`, `kind`, `description`, `details` | Omit `kind` if every node repeats the same category.                                           |
-| `diamond` node   | `title`                                   | Available in `general`; no condition or branch semantics are inferred.                         |
-| `bounding` Group | `title`, `description`                    | Available in `general`; `hideTitle: true` hides the required title, not its Annotation target. |
-| `lifeline` node  | `kind`, `title`, `description`            |                                                                                                |
-| `fragment` node  | `operator`, each branch's `guard`         | Put conditions needed for review in each branch's `guard`.                                     |
-| `default` edge   | `kind`, `label`                           | Convey the relationship's meaning through the displayed fields.                                |
-| `message` edge   | `label`                                   |                                                                                                |
+| Element          | Displayed fields to use for explanations  | Authoring notes                                                                         |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| Group            | `title`, `description`                    |                                                                                         |
+| `default` node   | `title`, `kind`, `description`, `details` | Omit `kind` if every node repeats the same category.                                    |
+| `diamond` node   | `title`                                   | A visual shape only, with no built-in Decision Node behavior.                           |
+| `bounding` Group | `title`, `description`                    | `hideTitle: true` hides the required title, but the Group remains an Annotation Target. |
+| `lifeline` node  | `kind`, `title`, `description`            |                                                                                         |
+| `fragment` node  | `operator`, each branch's `guard`         | Put conditions needed for review in each branch's `guard`.                              |
+| `default` edge   | `kind`, `label`                           | Convey the relationship's meaning through the displayed fields.                         |
+| `message` edge   | `label`                                   |                                                                                         |
 
 ### Component structure relationships
 
@@ -104,8 +104,6 @@ Preserve this metadata from generator output instead of reconstructing it from e
 ### Component structure polarity pairs
 
 A branch marked `polarityPair: true` represents one subject and its complement, not merely any two alternatives. Store its two cases in `[ON, OFF]` order after polarity calculation. Preserve case IDs and all `activeWhen`/`dependsOn` references when ordering: a source-negated gate can have `false` as its ON case. The viewer reads this stored result without inferring polarity from labels or IDs.
-
-Generators interpret source condition syntax and choose the subject label and case polarities. Generators implemented in this repository use `createPolarityPair` in `src/features/diagram/control-polarity.ts` to construct the stored `[ON, OFF]` order from those explicit values; the shared function does not infer meaning from label strings.
 
 ## Evidence links
 

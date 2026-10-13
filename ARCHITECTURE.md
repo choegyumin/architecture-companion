@@ -1,4 +1,4 @@
-# Architecture — Layers and Dependency Boundaries
+# Architecture
 
 ## Directory Structure
 
@@ -24,7 +24,7 @@ src/
     react-flow/     # React Flow presentation elements unaware of application policy
 ```
 
-## Dependency Rules
+## Layers and Dependency Rules
 
 The diagrams and rules below describe permitted import directions between modules in this repository. Arrows do not represent HTTP/SSE communication flows, and an edge between directories does not permit all imports between their nested modules.
 
@@ -91,7 +91,6 @@ flowchart TB
 - Imports between modules in the same layer must still respect each module's responsibilities. Circular dependencies are not allowed. Unless an exception is explicitly documented, the same dependency boundaries apply to type-only imports.
 - The default UI dependency direction is `pages → widgets → parts → shared`. Higher-level modules may import lower-level modules directly, but reverse imports are not allowed. Cross-page imports are also prohibited.
 - `features` owns domain schemas, types, and Domain Logic. Business Rules are the product's policies, conditions, constraints, and calculation methods; Domain Logic is the code that implements them independently of the UI. This layer does not handle rendering, UI flow orchestration, browser interactions, or network and file I/O. Do not place code in `features` merely because it is a pure function or is written in a `.ts` file rather than a `.tsx` file.
-- Each Layout's execution and presentation live together in `client/widgets/<layout>-diagram-renderer.tsx` and `<layout>-diagram-renderer.layout.ts`. The Renderer owns projection and interaction; its `.layout.ts` owns spatial calculation and the required input/output types. Layout modules do not import their Renderers, including type-only imports. Stored Layout configuration schemas remain in `features/diagram/diagram-layout.ts`. Shared ELK execution, graph geometry, and existing Group/viewport policies are an explicit exception retained in `features/diagram/elk-core.ts`; this does not include Layout-specific projection or execution. Common measurement and Canvas/Annotation wiring live in `client/parts/diagram-view.tsx` and `diagram-view.react-flow.tsx`.
 - `parts` is a domain-aware presentation layer and, unlike `features`, may compose UI. Code coupled to the state, behavior, or presentation of components in `pages`, `widgets`, or `parts` is classified as Presentation Logic.
 - Code in `shared` must not have direct knowledge of higher-layer application policies, API contracts, global state, or execution flows. Consumers supply the data and policies it needs. General-purpose UI presentation and interactions are UI Logic, a subset of Presentation Logic, and do not encode product-specific requirements. Names, reuse counts, function purity, or potential reuse alone do not justify placing code in `shared`.
 - React-related modules within `shared` follow the dependency direction `react-flow → react-ui → react → ...`.
@@ -105,3 +104,10 @@ flowchart TB
 - `src/` — tests that target a single source file. They live next to the source file, share its name, and use the `.test` suffix: `<source>.test.ts`. They may be split into several files by the concern they verify: `<source>.<concern>.test.ts`.
 - `tests/` — scene tests that no single source file describes. They use dot-free kebab-case names with the `.test` suffix: `scene-test-name.test.ts`.
 - `specs/` — user journey tests. They use kebab-case names with the `.spec` suffix: `user-journey-name.spec.ts`.
+
+## Diagram Rendering Relationships
+
+- **Graph element types and display components do not have a one-to-one relationship.** An element's `type` distinguishes stored data. `DiamondNode` displays both nodes stored in an Artifact with `type: "diamond"` and Decision Nodes derived from Branch Controls by the Component Structure Renderer. The latter are not stored as nodes in the Artifact; the Renderer supplies their branching semantics.
+- **Name diagram element components according to their roles.** Name general-purpose display components after their shape or presentation (`RectangleNode`, `DiamondNode`), and components dedicated to a specific meaning after that meaning.
+- **Renderers and Layouts have a one-to-one relationship.** Keep each pair in `client/widgets` as `<layout>-diagram-renderer.tsx` and `<layout>-diagram-renderer.layout.ts`.
+- **Layouts use ELKjs as a tool when needed.** ELKjs—accessed through ELK Core in the source code—supports placement calculations but is not itself the Layout paired with a Renderer.
