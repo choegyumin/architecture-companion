@@ -1,23 +1,22 @@
 import {
-  type AggregateEdgeRoute,
-  routeAggregateDependencyEdges,
-} from "@/client/widgets/dependency-graph-aggregate-routes";
-import { getDependencyElementBounds } from "@/client/widgets/dependency-graph-edge-routes";
+  type DependencyEdgeProjection,
+  projectDependencyEdges,
+} from "@/client/widgets/dependency-graph-diagram-renderer";
 import {
-  onBoundary,
-  pathEndpoints,
-  pathsCross,
-  pathsOverlap,
-} from "@/client/widgets/dependency-graph-route-test-geometry";
-import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
+  type AggregateEdgeRoute,
+  collectVirtualBundles,
+  getDependencyElementBounds,
+  layoutDependencyGraph,
+  routeAggregateDependencyEdges,
+} from "@/client/widgets/dependency-graph-diagram-renderer.layout";
 import { parseArtifact } from "@/features/artifact/artifact";
-import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import { type DependencyEdgeProjection, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
+import { type DependencyDiagramGraph, dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 import commanderJson from "../showcases/.architecture-companion/artifacts/commander-dependency-graph.json";
 import dependencyCruiserJson from "../showcases/.architecture-companion/artifacts/dependency-cruiser-dependency-graph.json";
+import { onBoundary, pathEndpoints, pathsCross, pathsOverlap } from "./helpers/dependency-graph-route-geometry";
 
 type Aggregate = Extract<DependencyEdgeProjection, { type: "aggregate" }>;
 type AggregateEndpoint = Readonly<{ id: string; sourceId: string; targetId: string }>;
@@ -117,16 +116,16 @@ function expectUncrossedRoutes(
 
 type Scene = Readonly<{
   title: string;
-  graph: ReturnType<typeof parseArtifact>["diagram"]["graph"];
+  graph: DependencyDiagramGraph;
   layout: Promise<DiagramLayout>;
   focused: ReadonlyMap<string, readonly Aggregate[]>;
 }>;
 
 function showcaseScene(title: string, artifactJson: unknown): Scene {
   const diagram = parseArtifact(artifactJson);
-  const graph = diagram.diagram.graph;
+  const graph = dependencyDiagramGraphSchema.parse(diagram.diagram.graph);
   const sizes = Object.fromEntries(graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]));
-  // One shared layout keeps the ELK run cached across the generated tests.
+  // One shared layout keeps the routing scene cached across the generated tests.
   const layout = layoutDependencyGraph(graph, sizes);
   const focused = new Map(
     graph.groups.map(

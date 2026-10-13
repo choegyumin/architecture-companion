@@ -1,7 +1,8 @@
-import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer.react-flow";
+import { buildDependencyGraphDiagramReactFlowRenderModel } from "@/client/widgets/dependency-graph-diagram-renderer";
+import { layoutDependencyGraph } from "@/client/widgets/dependency-graph-diagram-renderer.layout";
 import { annotationTargetSchema } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
-import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 const diagram = {
   artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
@@ -12,7 +13,7 @@ const diagram = {
   instructions: "## Purpose\nReview nested dependency boundaries.\n\n## Regeneration\nRebuild the module relations.",
   diagram: {
     layout: { layoutId: "dependency-graph" },
-    graph: {
+    graph: dependencyDiagramGraphSchema.parse({
       groups: [
         { groupId: "app", title: "App" },
         { groupId: "nested", title: "Nested", parentGroupId: "app" },
@@ -28,7 +29,7 @@ const diagram = {
         { edgeId: "b-c", type: "default", sourceNodeId: "b", targetNodeId: "c" },
         { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
       ],
-    },
+    }),
   },
 } satisfies Artifact;
 
@@ -47,11 +48,11 @@ describe("dependency graph React Flow adapter", () => {
       nodesActivatable: true,
     });
     const aggregate = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
-    if (aggregate?.type !== "route") throw new Error("Missing aggregate route");
+    if (aggregate?.type !== "connection") throw new Error("Missing aggregate route");
     const app = model.nodes.find((node) => node.id === "app");
     if (app?.type !== "labeled-group") throw new Error("Missing group");
     const card = model.nodes.find((node) => node.id === "a");
-    if (card?.type !== "card") throw new Error("Missing card");
+    if (card?.type !== "rectangle") throw new Error("Missing card");
 
     expect(model.edges).toHaveLength(2);
     expect(aggregate.markerEnd).toMatchObject({ color: "var(--diagram-edge)" });
@@ -74,7 +75,7 @@ describe("dependency graph React Flow adapter", () => {
 
     const commentModel = buildDependencyGraphDiagramReactFlowRenderModel(diagram, layout, vi.fn());
     const commentAggregate = commentModel.edges.at(0);
-    if (commentAggregate?.type !== "route") throw new Error("Missing comment aggregate");
+    if (commentAggregate?.type !== "connection") throw new Error("Missing comment aggregate");
     expect(commentAggregate.data?.eyebrow).toBe("×2");
     expect(commentAggregate.data?.labelAction).toBeUndefined();
     expect(commentModel.nodes.find((node) => node.id === "app")?.data).not.toHaveProperty("activatable");
@@ -96,7 +97,7 @@ describe("dependency graph React Flow adapter", () => {
     expect(model.nodes.find((node) => node.id === "bundle:library")).toBeUndefined();
 
     const internal = model.edges.find((edge) => edge.source === "nested" && edge.target === bounding.id);
-    if (internal?.type !== "route") throw new Error("Missing internal bundle aggregate");
+    if (internal?.type !== "connection") throw new Error("Missing internal bundle aggregate");
     expect(internal.data?.path).toMatch(/^M .+ L /);
     expect(internal.data?.path).not.toMatch(/NaN|Infinity| C /);
     expect(annotationTargetSchema.parse(model.edgeTargets?.get(internal.id))).toEqual({
@@ -129,19 +130,19 @@ describe("dependency graph React Flow adapter", () => {
       ...diagram,
       diagram: {
         ...diagram.diagram,
-        graph: {
+        graph: dependencyDiagramGraphSchema.parse({
           ...diagram.diagram.graph,
           nodes: [...diagram.diagram.graph.nodes, { nodeId: "bundle:app", type: "default", title: "Root file" }],
           edges: [
             ...diagram.diagram.graph.edges,
             { edgeId: "bundle:app:", type: "default", sourceNodeId: "a", targetNodeId: "b" },
           ],
-        },
+        }),
       },
     } satisfies Artifact;
     const layout = await layoutDependencyGraph(colliding.diagram.graph, { ...sizes, "bundle:app": sizes.a });
     const model = buildDependencyGraphDiagramReactFlowRenderModel(colliding, layout, vi.fn());
-    expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("card");
+    expect(model.nodes.find(({ id }) => id === "bundle:app")?.type).toBe("rectangle");
     expect(model.nodes.find(({ id }) => id === "bundle:app::")?.type).toBe("bounding-group");
     expect(model.edges.some(({ source, target }) => source === "bundle:app::" && target === "nested")).toBe(true);
     expect(model.edges.some(({ source, target }) => source === "nested" && target === "bundle:app::")).toBe(true);
@@ -155,7 +156,7 @@ describe("dependency graph React Flow adapter", () => {
     });
 
     expect(model.edges.map(({ id }) => id)).toEqual(["b-c", "a-c"]);
-    expect(model.edges.every((edge) => edge.type === "route" && edge.data?.path.includes(" C "))).toBe(true);
+    expect(model.edges.every((edge) => edge.type === "connection" && edge.data?.path.includes(" C "))).toBe(true);
     expect(model.edges.find(({ id }) => id === "a-c")?.label).toBe("Uses C");
     expect(model.edgeTargets?.size).toBe(0);
   });
@@ -168,9 +169,9 @@ describe("dependency graph React Flow adapter", () => {
     const internal = model.edges.find((edge) => edge.id === "b-a");
     const boundary = model.edges.find((edge) => edge.source === "app" && edge.target === "library");
 
-    expect(internal?.type === "route" && internal.data?.path).toContain(" C ");
-    expect(boundary?.type === "route" && boundary.data?.path).not.toContain(" C ");
-    expect(boundary?.type === "route" && boundary.data?.path).toContain(" L ");
+    expect(internal?.type === "connection" && internal.data?.path).toContain(" C ");
+    expect(boundary?.type === "connection" && boundary.data?.path).not.toContain(" C ");
+    expect(boundary?.type === "connection" && boundary.data?.path).toContain(" L ");
   });
 
   it("routes a focused group's boundary to direct sibling nodes in both directions", async () => {
@@ -178,13 +179,13 @@ describe("dependency graph React Flow adapter", () => {
       ...diagram,
       diagram: {
         ...diagram.diagram,
-        graph: {
+        graph: dependencyDiagramGraphSchema.parse({
           ...diagram.diagram.graph,
           edges: [
             ...diagram.diagram.graph.edges,
             { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
           ],
-        },
+        }),
       },
     } satisfies Artifact;
     const layout = await layoutDependencyGraph(withSibling.diagram.graph, sizes);
@@ -193,7 +194,7 @@ describe("dependency graph React Flow adapter", () => {
     });
     const outgoing = model.edges.find((edge) => edge.source === "nested" && edge.target === "a");
     const incoming = model.edges.find((edge) => edge.source === "a" && edge.target === "nested");
-    if (outgoing?.type !== "route" || incoming?.type !== "route") throw new Error("Missing sibling boundary");
+    if (outgoing?.type !== "connection" || incoming?.type !== "connection") throw new Error("Missing sibling boundary");
 
     expect(outgoing.data?.path).toMatch(/^M .+ L /);
     expect(incoming.data?.path).toMatch(/^M .+ L /);
@@ -208,7 +209,7 @@ describe("dependency graph React Flow adapter", () => {
       ...diagram,
       diagram: {
         ...diagram.diagram,
-        graph: {
+        graph: dependencyDiagramGraphSchema.parse({
           ...diagram.diagram.graph,
           nodes: [...diagram.diagram.graph.nodes, { nodeId: "root", type: "default", title: "Root" }],
           edges: [
@@ -216,7 +217,7 @@ describe("dependency graph React Flow adapter", () => {
             { edgeId: "a-root", type: "default", sourceNodeId: "a", targetNodeId: "root" },
             { edgeId: "root-a", type: "default", sourceNodeId: "root", targetNodeId: "a" },
           ],
-        },
+        }),
       },
     } satisfies Artifact;
     const layout = await layoutDependencyGraph(withRoot.diagram.graph, { ...sizes, root: sizes.a });
@@ -224,10 +225,10 @@ describe("dependency graph React Flow adapter", () => {
     const forward = model.edges.find((edge) => edge.source === "app" && edge.target === "root");
     const reverse = model.edges.find((edge) => edge.source === "root" && edge.target === "app");
 
-    expect(forward?.type === "route" && forward.data?.path).toMatch(/^M (?!.* C ).+ L /);
-    expect(reverse?.type === "route" && reverse.data?.path).toMatch(/^M (?!.* C ).+ L /);
-    expect(forward?.type === "route" && model.edgeTargets?.get(forward.id)).toMatchObject({ edgeIds: ["a-root"] });
-    expect(reverse?.type === "route" && model.edgeTargets?.get(reverse.id)).toMatchObject({ edgeIds: ["root-a"] });
+    expect(forward?.type === "connection" && forward.data?.path).toMatch(/^M (?!.* C ).+ L /);
+    expect(reverse?.type === "connection" && reverse.data?.path).toMatch(/^M (?!.* C ).+ L /);
+    expect(forward?.type === "connection" && model.edgeTargets?.get(forward.id)).toMatchObject({ edgeIds: ["a-root"] });
+    expect(reverse?.type === "connection" && model.edgeTargets?.get(reverse.id)).toMatchObject({ edgeIds: ["root-a"] });
   });
 
   it("uses F curves for node–node aggregates between ungrouped root nodes", async () => {
@@ -235,7 +236,7 @@ describe("dependency graph React Flow adapter", () => {
       ...diagram,
       diagram: {
         ...diagram.diagram,
-        graph: {
+        graph: dependencyDiagramGraphSchema.parse({
           ...diagram.diagram.graph,
           nodes: [
             ...diagram.diagram.graph.nodes,
@@ -247,7 +248,7 @@ describe("dependency graph React Flow adapter", () => {
             { edgeId: "one-two", type: "default", sourceNodeId: "root-one", targetNodeId: "root-two" },
             { edgeId: "two-one", type: "default", sourceNodeId: "root-two", targetNodeId: "root-one" },
           ],
-        },
+        }),
       },
     } satisfies Artifact;
     const layout = await layoutDependencyGraph(roots.diagram.graph, {
@@ -259,12 +260,12 @@ describe("dependency graph React Flow adapter", () => {
     const forward = model.edges.find((edge) => edge.source === "root-one" && edge.target === "root-two");
     const reverse = model.edges.find((edge) => edge.source === "root-two" && edge.target === "root-one");
 
-    expect(forward?.type === "route" && forward.data?.path).toContain(" C ");
-    expect(reverse?.type === "route" && reverse.data?.path).toContain(" C ");
-    expect(forward?.type === "route" && model.edgeTargets?.get(forward.id)).toMatchObject({
+    expect(forward?.type === "connection" && forward.data?.path).toContain(" C ");
+    expect(reverse?.type === "connection" && reverse.data?.path).toContain(" C ");
+    expect(forward?.type === "connection" && model.edgeTargets?.get(forward.id)).toMatchObject({
       edgeIds: ["one-two"],
     });
-    expect(reverse?.type === "route" && model.edgeTargets?.get(reverse.id)).toMatchObject({
+    expect(reverse?.type === "connection" && model.edgeTargets?.get(reverse.id)).toMatchObject({
       edgeIds: ["two-one"],
     });
   });

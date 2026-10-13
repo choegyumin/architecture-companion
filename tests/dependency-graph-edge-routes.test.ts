@@ -1,24 +1,29 @@
 import {
+  type DependencyEdgeProjection,
+  projectDependencyEdges,
+} from "@/client/widgets/dependency-graph-diagram-renderer";
+import {
   type AggregateEdgeRoute,
+  collectVirtualBundles,
+  getDependencyElementBounds,
+  layoutDependencyGraph,
   measureAggregateSegmentCongestion,
   routeAggregateDependencyEdges,
-} from "@/client/widgets/dependency-graph-aggregate-routes";
-import { getDependencyElementBounds, routeOriginalDependencyEdge } from "@/client/widgets/dependency-graph-edge-routes";
+  routeOriginalDependencyEdge,
+} from "@/client/widgets/dependency-graph-diagram-renderer.layout";
+import { parseArtifact } from "@/features/artifact/artifact";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
+import type { DiagramLayout, DiagramLayoutGroup } from "@/features/diagram/diagram-spatial";
+import { getOrThrow } from "@/shared/universal/get-or-throw";
+
+import artifactJson from "../showcases/.architecture-companion/artifacts/dependency-cruiser-dependency-graph.json";
 import {
   onBoundary,
   pathEndpoints,
   pathEntersBounds,
   pathsCross,
   pathsOverlap,
-} from "@/client/widgets/dependency-graph-route-test-geometry";
-import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
-import { parseArtifact } from "@/features/artifact/artifact";
-import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import { type DependencyEdgeProjection, projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
-import type { DiagramLayout, DiagramLayoutGroup } from "@/features/diagram/diagram-spatial";
-import { getOrThrow } from "@/shared/universal/get-or-throw";
-
-import artifactJson from "../../../showcases/.architecture-companion/artifacts/dependency-cruiser-dependency-graph.json";
+} from "./helpers/dependency-graph-route-geometry";
 
 const source = { position: { x: 0, y: 0 }, size: { width: 100, height: 60 } };
 const target = { position: { x: 0, y: 220 }, size: { width: 100, height: 60 } };
@@ -164,13 +169,12 @@ function expectReadableRoutes(
 // Focused readability on the showcase design, regenerated from an external
 // project: groups are selected structurally, never by literal id.
 const focusedDiagram = parseArtifact(artifactJson);
-const focusedSizes = Object.fromEntries(
-  focusedDiagram.diagram.graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]),
-);
-const focusedLayout = layoutDependencyGraph(focusedDiagram.diagram.graph, focusedSizes);
-const focusedScenes = focusedDiagram.diagram.graph.groups.map((group) => ({
+const focusedGraph = dependencyDiagramGraphSchema.parse(focusedDiagram.diagram.graph);
+const focusedSizes = Object.fromEntries(focusedGraph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]));
+const focusedLayout = layoutDependencyGraph(focusedGraph, focusedSizes);
+const focusedScenes = focusedGraph.groups.map((group) => ({
   title: group.title,
-  projections: projectDependencyEdges(focusedDiagram.diagram.graph, { type: "group", id: group.groupId }).filter(
+  projections: projectDependencyEdges(focusedGraph, { type: "group", id: group.groupId }).filter(
     (projection): projection is Extract<DependencyEdgeProjection, { type: "aggregate" }> =>
       projection.type === "aggregate",
   ),
@@ -471,7 +475,7 @@ describe("dependency edge routes", () => {
   // regenerated showcase layout, approach corridors and corner arcs can cross
   // neighbouring tracks, so the guaranteed contract here is distinct ports,
   // separate tracks, and normal-stage routes. Dense hubs are covered by
-  // dependency-graph-aggregate-routes.artifact.test.ts.
+  // dependency-graph-showcase-routes.test.ts.
   for (const { title, projections } of focusedScenes) {
     if (projections.length < 2 || projections.length > 6) continue;
     it(`keeps ${title}'s focused relations readable`, async () => {

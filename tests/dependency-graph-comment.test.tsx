@@ -11,6 +11,7 @@ import {
 } from "@/features/annotation/annotation-document";
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
 import type { Artifact } from "@/features/artifact/artifact";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 const sizes = {
   one: { width: 288, height: 80 },
@@ -27,7 +28,7 @@ const diagram = {
     "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
   diagram: {
     layout: { layoutId: "dependency-graph" },
-    graph: {
+    graph: dependencyDiagramGraphSchema.parse({
       groups: [
         { groupId: "source", title: "Source" },
         { groupId: "target", title: "Target" },
@@ -42,7 +43,7 @@ const diagram = {
         { edgeId: "two-other", type: "default", sourceNodeId: "two", targetNodeId: "other" },
         { edgeId: "one-two", type: "default", sourceNodeId: "one", targetNodeId: "two" },
       ],
-    },
+    }),
   },
 } satisfies Artifact;
 
@@ -55,8 +56,8 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
   },
   useReactFlow: () => ({ getNodes: () => [] }),
 }));
-vi.mock("@/client/widgets/diagram-renderer.react-flow", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/client/widgets/diagram-renderer.react-flow")>()),
+vi.mock("@/client/parts/diagram-view.react-flow", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/client/parts/diagram-view.react-flow")>()),
   resolveDiagramNodeSizes: () => sizes,
 }));
 vi.mock("@/client/parts/diagram-canvas", () => ({
@@ -89,7 +90,6 @@ vi.mock("@/client/parts/diagram-canvas", () => ({
   },
 }));
 vi.mock("@/shared/react-flow/base-overlay-panel", () => ({ BaseOverlayPanel: () => null }));
-vi.mock("@/client/widgets/diagram-links-panel", () => ({ DiagramLinksPanel: () => null }));
 
 describe("dependency graph Comment snapshot", () => {
   it("saves aggregate endpoints, original IDs, and canvas point from click time after focus changes", async () => {

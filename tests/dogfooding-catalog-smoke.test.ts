@@ -1,14 +1,17 @@
-import { routeAggregateDependencyEdges } from "@/client/widgets/dependency-graph-aggregate-routes";
-import { getDependencyElementBounds } from "@/client/widgets/dependency-graph-edge-routes";
-import { onBoundary, pathEndpoints } from "@/client/widgets/dependency-graph-route-test-geometry";
+import { projectDependencyEdges } from "@/client/widgets/dependency-graph-diagram-renderer";
+import {
+  getDependencyElementBounds,
+  layoutDependencyGraph,
+  routeAggregateDependencyEdges,
+} from "@/client/widgets/dependency-graph-diagram-renderer.layout";
 import { parseArtifact } from "@/features/artifact/artifact";
-import { layoutDependencyGraph } from "@/features/diagram/_layout/dependency-graph-layout";
-import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 import componentStructureJson from "../.architecture-companion/artifacts/component-structure.json";
 import dependencyGraphJson from "../.architecture-companion/artifacts/dependency-graph.json";
 import sequenceJson from "../.architecture-companion/artifacts/review-session-sequence.json";
+import { onBoundary, pathEndpoints } from "./helpers/dependency-graph-route-geometry";
 
 // The dogfooding catalog tracks this repository's own refactoring, so it moves
 // with every change to src/. It is smoke-tested only — parse, layout, and route
@@ -16,7 +19,7 @@ import sequenceJson from "../.architecture-companion/artifacts/review-session-se
 // assertions. Strong assertions here would break on unrelated refactoring.
 
 const diagram = parseArtifact(dependencyGraphJson);
-const graph = diagram.diagram.graph;
+const graph = dependencyDiagramGraphSchema.parse(diagram.diagram.graph);
 const sizes = Object.fromEntries(graph.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 100 }]));
 // One shared layout keeps the ELK run cached across the generated tests.
 const layout = layoutDependencyGraph(graph, sizes);

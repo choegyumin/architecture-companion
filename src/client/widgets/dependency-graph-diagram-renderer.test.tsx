@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
+import type { DiagramRendererProps } from "@/client/parts/diagram-view";
 import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-graph-diagram-renderer";
-import type { DiagramRendererProps } from "@/client/widgets/diagram-renderer-base";
 import type { Artifact } from "@/features/artifact/artifact";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
 
 const diagram = {
@@ -18,7 +19,7 @@ const diagram = {
     "## Purpose\nReview grouped dependency relations.\n\n## Regeneration\nRebuild the source and target groups.",
   diagram: {
     layout: { layoutId: "dependency-graph" },
-    graph: {
+    graph: dependencyDiagramGraphSchema.parse({
       groups: [
         { groupId: "source", title: "Source" },
         { groupId: "target", title: "Target" },
@@ -33,7 +34,7 @@ const diagram = {
         { edgeId: "two-other", type: "default", sourceNodeId: "two", targetNodeId: "other" },
         { edgeId: "one-two", type: "default", sourceNodeId: "one", targetNodeId: "two" },
       ],
-    },
+    }),
   },
 } satisfies Artifact;
 
@@ -73,8 +74,8 @@ const layout = {
   initialView: { mode: "fit" },
 } satisfies DiagramLayout;
 
-vi.mock("@/client/widgets/diagram-renderer-base", () => ({
-  DiagramRendererBase: ({
+vi.mock("@/client/parts/diagram-view", () => ({
+  DiagramView: ({
     buildRenderModel,
     children,
     artifact,
@@ -88,7 +89,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
       layout: DiagramLayout,
       onOpenSource: (href: string) => void,
     ) => ReturnType<
-      typeof import("@/client/widgets/dependency-graph-diagram-renderer.react-flow").buildDependencyGraphDiagramReactFlowRenderModel
+      typeof import("@/client/widgets/dependency-graph-diagram-renderer").buildDependencyGraphDiagramReactFlowRenderModel
     >;
     children?: ReactNode;
     artifact: Artifact;
@@ -99,7 +100,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
   }) => {
     const model = buildRenderModel(artifact, layout, onOpenSource);
     const group = model.nodes.find((node) => node.type === "labeled-group" && node.id === "source");
-    const aggregate = model.edges.find((edge) => edge.type === "route" && edge.source === "source");
+    const aggregate = model.edges.find((edge) => edge.type === "connection" && edge.source === "source");
     return (
       <div>
         <output data-testid="visible-edges">{model.edges.map(({ id }) => id).join("|")}</output>
@@ -109,7 +110,7 @@ vi.mock("@/client/widgets/diagram-renderer-base", () => ({
         </output>
         <button onClick={() => onNodeActivate?.("one")}>Select node</button>
         <button onClick={() => onPaneActivate?.()}>Select pane</button>
-        {aggregate?.type === "route" && aggregate.data?.labelAction ? (
+        {aggregate?.type === "connection" && aggregate.data?.labelAction ? (
           <button onClick={aggregate.data.labelAction.onActivate}>{aggregate.data.labelAction.ariaLabel}</button>
         ) : null}
         {children}

@@ -1,15 +1,18 @@
-import { routeAggregateDependencyEdges } from "@/client/widgets/dependency-graph-aggregate-routes";
-import { getDependencyElementBounds } from "@/client/widgets/dependency-graph-edge-routes";
+import {
+  collectVirtualBundles,
+  getDependencyElementBounds,
+  routeAggregateDependencyEdges,
+} from "@/client/widgets/dependency-graph-diagram-renderer.layout";
+import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+import { getOrThrow } from "@/shared/universal/get-or-throw";
+
 import {
   onBoundary,
   pathEndpoints,
   pathEntersBounds,
   pathsCross,
   pathsOverlap,
-} from "@/client/widgets/dependency-graph-route-test-geometry";
-import { collectVirtualBundles } from "@/client/widgets/dependency-graph-routing-scene";
-import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
-import { getOrThrow } from "@/shared/universal/get-or-throw";
+} from "./helpers/dependency-graph-route-geometry";
 
 // Hand-built scenes for routing cases the showcase designs do not contain:
 // several distinct source groups converging on an external-packages group, and

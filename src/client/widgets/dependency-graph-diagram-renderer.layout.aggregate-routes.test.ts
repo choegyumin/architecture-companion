@@ -1,7 +1,7 @@
 import {
   type AggregateEdgeRoute,
   routeAggregateDependencyEdges,
-} from "@/client/widgets/dependency-graph-aggregate-routes";
+} from "@/client/widgets/dependency-graph-diagram-renderer.layout";
 import type { DiagramLayout, DiagramLayoutGroup, DiagramLayoutNode } from "@/features/diagram/diagram-spatial";
 
 const group = (

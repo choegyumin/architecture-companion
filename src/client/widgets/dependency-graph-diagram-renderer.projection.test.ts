@@ -1,7 +1,8 @@
-import { projectDependencyEdges } from "@/features/diagram/dependency-edge-projection";
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import { projectDependencyEdges } from "@/client/widgets/dependency-graph-diagram-renderer";
+import type { DependencyDiagramGraph } from "@/features/diagram/diagram-graph";
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
-const graph = {
+const graph = dependencyDiagramGraphSchema.parse({
   groups: [
     { groupId: "app", title: "App" },
     { groupId: "pages", title: "Pages", parentGroupId: "app" },
@@ -28,7 +29,7 @@ const graph = {
     { edgeId: "root-to-api", type: "default", sourceNodeId: "root", targetNodeId: "api-file" },
     { edgeId: "app-self", type: "default", sourceNodeId: "app-a", targetNodeId: "app-a" },
   ],
-} as const satisfies DiagramGraph;
+});
 
 function members(focus?: Parameters<typeof projectDependencyEdges>[1]) {
   return projectDependencyEdges(graph, focus).map((edge) =>
@@ -55,7 +56,7 @@ describe("dependency edge projection", () => {
   });
 
   it("shows each relationship once at its lowest common scope at every depth", () => {
-    const nested = {
+    const nested = dependencyDiagramGraphSchema.parse({
       groups: [
         { groupId: "A", title: "A" },
         { groupId: "B", title: "B", parentGroupId: "A" },
@@ -90,7 +91,7 @@ describe("dependency edge projection", () => {
         { edgeId: "root-to-group", type: "default", sourceNodeId: "root", targetNodeId: "d" },
         { edgeId: "root-to-root", type: "default", sourceNodeId: "root", targetNodeId: "other-root" },
       ],
-    } satisfies DiagramGraph;
+    });
     const projected = projectDependencyEdges(nested);
     expect(
       projected.map((edge) => {
@@ -122,7 +123,7 @@ describe("dependency edge projection", () => {
           return "parentGroupId" in group ? group.parentGroupId : undefined;
         },
       })),
-    } satisfies DiagramGraph;
+    } satisfies DependencyDiagramGraph;
 
     expect(projectDependencyEdges(shared)).toEqual(projectDependencyEdges(graph));
     for (const group of graph.groups) expect(parentReads.get(group.groupId)).toBe(1);
@@ -131,7 +132,7 @@ describe("dependency edge projection", () => {
   });
 
   it("shows every relationship as original edges when the graph has no groups", () => {
-    const plain = {
+    const plain = dependencyDiagramGraphSchema.parse({
       groups: [],
       nodes: [
         { nodeId: "a", type: "default", title: "A" },
@@ -141,7 +142,7 @@ describe("dependency edge projection", () => {
         { edgeId: "a-to-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
         { edgeId: "b-to-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
       ],
-    } as const satisfies DiagramGraph;
+    });
 
     expect(projectDependencyEdges(plain)).toEqual([
       { type: "original", edgeId: "a-to-b" },
@@ -176,7 +177,7 @@ describe("dependency edge projection", () => {
         ...graph.edges,
         { edgeId: "page-to-app-b", type: "default", sourceNodeId: "page", targetNodeId: "app-b" },
       ],
-    } as const satisfies DiagramGraph;
+    } as const satisfies DependencyDiagramGraph;
     const projections = projectDependencyEdges(withSibling, { type: "group", id: "pages" });
 
     expect(
@@ -225,7 +226,7 @@ describe("dependency edge projection", () => {
           targetNodeId: "api-file",
         },
       ],
-    } as const satisfies DiagramGraph;
+    } as const satisfies DependencyDiagramGraph;
     for (const focus of [undefined, { type: "group", id: "app" }] as const) {
       const projected = projectDependencyEdges(colliding, focus);
       const aggregate = projected.find(
