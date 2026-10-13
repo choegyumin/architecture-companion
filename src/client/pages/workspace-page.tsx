@@ -947,7 +947,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                 >
                   <MessageSquarePlus data-icon="inline-start" />
                   Comment{" "}
-                  <Kbd aria-hidden="true" className="translate-x-0.5">
+                  <Kbd aria-hidden="true" data-icon="inline-end">
                     {platform.os.mac ? "⌥" : "Alt"}
                   </Kbd>
                 </Toggle>
