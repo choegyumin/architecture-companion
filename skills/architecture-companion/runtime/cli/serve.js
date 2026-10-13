@@ -28362,7 +28362,17 @@ async function startServer(scope, options = {}) {
   const staticRoot = options.staticRoot === false ? null : options.staticRoot ?? fileURLToPath(new URL("./client", import.meta.url));
   const reviewUpdates = await createReviewUpdates(scope.path);
   const app = createApp(scope, { reviewUpdates });
-  if (staticRoot !== null) app.use("*", serveStatic({ root: staticRoot }));
+  if (staticRoot !== null) {
+    app.use("*", serveStatic({ root: staticRoot }));
+    const serveClient = serveStatic({ root: staticRoot, path: "index.html" });
+    app.get("*", (context, next) => {
+      const path = context.req.path;
+      if (path === "/api" || path.startsWith("/api/") || path === "/assets" || path.startsWith("/assets/")) {
+        return next();
+      }
+      return serveClient(context, next);
+    });
+  }
   return new Promise((resolve, reject) => {
     const server = serve(
       {
