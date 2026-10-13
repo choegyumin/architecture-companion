@@ -191,6 +191,12 @@ Examining diagrams alongside source evidence to assess product behavior or code 
 **Review Follow-up**:
 Work that responds to requests for explanations, changes, or further review based on an earlier review. Annotations and comments from the active revision provide context for interpreting those requests.
 
+**Walkthrough**:
+Content that explains a diagram in one or more steps.
+
+**Spotlight**:
+An agent action controlling the review screen. Walkthrough describes the content; Spotlight describes the action. Reading or revisiting a walkthrough is not itself a Spotlight.
+
 **Annotation**:
 A review mark attached to a canvas position or diagram element. It consists of one anchor and one comment.
 

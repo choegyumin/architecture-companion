@@ -20,6 +20,7 @@ For follow-up requests after a Review UI review, start with **Review follow-up**
 | Create a new diagram or modify an existing one                  | Artifact authoring  | `schemas/artifact.schema.json`, `artifact-writing.md`, and the `GENERATOR.md` of the generator selected after discovery |
 | Provide a review interface or URL                               | Start the Review UI | The authoring documents only if artifact authoring is needed                                                            |
 | Explain, make changes, or review again after a Review UI review | Review follow-up    | `review-follow-up.md`; also read the authoring documents if diagram changes are needed.                                 |
+| Present a walkthrough on the review screen                      | Spotlight           | `spotlight.md`; also read `review-follow-up.md` when working from an earlier review.                                    |
 
 Use the absolute paths defined above for `<AC>` and `<scope>` in the commands below.
 
@@ -110,3 +111,8 @@ Ask whether to save a rule in `instructions` only when there is a reason to make
 2. Treat the user's message as the primary request and the active revision's Annotations and Comments as review context. Investigate relevant evidence to answer explanation requests, and make code or documentation changes within the requested scope. Continue with **Artifact authoring** only when diagram changes are needed.
 
 3. If the follow-up changes the catalog or the user requests another review, run **Start the Review UI** and share the validated catalog's URL. Always validate after diagram changes, whether or not another review is requested.
+
+## Spotlight
+
+1. Read `<AC>/spotlight.md` for the walkthrough contract, the caption policy, and the delivery rules. The walkthrough addresses one artifact with the stored element IDs of its current diagram.
+2. When a Review UI for the scope is already open locally, deliver the walkthrough with `POST /api/spotlight` and check the response. Otherwise build and share a walkthrough URL as described in `spotlight.md`.
