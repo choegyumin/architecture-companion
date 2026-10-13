@@ -1,6 +1,10 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import type z from "zod";
+
+import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 import { buildModuleGraph } from "../analysis/build-module-graph";
 import { executeJsModuleDependencyGraphCommand, writeJsModuleDependencyGraph } from "./command";
@@ -60,16 +64,27 @@ describe("JavaScript module dependency graph generator command", () => {
 
     try {
       await writeFile(join(rootPath, "package.json"), '{"name":"fixture-package","type":"module"}\n');
-      await writeFile(join(rootPath, "index.js"), 'import { value } from "./value.js";\nexport { value };\n');
-      await writeFile(join(rootPath, "value.js"), "export const value = 1;\n");
-      const options = { scopePath: rootPath, sourcePaths: ["index.js", "value.js"] } as const;
+      await mkdir(join(rootPath, "lib"));
+      await writeFile(join(rootPath, "index.js"), 'import { value } from "./lib/value.js";\nexport { value };\n');
+      await writeFile(join(rootPath, "lib/value.js"), "export const value = 1;\n");
+      const options = { scopePath: rootPath, sourcePaths: ["index.js", "lib/value.js"] } as const;
 
       const [firstGraph, secondGraph] = await Promise.all([buildModuleGraph(options), buildModuleGraph(options)]);
       const graphPath = await writeJsModuleDependencyGraph(options);
-      const writtenGraph = JSON.parse(await readFile(graphPath, "utf8"));
+      const writtenGraph = JSON.parse(await readFile(graphPath, "utf8")) as z.input<
+        typeof dependencyDiagramGraphSchema
+      >;
 
       expect(secondGraph).toEqual(firstGraph);
-      expect(writtenGraph).toEqual(firstGraph);
+      expect(dependencyDiagramGraphSchema.parse(writtenGraph)).toEqual(firstGraph);
+      expect(writtenGraph.groups).toHaveLength(1);
+      expect(writtenGraph.nodes).toHaveLength(2);
+      expect(writtenGraph.edges).toHaveLength(1);
+      expect(
+        [...writtenGraph.groups, ...writtenGraph.nodes, ...writtenGraph.edges].every(
+          (element) => element.type === undefined,
+        ),
+      ).toBe(true);
       expect(writtenGraph).toEqual({
         groups: expect.any(Array),
         nodes: expect.any(Array),

@@ -3,11 +3,10 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import type { ProjectedComponentStructureGraph } from "@/features/diagram/decision-nodes";
-import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
+import { projectDecisionNodes } from "@/client/widgets/component-structure-diagram-renderer";
+import type { ProjectedComponentStructureGraph } from "@/client/widgets/component-structure-diagram-renderer.layout";
 import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
-
-import { buildComponentGraph } from "./build-component-graph";
+import { buildComponentGraph } from "@/plugins/artifact-generators/react-component-structure/analysis/build-component-graph";
 
 async function graphFor(source: string): Promise<ProjectedComponentStructureGraph> {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-component-decisions-"));
@@ -33,6 +32,77 @@ function branchArm(graph: ProjectedComponentStructureGraph, controlLabel: string
 }
 
 describe("decision node projection", () => {
+  it("keeps every route when both branches reuse the same forwarded JSX alias", async () => {
+    const graph = await graphFor(`
+      function Leaf() { return <span />; }
+      function Receiver({ children }) { return <>{children}</>; }
+      function Wrapper({ children, choice }) {
+        const output = <Receiver>{children}</Receiver>;
+        return choice ? output : output;
+      }
+      export function App() { return <Wrapper><Leaf /></Wrapper>; }
+    `);
+    const choice = graph.controls.find(({ label }) => label === "choice")!;
+    const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
+    if (target.type !== "default") throw new Error("Missing Leaf component");
+    // Both stored cases survive as separate decision arms after projection.
+    const arms = graph.edges
+      .filter((edge) => edge.source === choice.controlId && edge.target === target.nodeId)
+      .toSorted((left, right) => (left.sourcePort ?? "").localeCompare(right.sourcePort ?? ""));
+    expect(arms.map((arm) => ({ port: arm.sourcePort, activeWhen: arm.activeWhen }))).toEqual([
+      { port: "false", activeWhen: [[{ controlId: choice.controlId, value: "false" }]] },
+      { port: "true", activeWhen: [[{ controlId: choice.controlId, value: "true" }]] },
+    ]);
+  });
+
+  it("keeps the decision chain in source order when the remainder feeds another gate", async () => {
+    const graph = await graphFor(`
+      function First() { return <span />; }
+      function Second() { return <aside />; }
+      export function App({ status, catalog }) {
+        if (status === "loading") return <main>Loading</main>;
+        if (status === "error") return <main>Error</main>;
+        if (!catalog) return <First />;
+        return <Second />;
+      }
+    `);
+    const status = graph.controls.find((control) => control.label === "status")!;
+    const catalog = graph.controls.find((control) => control.label === "catalog")!;
+    const first = graph.nodes.find((node) => node.type === "default" && node.title === "First")!;
+    const second = graph.nodes.find((node) => node.type === "default" && node.title === "Second")!;
+    if (first.type !== "default" || second.type !== "default") throw new Error("Missing branch components");
+
+    // The catalog gate sits after the status gates in source, so its decision
+    // node hangs off the status remainder arm — never the other way around,
+    // which stranded the graph whenever status left the remainder case.
+    const intoCatalog = graph.edges.find(
+      (edge) => edge.target === catalog.controlId && edge.source !== catalog.controlId,
+    )!;
+    expect(intoCatalog.source).toBe(status.controlId);
+    expect(intoCatalog.sourcePort).toBe("otherwise");
+    expect(intoCatalog.activeWhen).toEqual([[{ controlId: status.controlId, value: "otherwise" }]]);
+
+    // One remainder arm reaches the catalog decision; the instance split rides
+    // the catalog's own arms instead of duplicating the remainder label.
+    const remainderArms = graph.edges.filter(
+      (edge) => edge.source === status.controlId && edge.sourcePort === "otherwise",
+    );
+    expect(remainderArms).toHaveLength(1);
+    const firstEdge = graph.edges.find((edge) => edge.source === catalog.controlId && edge.target === first.nodeId)!;
+    expect(firstEdge).toMatchObject({
+      sourcePort: "true",
+      activeWhen: [
+        [
+          { controlId: status.controlId, value: "otherwise" },
+          { controlId: catalog.controlId, value: "true" },
+        ],
+      ],
+    });
+    expect(graph.edges.find((edge) => edge.target === second.nodeId)).toMatchObject({
+      source: catalog.controlId,
+    });
+  });
+
   it("projects one diamond per branch control with an owner entry edge", async () => {
     const graph = await graphFor(`
       function Leaf() { return <span />; }

@@ -3,7 +3,6 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import {
   type ComponentStructureDiagramGraph,
   componentStructureDiagramGraphSchema,
@@ -358,29 +357,6 @@ describe("component rendering controls", () => {
     expect(graph.layoutContext.controls).toEqual([]);
   });
 
-  it("keeps every route when both branches reuse the same forwarded JSX alias", async () => {
-    const graph = await graphFor(`
-      function Leaf() { return <span />; }
-      function Receiver({ children }) { return <>{children}</>; }
-      function Wrapper({ children, choice }) {
-        const output = <Receiver>{children}</Receiver>;
-        return choice ? output : output;
-      }
-      export function App() { return <Wrapper><Leaf /></Wrapper>; }
-    `);
-    const choice = graph.layoutContext.controls.find(({ label }) => label === "choice")!;
-    const target = graph.nodes.find((node) => node.type === "default" && node.title === "Leaf")!;
-    // Both cases survive into the stored edge's ruleset; the projection splits
-    // them back into decision arms, so the assertion reads the arms.
-    const arms = projectDecisionNodes(graph)
-      .edges.filter((edge) => edge.source === choice.controlId && edge.target === target.nodeId)
-      .toSorted((left, right) => (left.sourcePort ?? "").localeCompare(right.sourcePort ?? ""));
-    expect(arms.map((arm) => ({ port: arm.sourcePort, activeWhen: arm.activeWhen }))).toEqual([
-      { port: "false", activeWhen: [[{ controlId: choice.controlId, value: "false" }]] },
-      { port: "true", activeWhen: [[{ controlId: choice.controlId, value: "true" }]] },
-    ]);
-  });
-
   it("recognizes aliased roots and JSX consumers that only return supplied nodes", async () => {
     const graph = await graphFor(`
       function Leaf() { return <span />; }
@@ -650,54 +626,6 @@ describe("component rendering controls", () => {
     });
   });
 
-  it("keeps the decision chain in source order when the remainder feeds another gate", async () => {
-    const graph = await graphFor(`
-      function First() { return <span />; }
-      function Second() { return <aside />; }
-      export function App({ status, catalog }) {
-        if (status === "loading") return <main>Loading</main>;
-        if (status === "error") return <main>Error</main>;
-        if (!catalog) return <First />;
-        return <Second />;
-      }
-    `);
-    const status = graph.layoutContext.controls.find((control) => control.label === "status")!;
-    const catalog = graph.layoutContext.controls.find((control) => control.label === "catalog")!;
-    const projected = projectDecisionNodes(graph);
-
-    // The catalog gate sits after the status gates in source, so its decision
-    // node hangs off the status remainder arm — never the other way around,
-    // which stranded the graph whenever status left the remainder case.
-    const intoCatalog = projected.edges.find(
-      (edge) => edge.target === catalog.controlId && edge.source !== catalog.controlId,
-    )!;
-    expect(intoCatalog.source).toBe(status.controlId);
-    expect(intoCatalog.sourcePort).toBe("otherwise");
-    expect(intoCatalog.activeWhen).toEqual([[{ controlId: status.controlId, value: "otherwise" }]]);
-
-    // One remainder arm reaches the catalog decision; the instance split rides
-    // the catalog's own arms instead of duplicating the remainder label.
-    const remainderArms = projected.edges.filter(
-      (edge) => edge.source === status.controlId && edge.sourcePort === "otherwise",
-    );
-    expect(remainderArms).toHaveLength(1);
-    const firstEdge = projected.edges.find(
-      (edge) => edge.source === catalog.controlId && edge.target === edgeTo(graph, "First").targetNodeId,
-    )!;
-    expect(firstEdge).toMatchObject({
-      sourcePort: "true",
-      activeWhen: [
-        [
-          { controlId: status.controlId, value: "otherwise" },
-          { controlId: catalog.controlId, value: "true" },
-        ],
-      ],
-    });
-    expect(projected.edges.find((edge) => edge.target === edgeTo(graph, "Second").targetNodeId)).toMatchObject({
-      source: catalog.controlId,
-    });
-  });
-
   it.each([
     { condition: "!catalog", onLabel: "catalog" },
     { condition: "!(catalog)", onLabel: "(catalog)" },
@@ -722,7 +650,7 @@ describe("component rendering controls", () => {
         { caseId: "true", label: condition },
       ],
     });
-    expect(catalog).not.toHaveProperty("dependsOn");
+    expect(catalog.dependsOn).toEqual([[]]);
     expect(edgeTo(graph, "First")).toMatchObject({
       activeWhen: [[{ controlId: catalog.controlId, value: "true" }]],
     });
@@ -907,7 +835,7 @@ describe("component rendering controls", () => {
       function Shell({ children, visible }) { return <>{visible && children}</>; }
       export function App({ ready }) { return <Shell>{ready && <Leaf />}</Shell>; }
     `);
-    expect(Object.hasOwn(unfocused.layoutContext, "auxiliaryDefinitions")).toBe(false);
+    expect(unfocused.layoutContext.auxiliaryDefinitions).toEqual([]);
   });
 
   it("keeps only the created seed as root of a conditional source cycle", async () => {
@@ -990,14 +918,14 @@ describe("component rendering controls", () => {
   it.each([
     ["<Child />", "default"],
     ["ready && <Child />", "control"],
-  ])("omits default composition for %s", async (expression, type) => {
+  ])("normalizes direct composition for %s", async (expression, type) => {
     const graph = await graphFor(`
       function Child() { return <span />; }
       export function App({ ready }) { return ${expression}; }
     `);
     const edge = edgeTo(graph, "Child");
     expect(edge.type).toBe(type);
-    expect(edge).not.toHaveProperty("layoutContext");
+    expect(edge.layoutContext).toEqual({ composition: null });
   });
 
   it("combines supplier and consumer controls for children, node, render and component props", async () => {
@@ -1308,6 +1236,7 @@ describe("component rendering controls", () => {
           ownerNodeId: app.nodeId,
           label: "ready",
           type: "conditional",
+          dependsOn: [[]],
         },
       ],
     });

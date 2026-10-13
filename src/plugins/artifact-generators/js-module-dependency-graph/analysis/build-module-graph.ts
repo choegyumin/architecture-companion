@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { basename, dirname, join, relative } from "node:path";
 
-import { type DiagramGraph, diagramGraphSchema } from "@/features/diagram/diagram-graph";
+import type z from "zod";
+
+import { type DependencyDiagramGraph, dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
 import {
@@ -26,14 +28,16 @@ type LocalBoundary = Readonly<{
   rootPath: string;
 }>;
 
+type ModuleGraphInput = z.input<typeof dependencyDiagramGraphSchema>;
+
 type LocalGroupDescriptor = Readonly<{
-  group: DiagramGraph["groups"][number];
+  group: ModuleGraphInput["groups"][number];
   parentId: string | undefined;
 }>;
 
 type LocalGrouping = Readonly<{
   groupIdByFile: ReadonlyMap<string, string>;
-  groups: readonly DiagramGraph["groups"][number][];
+  groups: readonly ModuleGraphInput["groups"][number][];
 }>;
 
 function compareById<K extends "groupId" | "nodeId" | "edgeId">(
@@ -163,11 +167,11 @@ async function buildDiagramGraph(
   scopePath: string,
   discoveredSources: readonly DiscoveredSourceFile[],
   analyzedModules: readonly AnalyzedModule[],
-): Promise<DiagramGraph> {
+): Promise<DependencyDiagramGraph> {
   const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
   const groups = new Map(localGrouping.groups.map((group) => [group.groupId, group]));
   const localNodeByPath = new Map<string, string>();
-  const nodes: DiagramGraph["nodes"][number][] = [];
+  const nodes: ModuleGraphInput["nodes"][number][] = [];
 
   for (const { absolutePath, relativePath } of discoveredSources) {
     const id = moduleNodeId(relativePath);
@@ -182,8 +186,8 @@ async function buildDiagramGraph(
     });
   }
 
-  const externalNodes = new Map<string, DiagramGraph["nodes"][number]>();
-  const edges = new Map<string, DiagramGraph["edges"][number]>();
+  const externalNodes = new Map<string, ModuleGraphInput["nodes"][number]>();
+  const edges = new Map<string, ModuleGraphInput["edges"][number]>();
 
   for (const { absolutePath, dependencies } of analyzedModules) {
     const source = localNodeByPath.get(absolutePath);
@@ -220,14 +224,14 @@ async function buildDiagramGraph(
     }
   }
 
-  return diagramGraphSchema.parse({
+  return dependencyDiagramGraphSchema.parse({
     groups: [...groups.values()].toSorted(compareById("groupId")),
     nodes: [...externalNodes.values(), ...nodes].toSorted(compareById("nodeId")),
     edges: [...edges.values()].toSorted(compareById("edgeId")),
-  });
+  } satisfies ModuleGraphInput);
 }
 
-export async function buildModuleGraph(options: ModuleGraphOptions): Promise<DiagramGraph> {
+export async function buildModuleGraph(options: ModuleGraphOptions): Promise<DependencyDiagramGraph> {
   const scopePath = await resolveScopePath(options.scopePath);
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
   const discoveredSources = await collectSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);

@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
+import { toDiagramGraphInput } from "@/features/diagram/diagram-graph";
+
 import { buildComponentGraph, type ComponentGraphOptions } from "../analysis/build-component-graph";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
@@ -75,7 +77,7 @@ export async function executeReactComponentStructureCommand(
     "graph.json",
   );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
-  await writeFile(resolvedOutputPath, `${JSON.stringify(graph, undefined, 2)}\n`);
+  await writeFile(resolvedOutputPath, `${JSON.stringify(toDiagramGraphInput(graph), undefined, 2)}\n`);
   environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}\n`);
   return resolvedOutputPath;
 }

@@ -73,6 +73,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
+          type: "default",
           groupId: "group:external-packages",
           title: "External packages",
         },
@@ -142,10 +143,12 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
+          type: "default",
           groupId: "group:directory:src",
           title: "src",
         },
         {
+          type: "default",
           groupId: "group:package:packages/nested",
           title: "nested-package",
           description: "Package packages/nested",
@@ -189,10 +192,12 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
+          type: "default",
           groupId: "group:directory:src/client",
           title: "client",
         },
         {
+          type: "default",
           groupId: "group:directory:src/server",
           title: "server",
         },
@@ -224,10 +229,12 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
+          type: "default",
           groupId: "group:directory:scripts",
           title: "scripts",
         },
         {
+          type: "default",
           groupId: "group:directory:src",
           title: "src",
         },
@@ -258,6 +265,7 @@ describe("JavaScript module dependency graph generator", () => {
 
       expect(graph.groups).toEqual([
         {
+          type: "default",
           groupId: "group:directory:packages/nested/lib",
           title: "lib",
         },

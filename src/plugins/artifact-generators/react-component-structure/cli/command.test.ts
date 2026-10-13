@@ -3,9 +3,13 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 
-import type { ComponentStructureDiagramGraph } from "@/features/diagram/diagram-graph";
+import type z from "zod";
+
+import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
 
 import { executeReactComponentStructureCommand } from "./command";
+
+type ComponentGraphInput = z.input<typeof componentStructureDiagramGraphSchema>;
 
 async function withFixture(
   files: Readonly<Record<string, string>>,
@@ -108,13 +112,12 @@ describe("React component structure command", () => {
       });
 
       try {
-        const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentStructureDiagramGraph;
+        const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentGraphInput;
         expect(outputs).toEqual([`${JSON.stringify({ graphPath: graphPath })}\n`]);
         expect(graph).toEqual({
           groups: [],
           nodes: [
             expect.objectContaining({
-              type: "default",
               title: "App",
               layoutContext: { definitionId: "component:src/app.tsx#App", origins: [] },
             }),
@@ -127,6 +130,59 @@ describe("React component structure command", () => {
         await rm(dirname(graphPath), { recursive: true });
       }
     });
+  });
+
+  it("omits stored defaults while preserving branch and prerequisite semantics", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Plain() { return <main />; }
+          function First() { return <span />; }
+          function Second() { return <aside />; }
+          function Chooser({ mode }) {
+            switch (mode) {
+              case "first": return <First />;
+              case "second": return <Second />;
+              default: return <Plain />;
+            }
+          }
+          export function App({ enabled, choice, mode }) {
+            return <><Plain /><Chooser mode={mode} />{enabled && (choice ? <First /> : <Second />)}</>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentGraphInput;
+          const parsed = componentStructureDiagramGraphSchema.parse(graph);
+          expect(graph.nodes.every((node) => node.type === undefined)).toBe(true);
+          expect(graph.edges.some((edge) => edge.type === undefined)).toBe(true);
+          expect(graph.edges.some((edge) => edge.type === "control")).toBe(true);
+          expect(graph.edges.every((edge) => edge.layoutContext === undefined)).toBe(true);
+          expect(graph.layoutContext).not.toHaveProperty("auxiliaryDefinitions");
+          expect(graph.layoutContext.controls.find(({ label }) => label === "enabled")).not.toHaveProperty("dependsOn");
+          expect(graph.layoutContext.controls.find(({ label }) => label === "mode")).not.toHaveProperty("polarityPair");
+          expect(graph.layoutContext.controls.find(({ label }) => label === "choice")).toMatchObject({
+            polarityPair: true,
+            dependsOn: [[{ controlId: expect.any(String), value: "on" }]],
+          });
+          expect(parsed.nodes.every((node) => node.type === "default")).toBe(true);
+          expect(parsed.edges.every((edge) => edge.layoutContext.composition === null)).toBe(true);
+          expect(parsed.layoutContext.auxiliaryDefinitions).toEqual([]);
+          expect(parsed.layoutContext.controls.find(({ label }) => label === "enabled")).toMatchObject({
+            dependsOn: [[]],
+          });
+          expect(parsed.layoutContext.controls.find(({ label }) => label === "mode")).toMatchObject({
+            polarityPair: false,
+          });
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
   });
 
   it("applies --root through the command seam", async () => {
@@ -157,7 +213,7 @@ describe("React component structure command", () => {
         );
 
         try {
-          const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentStructureDiagramGraph;
+          const graph = JSON.parse(await readFile(graphPath, "utf8")) as ComponentGraphInput;
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["Content", "Layout"]);
         } finally {
           await rm(dirname(graphPath), { recursive: true });
