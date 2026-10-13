@@ -1,10 +1,24 @@
+import type { z } from "zod";
+
 import {
-  elkLayeredDiagramLayoutConfigSchema,
-  layoutElkLayeredDiagram,
+  layoutGeneralDiagram as calculateLayout,
   straightenLayeredEdges,
-} from "@/features/diagram/_layout/elk-layered-diagram-layout";
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+} from "@/client/widgets/general-diagram-renderer.layout";
+import type { GeneralDiagramGraph } from "@/features/diagram/diagram-graph";
+import { generalDiagramLayoutConfigSchema } from "@/features/diagram/diagram-layout";
 import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+
+function layoutGeneralDiagram(
+  graph: Parameters<typeof calculateLayout>[0],
+  sizes: Parameters<typeof calculateLayout>[1],
+  options?: z.input<typeof generalDiagramLayoutConfigSchema>["options"],
+) {
+  return calculateLayout(
+    graph,
+    sizes,
+    generalDiagramLayoutConfigSchema.parse({ layoutId: "general", options }).options,
+  );
+}
 
 const diagramBase = {
   groups: [],
@@ -12,7 +26,7 @@ const diagramBase = {
 
 const groupedDiagram = {
   ...diagramBase,
-  groups: [{ groupId: "checkout", title: "Checkout" }],
+  groups: [{ type: "default", groupId: "checkout", title: "Checkout" }],
   nodes: [
     {
       nodeId: "checkout-page",
@@ -37,7 +51,7 @@ const groupedDiagram = {
       targetNodeId: "payment-client",
     },
   ],
-} satisfies DiagramGraph;
+} satisfies GeneralDiagramGraph;
 
 const groupedNodeSizes = {
   "checkout-page": { width: 288, height: 176 },
@@ -52,14 +66,14 @@ const directionDiagram = {
     { nodeId: "target", type: "default", kind: "target", title: "Target" },
   ],
   edges: [{ edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" }],
-} satisfies DiagramGraph;
+} satisfies GeneralDiagramGraph;
 
 const directionNodeSizes = {
   source: { width: 100, height: 100 },
   target: { width: 100, height: 100 },
 } as const;
 
-describe("ELK layered diagram layout", () => {
+describe("general diagram layout", () => {
   it("places the root near the graph center in a tree mixing deep chains and a wide fan", async () => {
     const diagram = {
       ...diagramBase,
@@ -78,10 +92,10 @@ describe("ELK layered diagram layout", () => {
         { edgeId: "root-fan-b", type: "default", sourceNodeId: "root", targetNodeId: "fan-b" },
         { edgeId: "root-fan-c", type: "default", sourceNodeId: "root", targetNodeId: "fan-c" },
       ],
-    } satisfies DiagramGraph;
+    } satisfies GeneralDiagramGraph;
     const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 288, height: 176 }]));
 
-    const result = await layoutElkLayeredDiagram(diagram, nodeSizes);
+    const result = await layoutGeneralDiagram(diagram, nodeSizes);
     const root = result.nodes.find(({ id }) => id === "root");
     const graphMinY = Math.min(...result.nodes.map(({ position }) => position.y));
     const graphMaxY = Math.max(...result.nodes.map(({ position, size }) => position.y + size.height));
@@ -91,7 +105,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("lays out left to right by default", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes);
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes);
     const source = result.nodes.find(({ id }) => id === "source");
     const target = result.nodes.find(({ id }) => id === "target");
 
@@ -101,7 +115,7 @@ describe("ELK layered diagram layout", () => {
 
   it("accepts a direction per layout request", async () => {
     const options = { elk: { direction: "DOWN" } } as const;
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, options);
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, options);
     const source = result.nodes.find(({ id }) => id === "source");
     const target = result.nodes.find(({ id }) => id === "target");
 
@@ -110,7 +124,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("marks edges for spline rendering when edgeRouting is SPLINES", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       elk: { direction: "RIGHT", "layered.edgeRouting": "SPLINES" },
     });
 
@@ -118,8 +132,8 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("keeps polyline edges when edgeRouting is omitted or orthogonal", async () => {
-    const defaults = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes);
-    const orthogonal = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const defaults = await layoutGeneralDiagram(directionDiagram, directionNodeSizes);
+    const orthogonal = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       elk: { "layered.edgeRouting": "ORTHOGONAL" },
     });
 
@@ -128,7 +142,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("routes border-to-border bezier edges when bezierEdges is set", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       bezierEdges: true,
     });
 
@@ -154,10 +168,10 @@ describe("ELK layered diagram layout", () => {
         { edgeId: "obstacle-target", type: "default", sourceNodeId: "obstacle", targetNodeId: "target" },
         { edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" },
       ],
-    } satisfies DiagramGraph;
+    } satisfies GeneralDiagramGraph;
     const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 100, height: 100 }]));
 
-    const result = await layoutElkLayeredDiagram(diagram, nodeSizes, {
+    const result = await layoutGeneralDiagram(diagram, nodeSizes, {
       nudgeObstacleNodes: true,
       bezierEdges: true,
       elk: { direction: "DOWN" },
@@ -168,7 +182,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("resolves a raw direction alias like the verified option", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       elk: { "_.direction": "DOWN" },
     });
     const source = result.nodes.find(({ id }) => id === "source");
@@ -179,7 +193,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("prefers the verified option when both forms are declared", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       elk: { "layered.edgeRouting": "SPLINES", "_.layered.edgeRouting": "ORTHOGONAL" },
     });
 
@@ -187,7 +201,7 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("passes raw elk options through unverified", async () => {
-    const result = await layoutElkLayeredDiagram(directionDiagram, directionNodeSizes, {
+    const result = await layoutGeneralDiagram(directionDiagram, directionNodeSizes, {
       elk: { "_.layered.thoroughness": "1" },
     });
 
@@ -195,8 +209,8 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("rejects elk option keys that are neither verified nor raw", () => {
-    const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-      layoutId: "elk-layered",
+    const parsed = generalDiagramLayoutConfigSchema.safeParse({
+      layoutId: "general",
       options: { elk: { "layered.thoroughness": "9" } },
     });
 
@@ -207,8 +221,8 @@ describe("ELK layered diagram layout", () => {
 
   it("rejects raw padding and spacing options as design-owned", () => {
     for (const key of ["_.padding", "_.spacing.nodeNode", "_.layered.spacing.baseValue"]) {
-      const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-        layoutId: "elk-layered",
+      const parsed = generalDiagramLayoutConfigSchema.safeParse({
+        layoutId: "general",
         options: { elk: { [key]: "40" } },
       });
 
@@ -219,8 +233,8 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("rejects non-string values for raw elk options", () => {
-    const parsed = elkLayeredDiagramLayoutConfigSchema.safeParse({
-      layoutId: "elk-layered",
+    const parsed = generalDiagramLayoutConfigSchema.safeParse({
+      layoutId: "general",
       options: { elk: { "_.layered.thoroughness": 9 } },
     });
 
@@ -231,9 +245,9 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...directionDiagram,
       edges: [],
-    } satisfies DiagramGraph;
+    } satisfies GeneralDiagramGraph;
 
-    const result = await layoutElkLayeredDiagram(diagram, directionNodeSizes);
+    const result = await layoutGeneralDiagram(diagram, directionNodeSizes);
 
     expect(result.initialView).toEqual({ mode: "fit" });
   });
@@ -242,14 +256,14 @@ describe("ELK layered diagram layout", () => {
     const diagram = {
       ...diagramBase,
       groups: [
-        { groupId: "empty", title: "Empty" },
-        { groupId: "sibling", title: "Sibling" },
+        { type: "default", groupId: "empty", title: "Empty" },
+        { type: "default", groupId: "sibling", title: "Sibling" },
       ],
       nodes: [{ nodeId: "solo", type: "default", kind: "source", title: "Solo", groupId: "sibling" }],
       edges: [],
-    } satisfies DiagramGraph;
+    } satisfies GeneralDiagramGraph;
 
-    const result = await layoutElkLayeredDiagram(diagram, { solo: { width: 100, height: 100 } });
+    const result = await layoutGeneralDiagram(diagram, { solo: { width: 100, height: 100 } });
     const empty = result.groups.find(({ id }) => id === "empty");
     const sibling = result.groups.find(({ id }) => id === "sibling");
 
@@ -267,13 +281,13 @@ describe("ELK layered diagram layout", () => {
   });
 
   it("rejects nodes with a missing measured size", async () => {
-    await expect(layoutElkLayeredDiagram(directionDiagram, { source: directionNodeSizes.source })).rejects.toThrow(
+    await expect(layoutGeneralDiagram(directionDiagram, { source: directionNodeSizes.source })).rejects.toThrow(
       "Missing measured node size: target",
     );
   });
 
   it("returns provider-agnostic placement and directed edge routes", async () => {
-    const result = await layoutElkLayeredDiagram(groupedDiagram, groupedNodeSizes);
+    const result = await layoutGeneralDiagram(groupedDiagram, groupedNodeSizes);
 
     expect(result.nodes.map(({ id }) => id)).toEqual(["checkout-page", "payment-client"]);
     expect(result.nodes.every(({ position }) => Number.isFinite(position.x) && Number.isFinite(position.y))).toBe(true);
@@ -304,11 +318,11 @@ describe("ELK layered diagram layout", () => {
         { edgeId: "obstacle-target", type: "default", sourceNodeId: "obstacle", targetNodeId: "target" },
         { edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" },
       ],
-    } satisfies DiagramGraph;
+    } satisfies GeneralDiagramGraph;
     const nodeSizes = Object.fromEntries(diagram.nodes.map(({ nodeId }) => [nodeId, { width: 100, height: 100 }]));
 
-    const defaults = await layoutElkLayeredDiagram(diagram, nodeSizes, { elk: { direction: "DOWN" } });
-    const nudged = await layoutElkLayeredDiagram(diagram, nodeSizes, {
+    const defaults = await layoutGeneralDiagram(diagram, nodeSizes, { elk: { direction: "DOWN" } });
+    const nudged = await layoutGeneralDiagram(diagram, nodeSizes, {
       nudgeObstacleNodes: true,
       elk: { direction: "DOWN" },
     });
@@ -352,12 +366,12 @@ function toStraightenedLayout(
 
 function toStraightenedGraph(
   edgeSpecs: ReadonlyArray<{ edgeId: string; sourceNodeId: string; targetNodeId: string }>,
-): DiagramGraph {
+): GeneralDiagramGraph {
   return {
     groups: [],
     nodes: [],
     edges: edgeSpecs.map((edge) => ({ ...edge, type: "default" })),
-  } as unknown as DiagramGraph;
+  } as unknown as GeneralDiagramGraph;
 }
 
 describe("straightenLayeredEdges", () => {

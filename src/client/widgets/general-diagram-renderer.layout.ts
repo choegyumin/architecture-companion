@@ -1,10 +1,16 @@
-import z from "zod";
-
+import type { GeneralDiagramGraph } from "@/features/diagram/diagram-graph";
+import type { GeneralDiagramLayoutConfig } from "@/features/diagram/diagram-layout";
+import type {
+  DiagramLayout,
+  DiagramLayoutEdge,
+  DiagramLayoutNode,
+  DiagramLayoutPoint,
+  DiagramNodeSizes,
+} from "@/features/diagram/diagram-spatial";
 import {
   centerOf,
   clipSegment,
   ELK_ROOT_ID,
-  elkOptionMapSchema,
   expanded,
   layoutWithElkCore,
   lerp,
@@ -18,29 +24,7 @@ import {
   toElkViewportPolicy,
   toNodeRects,
   toPlainElkNode,
-} from "@/features/diagram/_layout/elk-core";
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
-import type {
-  DiagramLayout,
-  DiagramLayoutEdge,
-  DiagramLayoutNode,
-  DiagramNodeSizes,
-} from "@/features/diagram/diagram-spatial";
-
-export const elkLayeredDiagramLayoutConfigSchema = z
-  .object({
-    layoutId: z.literal("elk-layered"),
-    options: z
-      .object({
-        nudgeObstacleNodes: z.boolean().optional(),
-        bezierEdges: z.boolean().optional(),
-        elk: elkOptionMapSchema.optional(),
-      })
-      .strict()
-      .optional(),
-  })
-  .strict();
-export type ElkLayeredDiagramLayoutConfig = z.infer<typeof elkLayeredDiagramLayoutConfigSchema>;
+} from "@/features/diagram/elk-core";
 
 // Opt-in straight-line edge routing for layered diagrams: every resolvable edge
 // becomes a single source-border to target-border segment, and obstacle nodes
@@ -53,13 +37,18 @@ const CLEARANCE = 40;
 const GROUP_CLEARANCE = 16;
 
 function toStraightEdges(
-  graph: DiagramGraph,
+  graph: GeneralDiagramGraph,
   layout: DiagramLayout,
   rects: ReadonlyMap<string, Rect>,
 ): DiagramLayoutEdge[] {
   return layout.edges.map<DiagramLayoutEdge>((placement) => {
     const edge = graph.edges.find(({ edgeId }) => edgeId === placement.id);
     if (!edge || edge.type === "message") return placement;
+    if (
+      edge.sourceNodeId === edge.targetNodeId &&
+      graph.nodes.some((node) => node.nodeId === edge.sourceNodeId && node.type === "diamond")
+    )
+      return placement;
     const source = rects.get(edge.sourceNodeId);
     const target = rects.get(edge.targetNodeId);
     if (!source || !target) return placement;
@@ -76,7 +65,7 @@ function toStraightEdges(
 }
 
 export function straightenLayeredEdges(
-  graph: DiagramGraph,
+  graph: GeneralDiagramGraph,
   layout: DiagramLayout,
   direction: ReturnType<typeof resolveElkLayeredOptions>["direction"],
 ): DiagramLayout {
@@ -155,10 +144,43 @@ function toBezierRoutedLayout(layout: DiagramLayout): DiagramLayout {
   return { ...layout, edges: layout.edges.map((edge) => ({ ...edge, routing: "bezier" as const })) };
 }
 
-export async function layoutElkLayeredDiagram(
-  diagram: DiagramGraph,
+function anchorDiamondEdges(graph: GeneralDiagramGraph, layout: DiagramLayout): DiagramLayout {
+  const diamondIds = new Set(graph.nodes.filter((node) => node.type === "diamond").map(({ nodeId }) => nodeId));
+  if (diamondIds.size === 0) return layout;
+  const rects = toNodeRects(layout.nodes, layout.groups);
+  const anchor = (nodeId: string, point: DiagramLayoutPoint, toward: DiagramLayoutPoint): DiagramLayoutPoint => {
+    if (!diamondIds.has(nodeId)) return point;
+    const rect = rects.get(nodeId);
+    if (!rect) throw new Error(`Missing diamond placement: ${nodeId}`);
+    const center = centerOf(rect);
+    // DiamondNode scales its 48-unit viewBox, with tips inset by 2 units.
+    const halfWidth = ((rect.max.x - rect.min.x) * 22) / 48;
+    const halfHeight = ((rect.max.y - rect.min.y) * 22) / 48;
+    const dx = toward.x - center.x;
+    const dy = toward.y - center.y;
+    const distance = Math.abs(dx) / halfWidth + Math.abs(dy) / halfHeight;
+    return distance === 0 ? point : { x: center.x + dx / distance, y: center.y + dy / distance };
+  };
+  const edgeById = new Map(graph.edges.map((edge) => [edge.edgeId, edge]));
+  return {
+    ...layout,
+    edges: layout.edges.map((placement) => {
+      const edge = edgeById.get(placement.id);
+      if (!edge || placement.points.length < 2) return placement;
+      const points = [...placement.points];
+      const first = points.at(0)!;
+      const last = points.at(-1)!;
+      points[0] = anchor(edge.sourceNodeId, first, points.at(1)!);
+      points[points.length - 1] = anchor(edge.targetNodeId, last, placement.points.at(-2)!);
+      return { ...placement, points };
+    }),
+  };
+}
+
+export async function layoutGeneralDiagram(
+  diagram: GeneralDiagramGraph,
   nodeSizes: DiagramNodeSizes,
-  options?: ElkLayeredDiagramLayoutConfig["options"],
+  options?: GeneralDiagramLayoutConfig["options"],
 ): Promise<DiagramLayout> {
   const resolved = resolveElkLayeredOptions(options?.elk);
   const placed = await layoutWithElkCore(
@@ -190,15 +212,21 @@ export async function layoutElkLayeredDiagram(
   };
   if (options?.nudgeObstacleNodes === true) {
     const straightened = straightenLayeredEdges(diagram, layout, resolved.direction);
-    return options.bezierEdges === true ? toBezierRoutedLayout(straightened) : straightened;
+    return anchorDiamondEdges(
+      diagram,
+      options.bezierEdges === true ? toBezierRoutedLayout(straightened) : straightened,
+    );
   }
   if (options?.bezierEdges === true) {
     // Border-to-border segments without obstacle nudging; the renderer sways
     // each two-point edge into a natural bezier and smooths any leftover route.
-    return toBezierRoutedLayout({
-      ...layout,
-      edges: toStraightEdges(diagram, layout, toNodeRects(layout.nodes, layout.groups)),
-    });
+    return anchorDiamondEdges(
+      diagram,
+      toBezierRoutedLayout({
+        ...layout,
+        edges: toStraightEdges(diagram, layout, toNodeRects(layout.nodes, layout.groups)),
+      }),
+    );
   }
-  return layout;
+  return anchorDiamondEdges(diagram, layout);
 }
