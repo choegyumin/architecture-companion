@@ -362,6 +362,23 @@ export const generalDiagramGraphSchema = z
   .meta({ id: "GeneralDiagramGraph" });
 export type GeneralDiagramGraph = z.infer<typeof generalDiagramGraphSchema>;
 
+/** The flowchart contract: the general graph narrowed to rectangle and diamond nodes with default edges. Keyed by generator, not layout, because the flowchart generator shares the general layout. */
+export const flowchartDiagramGraphSchema = z
+  .object({
+    ...graphBaseShape,
+    nodes: z
+      .array(z.discriminatedUnion("type", [defaultDiagramNodeSchema, diamondDiagramNodeSchema]))
+      .min(1)
+      .readonly(),
+    edges: z.array(defaultDiagramEdgeSchema).readonly(),
+  })
+  .strict()
+  .superRefine((graph, context) => {
+    for (const issue of validateGraphIntegrity(graph)) context.addIssue(issue);
+  })
+  .meta({ id: "FlowchartGraph" });
+export type FlowchartDiagramGraph = z.infer<typeof flowchartDiagramGraphSchema>;
+
 /* === Layout-specific graphs === */
 
 /** Sequence integrity: activations and fragment branches reference messages in span order. */
@@ -725,10 +742,14 @@ export function toDiagramGraphInput(
 ): z.input<typeof componentStructureDiagramGraphSchema>;
 export function toDiagramGraphInput(graph: SequenceDiagramGraph): z.input<typeof sequenceDiagramGraphSchema>;
 export function toDiagramGraphInput(graph: DependencyDiagramGraph): z.input<typeof dependencyDiagramGraphSchema>;
+export function toDiagramGraphInput(graph: FlowchartDiagramGraph): z.input<typeof flowchartDiagramGraphSchema>;
 export function toDiagramGraphInput(graph: GeneralDiagramGraph): z.input<typeof generalDiagramGraphSchema>;
 export function toDiagramGraphInput(
-  graph: GeneralDiagramGraph | ComponentStructureDiagramGraph,
-): z.input<typeof generalDiagramGraphSchema> | z.input<typeof componentStructureDiagramGraphSchema> {
+  graph: GeneralDiagramGraph | FlowchartDiagramGraph | ComponentStructureDiagramGraph,
+):
+  | z.input<typeof generalDiagramGraphSchema>
+  | z.input<typeof flowchartDiagramGraphSchema>
+  | z.input<typeof componentStructureDiagramGraphSchema> {
   if ("layoutContext" in graph) {
     const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
     return {

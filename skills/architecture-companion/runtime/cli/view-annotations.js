@@ -24016,6 +24016,13 @@ var graphBaseShape = {
 var generalDiagramGraphSchema = external_exports.object(graphBaseShape).strict().superRefine((graph, context) => {
   for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
 }).meta({ id: "GeneralDiagramGraph" });
+var flowchartDiagramGraphSchema = external_exports.object({
+  ...graphBaseShape,
+  nodes: external_exports.array(external_exports.discriminatedUnion("type", [defaultDiagramNodeSchema, diamondDiagramNodeSchema])).min(1).readonly(),
+  edges: external_exports.array(defaultDiagramEdgeSchema).readonly()
+}).strict().superRefine((graph, context) => {
+  for (const issue2 of validateGraphIntegrity(graph)) context.addIssue(issue2);
+}).meta({ id: "FlowchartGraph" });
 function validateSequenceGraph(graph) {
   const issues = [];
   const messageEdges = graph.edges.filter((edge) => edge.type === "message");
@@ -24364,6 +24371,10 @@ var artifactBaseShape = {
 };
 var diagramMemberSchema = (layout, graph) => external_exports.object({ layout, graph }).strict();
 var generalDiagramSchema = diagramMemberSchema(generalDiagramLayoutConfigSchema, generalDiagramGraphSchema);
+var flowchartDiagramSchema = diagramMemberSchema(
+  generalDiagramLayoutConfigSchema,
+  flowchartDiagramGraphSchema
+);
 var sequenceDiagramSchema = diagramMemberSchema(sequenceDiagramLayoutConfigSchema, sequenceDiagramGraphSchema);
 var dependencyGraphDiagramSchema = diagramMemberSchema(
   dependencyGraphLayoutConfigSchema,
@@ -24375,6 +24386,7 @@ var componentStructureDiagramSchema = diagramMemberSchema(
 );
 var diagramSchema = external_exports.union([
   generalDiagramSchema,
+  flowchartDiagramSchema,
   sequenceDiagramSchema,
   dependencyGraphDiagramSchema,
   componentStructureDiagramSchema
@@ -24389,18 +24401,20 @@ var diagramMembersByLayoutId = {
   "dependency-graph": dependencyGraphDiagramSchema,
   "component-structure": componentStructureDiagramSchema
 };
+var diagramMembersByGenerator = {
+  "built-in:flowchart": flowchartDiagramSchema
+};
 function toIssueMessages(error62) {
   return error62.issues.map(({ message, path }) => path.length > 0 ? `${path.join(".")}: ${message}` : message).join("; ");
 }
 function parseArtifact(input2) {
+  const generator = input2?.generator;
   const layout = input2?.diagram?.layout;
-  if (layout != null && typeof layout === "object" && typeof layout.layoutId === "string") {
-    const member = diagramMembersByLayoutId[layout.layoutId];
-    if (member === void 0) {
-      throw new Error(
-        `Invalid artifact: diagram.layout.layoutId: Unsupported layout configuration: ${layout.layoutId}`
-      );
-    }
+  const member = (typeof generator === "string" ? diagramMembersByGenerator[generator] : void 0) ?? (layout != null && typeof layout === "object" && typeof layout.layoutId === "string" ? diagramMembersByLayoutId[layout.layoutId] : void 0);
+  if (member === void 0 && layout != null && typeof layout === "object" && typeof layout.layoutId === "string") {
+    throw new Error(`Invalid artifact: diagram.layout.layoutId: Unsupported layout configuration: ${layout.layoutId}`);
+  }
+  if (member !== void 0) {
     const diagram = input2.diagram;
     const diagramResult = member.safeParse(diagram);
     if (!diagramResult.success) {

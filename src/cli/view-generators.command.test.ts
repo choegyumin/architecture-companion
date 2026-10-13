@@ -166,6 +166,12 @@ describe("artifact generator discovery command", () => {
 
       expect(JSON.parse(outputs.at(0) as string)).toEqual([
         {
+          id: "flowchart",
+          description: expect.any(String),
+          source: "built-in",
+          path: resolve(builtInRoot, "flowchart"),
+        },
+        {
           id: "freeform",
           description: expect.any(String),
           source: "built-in",

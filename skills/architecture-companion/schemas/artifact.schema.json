@@ -104,6 +104,49 @@
               "properties": {
                 "layoutId": {
                   "type": "string",
+                  "const": "general"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "nudgeObstacleNodes": {
+                      "default": false,
+                      "type": "boolean"
+                    },
+                    "bezierEdges": {
+                      "default": false,
+                      "type": "boolean"
+                    },
+                    "elk": {
+                      "$ref": "#/$defs/ElkOptions"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "layoutId"
+              ],
+              "additionalProperties": false
+            },
+            "graph": {
+              "$ref": "#/$defs/FlowchartGraph"
+            }
+          },
+          "required": [
+            "layout",
+            "graph"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "type": "object",
+              "properties": {
+                "layoutId": {
+                  "type": "string",
                   "const": "sequence"
                 }
               },
@@ -795,6 +838,53 @@
         "type",
         "sourceNodeId",
         "targetNodeId"
+      ],
+      "additionalProperties": false
+    },
+    "FlowchartGraph": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultGroup"
+              },
+              {
+                "$ref": "#/$defs/BoundingGroup"
+              }
+            ]
+          }
+        },
+        "nodes": {
+          "readOnly": true,
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DefaultNode"
+              },
+              {
+                "$ref": "#/$defs/DiamondNode"
+              }
+            ]
+          }
+        },
+        "edges": {
+          "readOnly": true,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DefaultEdge"
+          }
+        }
+      },
+      "required": [
+        "groups",
+        "nodes",
+        "edges"
       ],
       "additionalProperties": false
     },

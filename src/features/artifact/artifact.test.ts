@@ -110,6 +110,28 @@ const composition = {
 };
 const nodeLayoutContext = { definitionId: "definition:Shared", origins: composition.origins };
 
+const validFlowchartDiagram = {
+  ...validDiagram,
+  generator: "built-in:flowchart",
+  diagram: {
+    layout: { layoutId: "general" },
+    graph: {
+      groups: [{ groupId: "fulfillment", title: "Fulfillment", type: "default" }],
+      nodes: [
+        { nodeId: "request", type: "default", kind: "start", title: "Checkout requested" },
+        { nodeId: "in-stock", type: "diamond", title: "Item in stock?" },
+        { nodeId: "charge", type: "default", title: "Charge payment", groupId: "fulfillment" },
+        { nodeId: "backorder", type: "default", title: "Create backorder", groupId: "fulfillment" },
+      ],
+      edges: [
+        { edgeId: "begin", type: "default", sourceNodeId: "request", targetNodeId: "in-stock" },
+        { edgeId: "yes", type: "default", sourceNodeId: "in-stock", targetNodeId: "charge", label: "yes" },
+        { edgeId: "no", type: "default", sourceNodeId: "in-stock", targetNodeId: "backorder", label: "no" },
+      ],
+    },
+  },
+} as const;
+
 describe("control storage contract", () => {
   it.each([
     { type: "conditional", label: "ready" },
@@ -656,6 +678,61 @@ describe("artifact parsing", () => {
         },
       }),
     ).toThrow('graph.edges.0.type: Invalid input: expected "default"');
+  });
+
+  it("restricts flowchart graphs to rectangle and diamond nodes", () => {
+    expect(parseArtifact(validFlowchartDiagram)).toEqual(validFlowchartDiagram);
+    const fragment = {
+      nodeId: "fragment",
+      type: "fragment",
+      title: "Alternative",
+      kind: "frame",
+      operator: "alt",
+      branches: [{ branchId: "branch", guard: "valid", startMessageId: "request", endMessageId: "request" }],
+    } as const;
+    for (const node of [...validSequenceDiagram.diagram.graph.nodes, fragment]) {
+      expect(() =>
+        parseArtifact({
+          ...validFlowchartDiagram,
+          diagram: {
+            ...validFlowchartDiagram.diagram,
+            graph: { ...validFlowchartDiagram.diagram.graph, nodes: [node], edges: [] },
+          },
+        }),
+      ).toThrow("Invalid discriminator value. Expected 'default' | 'undefined' | 'diamond'");
+    }
+  });
+
+  it("restricts flowchart graphs to default edges", () => {
+    const control = validComponentDiagram.diagram.graph.edges.at(1);
+    for (const edge of [validSequenceDiagram.diagram.graph.edges.at(0), control]) {
+      expect(() =>
+        parseArtifact({
+          ...validFlowchartDiagram,
+          diagram: {
+            ...validFlowchartDiagram.diagram,
+            graph: { ...validFlowchartDiagram.diagram.graph, edges: [edge] },
+          },
+        }),
+      ).toThrow('graph.edges.0.type: Invalid input: expected "default"');
+    }
+  });
+
+  it("narrows the general graph only for flowchart artifacts", () => {
+    const graph = validSequenceDiagram.diagram.graph;
+    expect(() => parseArtifact({ ...validDiagram, diagram: { layout: { layoutId: "general" }, graph } })).not.toThrow();
+    expect(() =>
+      parseArtifact({ ...validFlowchartDiagram, diagram: { layout: { layoutId: "general" }, graph } }),
+    ).toThrow("Invalid discriminator value. Expected 'default' | 'undefined' | 'diamond'");
+  });
+
+  it("selects the flowchart member by generator before the layout id", () => {
+    expect(() =>
+      parseArtifact({
+        ...validFlowchartDiagram,
+        diagram: { ...validFlowchartDiagram.diagram, layout: { layoutId: "sequence" } },
+      }),
+    ).toThrow('diagram.layout.layoutId: Invalid input: expected "general"');
   });
 
   it("rejects unsupported layout configurations", () => {
