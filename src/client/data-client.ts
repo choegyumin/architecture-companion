@@ -8,6 +8,7 @@ import {
 } from "@/features/annotation/revision-annotations";
 import { parseCatalog } from "@/features/catalog/catalog";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import { type ArtifactWalkthrough, parseArtifactWalkthrough } from "@/features/walkthrough/artifact-walkthrough";
 // oxlint-disable-next-line boundaries/dependencies -- Hono hc requires the server AppType as a type-only RPC contract.
 import type { AppType } from "@/server/create-app";
 
@@ -110,6 +111,7 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
   async function consumeReviewEvents(
     signal: AbortSignal,
     onUpdate: () => void,
+    onSpotlight: (walkthrough: ArtifactWalkthrough) => void,
     onError?: (error: Error) => void,
   ): Promise<void> {
     try {
@@ -134,7 +136,31 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
         while (boundary >= 0) {
           const event = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
-          if (event.split("\n").some((line) => line === "event: review")) onUpdate();
+
+          const eventName = event
+            .split("\n")
+            .find((line) => line.startsWith("event:"))
+            ?.slice("event:".length)
+            .trim();
+          if (eventName === "review") onUpdate();
+
+          if (eventName === "spotlight") {
+            const data = event
+              .split("\n")
+              .find((line) => line.startsWith("data:"))
+              ?.slice("data:".length)
+              .trim();
+            let walkthrough: ArtifactWalkthrough | undefined;
+            try {
+              if (data !== undefined) walkthrough = parseArtifactWalkthrough(JSON.parse(data));
+            } catch {
+              // A malformed spotlight event must not break the review stream.
+            }
+            // Invoked outside the catch so a throwing consumer reaches the
+            // stream's error boundary instead of passing as malformed data.
+            if (walkthrough !== undefined) onSpotlight(walkthrough);
+          }
+
           boundary = buffer.indexOf("\n\n");
         }
 
@@ -184,9 +210,13 @@ export function createDataClient(baseUrl: string, fetcher: typeof fetch = global
 
       return result;
     },
-    subscribeToReviewUpdates: (onUpdate: () => void, onError?: (error: Error) => void) => {
+    subscribeToReviewUpdates: (
+      onUpdate: () => void,
+      onError?: (error: Error) => void,
+      onSpotlight?: (walkthrough: ArtifactWalkthrough) => void,
+    ) => {
       const controller = new AbortController();
-      void consumeReviewEvents(controller.signal, onUpdate, onError);
+      void consumeReviewEvents(controller.signal, onUpdate, onSpotlight ?? (() => undefined), onError);
 
       return () => controller.abort();
     },
