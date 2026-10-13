@@ -32,6 +32,7 @@ const expectedTopLevelEntries = [
   "review-follow-up.md",
   "runtime",
   "schemas",
+  "spotlight.md",
 ] as const;
 const expectedRuntimeEntries = ["artifact-generators", "cli", "client"] as const;
 const expectedCliFiles = [
@@ -250,6 +251,7 @@ async function verifySkillResources(rootPath: string): Promise<void> {
   assert.match(await readRequiredText(join(rootPath, "SKILL.md")), /^---\nname: architecture-companion\n/);
   await readRequiredText(join(rootPath, "artifact-writing.md"));
   await readRequiredText(join(rootPath, "review-follow-up.md"));
+  await readRequiredText(join(rootPath, "spotlight.md"));
 
   const schemasRoot = join(rootPath, "schemas");
   assert.deepEqual((await readdir(schemasRoot)).toSorted(), [...generatedSchemaFileNames].toSorted());
