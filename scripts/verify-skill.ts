@@ -47,6 +47,7 @@ const repositoryRoot = packageRoot;
 const skillSourceRoot = join(packageRoot, "skills", "architecture-companion");
 const sourceGeneratorsRoot = join(packageRoot, "src", "plugins", "artifact-generators");
 const expectedBuiltInGeneratorFiles = {
+  flowchart: ["GENERATOR.md"],
   freeform: ["GENERATOR.md"],
   "js-module-dependency-graph": ["GENERATOR.md", "run.js"],
   "react-component-structure": ["GENERATOR.md", "run.js"],
