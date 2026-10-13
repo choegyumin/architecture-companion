@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import type { ComponentProps, MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,20 +11,14 @@ const mocks = vi.hoisted(() => {
   return {
     platform: { os: { mac: false } },
     flowInstance: { screenToFlowPosition, fitView },
-    nodes: [] as { id: string; type: string; parentId?: string; className?: string }[],
     screenToFlowPosition,
     fitView,
   };
 });
 
 vi.mock("@base-ui/utils/platform", () => ({ platform: mocks.platform }));
-
 vi.mock("@xyflow/react", () => ({
   Background: () => null,
-  ControlButton: ({ children, ...props }: ComponentProps<"button">) => <button {...props}>{children}</button>,
-  Controls: ({ children }: { children: ReactNode }) => <>{children}</>,
-  Panel: ({ children }: { children: ReactNode }) => <>{children}</>,
-  useReactFlow: () => ({ getNodes: () => mocks.nodes }),
   useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
   ReactFlow: ({
     children,
@@ -44,7 +37,6 @@ vi.mock("@xyflow/react", () => ({
     onNodeClick?: (event: MouseEvent<Element>, node: { id: string; type: string }) => void;
     onPaneClick?: (event: MouseEvent<Element>) => void;
   }) => {
-    mocks.nodes = [...nodes];
     useEffect(() => {
       onInit(mocks.flowInstance);
     }, [onInit]);
@@ -92,9 +84,7 @@ describe("diagram canvas", () => {
     render(<DiagramCanvas edges={[]} nodes={[]} onCanvasClick={onCanvasClick} />);
     const pane = await screen.findByLabelText("React Flow pane");
     await act(async () => undefined);
-
     fireEvent.click(pane, { clientX: 120, clientY: 80 });
-
     expect(mocks.screenToFlowPosition).toHaveBeenCalledWith({ x: 120, y: 80 });
     expect(onCanvasClick).toHaveBeenCalledWith({ x: 12, y: 34 }, undefined);
   });
@@ -113,12 +103,7 @@ describe("diagram canvas", () => {
           },
         ]}
         nodes={[
-          {
-            id: "checkout-page",
-            type: "rectangle",
-            position: { x: 0, y: 0 },
-            data: { label: "Checkout page" },
-          },
+          { id: "checkout-page", type: "rectangle", position: { x: 0, y: 0 }, data: { label: "Checkout page" } },
           {
             id: "checkout-boundary",
             type: "labeled-group",
@@ -131,11 +116,9 @@ describe("diagram canvas", () => {
     );
     await screen.findByLabelText("React Flow pane");
     await act(async () => undefined);
-
     fireEvent.click(screen.getByLabelText("React Flow node checkout-page"), { clientX: 120, clientY: 80 });
     fireEvent.click(screen.getByLabelText("React Flow node checkout-boundary"), { clientX: 140, clientY: 90 });
     fireEvent.click(screen.getByLabelText("React Flow edge checkout-edge"), { clientX: 160, clientY: 100 });
-
     expect(onCanvasClick).toHaveBeenNthCalledWith(1, { x: 12, y: 34 }, { type: "node", id: "checkout-page" });
     expect(onCanvasClick).toHaveBeenNthCalledWith(2, { x: 12, y: 34 }, { type: "group", id: "checkout-boundary" });
     expect(onCanvasClick).toHaveBeenNthCalledWith(3, { x: 12, y: 34 }, { type: "edge", id: "checkout-edge" });
@@ -192,11 +175,9 @@ describe("diagram canvas", () => {
       />,
     );
     const pane = await screen.findByLabelText("React Flow pane");
-
     fireEvent.click(screen.getByLabelText("React Flow node file"));
     fireEvent.click(screen.getByLabelText("React Flow node group"));
     fireEvent.click(pane);
-
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
     expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
     expect(onPaneActivate).toHaveBeenCalledOnce();
@@ -230,10 +211,8 @@ describe("diagram canvas", () => {
       />,
     );
     await screen.findByLabelText("React Flow pane");
-
     fireEvent.click(screen.getByLabelText("React Flow node child-node"));
     fireEvent.click(screen.getByLabelText("React Flow node child-group"));
-
     expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("child-node");
     expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("child-group");
   });
@@ -241,182 +220,17 @@ describe("diagram canvas", () => {
   it("does not forward clicks on interactive elements as canvas clicks", async () => {
     const onCanvasClick = vi.fn();
     render(
-      <DiagramCanvas edges={[]} nodes={[]} onCanvasClick={onCanvasClick}>
-        <button type="button">Node action</button>
-      </DiagramCanvas>,
+      <DiagramCanvas
+        edges={[]}
+        nodes={[]}
+        onCanvasClick={onCanvasClick}
+        renderOverlays={() => <button type="button">Node action</button>}
+      />,
     );
     const button = await screen.findByRole("button", { name: "Node action" });
     await act(async () => undefined);
-
     fireEvent.click(button, { clientX: 120, clientY: 80 });
-
     expect(mocks.screenToFlowPosition).not.toHaveBeenCalled();
     expect(onCanvasClick).not.toHaveBeenCalled();
-  });
-
-  it("highlights all matches without moving, then fits each node or group on the first and subsequent navigation gestures", async () => {
-    const user = userEvent.setup();
-    const onNodeActivate = vi.fn();
-    const onGroupActivate = vi.fn();
-    const labels = new Map([
-      ["file", "Render"],
-      ["group", "Render"],
-    ]);
-    render(
-      <DiagramCanvas
-        edges={[]}
-        getNodeLabel={(node) => labels.get(node.id) ?? ""}
-        nodes={[
-          {
-            id: "file",
-            type: "rectangle",
-            className: "existing-class",
-            position: { x: 0, y: 0 },
-            data: { label: "Render" },
-          },
-          { id: "group", type: "labeled-group", position: { x: 0, y: 0 }, data: { label: "Render" } },
-          { id: "bounding-group:group", type: "bounding-group", position: { x: 0, y: 0 }, data: {} },
-        ]}
-        onGroupActivate={onGroupActivate}
-        onNodeActivate={onNodeActivate}
-      />,
-    );
-    const input = await screen.findByRole("combobox", { name: "Search nodes" });
-    const file = screen.getByLabelText("React Flow node file");
-    const group = screen.getByLabelText("React Flow node group");
-
-    await user.type(input, "RENDER");
-    expect(screen.getAllByRole("option", { name: "Render" })).toHaveLength(2);
-    expect(file).toHaveClass("existing-class", "is-search-match");
-    expect(group).toHaveClass("is-search-match");
-    expect(file).not.toHaveClass("is-search-current");
-    expect(mocks.fitView).not.toHaveBeenCalled();
-    expect(onNodeActivate).not.toHaveBeenCalled();
-    expect(onGroupActivate).not.toHaveBeenCalled();
-
-    await user.keyboard("{ArrowDown}");
-    expect(onNodeActivate).toHaveBeenCalledExactlyOnceWith("file");
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "file" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
-    expect(file).toHaveClass("is-search-current");
-    expect(group).not.toHaveClass("is-search-current");
-
-    await user.keyboard("{ArrowDown}");
-    expect(onGroupActivate).toHaveBeenCalledExactlyOnceWith("group");
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "group" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
-    expect(group).toHaveClass("is-search-current");
-    expect(file).not.toHaveClass("is-search-current");
-    expect(input).toHaveValue("RENDER");
-
-    await user.keyboard("{Enter}");
-    expect(mocks.fitView).toHaveBeenCalledTimes(3);
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "group" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(input).toHaveValue("RENDER");
-    expect(file).not.toHaveClass("is-search-match", "is-search-current");
-    expect(group).not.toHaveClass("is-search-match", "is-search-current");
-
-    await user.click(screen.getByRole("button", { name: "Fit View" }));
-    await user.click(input);
-    const [firstOption] = screen.getAllByRole("option", { name: "Render" });
-    await user.click(firstOption);
-    expect(mocks.fitView).toHaveBeenLastCalledWith({
-      nodes: [{ id: "file" }],
-      minZoom: 0.01,
-      maxZoom: 1,
-      padding: "24px",
-      duration: 500,
-    });
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(input).toHaveValue("RENDER");
-    expect(input).toHaveFocus();
-    expect(mocks.nodes.every((node) => !("selected" in node))).toBe(true);
-
-    await user.keyboard("{Escape}");
-    expect(input).toHaveValue("");
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(file).not.toHaveClass("is-search-match", "is-search-current");
-    expect(group).not.toHaveClass("is-search-match", "is-search-current");
-    expect(file).toHaveClass("existing-class");
-
-    await user.clear(input);
-    await user.type(input, "bounding-group");
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
-    expect(mocks.fitView).toHaveBeenCalledTimes(4);
-  });
-
-  it.each([
-    {
-      os: "macOS",
-      mac: true,
-      modifier: { metaKey: true },
-      wrongModifier: { ctrlKey: true },
-      shortcut: "⌘K",
-    },
-    {
-      os: "Windows/Linux",
-      mac: false,
-      modifier: { ctrlKey: true },
-      wrongModifier: { metaKey: true },
-      shortcut: "Ctrl+K",
-    },
-  ])("focuses node search with the advertised shortcut on $os", async ({ mac, modifier, wrongModifier, shortcut }) => {
-    mocks.platform.os.mac = mac;
-    const { unmount } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
-    const input = await screen.findByRole("combobox", { name: "Search nodes" });
-    expect(input).toHaveAttribute("placeholder", "Search nodes...");
-    expect(screen.getByText(shortcut)).toBeVisible();
-
-    expect(fireEvent.keyDown(document, { key: "k", ...wrongModifier })).toBe(true);
-    expect(input).not.toHaveFocus();
-
-    expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(false);
-    expect(input).toHaveFocus();
-
-    unmount();
-    expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(true);
-  });
-
-  it.each([
-    { key: "k" },
-    { key: "j", ctrlKey: true },
-    { key: "k", ctrlKey: true, metaKey: true },
-    { key: "k", ctrlKey: true, altKey: true },
-    { key: "k", ctrlKey: true, shiftKey: true },
-    { key: "k", ctrlKey: true, repeat: true },
-    { key: "k", ctrlKey: true, isComposing: true },
-  ])("does not intercept unrelated or conflicting key events: %j", async (event) => {
-    render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
-    const input = await screen.findByRole("combobox", { name: "Search nodes" });
-
-    expect(fireEvent.keyDown(document, event)).toBe(true);
-    expect(input).not.toHaveFocus();
-  });
-
-  it("stops intercepting the shortcut when search is unavailable", async () => {
-    const { rerender } = render(<DiagramCanvas edges={[]} nodes={[]} getNodeLabel={(node) => node.id} />);
-    await screen.findByRole("combobox", { name: "Search nodes" });
-
-    rerender(<DiagramCanvas edges={[]} nodes={[]} />);
-
-    expect(screen.queryByRole("combobox", { name: "Search nodes" })).not.toBeInTheDocument();
-    expect(fireEvent.keyDown(document, { key: "k", ctrlKey: true })).toBe(true);
   });
 });

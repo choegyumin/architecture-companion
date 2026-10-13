@@ -1,20 +1,15 @@
-import { addEventListener } from "@base-ui/utils/addEventListener";
 import { platform } from "@base-ui/utils/platform";
 import {
   Background,
-  ControlButton,
-  Controls,
   type Edge,
   type EdgeProps,
   type Node,
   type NodeProps,
   type OnNodesChange,
-  Panel,
   ReactFlow,
   type ReactFlowInstance,
   useViewport,
 } from "@xyflow/react";
-import { Maximize } from "lucide-react";
 import {
   type ComponentType,
   type CSSProperties,
@@ -23,14 +18,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 
 import { DIAGRAM_FIT_VIEW_OPTIONS, DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
-import { cn } from "@/shared/react/class-name";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
 import { ConnectionEdge, type ConnectionReactFlowEdge } from "@/shared/react-flow/connection-edge";
 import { DiamondNode, type DiamondReactFlowNode } from "@/shared/react-flow/diamond-node";
@@ -44,9 +37,7 @@ import {
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
-import { ElementSearch } from "@/shared/react-flow/element-search";
 import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
-import { Kbd } from "@/shared/react-ui/kbd";
 import { useTheme } from "@/shared/react-ui/theme-context";
 
 export type DiagramReactFlowNode =
@@ -57,6 +48,12 @@ export type DiagramReactFlowNode =
   | BoundingGroupReactFlowNode
   | DiamondReactFlowNode;
 export type DiagramReactFlowEdge = ConnectionReactFlowEdge;
+
+export type DiagramCameraControls = Readonly<{
+  cameraReady: boolean;
+  fitView: () => Promise<void>;
+  focusNodes: (nodeIds: readonly string[]) => Promise<void>;
+}>;
 
 type NodeRendererRegistry<NodeType extends Node> = {
   [Type in Extract<NodeType["type"], string>]: ComponentType<NodeProps<Extract<NodeType, { type: Type }>>>;
@@ -80,13 +77,10 @@ const interactiveElementSelector =
   "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
 
 type DiagramCanvasProps = Readonly<{
-  children?: ReactNode;
   className?: string;
   edges: DiagramReactFlowEdge[];
-  getNodeLabel?: (node: DiagramReactFlowNode) => string;
-  searchQuery?: string;
-  onSearchQueryChange?: (query: string) => void;
   nodes: DiagramReactFlowNode[];
+  renderOverlays?: (camera: DiagramCameraControls) => ReactNode;
   onCanvasClick?: (point: DiagramLayoutPoint, target?: AnnotationTarget) => void;
   onGroupActivate?: (groupId: string) => void;
   onNodeActivate?: (nodeId: string) => void;
@@ -102,13 +96,10 @@ type DiagramCanvasProps = Readonly<{
 }>;
 
 export function DiagramCanvas({
-  children,
   className,
   edges,
-  getNodeLabel,
-  searchQuery,
-  onSearchQueryChange,
   nodes,
+  renderOverlays,
   onCanvasClick,
   onGroupActivate,
   onNodeActivate,
@@ -119,37 +110,10 @@ export function DiagramCanvas({
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
   const { zoom } = useViewport();
-  const [searchMatches, setSearchMatches] = useState<{ ids: ReadonlySet<string>; currentId: string | null }>({
-    ids: new Set(),
-    currentId: null,
-  });
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance<DiagramReactFlowNode, DiagramReactFlowEdge>>();
   const [highlightOrigin, setHighlightOrigin] = useState<EdgeHighlightOrigin | null>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [canvasElement, setCanvasElement] = useState<HTMLDivElement | null>(null);
   const isMacOS = platform.os.mac;
-  const searchEnabled = Boolean(flowInstance && getNodeLabel);
-
-  useEffect(() => {
-    if (!searchEnabled) return;
-    return addEventListener(document, "keydown", (event) => {
-      const modifierPressed = isMacOS ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
-      if (
-        !modifierPressed ||
-        event.key.toLowerCase() !== "k" ||
-        event.altKey ||
-        event.shiftKey ||
-        event.repeat ||
-        event.isComposing ||
-        event.defaultPrevented
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      searchInputRef.current?.focus();
-    });
-  }, [isMacOS, searchEnabled]);
 
   // Labels report highlights through the module-level channel; the canvas
   // decides which edges light. Dropping the held origin on unmount keeps a
@@ -180,40 +144,21 @@ export function DiagramCanvas({
     );
   }, [edges, highlightedEdges]);
 
-  const handleSearchMatchesChange = useCallback(
-    (matches: readonly DiagramReactFlowNode[], currentNode: DiagramReactFlowNode | null) => {
-      const ids = new Set(matches.map((node) => node.id));
-      const currentId = currentNode?.id ?? null;
-      setSearchMatches((previous) =>
-        previous.currentId === currentId &&
-        previous.ids.size === ids.size &&
-        [...ids].every((id) => previous.ids.has(id))
-          ? previous
-          : { ids, currentId },
-      );
-    },
-    [],
-  );
-  const searchStampedNodes = useMemo(() => {
-    if (!searchEnabled || searchMatches.ids.size === 0) return nodes;
-    return nodes.map((node) =>
-      searchMatches.ids.has(node.id)
-        ? {
-            ...node,
-            className: cn(
-              node.className,
-              "is-search-match",
-              node.id === searchMatches.currentId && "is-search-current",
-            ),
-          }
-        : node,
-    );
-  }, [nodes, searchEnabled, searchMatches]);
-
   const fitView = useCallback(async () => {
-    if (!flowInstance || !initialView || !canvasRef.current) return;
-    await fitViewFraming(flowInstance, initialView, canvasRef.current);
-  }, [flowInstance, initialView]);
+    if (!flowInstance || !initialView || !canvasElement) return;
+    await fitViewFraming(flowInstance, initialView, canvasElement);
+  }, [canvasElement, flowInstance, initialView]);
+  const focusNodes = useCallback(
+    async (nodeIds: readonly string[]) => {
+      if (!flowInstance) return;
+      await flowInstance.fitView({
+        ...DIAGRAM_FIT_VIEW_OPTIONS,
+        nodes: nodeIds.map((id) => ({ id })),
+        duration: 500,
+      });
+    },
+    [flowInstance],
+  );
 
   useEffect(() => {
     let secondFrame = 0;
@@ -232,7 +177,6 @@ export function DiagramCanvas({
 
   function handleCanvasClick(event: MouseEvent, target?: AnnotationTarget): void {
     if (!onCanvasClick || !flowInstance || isInteractiveClick(event)) return;
-
     event.preventDefault();
     event.stopPropagation();
     const point = flowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -262,14 +206,6 @@ export function DiagramCanvas({
     }
   }
 
-  function handleSearchSelect(node: DiagramReactFlowNode): void {
-    if (!flowInstance) return;
-    if (node.type === "rectangle" || node.type === "diamond") onNodeActivate?.(node.id);
-    if (node.type === "labeled-group" || (node.type === "bounding-group" && node.data.label != null))
-      onGroupActivate?.(node.id);
-    void flowInstance.fitView({ ...DIAGRAM_FIT_VIEW_OPTIONS, nodes: [{ id: node.id }], duration: 500 });
-  }
-
   return (
     <div
       aria-label="Artifact canvas"
@@ -277,7 +213,7 @@ export function DiagramCanvas({
       onClick={(event) => {
         if (event.target === event.currentTarget) handlePaneClick(event);
       }}
-      ref={canvasRef}
+      ref={setCanvasElement}
       role="group"
     >
       <ReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>
@@ -296,7 +232,7 @@ export function DiagramCanvas({
         edgeTypes={diagramEdgeTypes}
         elementsSelectable={false}
         minZoom={DIAGRAM_MIN_ZOOM}
-        nodes={searchStampedNodes}
+        nodes={nodes}
         nodesConnectable={false}
         nodesDraggable={false}
         nodesFocusable={false}
@@ -312,25 +248,7 @@ export function DiagramCanvas({
         zoomOnScroll={!isMacOS}
       >
         <Background />
-        <Controls showFitView={false} showInteractive={false}>
-          <ControlButton aria-label="Fit View" onClick={() => void fitView()} title="Fit View">
-            <Maximize aria-hidden="true" />
-          </ControlButton>
-        </Controls>
-        {searchEnabled ? (
-          <Panel className="nodrag nopan nowheel" position="top-left">
-            <ElementSearch<DiagramReactFlowNode>
-              getNodeLabel={getNodeLabel}
-              searchQuery={searchQuery}
-              onSearchQueryChange={onSearchQueryChange}
-              inputRef={searchInputRef}
-              onSelectNode={handleSearchSelect}
-              onMatchesChange={handleSearchMatchesChange}
-              endInputAddon={<Kbd>{isMacOS ? "⌘K" : "Ctrl+K"}</Kbd>}
-            />
-          </Panel>
-        ) : null}
-        {children}
+        {renderOverlays?.({ cameraReady: Boolean(flowInstance && canvasElement), fitView, focusNodes })}
       </ReactFlow>
     </div>
   );

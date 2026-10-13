@@ -1,4 +1,4 @@
-import { MarkerType, Panel, Position } from "@xyflow/react";
+import { MarkerType, Position } from "@xyflow/react";
 import { Check, Split } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -24,6 +24,7 @@ import type {
 import { combineRulesets, unionRulesets } from "@/features/diagram/diagram-route-requirement-rules";
 import type { DiagramLayout, DiagramLayoutEdge, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import { BaseEdgeLabel } from "@/shared/react-flow/base-edge-label";
+import { ReferencePanel } from "@/shared/react-flow/diagram-overlays";
 import type { DiamondReactFlowNode } from "@/shared/react-flow/diamond-node";
 import {
   clearEdgeHighlight,
@@ -1324,20 +1325,14 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       calculateLayout={calculateLayout}
       buildMeasurementNodes={buildMeasurementNodes}
       buildRenderModel={buildRenderModel}
-    >
-      {highlightedEdgeId != null && projected ? (
-        // The highlight preview is the standard bottom-right info spot — pinned
-        // to the viewport like the links panel, not floating over the canvas.
-        <Panel className="nodrag nopan nowheel pointer-events-none mb-8!" position="bottom-right">
-          <aside
-            aria-label="Route changes"
-            className="w-64 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
-          >
+      referencePanel={
+        highlightedEdgeId != null && projected ? (
+          <ReferencePanel aria-label="Route changes" className="pointer-events-none">
             <RouteChangesPreview changes={describeRouteSelectionChange(projected, selection, highlightedEdgeId)} />
-          </aside>
-        </Panel>
-      ) : null}
-    </DiagramView>
+          </ReferencePanel>
+        ) : null
+      }
+    />
   );
 }
 

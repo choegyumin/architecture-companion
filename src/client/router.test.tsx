@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createMemoryHistory } from "@tanstack/react-router";
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
@@ -11,12 +11,18 @@ import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
 import { renderWorkspace } from "../../tests/helpers/render-workspace";
+import { waitForDiagramReady } from "../../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../../tests/helpers/write-catalog";
+
+const mocks = vi.hoisted(() => ({ platform: { os: { mac: false } } }));
+
+vi.mock("@base-ui/utils/platform", () => ({ platform: mocks.platform }));
 
 const workflowId = ".architecture-companion/artifacts/workflow.archcomp.json";
 const secondWorkflowId = ".architecture-companion/artifacts/z-workflow.archcomp.json";
 const designId = ".architecture-companion/artifacts/design.archcomp.json";
 const secondDesignId = ".architecture-companion/artifacts/z-design.archcomp.json";
+const dependencyId = ".architecture-companion/artifacts/dependencies.archcomp.json";
 
 function artifact(artifactId: string, type: "behavior" | "design", title: string) {
   return {
@@ -29,24 +35,51 @@ function artifact(artifactId: string, type: "behavior" | "design", title: string
     diagram: {
       layout: { layoutId: "general" },
       graph: {
-        groups: [],
-        nodes: [{ type: "default", nodeId: "alpha", title: "Alpha" }],
+        groups: [{ groupId: "alpha-boundary", title: "Alpha boundary" }],
+        nodes: [
+          { type: "default", nodeId: "alpha", title: "Alpha" },
+          { type: "default", nodeId: "alpha-relay", title: "Alpha relay", groupId: "alpha-boundary" },
+        ],
         edges: [],
       },
     },
   };
 }
 
-async function openWorkspace(entry: string) {
+function dependencyGraphArtifact() {
+  return {
+    artifactId: dependencyId,
+    type: "design" as const,
+    title: "Dependencies",
+    updatedAt: "2026-10-03T09:15:00.000Z",
+    generator: "built-in:freeform",
+    instructions: "Review the dependencies.",
+    diagram: {
+      layout: { layoutId: "dependency-graph" },
+      graph: {
+        groups: [{ groupId: "service", title: "Service layer" }],
+        nodes: [
+          { type: "default", nodeId: "alpha", title: "Alpha service", groupId: "service" },
+          { type: "default", nodeId: "beta", title: "Beta service", groupId: "service" },
+        ],
+        edges: [],
+      },
+    },
+  };
+}
+
+type FixtureArtifact = ReturnType<typeof artifact> | ReturnType<typeof dependencyGraphArtifact>;
+
+const catalogArtifacts: readonly FixtureArtifact[] = [
+  artifact(workflowId, "behavior", "Workflow"),
+  artifact(secondWorkflowId, "behavior", "Z workflow"),
+  artifact(designId, "design", "Design"),
+  artifact(secondDesignId, "design", "Second design"),
+];
+
+async function openWorkspace(entry: string, artifacts: readonly FixtureArtifact[] = catalogArtifacts) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-url-"));
-  await writeCatalog(scopePath, {
-    artifacts: [
-      artifact(workflowId, "behavior", "Workflow"),
-      artifact(secondWorkflowId, "behavior", "Z workflow"),
-      artifact(designId, "design", "Design"),
-      artifact(secondDesignId, "design", "Second design"),
-    ],
-  });
+  await writeCatalog(scopePath, { artifacts });
   const app = createApp(await resolveCompanionScope(scopePath));
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
@@ -172,6 +205,166 @@ describe("workspace artifact URLs", () => {
       await screen.findByRole("region", { name: "Workflow product behavior diagram" });
       await waitFor(() => expect(workspace.history.location.search).toBe(""));
       expect(workspace.history.length).toBe(1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+});
+
+function flowNode(id: string): HTMLElement {
+  const node = document.querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
+  if (!node) throw new Error(`Missing React Flow node: ${id}`);
+  return node;
+}
+
+describe("workspace search shortcut", () => {
+  beforeEach(() => {
+    mocks.platform.os.mac = false;
+  });
+
+  it.each([
+    {
+      os: "macOS",
+      mac: true,
+      modifier: { metaKey: true },
+      wrongModifier: { ctrlKey: true },
+      shortcut: "⌘K",
+    },
+    {
+      os: "Windows/Linux",
+      mac: false,
+      modifier: { ctrlKey: true },
+      wrongModifier: { metaKey: true },
+      shortcut: "Ctrl+K",
+    },
+  ])(
+    "focuses the advertised search input with the $os shortcut and unsubscribes on unmount",
+    async ({ mac, modifier, wrongModifier, shortcut }) => {
+      mocks.platform.os.mac = mac;
+      const workspace = await openWorkspace(`/artifacts/${workflowId}`);
+      try {
+        const input = await screen.findByRole("combobox", { name: "Search nodes" });
+        expect(screen.getByText(shortcut)).toBeVisible();
+
+        expect(fireEvent.keyDown(document, { key: "k", ...wrongModifier })).toBe(true);
+        expect(input).not.toHaveFocus();
+
+        expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(false);
+        expect(input).toHaveFocus();
+      } finally {
+        await workspace.dispose();
+      }
+
+      expect(fireEvent.keyDown(document, { key: "k", ...modifier })).toBe(true);
+    },
+  );
+
+  it.each([
+    { key: "k" },
+    { key: "j", ctrlKey: true },
+    { key: "k", ctrlKey: true, metaKey: true },
+    { key: "k", ctrlKey: true, altKey: true },
+    { key: "k", ctrlKey: true, shiftKey: true },
+    { key: "k", ctrlKey: true, repeat: true },
+    { key: "k", ctrlKey: true, isComposing: true },
+  ])("does not intercept unrelated or conflicting key events: %j", async (event) => {
+    const workspace = await openWorkspace(`/artifacts/${workflowId}`);
+    try {
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+
+      expect(fireEvent.keyDown(document, event)).toBe(true);
+      expect(input).not.toHaveFocus();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("does not steal focus from an already-prevented event", async () => {
+    const workspace = await openWorkspace(`/artifacts/${workflowId}`);
+    try {
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+
+      const event = createEvent.keyDown(document, { key: "k", ctrlKey: true });
+      event.preventDefault();
+      fireEvent(document, event);
+      expect(input).not.toHaveFocus();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+});
+
+describe("workspace diagram search", () => {
+  it("highlights every matching node and group, marks the visited match, and keeps the query on confirm", async () => {
+    const workspace = await openWorkspace(`/artifacts/${workflowId}`);
+    const user = userEvent.setup();
+    try {
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+      await waitForDiagramReady();
+      const boundary = flowNode("alpha-boundary");
+      const alpha = flowNode("alpha");
+      const relay = flowNode("alpha-relay");
+
+      await user.type(input, "Alpha");
+      expect(screen.getByRole("option", { name: "Alpha boundary" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Alpha relay" })).toBeInTheDocument();
+      expect(screen.getByText("0/3")).toBeVisible();
+      expect(boundary).toHaveClass("is-search-match");
+      expect(alpha).toHaveClass("is-search-match");
+      expect(relay).toHaveClass("is-search-match");
+      expect(boundary).not.toHaveClass("is-search-current");
+      expect(alpha).not.toHaveClass("is-search-current");
+      expect(relay).not.toHaveClass("is-search-current");
+
+      await user.keyboard("{ArrowDown}");
+      expect(boundary).toHaveClass("is-search-current");
+      expect(alpha).not.toHaveClass("is-search-current");
+      expect(screen.getByText("1/3")).toBeVisible();
+
+      await user.keyboard("{ArrowDown}");
+      expect(relay).toHaveClass("is-search-current");
+      expect(boundary).not.toHaveClass("is-search-current");
+      expect(alpha).not.toHaveClass("is-search-current");
+      expect(boundary).not.toHaveClass("is-search-current");
+
+      await user.keyboard("{Enter}");
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      expect(input).toHaveValue("Alpha");
+      expect(new URLSearchParams(workspace.history.location.search).get("q")).toBe("Alpha");
+      expect(boundary).not.toHaveClass("is-search-match", "is-search-current");
+      expect(alpha).not.toHaveClass("is-search-match", "is-search-current");
+      expect(relay).not.toHaveClass("is-search-match", "is-search-current");
+
+      await user.keyboard("{Escape}");
+      expect(input).toHaveValue("");
+      await waitFor(() => expect(workspace.history.location.search).toBe(""));
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("focuses the searched dependency-graph element through the active indicator", async () => {
+    const workspace = await openWorkspace(`/artifacts/${dependencyId}`, [dependencyGraphArtifact()]);
+    const user = userEvent.setup();
+    try {
+      await screen.findByRole("region", { name: "Dependencies code design diagram" });
+      await waitForDiagramReady();
+      const input = screen.getByRole("combobox", { name: "Search nodes" });
+
+      await user.type(input, "service");
+      await user.keyboard("{ArrowDown}");
+      expect(await screen.findByRole("status")).toHaveTextContent("Focused on Service layer");
+
+      await user.keyboard("{ArrowDown}");
+      expect(await screen.findByRole("status")).toHaveTextContent("Focused on Alpha service");
+
+      await user.keyboard("{Enter}");
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      expect(await screen.findByRole("status")).toHaveTextContent("Focused on Alpha service");
+
+      await user.click(screen.getByRole("button", { name: "Clear focus" }));
+      await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
     } finally {
       await workspace.dispose();
     }
