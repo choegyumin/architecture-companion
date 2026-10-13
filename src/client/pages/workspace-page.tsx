@@ -1,4 +1,5 @@
 import { addEventListener } from "@base-ui/utils/addEventListener";
+import { platform } from "@base-ui/utils/platform";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
@@ -940,7 +941,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
             variant="outline"
           >
             <MessageSquarePlus data-icon="inline-start" />
-            Comment
+            Comment <span aria-hidden="true">(Hold {platform.os.mac ? "⌥" : "Alt"})</span>
           </Toggle>
         }
         navigation={
