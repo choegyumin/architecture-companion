@@ -21,7 +21,10 @@ function catalog(title: string): CompanionCatalog {
         instructions:
           "## Purpose\nReview the checkout trigger.\n\n## Regeneration\nRebuild the trigger from the current checkout flow.",
         diagram: {
-          layout: { layoutId: "elk-layered", options: { elk: { direction: "RIGHT" } } },
+          layout: {
+            layoutId: "general",
+            options: { nudgeObstacleNodes: false, bezierEdges: false, elk: { direction: "RIGHT" } },
+          },
           graph: {
             groups: [],
             nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title }],
