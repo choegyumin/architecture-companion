@@ -44,7 +44,7 @@ import {
 import { FragmentNode, type FragmentReactFlowNode } from "@/shared/react-flow/fragment-node";
 import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react-flow/labeled-group-node";
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
-import { NodeSearch } from "@/shared/react-flow/node-search";
+import { ElementSearch } from "@/shared/react-flow/element-search";
 import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
 import { Kbd } from "@/shared/react-ui/kbd";
 import { useTheme } from "@/shared/react-ui/theme-context";
@@ -319,7 +319,7 @@ export function DiagramCanvas({
         </Controls>
         {searchEnabled ? (
           <Panel className="nodrag nopan nowheel" position="top-left">
-            <NodeSearch<DiagramReactFlowNode>
+            <ElementSearch<DiagramReactFlowNode>
               getNodeLabel={getNodeLabel}
               searchQuery={searchQuery}
               onSearchQueryChange={onSearchQueryChange}

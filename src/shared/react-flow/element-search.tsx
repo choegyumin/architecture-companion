@@ -22,7 +22,7 @@ import {
   ComboboxPositioner,
 } from "@/shared/react-ui/combobox";
 
-export type NodeSearchProps<NodeType extends Node = Node> = Readonly<{
+export type ElementSearchProps<NodeType extends Node = Node> = Readonly<{
   className?: string;
   getNodeLabel?: (node: NodeType) => string;
   inputRef?: Ref<HTMLInputElement>;
@@ -47,7 +47,7 @@ function defaultGetNodeLabel(node: Node): unknown {
   return node.data?.label;
 }
 
-export function NodeSearch<NodeType extends Node = Node>({
+export function ElementSearch<NodeType extends Node = Node>({
   className,
   getNodeLabel,
   inputRef,
@@ -61,7 +61,7 @@ export function NodeSearch<NodeType extends Node = Node>({
   onMatchesChange,
   open,
   onOpenChange,
-}: NodeSearchProps<NodeType>) {
+}: ElementSearchProps<NodeType>) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [internalSearchString, setInternalSearchString] = useState("");
   const searchString = searchQuery ?? internalSearchString;
@@ -82,7 +82,7 @@ export function NodeSearch<NodeType extends Node = Node>({
     for (const node of nodes) {
       const label: unknown = (getNodeLabel ?? defaultGetNodeLabel)(node);
       if (typeof label !== "string" && getNodeLabel) {
-        throw new TypeError(`NodeSearch: getNodeLabel must return a string for node ${node.id}.`);
+        throw new TypeError(`ElementSearch: getNodeLabel must return a string for node ${node.id}.`);
       }
       if (typeof label !== "string") invalidIds.push(node.id);
       const resolvedLabel = typeof label === "string" ? label : node.id;
@@ -94,7 +94,7 @@ export function NodeSearch<NodeType extends Node = Node>({
     if (hasWarnedInvalidLabel.current || invalidIds.length === 0) return;
     hasWarnedInvalidLabel.current = true;
     console.warn(
-      `NodeSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
+      `ElementSearch: Could not resolve a string label for ${invalidIds.length} ${invalidIds.length === 1 ? "node" : "nodes"}.`,
       { nodeIds: invalidIds },
     );
   }, [invalidIds]);
