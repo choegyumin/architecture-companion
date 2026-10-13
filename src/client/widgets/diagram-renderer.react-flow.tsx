@@ -58,6 +58,12 @@ export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
   edges: readonly DiagramReactFlowEdge[];
   edgeTargets?: ReadonlyMap<string, AnnotationTarget>;
+  /**
+   * Maps a render edge id to the stored graph edge ids it displays.
+   * Projection-based renderers (component structure) re-cut stored edges
+   * into segments with fresh ids, so render ids diverge from stored ids.
+   */
+  graphEdgeIds?: ReadonlyMap<string, readonly string[]>;
 }>;
 
 function toCardNodeData(

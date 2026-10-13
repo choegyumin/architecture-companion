@@ -42,16 +42,21 @@ export function applySpotlight(
   const step = spotlight.diagram.steps[stepIndex];
   if (!step || step.elements.length === 0) return { model, framedNodeIds: [], framedEdgeIds: [] };
 
-  // Aggregate render edges display several graph edges as one path; map every
-  // underlying graph edge id to the render edge that shows it.
+  // Aggregate render edges display several graph edges as one path, and
+  // projected render edges carry fresh ids; map every underlying graph edge
+  // id to the render edge that shows it.
   const renderEdgeIdsByGraphEdgeId = new Map<string, Set<string>>();
+  const claimGraphEdge = (renderEdgeId: string, graphEdgeId: string): void => {
+    const renderEdgeIds = renderEdgeIdsByGraphEdgeId.get(graphEdgeId) ?? new Set<string>();
+    renderEdgeIds.add(renderEdgeId);
+    renderEdgeIdsByGraphEdgeId.set(graphEdgeId, renderEdgeIds);
+  };
   for (const [renderEdgeId, target] of model.edgeTargets ?? []) {
     if (target.type !== "edge-set") continue;
-    for (const edgeId of target.edgeIds) {
-      const renderEdgeIds = renderEdgeIdsByGraphEdgeId.get(edgeId) ?? new Set<string>();
-      renderEdgeIds.add(renderEdgeId);
-      renderEdgeIdsByGraphEdgeId.set(edgeId, renderEdgeIds);
-    }
+    for (const edgeId of target.edgeIds) claimGraphEdge(renderEdgeId, edgeId);
+  }
+  for (const [renderEdgeId, graphEdgeIds] of model.graphEdgeIds ?? []) {
+    for (const graphEdgeId of graphEdgeIds) claimGraphEdge(renderEdgeId, graphEdgeId);
   }
 
   const elementKeys = new Set(step.elements.map(elementKey));

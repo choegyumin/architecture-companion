@@ -260,6 +260,9 @@ function ComponentStructureContent(props: DiagramRendererProps) {
       const emphasis = componentPathEmphasis(projected, selection);
       const model: DiagramReactFlowRenderModel = {
         nodes: buildComponentStructureReactFlowNodes(projected, layout, onOpenSource),
+        // Projected edges carry fresh ids; expose which stored graph edges
+        // each render edge displays so spotlights can match them.
+        graphEdgeIds: new Map(projected.edges.map((edge) => [edge.id, [...edge.originEdgeIds]])),
         // Projected edges carry no display fields: their condition rides the
         // guard labels, so the routes themselves stay bare.
         edges: layout.edges.map<DiagramReactFlowEdge>((placement) => {

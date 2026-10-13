@@ -48,6 +48,8 @@ export type ProjectedComponentStructureEdge = Readonly<{
   source: string;
   target: string;
   sourcePort?: string;
+  /** The stored graph edges this hop displays; empty for derived dead-case hops. */
+  originEdgeIds: readonly string[];
   guards: DiagramRouteRequirementRuleset;
   activeWhen?: DiagramRouteRequirementRuleset;
 }>;
@@ -72,6 +74,7 @@ type Segment = Readonly<{
   source: string;
   target: string;
   sourcePort?: string;
+  originEdgeIds: readonly string[];
   guards: DiagramRouteRequirementRuleset;
   activeWhen: DiagramRouteRequirementRuleset;
 }>;
@@ -146,7 +149,7 @@ function missingGuardRules(
  */
 function segmentsOf(
   rule: readonly DiagramRouteRequirement[],
-  edge: Readonly<{ sourceNodeId: string; targetNodeId: string }>,
+  edge: Readonly<{ edgeId: string; sourceNodeId: string; targetNodeId: string }>,
   isBranch: (controlId: string) => boolean,
   controlsById: ReadonlyMap<string, Pick<DiagramControl, "dependsOn">>,
 ): Segment[] {
@@ -165,6 +168,7 @@ function segmentsOf(
       source: start,
       target,
       ...(startPort ? { sourcePort: startPort } : {}),
+      originEdgeIds: [edge.edgeId],
       guards: [[...(portCondition ? [portCondition] : []), ...span]],
       seeds: [...span, ...(reached ? [reached] : [])],
       activeWhen: [[...activeWhen]],
@@ -237,6 +241,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
         id: edge.edgeId,
         source: edge.sourceNodeId,
         target: edge.targetNodeId,
+        originEdgeIds: [edge.edgeId],
         ...(edge.type === "control"
           ? { activeWhen: branchless.length === ruleset.length ? edge.activeWhen : branchless }
           : {}),
@@ -250,6 +255,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
         if (!existing) {
           segments.set(key, {
             ...segment,
+            originEdgeIds: [...segment.originEdgeIds],
             guards: unionRulesets(segment.guards),
             activeWhen: unionRulesets(segment.activeWhen),
           });
@@ -257,6 +263,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
         }
         segments.set(key, {
           ...existing,
+          originEdgeIds: [...new Set([...existing.originEdgeIds, ...segment.originEdgeIds])],
           guards: unionRulesets(existing.guards, segment.guards),
           activeWhen: unionRulesets(existing.activeWhen, segment.activeWhen),
         });
@@ -276,6 +283,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
         source: control.controlId,
         target: nonComponentNodeId(control.controlId, branchCase.caseId),
         sourcePort: branchCase.caseId,
+        originEdgeIds: [],
         guards: [[{ controlId: control.controlId, value: branchCase.caseId }]],
         activeWhen: (control.dependsOn ?? [[]]).map((rule) => [
           ...rule,
@@ -304,6 +312,7 @@ export function projectDecisionNodes(graph: ComponentStructureDiagramGraph): Pro
     source: segment.source,
     target: segment.target,
     ...(segment.sourcePort ? { sourcePort: segment.sourcePort } : {}),
+    originEdgeIds: segment.originEdgeIds,
     ...(segment.activeWhen != null && (segment.activeWhen.length > 1 || (segment.activeWhen.at(0)?.length ?? 0) > 0)
       ? { activeWhen: segment.activeWhen }
       : {}),

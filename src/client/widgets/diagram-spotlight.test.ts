@@ -30,8 +30,14 @@ function model(
   nodes: readonly DiagramReactFlowNode[],
   edges: readonly DiagramReactFlowEdge[] = [],
   edgeTargets?: ReadonlyMap<string, AnnotationTarget>,
+  graphEdgeIds?: ReadonlyMap<string, readonly string[]>,
 ): DiagramReactFlowRenderModel {
-  return { nodes: [...nodes], edges: [...edges], ...(edgeTargets ? { edgeTargets } : {}) };
+  return {
+    nodes: [...nodes],
+    edges: [...edges],
+    ...(edgeTargets ? { edgeTargets } : {}),
+    ...(graphEdgeIds ? { graphEdgeIds } : {}),
+  };
 }
 
 function spotlight(steps: ArtifactSpotlight["diagram"]["steps"]): ArtifactSpotlight {
@@ -94,6 +100,19 @@ describe("applySpotlight", () => {
     expect(result.model.edges.at(0)?.className).toBe(SPOTLIGHT_EMPHASIZED_CLASS_NAME);
     expect(result.framedNodeIds).toEqual(["cart", "pay"]);
     expect(result.framedEdgeIds).toEqual(["e2"]);
+  });
+
+  it("emphasizes projected render edges through their origin graph edge ids", () => {
+    const graphEdgeIds = new Map<string, readonly string[]>([["edge:render", ["edge:stored-a", "edge:stored-b"]]]);
+    const result = applySpotlight(
+      model([cardNode("cart"), cardNode("pay")], [routeEdge("edge:render", "cart", "pay")], undefined, graphEdgeIds),
+      spotlight([{ elements: [{ type: "edge", id: "edge:stored-b" }] }]),
+      0,
+    );
+
+    expect(result.model.edges.at(0)?.className).toBe(SPOTLIGHT_EMPHASIZED_CLASS_NAME);
+    expect(result.framedNodeIds).toEqual(["cart", "pay"]);
+    expect(result.framedEdgeIds).toEqual(["edge:stored-b"]);
   });
 
   it("frames group targets and leaves bounding-group decoration untouched", () => {

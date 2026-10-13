@@ -75,4 +75,14 @@ describe("projectDecisionNodes", () => {
     expect(dead).toMatchObject({ source: "a", sourcePort: "a2" });
     expect(dead?.guards).toEqual([[{ controlId: "a", value: "a2" }]]);
   });
+
+  it("carries the stored edge id on every hop the edge splits into", () => {
+    expect(entry?.originEdgeIds).toEqual(["route"]);
+    expect(arm?.originEdgeIds).toEqual(["route"]);
+  });
+
+  it("marks derived dead-case hops as having no stored origin", () => {
+    const dead = projected.edges.find((edge) => edge.target === "a:a2:non-component");
+    expect(dead?.originEdgeIds).toEqual([]);
+  });
 });
