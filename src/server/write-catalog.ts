@@ -2,7 +2,12 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
-import { artifactIdSchema } from "@/features/artifact/artifact";
+import {
+  type ArtifactDocument,
+  artifactIdSchema,
+  artifactSchema,
+  toArtifactDocumentInput,
+} from "@/features/artifact/artifact";
 import { ARTIFACTS_RELATIVE_PATH, readCatalog } from "@/server/read-catalog";
 
 type WritableArtifact = Readonly<{
@@ -23,7 +28,11 @@ async function writeArtifactFile(scopePath: string, artifact: WritableArtifact):
   const temporaryPath = join(directoryPath, `.${basename(filePath)}-${randomUUID()}.tmp`);
 
   try {
-    await writeFile(temporaryPath, JSON.stringify(document), { encoding: "utf8", flag: "wx" });
+    // This boundary also accepts incomplete authored documents; preserve them
+    // unchanged and compact defaults only for valid artifacts.
+    const parsed = artifactSchema.safeParse(document);
+    const input = parsed.success ? toArtifactDocumentInput(parsed.data as ArtifactDocument) : document;
+    await writeFile(temporaryPath, JSON.stringify(input), { encoding: "utf8", flag: "wx" });
     await rename(temporaryPath, filePath);
   } catch (error) {
     try {

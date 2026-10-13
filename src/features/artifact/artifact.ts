@@ -4,17 +4,20 @@ import {
   type ArtifactGeneratorReference,
   artifactGeneratorReferenceSchema,
 } from "@/features/artifact-generator/artifact-generator-reference";
-import { componentStructureDiagramLayoutConfigSchema } from "@/features/diagram/_layout/component-structure-diagram-layout";
-import { dependencyGraphLayoutConfigSchema } from "@/features/diagram/_layout/dependency-graph-layout";
-import { elkLayeredDiagramLayoutConfigSchema } from "@/features/diagram/_layout/elk-layered-diagram-layout";
-import { sequenceDiagramLayoutConfigSchema } from "@/features/diagram/_layout/sequence-diagram-layout";
 import {
   componentStructureDiagramGraphSchema,
   dependencyDiagramGraphSchema,
-  diagramGraphSchema,
   diagramLinkSchema,
+  generalDiagramGraphSchema,
   sequenceDiagramGraphSchema,
+  toDiagramGraphInput,
 } from "@/features/diagram/diagram-graph";
+import {
+  componentStructureDiagramLayoutConfigSchema,
+  dependencyGraphLayoutConfigSchema,
+  generalDiagramLayoutConfigSchema,
+  sequenceDiagramLayoutConfigSchema,
+} from "@/features/diagram/diagram-layout";
 
 export const artifactIdSchema = z
   .string()
@@ -55,7 +58,7 @@ const artifactBaseShape = {
 const diagramMemberSchema = <Layout extends z.ZodTypeAny, Graph extends z.ZodTypeAny>(layout: Layout, graph: Graph) =>
   z.object({ layout, graph }).strict();
 
-export const elkLayeredDiagramSchema = diagramMemberSchema(elkLayeredDiagramLayoutConfigSchema, diagramGraphSchema);
+export const generalDiagramSchema = diagramMemberSchema(generalDiagramLayoutConfigSchema, generalDiagramGraphSchema);
 export const sequenceDiagramSchema = diagramMemberSchema(sequenceDiagramLayoutConfigSchema, sequenceDiagramGraphSchema);
 export const dependencyGraphDiagramSchema = diagramMemberSchema(
   dependencyGraphLayoutConfigSchema,
@@ -66,14 +69,14 @@ export const componentStructureDiagramSchema = diagramMemberSchema(
   componentStructureDiagramGraphSchema,
 );
 
-export type ElkLayeredDiagram = z.infer<typeof elkLayeredDiagramSchema>;
+export type GeneralDiagram = z.infer<typeof generalDiagramSchema>;
 export type SequenceDiagram = z.infer<typeof sequenceDiagramSchema>;
 export type DependencyGraphDiagram = z.infer<typeof dependencyGraphDiagramSchema>;
 export type ComponentStructureDiagram = z.infer<typeof componentStructureDiagramSchema>;
 export type Diagram = z.infer<typeof diagramSchema>;
 
 export const diagramSchema = z.union([
-  elkLayeredDiagramSchema,
+  generalDiagramSchema,
   sequenceDiagramSchema,
   dependencyGraphDiagramSchema,
   componentStructureDiagramSchema,
@@ -92,10 +95,34 @@ export type ArtifactDocument = Omit<ParsedArtifact, "generator"> & {
 };
 export type Artifact = ArtifactDocument & { artifactId: string };
 
+/** Serialize normalized values without writing defaults back into authored JSON. */
+export function toArtifactDocumentInput(document: ArtifactDocument) {
+  const layout = document.diagram.layout;
+  const inputLayout =
+    layout.layoutId === "general" && layout.options
+      ? {
+          ...layout,
+          options: {
+            ...(layout.options.elk ? { elk: layout.options.elk } : {}),
+            ...(layout.options.nudgeObstacleNodes ? { nudgeObstacleNodes: true } : {}),
+            ...(layout.options.bezierEdges ? { bezierEdges: true } : {}),
+          },
+        }
+      : layout;
+  return {
+    ...document,
+    diagram: { layout: inputLayout, graph: toDiagramGraphInput(document.diagram.graph) },
+  };
+}
+
 // Layout ids sit inside the `diagram` pair, so plain comparisons do not
 // narrow the artifact's diagram union; these guards carry the pairing instead.
-export function isElkLayeredArtifact(artifact: Artifact): artifact is Artifact & { diagram: ElkLayeredDiagram } {
-  return artifact.diagram.layout.layoutId === "elk-layered";
+export function isGeneralArtifact(artifact: Artifact): artifact is Artifact & { diagram: GeneralDiagram } {
+  return artifact.diagram.layout.layoutId === "general";
+}
+
+export function isSequenceArtifact(artifact: Artifact): artifact is Artifact & { diagram: SequenceDiagram } {
+  return artifact.diagram.layout.layoutId === "sequence";
 }
 
 export function isComponentStructureArtifact(
@@ -110,7 +137,7 @@ export function isComponentStructureArtifact(
 // schema still runs afterwards to report envelope problems under their own
 // paths.
 const diagramMembersByLayoutId = {
-  "elk-layered": elkLayeredDiagramSchema,
+  general: generalDiagramSchema,
   sequence: sequenceDiagramSchema,
   "dependency-graph": dependencyGraphDiagramSchema,
   "component-structure": componentStructureDiagramSchema,
