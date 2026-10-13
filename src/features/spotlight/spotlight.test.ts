@@ -100,6 +100,12 @@ describe("parseArtifactSpotlight", () => {
       parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [] }] } }),
     ).toThrow();
   });
+
+  it("names the offending field when a step is rejected", () => {
+    expect(() =>
+      parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [] }] } }),
+    ).toThrow(/diagram\.steps\[0\]\.caption/);
+  });
 });
 
 describe("validateSpotlightAgainstCatalog", () => {
