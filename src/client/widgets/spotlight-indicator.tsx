@@ -18,11 +18,12 @@ export type SpotlightController = Readonly<{
 
 /**
  * The spotlight panel over the canvas's top-right corner. The control bar is
- * always present, with the current step's caption below it: every step
- * carries a caption, so the agent instruction says to send the fixed fallback
- * line when there is nothing to explain. Arrow keys move between steps unless
- * the reviewer is typing. Dismissal is deliberately the only way to clear an
- * active spotlight: the agent, not the reviewer, owns it.
+ * always present. Every step carries a caption, so the agent instruction says
+ * to send the fixed fallback line when there is nothing to explain: inline
+ * next to the icon for a lone step, below the step navigation otherwise.
+ * Arrow keys move between steps unless the reviewer is typing. Dismissal is
+ * deliberately the only way to clear an active spotlight: the agent, not the
+ * reviewer, owns it.
  */
 export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose }: SpotlightController) {
   const steps = spotlight.diagram.steps;
@@ -80,7 +81,11 @@ export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose
               <ChevronRight aria-hidden="true" />
             </Button>
           </>
-        ) : null}
+        ) : (
+          // A lone step has an empty control bar, so its caption sits inline
+          // next to the icon instead of dropping to a row of its own.
+          <p className="min-h-0 min-w-0 shrink overflow-y-auto px-1.5 text-sm">{step?.caption}</p>
+        )}
         <Button
           aria-label="Close spotlight"
           className="-m-1.5 ml-auto"
@@ -91,7 +96,7 @@ export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose
           <X aria-hidden="true" />
         </Button>
       </div>
-      <p className="min-h-0 shrink overflow-y-auto px-3 pb-3 text-sm">{step?.caption}</p>
+      {hasNavigation ? <p className="min-h-0 shrink overflow-y-auto px-3 pb-3 text-sm">{step?.caption}</p> : null}
     </Card>
   );
 }

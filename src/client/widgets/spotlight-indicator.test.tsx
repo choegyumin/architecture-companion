@@ -70,6 +70,26 @@ describe("SpotlightIndicator", () => {
     expect(screen.getByRole("button", { name: "Close spotlight" })).toBeInTheDocument();
   });
 
+  it("puts a single-step caption inline with the controls", () => {
+    renderIndicator(spotlight([{ elements: [], caption: "Look here" }]), 0);
+
+    const captionRow = screen.getByText("Look here").parentElement;
+    expect(captionRow).toContainElement(screen.getByRole("button", { name: "Close spotlight" }));
+  });
+
+  it("keeps a multi-step caption on its own row", () => {
+    renderIndicator(
+      spotlight([
+        { elements: [], caption: "First" },
+        { elements: [], caption: "Second" },
+      ]),
+      0,
+    );
+
+    const bar = screen.getByRole("button", { name: "Close spotlight" }).parentElement;
+    expect(bar).not.toContainElement(screen.getByText("First"));
+  });
+
   it("closes the spotlight from its close button only", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
