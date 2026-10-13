@@ -4,6 +4,8 @@ This glossary describes the concepts used to create and regenerate source-ground
 
 ## Language
 
+Terms defined in this glossary are used verbatim in English in artifacts, code comments, tests, and discussion; avoid translating or paraphrasing them into another language.
+
 **Companion**:
 A synonym for Architecture Companion. The tool supports creating and regenerating artifacts grounded in source evidence, reviewing them, and following up on feedback.
 
