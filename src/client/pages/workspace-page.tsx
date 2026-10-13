@@ -21,6 +21,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
 import { ThemeToggle } from "@/shared/react-ui/theme-toggle";
 import { Toggle } from "@/shared/react-ui/toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/react-ui/tooltip";
 
 type ReviewResponse = Awaited<ReturnType<DataClient["getReview"]>>;
 type ReviewBundle = Readonly<{
@@ -933,16 +934,25 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     >
       <WorkspaceShell
         actions={
-          <Toggle
-            disabled={!activeCatalogRevisionId}
-            onPressedChange={(enabled) => dispatchAnnotation({ type: "mode-changed", enabled })}
-            pressed={annotationState.isModeEnabled}
-            size="sm"
-            variant="outline"
-          >
-            <MessageSquarePlus data-icon="inline-start" />
-            Comment <span aria-hidden="true">(Hold {platform.os.mac ? "⌥" : "Alt"})</span>
-          </Toggle>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Toggle
+                  disabled={!activeCatalogRevisionId}
+                  onPressedChange={(enabled) => dispatchAnnotation({ type: "mode-changed", enabled })}
+                  pressed={annotationState.isModeEnabled}
+                  size="sm"
+                  variant="outline"
+                >
+                  <MessageSquarePlus data-icon="inline-start" />
+                  Comment <kbd aria-hidden="true">({platform.os.mac ? "⌥" : "Alt"})</kbd>
+                </Toggle>
+              }
+            />
+            <TooltipContent sideOffset={8}>
+              Hold <kbd data-slot="kbd">{platform.os.mac ? "⌥" : "Alt"}</kbd> to comment while pressed
+            </TooltipContent>
+          </Tooltip>
         }
         navigation={
           <TabsList aria-label="Review views">
