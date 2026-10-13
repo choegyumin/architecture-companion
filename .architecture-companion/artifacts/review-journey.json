@@ -1,9 +1,9 @@
 {
   "type": "behavior",
   "title": "Architecture review journey",
-  "updatedAt": "2026-10-12T17:20:38.675Z",
+  "updatedAt": "2026-10-13T09:54:20.701Z",
   "vcs": {
-    "revision": "11cfe8cb3a3e697b5ea9d8373e803a654b29513f",
+    "revision": "739dd27ec17fb7241e40c7d3f0131acf7f615637",
     "divergesFromRevision": false
   },
   "generator": "built-in:freeform",

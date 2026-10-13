@@ -1,9 +1,9 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-12T17:20:38.675Z",
+  "updatedAt": "2026-10-13T09:54:20.701Z",
   "vcs": {
-    "revision": "11cfe8cb3a3e697b5ea9d8373e803a654b29513f",
+    "revision": "739dd27ec17fb7241e40c7d3f0131acf7f615637",
     "divergesFromRevision": false
   },
   "generator": "built-in:js-module-dependency-graph",
@@ -127,6 +127,11 @@
         {
           "groupId": "group:directory:src/shared",
           "title": "shared"
+        },
+        {
+          "groupId": "group:directory:src/shared/browser",
+          "title": "browser",
+          "parentGroupId": "group:directory:src/shared"
         },
         {
           "groupId": "group:directory:src/shared/node",
@@ -1446,6 +1451,18 @@
             {
               "text": "source",
               "href": "source:///src/server/write-catalog.ts"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/shared/browser/form.ts",
+          "title": "form.ts",
+          "groupId": "group:directory:src/shared/browser",
+          "type": "default",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/browser/form.ts"
             }
           ]
         },
@@ -3422,10 +3439,22 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:external%3A%40base-ui%2Futils:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "external:@base-ui/utils"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:external%3Alucide-react:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
           "targetNodeId": "external:lucide-react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:external%3Areact:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "external:react"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Ffeatures%2Fspotlight%2Fspotlight.ts:type-only",
@@ -3435,16 +3464,22 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Fbrowser%2Fform.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
+          "targetNodeId": "file:src/shared/browser/form.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
           "targetNodeId": "file:src/shared/react-ui/button.tsx"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fspotlight-indicator.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
           "type": "default",
           "sourceNodeId": "file:src/client/widgets/spotlight-indicator.tsx",
-          "targetNodeId": "file:src/shared/react-ui/item.tsx"
+          "targetNodeId": "file:src/shared/react-ui/card.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:external%3Azod:runtime",
@@ -4676,6 +4711,12 @@
           "type": "default",
           "sourceNodeId": "file:src/shared/react-ui/form.tsx",
           "targetNodeId": "external:react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:file%3Asrc%2Fshared%2Fbrowser%2Fform.ts:runtime",
+          "type": "default",
+          "sourceNodeId": "file:src/shared/react-ui/form.tsx",
+          "targetNodeId": "file:src/shared/browser/form.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fform.tsx:file%3Asrc%2Fshared%2Freact%2Fsafe-context.ts:runtime",
