@@ -1,8 +1,8 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-13T13:40:35.759Z",
-  "vcs": { "revision": "e7794fd70b01fdbfe7abd3b37d2fe42d5c8cc8b5", "divergesFromRevision": false },
+  "updatedAt": "2026-10-13T15:51:05.278Z",
+  "vcs": { "revision": "0d804d16131a9601e6b6678a7f93b188e4ed29bd", "divergesFromRevision": false },
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
   "diagram": {
@@ -716,12 +716,6 @@
           "title": "validate-catalog.ts",
           "groupId": "group:directory:src/server",
           "links": [{ "text": "source", "href": "source:///src/server/validate-catalog.ts" }]
-        },
-        {
-          "nodeId": "file:src/server/write-catalog.ts",
-          "title": "write-catalog.ts",
-          "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/write-catalog.ts" }]
         },
         {
           "nodeId": "file:src/shared/node/open-local-path.ts",
@@ -2455,16 +2449,6 @@
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fvalidate-catalog.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:runtime",
           "sourceNodeId": "file:src/server/validate-catalog.ts",
           "targetNodeId": "file:src/features/catalog/catalog.ts"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fserver%2Fwrite-catalog.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
-          "sourceNodeId": "file:src/server/write-catalog.ts",
-          "targetNodeId": "file:src/features/artifact/artifact.ts"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fserver%2Fwrite-catalog.ts:file%3Asrc%2Fserver%2Fread-catalog.ts:runtime",
-          "sourceNodeId": "file:src/server/write-catalog.ts",
-          "targetNodeId": "file:src/server/read-catalog.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:external%3Aclsx:runtime",
