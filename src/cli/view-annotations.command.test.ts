@@ -6,7 +6,8 @@ import { executeViewAnnotationsCommand } from "@/cli/view-annotations.command";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { createFileAnnotationRepository, getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const checkoutBehavior = {
   artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",

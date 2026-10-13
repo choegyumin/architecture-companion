@@ -10,7 +10,8 @@ import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 const checkoutDiagram = {
   artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",

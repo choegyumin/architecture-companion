@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const baseUrl = "http://architecture-companion.test";
 

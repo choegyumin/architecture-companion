@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeViewArtifactsCommand } from "@/cli/view-artifacts.command";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 let scopePath: string;
 let output: string;

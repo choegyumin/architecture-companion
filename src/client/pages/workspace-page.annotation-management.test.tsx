@@ -14,9 +14,9 @@ import { createApp } from "@/server/create-app";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 // Artifacts stay in the catalog's path-sorted order so the revision id
 // computed here matches the one the server derives from the same files.

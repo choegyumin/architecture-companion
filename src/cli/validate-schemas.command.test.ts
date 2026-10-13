@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { executeValidateSchemasCommand } from "@/cli/validate-schemas.command";
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 const checkoutBehavior = {
   type: "behavior",

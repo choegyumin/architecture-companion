@@ -9,7 +9,8 @@ import { createApp } from "@/server/create-app";
 import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "../../tests/helpers/write-catalog";
 
 function catalog(title: string): CompanionCatalog {
   return {

@@ -15,9 +15,9 @@ import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
 import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repository";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
-import { writeCatalog } from "@/server/write-catalog";
 
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../tests/helpers/write-catalog";
 
 function catalog(nodeTitle: string): CompanionCatalog {
   return {

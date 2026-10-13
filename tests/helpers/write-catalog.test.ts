@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { parseArtifact } from "@/features/artifact/artifact";
 import { readCatalog } from "@/server/read-catalog";
-import { writeCatalog } from "@/server/write-catalog";
+
+import { writeCatalog } from "./write-catalog";
 
 const input = {
   type: "design",
