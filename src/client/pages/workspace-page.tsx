@@ -1,4 +1,5 @@
 import { addEventListener } from "@base-ui/utils/addEventListener";
+import { platform } from "@base-ui/utils/platform";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
@@ -17,9 +18,11 @@ import type { RevisionAnnotationsRead } from "@/features/annotation/revision-ann
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
+import { Kbd } from "@/shared/react-ui/kbd";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
 import { ThemeToggle } from "@/shared/react-ui/theme-toggle";
 import { Toggle } from "@/shared/react-ui/toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/react-ui/tooltip";
 
 type ReviewResponse = Awaited<ReturnType<DataClient["getReview"]>>;
 type ReviewBundle = Readonly<{
@@ -932,16 +935,28 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     >
       <WorkspaceShell
         actions={
-          <Toggle
-            disabled={!activeCatalogRevisionId}
-            onPressedChange={(enabled) => dispatchAnnotation({ type: "mode-changed", enabled })}
-            pressed={annotationState.isModeEnabled}
-            size="sm"
-            variant="outline"
-          >
-            <MessageSquarePlus data-icon="inline-start" />
-            Comment
-          </Toggle>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Toggle
+                  disabled={!activeCatalogRevisionId}
+                  onPressedChange={(enabled) => dispatchAnnotation({ type: "mode-changed", enabled })}
+                  pressed={annotationState.isModeEnabled}
+                  size="sm"
+                  variant="outline"
+                >
+                  <MessageSquarePlus data-icon="inline-start" />
+                  Comment{" "}
+                  <Kbd aria-hidden="true" data-icon="inline-end">
+                    {platform.os.mac ? "⌥" : "Alt"}
+                  </Kbd>
+                </Toggle>
+              }
+            />
+            <TooltipContent sideOffset={8}>
+              Hold <Kbd aria-hidden="true">{platform.os.mac ? "⌥" : "Alt"}</Kbd> to comment while pressed
+            </TooltipContent>
+          </Tooltip>
         }
         navigation={
           <TabsList aria-label="Review views">

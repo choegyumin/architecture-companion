@@ -46,6 +46,7 @@ import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import { NodeSearch } from "@/shared/react-flow/node-search";
 import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
+import { Kbd } from "@/shared/react-ui/kbd";
 import { useTheme } from "@/shared/react-ui/theme-context";
 
 export type DiagramReactFlowNode =
@@ -311,9 +312,7 @@ export function DiagramCanvas({
               inputRef={searchInputRef}
               onSelectNode={handleSearchSelect}
               onMatchesChange={handleSearchMatchesChange}
-              endInputAddon={
-                <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-xs">{isMacOS ? "⌘K" : "Ctrl+K"}</kbd>
-              }
+              endInputAddon={<Kbd>{isMacOS ? "⌘K" : "Ctrl+K"}</Kbd>}
             />
           </Panel>
         ) : null}
