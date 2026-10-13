@@ -1,7 +1,7 @@
-import { layoutSequenceDiagram } from "@/features/diagram/_layout/sequence-diagram-layout";
-import type { DiagramGraph } from "@/features/diagram/diagram-graph";
+import { layoutSequenceDiagram } from "@/client/widgets/sequence-diagram-renderer.layout";
+import type { SequenceDiagramGraph } from "@/features/diagram/diagram-graph";
 
-function createSequenceDiagram({ nodes, edges }: Pick<DiagramGraph, "nodes" | "edges">): DiagramGraph {
+function createSequenceDiagram({ nodes, edges }: Pick<SequenceDiagramGraph, "nodes" | "edges">): SequenceDiagramGraph {
   return { groups: [], nodes, edges };
 }
 

@@ -1,10 +1,8 @@
-import z from "zod";
-
 import type {
-  DiagramGraph,
   FragmentDiagramNode,
   LifelineDiagramNode,
   MessageDiagramEdge,
+  SequenceDiagramGraph,
 } from "@/features/diagram/diagram-graph";
 import type {
   DiagramLayout,
@@ -13,9 +11,6 @@ import type {
   DiagramNodeSizes,
 } from "@/features/diagram/diagram-spatial";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
-
-export const sequenceDiagramLayoutConfigSchema = z.object({ layoutId: z.literal("sequence") }).strict();
-export type SequenceDiagramLayoutConfig = z.infer<typeof sequenceDiagramLayoutConfigSchema>;
 
 const ROW_HEIGHT = 72;
 const SELF_MESSAGE_LOOP_HEIGHT = 28;
@@ -34,7 +29,10 @@ function getMessageIndex(messages: readonly MessageDiagramEdge[]): ReadonlyMap<s
   return new Map(messages.map((edge, index) => [edge.edgeId, index]));
 }
 
-export function layoutSequenceDiagram(diagram: DiagramGraph, nodeSizes: DiagramNodeSizes): Promise<DiagramLayout> {
+export function layoutSequenceDiagram(
+  diagram: SequenceDiagramGraph,
+  nodeSizes: DiagramNodeSizes,
+): Promise<DiagramLayout> {
   const lifelines = diagram.nodes.filter((node): node is LifelineDiagramNode => node.type === "lifeline");
   const fragments = diagram.nodes.filter((node): node is FragmentDiagramNode => node.type === "fragment");
   const messages = diagram.edges.filter((edge): edge is MessageDiagramEdge => edge.type === "message");
