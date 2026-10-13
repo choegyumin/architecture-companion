@@ -163,6 +163,9 @@
 
   .react-flow__node.diagram-spotlight-emphasized {
     border-radius: 0.75rem;
+    /* A spotlight outranks interaction and control-state effects, so an
+       emphasized node shakes off an inactive-path opacity. */
+    opacity: 1;
     box-shadow:
       0 0 0 2px var(--primary),
       0 0 0 6px color-mix(in oklab, var(--primary) 22%, transparent);
@@ -172,6 +175,13 @@
   .react-flow__node.diagram-spotlight-dimmed {
     opacity: 0.35;
     transition: opacity 200ms ease;
+  }
+
+  /* Search (the reviewer) outranks a spotlight (the agent): a matched node
+     never stays dimmed. These rules come last to win the tie. */
+  .react-flow__node.is-search-match,
+  .react-flow__node.is-search-current {
+    opacity: 1;
   }
 
   .react-flow__edge.diagram-spotlight-dimmed {

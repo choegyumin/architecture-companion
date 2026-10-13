@@ -102,6 +102,24 @@ describe("applySpotlight", () => {
     expect(result.framedEdgeIds).toEqual(["e2"]);
   });
 
+  it("overrides a state dim already on an emphasized edge", () => {
+    const inactiveEdge: DiagramReactFlowEdge = {
+      ...routeEdge("e1", "cart", "pay"),
+      style: { stroke: "var(--diagram-edge)", strokeWidth: 2, opacity: 0.25 },
+    };
+    const result = applySpotlight(
+      model([cardNode("cart"), cardNode("pay")], [inactiveEdge]),
+      spotlight([{ elements: [{ type: "edge", id: "e1" }] }]),
+      0,
+    );
+
+    expect(result.model.edges.at(0)?.style).toMatchObject({
+      stroke: "var(--primary)",
+      strokeWidth: 3,
+      opacity: 1,
+    });
+  });
+
   it("emphasizes projected render edges through their origin graph edge ids", () => {
     const graphEdgeIds = new Map<string, readonly string[]>([["edge:render", ["edge:stored-a", "edge:stored-b"]]]);
     const result = applySpotlight(

@@ -127,7 +127,9 @@ export function applySpotlight(
           typeof edge.markerEnd === "object" && edge.markerEnd !== null
             ? { ...edge.markerEnd, color: SPOTLIGHT_STROKE }
             : edge.markerEnd,
-        style: { ...edge.style, stroke: SPOTLIGHT_STROKE, strokeWidth: 3 },
+        // The spotlight outranks interaction and control-state effects, so
+        // an emphasized edge shakes off an inline dim opacity.
+        style: { ...edge.style, stroke: SPOTLIGHT_STROKE, strokeWidth: 3, opacity: 1 },
       };
     }
     return {
