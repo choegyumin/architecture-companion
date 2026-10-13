@@ -3,9 +3,9 @@ import { ChevronLeft, ChevronRight, Focus, X } from "lucide-react";
 import { useEffect } from "react";
 
 import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
+import { MULTI_LINE_FIELD_SELECTORS, SINGLE_LINE_FIELD_SELECTORS } from "@/shared/browser/form";
 import { Button } from "@/shared/react-ui/button";
 import { Card } from "@/shared/react-ui/card";
-import { MULTI_LINE_FIELD_SELECTORS, SINGLE_LINE_FIELD_SELECTORS } from "@/shared/react-ui/form";
 
 const TEXT_FIELD_KEY_SELECTORS = `${SINGLE_LINE_FIELD_SELECTORS}, ${MULTI_LINE_FIELD_SELECTORS}`;
 

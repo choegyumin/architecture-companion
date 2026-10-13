@@ -2,6 +2,7 @@ import { addEventListener } from "@base-ui/utils/addEventListener";
 import { useMergedRefs } from "@base-ui/utils/useMergedRefs";
 import { useCallback, useEffect, useRef } from "react";
 
+import { MULTI_LINE_FIELD_SELECTORS, SINGLE_LINE_FIELD_SELECTORS } from "@/shared/browser/form";
 import { createSafeContext } from "@/shared/react/safe-context";
 
 function mergeSelectors(...selectors: string[]): string {
@@ -27,9 +28,6 @@ const FormConfigContext = createSafeContext<FormConfig>({
   displayName: "FormConfigContext",
 });
 
-export const SINGLE_LINE_FIELD_SELECTORS =
-  'input, select, [role="checkbox"], [role="combobox"], [role="radio"], [role="slider"], [role="spinbutton"], [role="switch"], [role="textbox"]:not([aria-multiline="true"])';
-export const MULTI_LINE_FIELD_SELECTORS = 'textarea, [role="textbox"][aria-multiline="true"]';
 const SUBMIT_BUTTON_SELECTORS = 'input[type="submit"], button[type="submit"], button:not([type])';
 
 type FormProps = React.ComponentPropsWithRef<"form"> & {
