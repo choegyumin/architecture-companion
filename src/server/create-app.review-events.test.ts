@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -41,8 +41,11 @@ function catalog(title: string): CompanionCatalog {
 
 async function writeAnnotations(scopePath: string, activeArtifact: CompanionCatalog, body: string): Promise<void> {
   await mkdir(join(scopePath, ".architecture-companion/annotations"), { recursive: true });
+  const path = join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(activeArtifact)));
+  const temporaryPath = `${path}.tmp`;
+  // Match repository saves: the poller must never observe a truncated fixture.
   await writeFile(
-    join(scopePath, getAnnotationDocumentRelativePath(createCatalogRevisionId(activeArtifact))),
+    temporaryPath,
     JSON.stringify({
       annotations: [
         {
@@ -61,6 +64,7 @@ async function writeAnnotations(scopePath: string, activeArtifact: CompanionCata
       ],
     }),
   );
+  await rename(temporaryPath, path);
 }
 
 describe("review events", () => {
