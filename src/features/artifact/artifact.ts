@@ -29,15 +29,6 @@ export const artifactIdSchema = z
     "Artifact ID must be a scope-relative file path with forward slashes",
   );
 
-// The URL identifies an artifact by its stem: the file name without its final
-// extension. Catalog loading rejects duplicate stems, so the stem is a unique
-// URL key.
-export function artifactStem(artifactId: string): string {
-  const fileName = artifactId.split("/").at(-1) ?? artifactId;
-  const extensionDot = fileName.lastIndexOf(".");
-  return extensionDot > 0 ? fileName.slice(0, extensionDot) : fileName;
-}
-
 // The envelope holds an artifact's authoring and regeneration context; the
 // varying part is the single `diagram` field below, so every envelope field
 // is declared once.

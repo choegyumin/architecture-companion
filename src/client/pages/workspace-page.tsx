@@ -29,7 +29,6 @@ import type { AnnotationAnchor, AnnotationDocument } from "@/features/annotation
 import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
-import { artifactStem } from "@/features/artifact/artifact";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import {
   type ArtifactSpotlight,
@@ -421,7 +420,8 @@ async function loadReviewBundle(client: DataClient, isCurrent: () => boolean): P
 function WorkspaceRoute() {
   const { client } = useRouteContext({ strict: false }) as { client: DataClient };
   const navigate = useNavigate();
-  const { stem } = useParams({ strict: false }) as { stem?: string };
+  const { _splat } = useParams({ strict: false }) as { _splat?: string };
+  const urlArtifactId = _splat;
   const { q: searchQuery, spotlight: spotlightParam } = useSearch({ strict: false }) as {
     q?: string;
     spotlight?: string;
@@ -541,21 +541,22 @@ function WorkspaceRoute() {
   useEffect(() => addEventListener(document, "keyup", handleAnnotationModeKeyUp), [handleAnnotationModeKeyUp]);
   useEffect(() => addEventListener(globalThis.window, "blur", handleAnnotationModeBlur), [handleAnnotationModeBlur]);
 
-  // The URL names the active artifact; everything below derives from it. A
-  // missing or unknown stem renders the first artifact, and the redirect
-  // effect mirrors that fallback into the URL.
+  // The URL names the active artifact by its artifactId — the scope-relative
+  // path including its extension, so the key cannot collide and no derivation
+  // is needed. A missing or unknown id renders the first artifact, and the
+  // redirect effect mirrors that fallback into the URL.
   const reviewCatalog = state.status === "ready" ? state.review.catalog : null;
   const activeArtifact = useMemo(() => {
     if (!reviewCatalog) return undefined;
     return (
-      (stem !== undefined
-        ? reviewCatalog.artifacts.find(({ artifactId }) => artifactStem(artifactId) === stem)
+      (urlArtifactId !== undefined
+        ? reviewCatalog.artifacts.find(({ artifactId }) => artifactId === urlArtifactId)
         : undefined) ??
       reviewCatalog.artifacts.find(({ type }) => type === "behavior") ??
       reviewCatalog.artifacts.find(({ type }) => type === "design")
     );
-  }, [reviewCatalog, stem]);
-  const activeStem = activeArtifact ? artifactStem(activeArtifact.artifactId) : undefined;
+  }, [reviewCatalog, urlArtifactId]);
+  const activeArtifactId = activeArtifact?.artifactId;
 
   // Selecting an artifact pushes a fresh URL: the query and spotlight params
   // belong to the artifact they were created on. The selection also becomes
@@ -571,31 +572,31 @@ function WorkspaceRoute() {
           current[type] === artifactId ? current : { ...current, [type]: artifactId },
         );
       }
-      void navigate({ params: { stem: artifactStem(artifactId) }, search: {}, to: "/artifacts/$stem" });
+      void navigate({ params: { _splat: artifactId }, search: {}, to: "/artifacts/$" });
     },
     [navigate, reviewCatalog],
   );
 
   useEffect(() => {
-    if (!activeStem || stem === activeStem) return;
-    void navigate({ params: { stem: activeStem }, replace: true, search: true, to: "/artifacts/$stem" });
-  }, [activeStem, navigate, stem]);
+    if (!activeArtifactId || urlArtifactId === activeArtifactId) return;
+    void navigate({ params: { _splat: activeArtifactId }, replace: true, search: true, to: "/artifacts/$" });
+  }, [activeArtifactId, navigate, urlArtifactId]);
 
   // Typing replaces the URL on every keystroke — the URL is the state, no
   // debounce — and preserves the spotlight param.
   const changeSearchQuery = useCallback(
     (value: string) => {
       void navigate({
-        params: { stem: activeStem },
+        params: { _splat: activeArtifactId },
         replace: true,
         search: (previous: { q?: string; spotlight?: string }) => ({
           q: value === "" ? undefined : value,
           spotlight: previous.spotlight,
         }),
-        to: "/artifacts/$stem",
+        to: "/artifacts/$",
       });
     },
-    [activeStem, navigate],
+    [activeArtifactId, navigate],
   );
 
   // The review view is derived from the active artifact, so switching views
@@ -615,21 +616,21 @@ function WorkspaceRoute() {
   // A spotlight ping writes itself into the URL: a push when it switches the
   // artifact (the query and any earlier spotlight drop with the move), a
   // replace when it re-targets the open one. The router state is read instead
-  // of the stem hook so the callback stays stable and the SSE subscription
+  // of the URL hook so the callback stays stable and the SSE subscription
   // does not re-run on every navigation.
   const router = useRouter();
   const followSpotlight = useCallback(
     (spotlight: ArtifactSpotlight) => {
       const param = encodeSpotlightParam(spotlight);
-      const targetStem = artifactStem(spotlight.artifactId);
-      const sameArtifact = router.state.location.pathname === `/artifacts/${targetStem}`;
+      const openArtifactId = decodeURIComponent(router.state.location.pathname.slice("/artifacts/".length));
+      const sameArtifact = openArtifactId === spotlight.artifactId;
       void navigate({
-        params: { stem: targetStem },
+        params: { _splat: spotlight.artifactId },
         replace: sameArtifact,
         search: sameArtifact
           ? (previous: { q?: string; spotlight?: string }) => ({ q: previous.q, spotlight: param })
           : { spotlight: param },
-        to: "/artifacts/$stem",
+        to: "/artifacts/$",
       });
     },
     [navigate, router],
@@ -695,30 +696,30 @@ function WorkspaceRoute() {
   // A spotlight param that fails the schema or disagrees with the catalog (or
   // names a different artifact than the path) is quietly dropped from the URL.
   useEffect(() => {
-    if (spotlightParam === undefined || !reviewCatalog || !activeStem) return;
+    if (spotlightParam === undefined || !reviewCatalog || !activeArtifactId) return;
     const coherent =
       spotlight !== undefined &&
-      artifactStem(spotlight.artifactId) === activeStem &&
+      spotlight.artifactId === activeArtifactId &&
       validateSpotlightAgainstCatalog(reviewCatalog, spotlight).status === "ok";
     if (coherent) return;
     void navigate({
-      params: { stem: activeStem },
+      params: { _splat: activeArtifactId },
       replace: true,
       search: (previous: { q?: string; spotlight?: string }) => ({ q: previous.q }),
-      to: "/artifacts/$stem",
+      to: "/artifacts/$",
     });
-  }, [spotlightParam, spotlight, reviewCatalog, activeStem, navigate]);
+  }, [spotlightParam, spotlight, reviewCatalog, activeArtifactId, navigate]);
 
   // Closing the spotlight ends its state, so the param leaves the URL.
   const closeSpotlight = useCallback(() => {
-    if (!activeStem) return;
+    if (!activeArtifactId) return;
     void navigate({
-      params: { stem: activeStem },
+      params: { _splat: activeArtifactId },
       replace: true,
       search: (previous: { q?: string; spotlight?: string }) => ({ q: previous.q }),
-      to: "/artifacts/$stem",
+      to: "/artifacts/$",
     });
-  }, [activeStem, navigate]);
+  }, [activeArtifactId, navigate]);
 
   async function confirmAnnotationClose(): Promise<boolean> {
     if (!hasUnsavedAnnotationChanges(annotationState)) return true;
@@ -1177,7 +1178,7 @@ const rootRoute = createRootRouteWithContext<Readonly<{ client: DataClient }>>()
 });
 
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: "/" });
-const artifactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/artifacts/$stem" });
+const artifactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/artifacts/$" });
 const routeTree = rootRoute.addChildren([indexRoute, artifactRoute]);
 
 function createWorkspaceRouter(client: DataClient, history?: RouterHistory) {

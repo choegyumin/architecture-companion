@@ -62,12 +62,11 @@ describe("catalog parsing", () => {
     expect(() => parseCatalog({ artifacts: [{ ...validBehavior, id }] })).toThrow("Invalid catalog");
   });
 
-  it("rejects the same filename in different directories as a duplicate URL stem", () => {
-    expect(() =>
-      parseCatalog({
-        artifacts: [validBehavior, { ...validBehavior, artifactId: "src/account/checkout.archcomp.json" }],
-      }),
-    ).toThrow("Duplicate artifact stem: checkout");
+  it("allows the same filename in different directories", () => {
+    const catalog = {
+      artifacts: [validBehavior, { ...validBehavior, artifactId: "src/account/checkout.archcomp.json" }],
+    };
+    expect(parseCatalog(catalog)).toEqual(catalog);
   });
 
   it("preserves artifact types and order in a single catalog collection", () => {

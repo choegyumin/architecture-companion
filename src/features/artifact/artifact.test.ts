@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { artifactSchema, artifactStem, parseArtifact } from "@/features/artifact/artifact";
+import { artifactSchema, parseArtifact } from "@/features/artifact/artifact";
 import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
 import {
   componentCompositionSchema,
@@ -540,18 +540,6 @@ describe("component composition metadata", () => {
     }
     expect(schema.$defs?.ComponentStructureDefaultEdge.properties).not.toHaveProperty("composition");
     expect(schema.$defs?.ComponentStructureControlEdge.properties).not.toHaveProperty("composition");
-  });
-});
-
-describe("artifact stem", () => {
-  it.each([
-    [".architecture-companion/artifacts/dependency-graph.json", "dependency-graph"],
-    [".architecture-companion/artifacts/invite-member.archcomp.json", "invite-member.archcomp"],
-    ["src/checkout/structure.archcomp.json", "structure.archcomp"],
-    ["dependency-graph.json", "dependency-graph"],
-    ["README", "README"],
-  ])("derives the URL stem %s from %s", (artifactId, stem) => {
-    expect(artifactStem(artifactId)).toBe(stem);
   });
 });
 

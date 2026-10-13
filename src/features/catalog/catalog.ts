@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { type Artifact, artifactIdSchema, artifactStem, parseArtifact } from "@/features/artifact/artifact";
+import { type Artifact, artifactIdSchema, parseArtifact } from "@/features/artifact/artifact";
 
 export const catalogConfigSchema = z
   .object({
@@ -48,15 +48,9 @@ export function parseCatalog(input: unknown): CompanionCatalog {
 
   const issues: string[] = [];
   const ids = new Set<string>();
-  const stems = new Set<string>();
   for (const artifact of catalog.artifacts) {
     if (ids.has(artifact.artifactId)) issues.push(`Duplicate artifact path: ${artifact.artifactId}`);
     ids.add(artifact.artifactId);
-    // The stem is the URL key, so two artifacts sharing a file name would
-    // claim the same URL.
-    const stem = artifactStem(artifact.artifactId);
-    if (stems.has(stem)) issues.push(`Duplicate artifact stem: ${stem}`);
-    stems.add(stem);
   }
   if (issues.length > 0) throw new Error(`Invalid catalog: ${issues.join("; ")}`);
 

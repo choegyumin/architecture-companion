@@ -99,19 +99,27 @@ describe("workspace URL routing", () => {
 
     try {
       expect(await screen.findByRole("button", { name: "Invite member" })).toHaveAttribute("aria-current", "page");
-      await waitFor(() => expect(history.location.pathname).toBe("/artifacts/invite-member.archcomp"));
+      await waitFor(() =>
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/invite-member.archcomp.json",
+        ),
+      );
     } finally {
       await cleanup();
     }
   });
 
   it("renders a deep-linked design artifact", async () => {
-    const { history, cleanup } = await renderWorkspace("/artifacts/settings-structure.archcomp");
+    const { history, cleanup } = await renderWorkspace(
+      "/artifacts/.architecture-companion/artifacts/settings-structure.archcomp.json",
+    );
 
     try {
       expect(await screen.findByRole("button", { name: "Settings structure" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("tab", { name: "Code Design" })).toHaveAttribute("aria-selected", "true");
-      expect(history.location.pathname).toBe("/artifacts/settings-structure.archcomp");
+      expect(history.location.pathname).toBe(
+        "/artifacts/.architecture-companion/artifacts/settings-structure.archcomp.json",
+      );
     } finally {
       await cleanup();
     }
@@ -125,14 +133,24 @@ describe("workspace URL routing", () => {
       await screen.findByRole("button", { name: "Invite member" });
 
       await user.click(screen.getByRole("tab", { name: "Code Design" }));
-      await waitFor(() => expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp"));
+      await waitFor(() =>
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json",
+        ),
+      );
 
       await user.click(screen.getByRole("button", { name: "Settings structure" }));
-      await waitFor(() => expect(history.location.pathname).toBe("/artifacts/settings-structure.archcomp"));
+      await waitFor(() =>
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/settings-structure.archcomp.json",
+        ),
+      );
 
       history.back();
       await waitFor(() => {
-        expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp");
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json",
+        );
         expect(screen.getByRole("button", { name: "Checkout structure" })).toHaveAttribute("aria-current", "page");
       });
     } finally {
@@ -145,7 +163,11 @@ describe("workspace URL routing", () => {
 
     try {
       expect(await screen.findByRole("button", { name: "Invite member" })).toHaveAttribute("aria-current", "page");
-      await waitFor(() => expect(history.location.pathname).toBe("/artifacts/invite-member.archcomp"));
+      await waitFor(() =>
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/invite-member.archcomp.json",
+        ),
+      );
     } finally {
       await cleanup();
     }
@@ -161,7 +183,9 @@ describe("workspace URL routing", () => {
       await user.click(screen.getByRole("tab", { name: "Code Design" }));
 
       await waitFor(() => {
-        expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp");
+        expect(history.location.pathname).toBe(
+          "/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json",
+        );
         expect(screen.getByRole("tab", { name: "Code Design" })).toHaveAttribute("aria-selected", "true");
       });
     } finally {
@@ -199,20 +223,24 @@ describe("workspace URL routing", () => {
 
   it("deep-links a spotlight URL to its panel", async () => {
     const { history, cleanup } = await renderWorkspace(
-      `/artifacts/checkout-structure.archcomp?spotlight=${encodeSpotlightParam(designSpotlight)}`,
+      `/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json?spotlight=${encodeSpotlightParam(designSpotlight)}`,
     );
 
     try {
       expect(await screen.findByRole("status")).toHaveTextContent("Checkout page owns the flow");
       expect(screen.getByRole("tab", { name: "Code Design" })).toHaveAttribute("aria-selected", "true");
-      expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp");
+      expect(history.location.pathname).toBe(
+        "/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json",
+      );
     } finally {
       await cleanup();
     }
   });
 
   it("drops an invalid spotlight param from the URL", async () => {
-    const { history, cleanup } = await renderWorkspace("/artifacts/invite-member.archcomp?spotlight=garbage");
+    const { history, cleanup } = await renderWorkspace(
+      "/artifacts/.architecture-companion/artifacts/invite-member.archcomp.json?spotlight=garbage",
+    );
 
     try {
       expect(await screen.findByRole("button", { name: "Invite member" })).toHaveAttribute("aria-current", "page");
@@ -226,7 +254,7 @@ describe("workspace URL routing", () => {
   it("removes the spotlight param when the panel closes", async () => {
     const user = userEvent.setup();
     const { history, cleanup } = await renderWorkspace(
-      `/artifacts/checkout-structure.archcomp?spotlight=${encodeSpotlightParam(designSpotlight)}`,
+      `/artifacts/.architecture-companion/artifacts/checkout-structure.archcomp.json?spotlight=${encodeSpotlightParam(designSpotlight)}`,
     );
 
     try {
