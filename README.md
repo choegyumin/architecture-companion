@@ -92,7 +92,7 @@ You can also create diagrams tailored to specific questions. Diagrams based on s
 | Module dependency graph (JS/TS) | Groups folders hierarchically to show dependencies between files and references to external packages. Use Focus to inspect the detailed dependencies of files, folders, and dependency paths of interest. | Yes             |
 | Component render tree (React)   | Shows which components each component renders. Select branches and toggle conditions to see how the rendered components change.                                                                           | Yes             |
 
-<!-- TODO: Add support for use case diagrams -->
+<!-- TODO: Add support for "use case" diagrams linked to test code -->
 
 <br><br>
 
