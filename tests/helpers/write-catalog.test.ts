@@ -24,17 +24,19 @@ const input = {
 };
 
 describe("writeCatalog", () => {
-  test("omits normalized defaults without changing the parsed catalog", async () => {
+  test.each([
+    { name: "omitted defaults", document: input },
+    { name: "explicit defaults", document: parseArtifact(input) },
+  ])("preserves $name without changing the parsed catalog", async ({ document }) => {
     const scope = await mkdtemp(join(tmpdir(), "architecture-companion-write-"));
     try {
       const artifactId = "diagram.archcomp.json";
-      const document = parseArtifact(input);
       await writeCatalog(scope, { artifacts: [{ ...document, artifactId }] });
-      expect(JSON.parse(await readFile(join(scope, artifactId), "utf8"))).toEqual(input);
+      expect(JSON.parse(await readFile(join(scope, artifactId), "utf8"))).toEqual(document);
       const catalog = await readCatalog(scope);
       expect(catalog.status).toBe("valid");
       if (catalog.status !== "valid") throw new Error("Expected a valid written catalog");
-      expect(catalog.catalog.artifacts).toEqual([{ ...document, artifactId }]);
+      expect(catalog.catalog.artifacts).toEqual([{ ...parseArtifact(document), artifactId }]);
     } finally {
       await rm(scope, { recursive: true, force: true });
     }
