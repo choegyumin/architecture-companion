@@ -1,6 +1,8 @@
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import {
   type ArtifactSpotlight,
+  decodeSpotlightParam,
+  encodeSpotlightParam,
   parseArtifactSpotlight,
   validateSpotlightAgainstCatalog,
 } from "@/features/spotlight/spotlight";
@@ -161,5 +163,34 @@ describe("validateSpotlightAgainstCatalog", () => {
     expect(result.message).toContain("Step 2: unknown diagram edge: nope");
     expect(result.message).toContain("from cart to ghost");
     expect(result.message).toContain("Step 2: unknown diagram edge: gone");
+  });
+});
+
+describe("spotlight URL param", () => {
+  it("round-trips a spotlight through the base64url param", () => {
+    const value = spotlight([
+      { elements: [{ type: "node", id: "cart" }], caption: "장바구니에서 시작" },
+      { elements: [{ type: "edge", id: "e1" }], caption: "결제로 흐른다" },
+    ]);
+
+    const param = encodeSpotlightParam(value);
+
+    expect(param).toMatch(/^[\w-]+$/);
+    expect(decodeSpotlightParam(param)).toEqual(value);
+  });
+
+  it("drops undecodable params", () => {
+    expect(decodeSpotlightParam("not-base64url-$$$")).toBeUndefined();
+    const broken = encodeSpotlightParam(spotlight([{ elements: [], caption: "x" }])).slice(0, 10);
+    expect(decodeSpotlightParam(broken)).toBeUndefined();
+  });
+
+  it("drops params whose JSON fails the spotlight schema", () => {
+    const json = JSON.stringify({ artifactId: "a.json", diagram: { steps: [{ elements: [] }] } });
+    const bytes = new TextEncoder().encode(json);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    const param = btoa(binary).replaceAll("+", "-").replaceAll("/", "_");
+    expect(decodeSpotlightParam(param)).toBeUndefined();
   });
 });

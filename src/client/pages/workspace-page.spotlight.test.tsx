@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createMemoryHistory } from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 
@@ -142,10 +143,12 @@ async function renderWorkspace(catalogContents: typeof catalog | typeof sequence
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
   );
-  const view = render(<WorkspacePage client={client} />);
+  const history = createMemoryHistory({ initialEntries: ["/"] });
+  const view = render(<WorkspacePage client={client} history={history} />);
 
   return {
     app,
+    history,
     cleanup: async () => {
       view.unmount();
       await rm(scopePath, { recursive: true });
@@ -249,9 +252,9 @@ describe("workspace spotlight", () => {
     }
   });
 
-  it("keeps the spotlight while the reviewer browses other artifacts", async () => {
+  it("drops the spotlight on artifact moves and revives it through history back", async () => {
     const user = userEvent.setup();
-    const { app, cleanup } = await renderWorkspace();
+    const { app, history, cleanup } = await renderWorkspace();
 
     try {
       await publishSpotlight(app, designSpotlight);
@@ -267,13 +270,20 @@ describe("workspace spotlight", () => {
       expect(document.querySelector(".diagram-spotlight-emphasized")).toBeNull();
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
+      // A fresh navigation back does not revive the spotlight…
       await user.click(screen.getByRole("button", { name: "Checkout structure" }));
 
-      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("2/2"));
-      expect(screen.getByRole("status")).toHaveTextContent("Payment client is composed in");
-      await waitFor(() => {
-        expect(document.querySelector(".diagram-spotlight-emphasized")).not.toBeNull();
-      });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Checkout structure" })).toHaveAttribute("aria-current", "page"),
+      );
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+      // …only history back restores the entry that still carries it, at step
+      // 1. Two entries back: the fresh Checkout visit sits on top of the
+      // Settings visit, which sits on top of the spotlight entry.
+      history.go(-2);
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1/2"));
+      expect(screen.getByRole("status")).toHaveTextContent("Checkout page owns the flow");
     } finally {
       await cleanup();
     }

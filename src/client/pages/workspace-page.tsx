@@ -9,6 +9,7 @@ import {
   useNavigate,
   useParams,
   useRouteContext,
+  useRouter,
   useSearch,
 } from "@tanstack/react-router";
 import { FolderSearch, MessageSquarePlus } from "lucide-react";
@@ -30,7 +31,12 @@ import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
 import { artifactStem } from "@/features/artifact/artifact";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
-import type { ArtifactSpotlight } from "@/features/spotlight/spotlight";
+import {
+  type ArtifactSpotlight,
+  decodeSpotlightParam,
+  encodeSpotlightParam,
+  validateSpotlightAgainstCatalog,
+} from "@/features/spotlight/spotlight";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
@@ -45,16 +51,6 @@ type ReviewBundle = Readonly<{
 
 type ReviewLoadMode = "initial" | "refresh";
 type ReviewView = "design" | "process";
-
-/**
- * A received spotlight ping with the reviewer's current step. The switch to
- * the spotlighted artifact happens once per ping; afterwards the reviewer
- * browses freely until the spotlight is closed or replaced by a newer ping.
- */
-type SpotlightState = Readonly<{
-  spotlight: ArtifactSpotlight;
-  stepIndex: number;
-}>;
 
 type ReviewState =
   | Readonly<{ status: "loading" }>
@@ -426,11 +422,13 @@ function WorkspaceRoute() {
   const { client } = useRouteContext({ strict: false }) as { client: DataClient };
   const navigate = useNavigate();
   const { stem } = useParams({ strict: false }) as { stem?: string };
-  const { q: searchQuery } = useSearch({ strict: false }) as { q?: string; spotlight?: string };
+  const { q: searchQuery, spotlight: spotlightParam } = useSearch({ strict: false }) as {
+    q?: string;
+    spotlight?: string;
+  };
   const [state, dispatchReview] = useReducer(reviewReducer, { status: "loading" });
   const [annotationState, dispatchAnnotation] = useReducer(annotationReducer, initialAnnotationState);
   const [sourceError, setSourceError] = useState<string>();
-  const [spotlightState, setSpotlightState] = useState<SpotlightState>();
   const activeCatalogRevisionId = state.status === "ready" ? state.catalogRevisionId : null;
   const holdAnnotationMode = useRef(false);
   const pressedKeys = useRef<ReadonlySet<string>>(new Set());
@@ -614,13 +612,27 @@ function WorkspaceRoute() {
     [reviewCatalog, rememberedArtifactIds, selectArtifact],
   );
 
-  // A spotlight ping switches to its artifact through the URL; the stem comes
-  // from the ping itself, so no catalog knowledge is needed here.
+  // A spotlight ping writes itself into the URL: a push when it switches the
+  // artifact (the query and any earlier spotlight drop with the move), a
+  // replace when it re-targets the open one. The router state is read instead
+  // of the stem hook so the callback stays stable and the SSE subscription
+  // does not re-run on every navigation.
+  const router = useRouter();
   const followSpotlight = useCallback(
     (spotlight: ArtifactSpotlight) => {
-      void navigate({ params: { stem: artifactStem(spotlight.artifactId) }, search: {}, to: "/artifacts/$stem" });
+      const param = encodeSpotlightParam(spotlight);
+      const targetStem = artifactStem(spotlight.artifactId);
+      const sameArtifact = router.state.location.pathname === `/artifacts/${targetStem}`;
+      void navigate({
+        params: { stem: targetStem },
+        replace: sameArtifact,
+        search: sameArtifact
+          ? (previous: { q?: string; spotlight?: string }) => ({ q: previous.q, spotlight: param })
+          : { spotlight: param },
+        to: "/artifacts/$stem",
+      });
     },
-    [navigate],
+    [navigate, router],
   );
 
   useEffect(() => {
@@ -657,7 +669,6 @@ function WorkspaceRoute() {
       },
       (spotlight) => {
         followSpotlight(spotlight);
-        setSpotlightState({ spotlight, stepIndex: 0 });
       },
     );
     void synchronizeReview("initial");
@@ -668,15 +679,46 @@ function WorkspaceRoute() {
     };
   }, [client, followSpotlight]);
 
-  const changeSpotlightStep = useCallback((stepIndex: number) => {
-    setSpotlightState((current) => {
-      if (!current) return current;
-      const lastStepIndex = current.spotlight.diagram.steps.length - 1;
-      return { ...current, stepIndex: Math.min(Math.max(stepIndex, 0), lastStepIndex) };
-    });
-  }, []);
+  // The spotlight lives in the URL; only the step index is page state, reset
+  // whenever a different spotlight arrives (a refresh restarts at step 1).
+  const spotlight = useMemo(
+    () => (spotlightParam === undefined ? undefined : decodeSpotlightParam(spotlightParam)),
+    [spotlightParam],
+  );
+  const [stepIndex, setStepIndex] = useState(0);
+  const [lastSpotlightParam, setLastSpotlightParam] = useState(spotlightParam);
+  if (spotlightParam !== lastSpotlightParam) {
+    setLastSpotlightParam(spotlightParam);
+    setStepIndex(0);
+  }
 
-  const closeSpotlight = useCallback(() => setSpotlightState(undefined), []);
+  // A spotlight param that fails the schema or disagrees with the catalog (or
+  // names a different artifact than the path) is quietly dropped from the URL.
+  useEffect(() => {
+    if (spotlightParam === undefined || !reviewCatalog || !activeStem) return;
+    const coherent =
+      spotlight !== undefined &&
+      artifactStem(spotlight.artifactId) === activeStem &&
+      validateSpotlightAgainstCatalog(reviewCatalog, spotlight).status === "ok";
+    if (coherent) return;
+    void navigate({
+      params: { stem: activeStem },
+      replace: true,
+      search: (previous: { q?: string; spotlight?: string }) => ({ q: previous.q }),
+      to: "/artifacts/$stem",
+    });
+  }, [spotlightParam, spotlight, reviewCatalog, activeStem, navigate]);
+
+  // Closing the spotlight ends its state, so the param leaves the URL.
+  const closeSpotlight = useCallback(() => {
+    if (!activeStem) return;
+    void navigate({
+      params: { stem: activeStem },
+      replace: true,
+      search: (previous: { q?: string; spotlight?: string }) => ({ q: previous.q }),
+      to: "/artifacts/$stem",
+    });
+  }, [activeStem, navigate]);
 
   async function confirmAnnotationClose(): Promise<boolean> {
     if (!hasUnsavedAnnotationChanges(annotationState)) return true;
@@ -1014,13 +1056,11 @@ function WorkspaceRoute() {
           }
       : undefined;
   const activeSpotlight: SpotlightController | undefined =
-    spotlightState &&
-    activeDiagramCollection &&
-    spotlightState.spotlight.artifactId === activeDiagramCollection.activeDiagram.artifactId
+    spotlight && activeDiagramCollection && spotlight.artifactId === activeDiagramCollection.activeDiagram.artifactId
       ? {
-          spotlight: spotlightState.spotlight,
-          stepIndex: spotlightState.stepIndex,
-          onStepChange: changeSpotlightStep,
+          spotlight,
+          stepIndex,
+          onStepChange: setStepIndex,
           onClose: closeSpotlight,
         }
       : undefined;

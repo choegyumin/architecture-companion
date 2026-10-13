@@ -46,6 +46,31 @@ export function parseArtifactSpotlight(input: unknown): ArtifactSpotlight {
   return result.data;
 }
 
+// The URL carries a spotlight as the raw JSON in base64url, uncompressed: a
+// representative ping stays around ~2.7KB, within the one local GET that
+// opens the URL. Anything that fails to decode or parse is quietly dropped
+// by the caller.
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+export function encodeSpotlightParam(spotlight: ArtifactSpotlight): string {
+  return toBase64Url(new TextEncoder().encode(JSON.stringify(spotlight)));
+}
+
+export function decodeSpotlightParam(param: string): ArtifactSpotlight | undefined {
+  try {
+    const base64 = param.replaceAll("-", "+").replaceAll("_", "/");
+    const binary = atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return parseArtifactSpotlight(JSON.parse(new TextDecoder().decode(bytes)));
+  } catch {
+    return undefined;
+  }
+}
+
 export type SpotlightValidation = Readonly<{ status: "ok" }> | Readonly<{ status: "invalid"; message: string }>;
 
 export function validateSpotlightAgainstCatalog(

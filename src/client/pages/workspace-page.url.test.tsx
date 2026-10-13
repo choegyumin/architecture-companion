@@ -8,6 +8,7 @@ import { userEvent } from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
 import { WorkspacePage } from "@/client/pages/workspace-page";
+import { type ArtifactSpotlight, encodeSpotlightParam } from "@/features/spotlight/spotlight";
 import { type AppType, createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { writeCatalog } from "@/server/write-catalog";
@@ -84,6 +85,13 @@ async function renderWorkspace(initialUrl = "/") {
     },
   };
 }
+
+const designSpotlight: ArtifactSpotlight = {
+  artifactId: ".architecture-companion/artifacts/checkout-structure.archcomp.json",
+  diagram: {
+    steps: [{ elements: [{ type: "node", id: "checkout-page" }], caption: "Checkout page owns the flow" }],
+  },
+};
 
 describe("workspace URL routing", () => {
   it("redirects the bare root to the first behavior artifact", async () => {
@@ -184,6 +192,50 @@ describe("workspace URL routing", () => {
       // remount, so the search box itself is gone here).
       history.back();
       await waitFor(() => expect(history.location.search).toBe("?q=Inv"));
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("deep-links a spotlight URL to its panel", async () => {
+    const { history, cleanup } = await renderWorkspace(
+      `/artifacts/checkout-structure.archcomp?spotlight=${encodeSpotlightParam(designSpotlight)}`,
+    );
+
+    try {
+      expect(await screen.findByRole("status")).toHaveTextContent("Checkout page owns the flow");
+      expect(screen.getByRole("tab", { name: "Code Design" })).toHaveAttribute("aria-selected", "true");
+      expect(history.location.pathname).toBe("/artifacts/checkout-structure.archcomp");
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("drops an invalid spotlight param from the URL", async () => {
+    const { history, cleanup } = await renderWorkspace("/artifacts/invite-member.archcomp?spotlight=garbage");
+
+    try {
+      expect(await screen.findByRole("button", { name: "Invite member" })).toHaveAttribute("aria-current", "page");
+      await waitFor(() => expect(history.location.search).toBe(""));
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("removes the spotlight param when the panel closes", async () => {
+    const user = userEvent.setup();
+    const { history, cleanup } = await renderWorkspace(
+      `/artifacts/checkout-structure.archcomp?spotlight=${encodeSpotlightParam(designSpotlight)}`,
+    );
+
+    try {
+      expect(await screen.findByRole("status")).toHaveTextContent("Checkout page owns the flow");
+
+      await user.click(screen.getByRole("button", { name: "Close spotlight" }));
+
+      await waitFor(() => expect(history.location.search).toBe(""));
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
     } finally {
       await cleanup();
     }
