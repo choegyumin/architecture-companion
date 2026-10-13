@@ -235,7 +235,9 @@ describe("workspace spotlight", () => {
 
       await publishSpotlight(app, {
         artifactId: ".architecture-companion/artifacts/invite-member.archcomp.json",
-        diagram: { steps: [{ elements: [{ type: "edge", id: "invite-delivered" }] }] },
+        diagram: {
+          steps: [{ elements: [{ type: "edge", id: "invite-delivered" }], caption: "Invitation flows out" }],
+        },
       });
 
       await waitFor(() =>

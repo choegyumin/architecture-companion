@@ -7,7 +7,9 @@ import type { CompanionCatalog } from "@/features/catalog/catalog";
 export const spotlightStepSchema = z
   .object({
     elements: z.array(annotationTargetSchema),
-    caption: z.string().optional(),
+    // Every step must explain itself; the agent instruction tells agents
+    // without anything to say to send the fixed fallback caption.
+    caption: z.string(),
   })
   .strict();
 

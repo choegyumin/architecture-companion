@@ -54,7 +54,7 @@ describe("parseArtifactSpotlight", () => {
               ],
               caption: "Cart starts checkout",
             },
-            { elements: [{ type: "node", id: "pay" }] },
+            { elements: [{ type: "node", id: "pay" }], caption: "Pay takes over" },
           ],
         },
       }),
@@ -69,25 +69,35 @@ describe("parseArtifactSpotlight", () => {
             ],
             caption: "Cart starts checkout",
           },
-          { elements: [{ type: "node", id: "pay" }] },
+          { elements: [{ type: "node", id: "pay" }], caption: "Pay takes over" },
         ],
       },
     });
   });
 
   it("accepts a step without elements to show a whole artifact", () => {
-    expect(parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [] }] } })).toEqual({
+    expect(
+      parseArtifactSpotlight({
+        artifactId: checkoutArtifactId,
+        diagram: { steps: [{ elements: [], caption: "All" }] },
+      }),
+    ).toEqual({
       artifactId: checkoutArtifactId,
-      diagram: { steps: [{ elements: [] }] },
+      diagram: { steps: [{ elements: [], caption: "All" }] },
     });
   });
 
-  it("rejects unknown fields, non-relative artifact ids, and empty step lists", () => {
+  it("rejects unknown fields, non-relative artifact ids, empty step lists, and captionless steps", () => {
     expect(() => parseArtifactSpotlight({ artifactId: checkoutArtifactId, reason: "why" })).toThrow();
-    expect(() => parseArtifactSpotlight({ artifactId: "/checkout", diagram: { steps: [{ elements: [] }] } })).toThrow();
+    expect(() =>
+      parseArtifactSpotlight({ artifactId: "/checkout", diagram: { steps: [{ elements: [], caption: "Why" }] } }),
+    ).toThrow();
     expect(() => parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [] } })).toThrow();
     expect(() =>
       parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [], step: 1 }] } }),
+    ).toThrow();
+    expect(() =>
+      parseArtifactSpotlight({ artifactId: checkoutArtifactId, diagram: { steps: [{ elements: [] }] } }),
     ).toThrow();
   });
 });
@@ -104,6 +114,7 @@ describe("validateSpotlightAgainstCatalog", () => {
             { type: "edge", id: "e1" },
             { type: "edge-set", sourceId: "cart", targetId: "pay", edgeIds: ["e1", "e2"] },
           ],
+          caption: "Cart fans out to Pay",
         },
       ]),
     );
@@ -114,7 +125,7 @@ describe("validateSpotlightAgainstCatalog", () => {
   it("rejects an unknown artifact", () => {
     const result = validateSpotlightAgainstCatalog(catalog(), {
       artifactId: "unknown",
-      diagram: { steps: [{ elements: [] }] },
+      diagram: { steps: [{ elements: [], caption: "Ghost artifact" }] },
     });
 
     expect(result).toEqual({
@@ -127,12 +138,13 @@ describe("validateSpotlightAgainstCatalog", () => {
     const result = validateSpotlightAgainstCatalog(
       catalog(),
       spotlight([
-        { elements: [{ type: "node", id: "missing" }] },
+        { elements: [{ type: "node", id: "missing" }], caption: "Missing node" },
         {
           elements: [
             { type: "edge", id: "nope" },
             { type: "edge-set", sourceId: "cart", targetId: "ghost", edgeIds: ["e1", "gone"] },
           ],
+          caption: "Ghost edges",
         },
       ]),
     );

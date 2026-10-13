@@ -38,7 +38,7 @@ function catalog(): CompanionCatalog {
 function spotlight(elements: ArtifactSpotlight["diagram"]["steps"][number]["elements"]): ArtifactSpotlight {
   return {
     artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
-    diagram: { steps: [{ elements: [...elements] }] },
+    diagram: { steps: [{ elements: [...elements], caption: "The checkout flow" }] },
   };
 }
 
@@ -145,7 +145,7 @@ describe("spotlight endpoint", () => {
 
     try {
       const unknownArtifact = await app.request(`${baseUrl}/api/spotlight`, {
-        body: JSON.stringify({ artifactId: "ghost", diagram: { steps: [{ elements: [] }] } }),
+        body: JSON.stringify({ artifactId: "ghost", diagram: { steps: [{ elements: [], caption: "Ghost" }] } }),
         headers,
         method: "POST",
       });

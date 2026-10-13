@@ -65,7 +65,7 @@ describe("spotlight endpoint request guard", () => {
         },
         body: JSON.stringify({
           artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
-          diagram: { steps: [{ elements: [] }] },
+          diagram: { steps: [{ elements: [], caption: "Cross-site" }] },
         }),
       });
 
@@ -92,7 +92,7 @@ describe("spotlight endpoint request guard", () => {
         },
         body: JSON.stringify({
           artifactId: ".architecture-companion/artifacts/checkout.archcomp.json",
-          diagram: { steps: [{ elements: [] }] },
+          diagram: { steps: [{ elements: [], caption: "Same-origin" }] },
         }),
       });
 

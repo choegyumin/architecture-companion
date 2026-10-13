@@ -45,7 +45,10 @@ describe("SpotlightIndicator", () => {
   });
 
   it("disables navigation at both ends", () => {
-    const twoSteps = spotlight([{ elements: [] }, { elements: [] }]);
+    const twoSteps = spotlight([
+      { elements: [], caption: "First" },
+      { elements: [], caption: "Second" },
+    ]);
 
     const { unmount } = renderIndicator(twoSteps, 0);
     expect(screen.getByRole("button", { name: "Previous step" })).toBeDisabled();
@@ -67,20 +70,20 @@ describe("SpotlightIndicator", () => {
     expect(screen.getByRole("button", { name: "Close spotlight" })).toBeInTheDocument();
   });
 
-  it("shows only the control bar for a single captionless step", () => {
-    renderIndicator(spotlight([{ elements: [] }]), 0);
-
-    expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Close spotlight" })).toBeInTheDocument();
-  });
-
   it("closes the spotlight from its close button only", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    renderIndicator(spotlight([{ elements: [] }, { elements: [] }]), 0, {
-      onStepChange: () => undefined,
-      onClose,
-    });
+    renderIndicator(
+      spotlight([
+        { elements: [], caption: "First" },
+        { elements: [], caption: "Second" },
+      ]),
+      0,
+      {
+        onStepChange: () => undefined,
+        onClose,
+      },
+    );
 
     await user.click(screen.getByRole("button", { name: "Close spotlight" }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -89,10 +92,18 @@ describe("SpotlightIndicator", () => {
   it("moves between steps with the arrow keys", async () => {
     const user = userEvent.setup();
     const onStepChange = vi.fn();
-    renderIndicator(spotlight([{ elements: [] }, { elements: [] }, { elements: [] }]), 1, {
-      onStepChange,
-      onClose: () => undefined,
-    });
+    renderIndicator(
+      spotlight([
+        { elements: [], caption: "First" },
+        { elements: [], caption: "Second" },
+        { elements: [], caption: "Third" },
+      ]),
+      1,
+      {
+        onStepChange,
+        onClose: () => undefined,
+      },
+    );
 
     await user.keyboard("{ArrowRight}");
     expect(onStepChange).toHaveBeenLastCalledWith(2);
@@ -109,7 +120,10 @@ describe("SpotlightIndicator", () => {
         <input aria-label="Search" />
         <textarea aria-label="Note" />
         <SpotlightIndicator
-          spotlight={spotlight([{ elements: [] }, { elements: [] }])}
+          spotlight={spotlight([
+            { elements: [], caption: "First" },
+            { elements: [], caption: "Second" },
+          ])}
           stepIndex={0}
           onStepChange={onStepChange}
           onClose={() => undefined}

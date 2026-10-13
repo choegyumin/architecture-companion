@@ -49,7 +49,7 @@ describe("applySpotlight", () => {
     const result = applySpotlight(
       model([cardNode("cart"), cardNode("pay")], [routeEdge("e1", "cart", "pay")]),
       spotlight([
-        { elements: [{ type: "node", id: "pay" }] },
+        { elements: [{ type: "node", id: "pay" }], caption: "Pay" },
         {
           elements: [
             { type: "node", id: "cart" },
@@ -75,7 +75,10 @@ describe("applySpotlight", () => {
   it("emphasizes only the addressed step", () => {
     const result = applySpotlight(
       model([cardNode("cart"), cardNode("pay")], [routeEdge("e1", "cart", "pay")]),
-      spotlight([{ elements: [{ type: "node", id: "pay" }] }, { elements: [{ type: "edge", id: "e1" }] }]),
+      spotlight([
+        { elements: [{ type: "node", id: "pay" }], caption: "Pay" },
+        { elements: [{ type: "edge", id: "e1" }], caption: "The message" },
+      ]),
       0,
     );
 
@@ -93,7 +96,9 @@ describe("applySpotlight", () => {
     ]);
     const result = applySpotlight(
       model([cardNode("cart"), cardNode("pay")], [routeEdge("agg-1", "cart", "pay")], edgeTargets),
-      spotlight([{ elements: [{ type: "edge-set", sourceId: "cart", targetId: "pay", edgeIds: ["e2"] }] }]),
+      spotlight([
+        { elements: [{ type: "edge-set", sourceId: "cart", targetId: "pay", edgeIds: ["e2"] }], caption: "Fan-out" },
+      ]),
       0,
     );
 
@@ -109,7 +114,7 @@ describe("applySpotlight", () => {
     };
     const result = applySpotlight(
       model([cardNode("cart"), cardNode("pay")], [inactiveEdge]),
-      spotlight([{ elements: [{ type: "edge", id: "e1" }] }]),
+      spotlight([{ elements: [{ type: "edge", id: "e1" }], caption: "The message" }]),
       0,
     );
 
@@ -124,7 +129,7 @@ describe("applySpotlight", () => {
     const graphEdgeIds = new Map<string, readonly string[]>([["edge:render", ["edge:stored-a", "edge:stored-b"]]]);
     const result = applySpotlight(
       model([cardNode("cart"), cardNode("pay")], [routeEdge("edge:render", "cart", "pay")], undefined, graphEdgeIds),
-      spotlight([{ elements: [{ type: "edge", id: "edge:stored-b" }] }]),
+      spotlight([{ elements: [{ type: "edge", id: "edge:stored-b" }], caption: "Projected origin" }]),
       0,
     );
 
@@ -151,7 +156,7 @@ describe("applySpotlight", () => {
     };
     const result = applySpotlight(
       model([groupNode, boundingGroup, cardNode("cart")]),
-      spotlight([{ elements: [{ type: "group", id: "store" }] }]),
+      spotlight([{ elements: [{ type: "group", id: "store" }], caption: "The store group" }]),
       0,
     );
 
@@ -166,12 +171,14 @@ describe("applySpotlight", () => {
   it("returns the unchanged model for a whole-artifact step or unknown elements", () => {
     const whole = model([cardNode("cart")], [routeEdge("e1", "cart", "cart")]);
 
-    expect(applySpotlight(whole, spotlight([{ elements: [] }]), 0)).toEqual({
+    expect(applySpotlight(whole, spotlight([{ elements: [], caption: "Whole artifact" }]), 0)).toEqual({
       model: whole,
       framedNodeIds: [],
       framedEdgeIds: [],
     });
-    expect(applySpotlight(whole, spotlight([{ elements: [{ type: "node", id: "ghost" }] }]), 0)).toEqual({
+    expect(
+      applySpotlight(whole, spotlight([{ elements: [{ type: "node", id: "ghost" }], caption: "Ghost" }]), 0),
+    ).toEqual({
       model: whole,
       framedNodeIds: [],
       framedEdgeIds: [],

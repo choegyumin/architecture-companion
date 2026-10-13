@@ -18,10 +18,11 @@ export type SpotlightController = Readonly<{
 
 /**
  * The spotlight panel over the canvas's top-right corner. The control bar is
- * always present; the current step's caption expands below it when the agent
- * supplied one. Arrow keys move between steps unless the reviewer is typing.
- * Dismissal is deliberately the only way to clear an active spotlight: the
- * agent, not the reviewer, owns it.
+ * always present, with the current step's caption below it: every step
+ * carries a caption, so the agent instruction says to send the fixed fallback
+ * line when there is nothing to explain. Arrow keys move between steps unless
+ * the reviewer is typing. Dismissal is deliberately the only way to clear an
+ * active spotlight: the agent, not the reviewer, owns it.
  */
 export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose }: SpotlightController) {
   const steps = spotlight.diagram.steps;
@@ -90,7 +91,7 @@ export function SpotlightIndicator({ spotlight, stepIndex, onStepChange, onClose
           <X aria-hidden="true" />
         </Button>
       </div>
-      {step?.caption ? <p className="min-h-0 shrink overflow-y-auto px-3 pb-3 text-sm">{step.caption}</p> : null}
+      <p className="min-h-0 shrink overflow-y-auto px-3 pb-3 text-sm">{step?.caption}</p>
     </Card>
   );
 }
