@@ -18,6 +18,7 @@ import type { RevisionAnnotationsRead } from "@/features/annotation/revision-ann
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
+import { Kbd } from "@/shared/react-ui/kbd";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
 import { ThemeToggle } from "@/shared/react-ui/theme-toggle";
 import { Toggle } from "@/shared/react-ui/toggle";
@@ -945,12 +946,15 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                   variant="outline"
                 >
                   <MessageSquarePlus data-icon="inline-start" />
-                  Comment <kbd aria-hidden="true">({platform.os.mac ? "⌥" : "Alt"})</kbd>
+                  Comment{" "}
+                  <Kbd aria-hidden="true" className="translate-x-0.5">
+                    {platform.os.mac ? "⌥" : "Alt"}
+                  </Kbd>
                 </Toggle>
               }
             />
             <TooltipContent sideOffset={8}>
-              Hold <kbd data-slot="kbd">{platform.os.mac ? "⌥" : "Alt"}</kbd> to comment while pressed
+              Hold <Kbd aria-hidden="true">{platform.os.mac ? "⌥" : "Alt"}</Kbd> to comment while pressed
             </TooltipContent>
           </Tooltip>
         }
