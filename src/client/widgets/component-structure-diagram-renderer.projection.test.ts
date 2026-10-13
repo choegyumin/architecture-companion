@@ -1,10 +1,11 @@
-import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
-import type { ComponentStructureDiagramGraph } from "@/features/diagram/diagram-graph";
+import { componentStructureDiagramGraphSchema } from "@/features/diagram/diagram-graph";
+
+import { projectDecisionNodes } from "./component-structure-diagram-renderer";
 
 // A gate whose disjuncts all traverse the same branch: one disjunct is the
 // branch choice alone, another carries a conditional before it. This is the
 // shape `(a || b) ? (a ? <p/> : null) : null` projects to before the hop split.
-const graph: ComponentStructureDiagramGraph = {
+const graph = componentStructureDiagramGraphSchema.parse({
   groups: [],
   nodes: [
     { nodeId: "root", type: "default", title: "Root" },
@@ -42,7 +43,7 @@ const graph: ComponentStructureDiagramGraph = {
       { controlId: "b", ownerNodeId: "root", type: "conditional", label: "b", dependsOn: [[]] },
     ],
   },
-};
+});
 
 const projected = projectDecisionNodes(graph);
 const entry = projected.edges.find((edge) => edge.source === "root" && edge.target === "a");

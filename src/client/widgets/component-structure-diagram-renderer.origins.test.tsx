@@ -1,4 +1,4 @@
-import { collectComponentOrigins } from "./component-structure-guards";
+import { collectComponentOrigins } from "./component-structure-diagram-renderer";
 
 it("resolves supplier names from the registry, stored nodes, and the outside-graph fallback", () => {
   const graph = {

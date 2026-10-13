@@ -1,15 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { attachGuardLabels } from "@/client/widgets/component-structure-guards";
+import { componentStructureDiagramGraphSchema, type DiagramControl } from "@/features/diagram/diagram-graph";
+
 import {
+  attachGuardLabels,
   componentPathEmphasis,
   type ComponentSelection,
+  projectDecisionNodes,
+  routeConditionText,
   selectEdgePath,
-} from "@/client/widgets/component-structure-path-selection";
-import { routeConditionText } from "@/client/widgets/component-structure-route-conditions";
-import { projectDecisionNodes } from "@/features/diagram/decision-nodes";
-import type { DiagramControl } from "@/features/diagram/diagram-graph";
+} from "./component-structure-diagram-renderer";
 
 const conditional = (id: string, label: string): DiagramControl => ({
   controlId: id,
@@ -57,6 +58,7 @@ describe("component structure route conditions", () => {
         controlId: "branch",
         ownerNodeId: "parent",
         type: "branch",
+        polarityPair: false,
         label: "mode",
         dependsOn: [[]],
         cases: [
@@ -72,32 +74,34 @@ describe("component structure route conditions", () => {
 
   it("shows projected off guards in the visible and accessible label without changing route selection", () => {
     // MessageEdge returns early for !data and for !first || !last.
-    const graph = projectDecisionNodes({
-      groups: [],
-      nodes: [
-        { type: "default", nodeId: "parent", title: "MessageEdge" },
-        { type: "default", nodeId: "child", title: "BaseEdge" },
-      ],
-      edges: [
-        {
-          type: "control",
-          edgeId: "render",
-          sourceNodeId: "parent",
-          targetNodeId: "child",
-          activeWhen: [
-            [
-              { controlId: "data", value: "on" },
-              { controlId: "first", value: "off" },
-              { controlId: "last", value: "off" },
+    const graph = projectDecisionNodes(
+      componentStructureDiagramGraphSchema.parse({
+        groups: [],
+        nodes: [
+          { type: "default", nodeId: "parent", title: "MessageEdge" },
+          { type: "default", nodeId: "child", title: "BaseEdge" },
+        ],
+        edges: [
+          {
+            type: "control",
+            edgeId: "render",
+            sourceNodeId: "parent",
+            targetNodeId: "child",
+            activeWhen: [
+              [
+                { controlId: "data", value: "on" },
+                { controlId: "first", value: "off" },
+                { controlId: "last", value: "off" },
+              ],
             ],
-          ],
+          },
+        ],
+        layoutContext: {
+          rootNodeIds: ["parent"],
+          controls: [conditional("data", "data"), conditional("first", "!first"), conditional("last", "!last")],
         },
-      ],
-      layoutContext: {
-        rootNodeIds: ["parent"],
-        controls: [conditional("data", "data"), conditional("first", "!first"), conditional("last", "!last")],
-      },
-    });
+      }),
+    );
     const edge = graph.edges.at(0)!;
     let selection: ComponentSelection = { data: "off", first: "on", last: "on" };
     const onSelect = vi.fn((edgeId: string, controlId: string, value: string) => {
@@ -126,14 +130,14 @@ describe("component structure route conditions", () => {
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            type: "route",
+            type: "connection",
             data: { path: "M0,0 L0,200", labelPosition: { x: 0, y: 100 } },
           },
         ],
         activeEdges: componentPathEmphasis(graph, selection).edges,
         onSelect,
       });
-      if (decorated.type !== "route") throw new Error("Expected a route edge");
+      if (decorated.type !== "connection") throw new Error("Expected a route edge");
       return decorated.data?.labelControls?.at(0)?.control;
     };
     const { rerender } = render(label());

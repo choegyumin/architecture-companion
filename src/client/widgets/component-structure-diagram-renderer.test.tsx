@@ -3,17 +3,16 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { vi } from "vitest";
 
+import type { DiagramView } from "@/client/parts/diagram-view";
 import { isComponentStructureArtifact, parseArtifact } from "@/features/artifact/artifact";
-import { calculateConditionPolarityPair } from "@/features/diagram/control-polarity";
-import { projectDecisionNodes, projectedComponentStructureNodeId } from "@/features/diagram/decision-nodes";
 
-import { ComponentStructureDiagramRenderer } from "./component-structure-diagram-renderer";
-import type { DiagramRendererBase } from "./diagram-renderer-base";
+import { ComponentStructureDiagramRenderer, projectDecisionNodes } from "./component-structure-diagram-renderer";
+import { projectedComponentStructureNodeId } from "./component-structure-diagram-renderer.layout";
 
 // Replace only canvas measurement/layout. Owner fields and selection use the
 // actual renderer, projection, node builders, and switches.
-vi.mock("./diagram-renderer-base", () => ({
-  DiagramRendererBase: ({ artifact, buildRenderModel, onOpenSource }: ComponentProps<typeof DiagramRendererBase>) => {
+vi.mock("@/client/parts/diagram-view", () => ({
+  DiagramView: ({ artifact, buildRenderModel, onOpenSource }: ComponentProps<typeof DiagramView>) => {
     if (!isComponentStructureArtifact(artifact)) throw new Error("Expected component structure");
     const graph = projectDecisionNodes(artifact.diagram.graph);
     const model = buildRenderModel(
@@ -31,7 +30,7 @@ vi.mock("./diagram-renderer-base", () => ({
       onOpenSource,
     );
     return model.nodes.map((node) =>
-      node.type === "card" ? (
+      node.type === "rectangle" ? (
         <section key={node.id} data-testid={node.id} data-active={node.data.accessibleDescription !== "Inactive path"}>
           {node.data.children}
         </section>
@@ -76,7 +75,11 @@ function renderGate(polarityPair: true | undefined) {
               ownerNodeId: "root",
               type: "branch",
               dependsOn: [[]],
-              ...calculateConditionPolarityPair("!ready"),
+              label: "ready",
+              cases: [
+                { caseId: "false", label: "ready" },
+                { caseId: "true", label: "!ready" },
+              ],
               polarityPair,
             },
           ],
