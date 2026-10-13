@@ -26,6 +26,7 @@ import {
   type DiagramReactFlowRenderModel,
   resolveDiagramNodeSizes,
 } from "@/client/parts/diagram-view.react-flow";
+import { applyWalkthrough } from "@/client/parts/diagram-view.walkthrough";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { Artifact } from "@/features/artifact/artifact";
 import { diagramEdgeDisplay, type DiagramLink } from "@/features/diagram/diagram-graph";
@@ -45,6 +46,9 @@ export type DiagramRendererProps = Readonly<{
   onOpenSource: (href: string) => void;
   searchQuery?: string;
   onSearchQueryChange?: (query: string) => void;
+  walkthroughElements?: readonly AnnotationTarget[];
+  /** An ExplanationPanel containing the caller's explanation. */
+  explanationPanel?: ReactNode;
 }>;
 
 type DiagramViewProps = DiagramRendererProps &
@@ -140,6 +144,7 @@ function DiagramViewContent({
   onPaneActivate,
   searchQuery,
   onSearchQueryChange,
+  walkthroughElements,
 }: DiagramContentProps) {
   const measurementNodes = useMemo(
     () => buildMeasurementNodes(artifact, onOpenSource),
@@ -229,6 +234,11 @@ function DiagramViewContent({
     if (rendered?.status === "ready") setNodes([...rendered.model.nodes]);
   }, [rendered, setNodes]);
 
+  const walkthroughPresentation = useMemo(() => {
+    if (rendered?.status !== "ready" || state.status !== "ready" || walkthroughElements === undefined) return undefined;
+    return applyWalkthrough({ ...rendered.model, nodes }, walkthroughElements, state.layout);
+  }, [nodes, rendered, state, walkthroughElements]);
+  const displayNodes = walkthroughPresentation?.model.nodes ?? nodes;
   const searchEnabled = rendered?.status === "ready";
   const handleSearchMatchesChange = useCallback(
     (matches: readonly DiagramReactFlowNode[], currentNode: DiagramReactFlowNode | null) => {
@@ -245,11 +255,12 @@ function DiagramViewContent({
     [],
   );
   const searchStampedNodes = useMemo(() => {
-    if (!searchEnabled || searchMatches.ids.size === 0) return nodes;
-    return nodes.map((node) =>
+    if (!searchEnabled || searchMatches.ids.size === 0) return [...displayNodes];
+    return displayNodes.map((node) =>
       searchMatches.ids.has(node.id)
         ? {
             ...node,
+            style: { ...node.style, opacity: 1 },
             className: cn(
               node.className,
               "is-search-match",
@@ -258,7 +269,7 @@ function DiagramViewContent({
           }
         : node,
     );
-  }, [nodes, searchEnabled, searchMatches]);
+  }, [displayNodes, searchEnabled, searchMatches]);
 
   useEffect(() => {
     if (!searchEnabled) return;
@@ -310,8 +321,17 @@ function DiagramViewContent({
       </ul>
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
-        edges={rendered?.status === "ready" ? [...rendered.model.edges] : []}
+        edges={
+          walkthroughPresentation
+            ? [...walkthroughPresentation.model.edges]
+            : rendered?.status === "ready"
+              ? [...rendered.model.edges]
+              : []
+        }
         nodes={searchStampedNodes}
+        focusFrame={walkthroughPresentation?.frame}
+        focusRequestKey={walkthroughElements}
+        reserveRight={walkthroughElements !== undefined ? 360 : 0}
         onCanvasClick={
           annotations.isCommentMode
             ? (point, target) => {
@@ -438,6 +458,7 @@ export function DiagramView({
   onPaneActivate,
   searchQuery,
   onSearchQueryChange,
+  walkthroughElements,
 }: DiagramViewProps) {
   const measurementKey = JSON.stringify(artifact);
 
@@ -459,6 +480,7 @@ export function DiagramView({
         activeIndicator={activeIndicator}
         explanationPanel={explanationPanel}
         referencePanel={referencePanel}
+        walkthroughElements={walkthroughElements}
       />
     </ReactFlowProvider>
   );

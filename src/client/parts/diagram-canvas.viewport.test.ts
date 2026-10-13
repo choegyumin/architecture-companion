@@ -1,7 +1,7 @@
 import type { ReactFlowInstance } from "@xyflow/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
+import { fitViewFraming, focusBoundsFraming } from "@/client/parts/diagram-canvas.viewport";
 
 function createReactFlowInstance(
   overrides: Readonly<{
@@ -30,6 +30,40 @@ function createReactFlowInstance(
 }
 
 const viewportElement = { clientHeight: 400, clientWidth: 600 } as HTMLElement;
+
+describe("camera reservation", () => {
+  const wideViewport = { clientWidth: 1000, clientHeight: 600 } as HTMLElement;
+  it("centers node or bounds framing in the usable area left of the explanation", async () => {
+    const { instance, setViewport } = createReactFlowInstance();
+    await focusBoundsFraming(instance, { x: 0, y: 0, width: 100, height: 100 }, wideViewport, 360);
+    expect(setViewport).toHaveBeenCalledWith({ x: 270, y: 250, zoom: 1 }, { duration: 500 });
+  });
+
+  it("reserves the same strip for initial and manual fit", async () => {
+    const { instance, setViewport, fitView } = createReactFlowInstance();
+    await fitViewFraming(instance, { mode: "fit" }, wideViewport, 360);
+    expect(setViewport).toHaveBeenCalledWith({ x: 270, y: 250, zoom: 1 }, { duration: 0 });
+    expect(fitView).not.toHaveBeenCalled();
+  });
+
+  it("does not move an unmeasured or hidden viewport", async () => {
+    const { instance, setViewport } = createReactFlowInstance();
+    await focusBoundsFraming(
+      instance,
+      { x: 0, y: 0, width: 100, height: 100 },
+      { clientWidth: 0, clientHeight: 0 } as HTMLElement,
+      360,
+    );
+    await focusBoundsFraming(instance, { x: 0, y: 0, width: 0, height: 0 }, wideViewport, 360);
+    expect(setViewport).not.toHaveBeenCalled();
+  });
+
+  it("releases the strip when no explanation is displayed", async () => {
+    const { instance, setViewport } = createReactFlowInstance();
+    await focusBoundsFraming(instance, { x: 0, y: 0, width: 100, height: 100 }, wideViewport);
+    expect(setViewport).toHaveBeenCalledWith({ x: 450, y: 250, zoom: 1 }, { duration: 500 });
+  });
+});
 
 describe("fitting the view to the layout", () => {
   it("keeps the fitted viewport from the fit policy", async () => {

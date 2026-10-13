@@ -8,16 +8,28 @@ import { DiagramCanvas } from "@/client/parts/diagram-canvas";
 const mocks = vi.hoisted(() => {
   const screenToFlowPosition = vi.fn(() => ({ x: 12, y: 34 }));
   const fitView = vi.fn();
+  const viewport = { x: 0, y: 0, zoom: 1 };
+  const setViewport = vi.fn(async (next: typeof viewport) => {
+    Object.assign(viewport, next);
+    return true;
+  });
   return {
+    viewport,
     platform: { os: { mac: false } },
-    flowInstance: { screenToFlowPosition, fitView },
+    flowInstance: {
+      screenToFlowPosition,
+      fitView,
+      setViewport,
+      getNodesBounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    },
     screenToFlowPosition,
     fitView,
   };
 });
 
 vi.mock("@base-ui/utils/platform", () => ({ platform: mocks.platform }));
-vi.mock("@xyflow/react", () => ({
+vi.mock("@xyflow/react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@xyflow/react")>()),
   Background: () => null,
   useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
   ReactFlow: ({
@@ -77,6 +89,64 @@ describe("diagram canvas", () => {
     mocks.platform.os.mac = false;
     mocks.screenToFlowPosition.mockClear();
     mocks.fitView.mockClear();
+  });
+
+  it("keeps a user's camera choice when projection styling changes, but reframes a new request", async () => {
+    vi.useFakeTimers();
+    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
+    const height = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
+    try {
+      const requestKey = {};
+      const bounds = { x: 1000, y: 1000, width: 100, height: 100 };
+      const overlays = (camera: { focusNodes: (ids: readonly string[]) => Promise<void> }) => (
+        <button onClick={() => void camera.focusNodes(["search-result"])}>Focus search result</button>
+      );
+      const { rerender } = render(
+        <DiagramCanvas
+          edges={[]}
+          nodes={[]}
+          reserveRight={360}
+          focusFrame={{ mode: "bounds", bounds }}
+          focusRequestKey={requestKey}
+          renderOverlays={overlays}
+        />,
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(50));
+      const requestedViewport = { ...mocks.viewport };
+      fireEvent.click(screen.getByRole("button", { name: "Focus search result" }));
+      const userViewport = { ...mocks.viewport };
+      expect(userViewport).not.toEqual(requestedViewport);
+
+      rerender(
+        <DiagramCanvas
+          edges={[]}
+          nodes={[]}
+          reserveRight={360}
+          focusFrame={{ mode: "bounds", bounds: { ...bounds } }}
+          focusRequestKey={requestKey}
+          renderOverlays={overlays}
+        />,
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(50));
+      expect(mocks.viewport).toEqual(userViewport);
+
+      rerender(
+        <DiagramCanvas
+          edges={[]}
+          nodes={[]}
+          reserveRight={360}
+          focusFrame={{ mode: "bounds", bounds }}
+          focusRequestKey={{}}
+          renderOverlays={overlays}
+        />,
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(50));
+      expect(mocks.viewport).toEqual(requestedViewport);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      vi.useRealTimers();
+    }
   });
 
   it("converts canvas clicks to flow coordinates and forwards them", async () => {

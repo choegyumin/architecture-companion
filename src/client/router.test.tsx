@@ -3,12 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createMemoryHistory } from "@tanstack/react-router";
-import { act, createEvent, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
+import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+import { createReviewUpdates } from "@/server/review-updates";
 
 import { renderWorkspace } from "../../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../../tests/helpers/wait-for-diagram";
@@ -80,7 +82,8 @@ const catalogArtifacts: readonly FixtureArtifact[] = [
 async function openWorkspace(entry: string, artifacts: readonly FixtureArtifact[] = catalogArtifacts) {
   const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-url-"));
   await writeCatalog(scopePath, { artifacts });
-  const app = createApp(await resolveCompanionScope(scopePath));
+  const updates = await createReviewUpdates(scopePath, { pollIntervalMs: 5 });
+  const app = createApp(await resolveCompanionScope(scopePath), { reviewUpdates: updates });
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
   );
@@ -88,8 +91,11 @@ async function openWorkspace(entry: string, artifacts: readonly FixtureArtifact[
   const mounted = await renderWorkspace(client, history);
   return {
     ...mounted,
+    app,
+    client,
     dispose: async () => {
       mounted.unmount();
+      await updates.close();
       await rm(scopePath, { recursive: true, force: true });
     },
   };
@@ -367,6 +373,402 @@ describe("workspace diagram search", () => {
       await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
     } finally {
       await workspace.dispose();
+    }
+  });
+});
+
+type WalkthroughStep = Readonly<{ elements: readonly AnnotationTarget[]; caption: string }>;
+type ArtifactWalkthroughFixture = Readonly<{
+  artifactId: string;
+  diagram: { steps: readonly WalkthroughStep[] };
+}>;
+
+function workflowWalkthrough(artifactId = workflowId): ArtifactWalkthroughFixture {
+  return {
+    artifactId,
+    diagram: {
+      steps: [
+        { elements: [{ type: "node", id: "alpha" }], caption: "Spotlight the Alpha trigger" },
+        { elements: [{ type: "group", id: "alpha-boundary" }], caption: "Spotlight the boundary" },
+      ],
+    },
+  };
+}
+
+async function encodeWalkthrough(walkthrough: ArtifactWalkthroughFixture): Promise<string> {
+  const { encodeArtifactWalkthrough } = await import("@/features/walkthrough/artifact-walkthrough");
+  return encodeArtifactWalkthrough(walkthrough);
+}
+
+async function postSpotlight(app: ReturnType<typeof createApp>, walkthrough: unknown): Promise<Response> {
+  let response!: Response;
+  await act(async () => {
+    response = await app.request("/api/spotlight", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(walkthrough),
+    });
+  });
+  return response;
+}
+
+describe("workspace walkthrough", () => {
+  it("renders a direct walkthrough URL with emphasis classes, coexisting search stamps, and an unchanged URL", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      await waitForDiagramReady();
+      const alpha = flowNode("alpha");
+      const relay = flowNode("alpha-relay");
+      const boundary = flowNode("alpha-boundary");
+      expect(within(region).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(region).getByText("1/2")).toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Previous step" })).toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Next step" })).toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Close walkthrough" })).toBeInTheDocument();
+      expect(alpha).toHaveClass("is-walkthrough-emphasis");
+      expect(relay).toHaveClass("is-walkthrough-dim");
+      expect(boundary).toHaveClass("is-walkthrough-dim");
+
+      const searchBefore = workspace.history.location.search;
+      const lengthBefore = workspace.history.length;
+      await user.click(within(region).getByRole("button", { name: "Next step" }));
+      expect(within(region).getByText("Spotlight the boundary")).toBeInTheDocument();
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+      expect(boundary).toHaveClass("is-walkthrough-emphasis");
+      expect(alpha).toHaveClass("is-walkthrough-dim");
+      await user.click(within(region).getByRole("button", { name: "Previous step" }));
+      expect(within(region).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(region).getByText("1/2")).toBeInTheDocument();
+      expect(workspace.history.location.search).toBe(searchBefore);
+      expect(workspace.history.length).toBe(lengthBefore);
+
+      const searchInput = screen.getByRole("combobox", { name: "Search nodes" });
+      await user.clear(searchInput);
+      await user.type(searchInput, "Alpha");
+      expect(alpha).toHaveClass("is-search-match", "is-walkthrough-emphasis");
+      expect(relay).toHaveClass("is-search-match", "is-walkthrough-dim");
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("traverses steps with arrow keys but ignores editing contexts and synthetic events", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const workspace = await openWorkspace(`/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}`);
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      const expectFirstStep = () => {
+        expect(within(region).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+        expect(within(region).getByText("1/2")).toBeInTheDocument();
+      };
+
+      expectFirstStep();
+      fireEvent.keyDown(document, { key: "ArrowRight" });
+      expect(within(region).getByText("Spotlight the boundary")).toBeInTheDocument();
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "ArrowLeft" });
+      expectFirstStep();
+
+      const input = await screen.findByRole("combobox", { name: "Search nodes" });
+      await user.click(input);
+      await user.keyboard("{ArrowRight}");
+      expectFirstStep();
+      await user.tab();
+      expect(input).not.toHaveFocus();
+
+      for (const role of ["textbox", "combobox", "checkbox", "radio", "switch", "slider", "spinbutton"]) {
+        const field = document.createElement("div");
+        field.setAttribute("role", role);
+        document.body.append(field);
+        try {
+          fireEvent.keyDown(field, { key: "ArrowRight" });
+          expectFirstStep();
+        } finally {
+          field.remove();
+        }
+      }
+      const editable = document.createElement("div");
+      editable.setAttribute("contenteditable", "true");
+      document.body.append(editable);
+      try {
+        fireEvent.keyDown(editable, { key: "ArrowRight" });
+        expectFirstStep();
+      } finally {
+        editable.remove();
+      }
+
+      for (const event of [
+        { key: "ArrowRight", ctrlKey: true },
+        { key: "ArrowRight", altKey: true },
+        { key: "ArrowRight", metaKey: true },
+        { key: "ArrowRight", shiftKey: true },
+        { key: "ArrowRight", repeat: true },
+        { key: "ArrowRight", isComposing: true },
+      ]) {
+        fireEvent.keyDown(document, event);
+        expectFirstStep();
+      }
+
+      const prevented = createEvent.keyDown(document, { key: "ArrowRight" });
+      prevented.preventDefault();
+      fireEvent(document, prevented);
+      expectFirstStep();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("ignores traversal past the first and last steps", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const workspace = await openWorkspace(`/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}`);
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+
+      fireEvent.keyDown(document, { key: "ArrowLeft" });
+      expect(within(region).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(region).getByText("1/2")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "ArrowRight" });
+      fireEvent.keyDown(document, { key: "ArrowRight" });
+      expect(within(region).getByText("Spotlight the boundary")).toBeInTheDocument();
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("shows an inline caption without navigation for a single-step walkthrough", async () => {
+    const encoded = await encodeWalkthrough({
+      artifactId: workflowId,
+      diagram: { steps: [{ elements: [{ type: "node", id: "alpha" }], caption: "Only step" }] },
+    });
+    const workspace = await openWorkspace(`/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}`);
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(region).getByText("Only step")).toBeInTheDocument();
+      expect(within(region).queryByRole("button", { name: "Previous step" })).not.toBeInTheDocument();
+      expect(within(region).queryByRole("button", { name: "Next step" })).not.toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Close walkthrough" })).toBeInTheDocument();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("quietly replace-removes a walkthrough that is not valid base64", async () => {
+    const workspace = await openWorkspace(`/artifacts/${workflowId}?walkthrough=!!not-base64&q=Alpha`);
+    try {
+      await screen.findByRole("region", { name: "Workflow product behavior diagram" });
+      await waitFor(() => {
+        const params = new URLSearchParams(workspace.history.location.search);
+        expect(params.get("q")).toBe("Alpha");
+        expect(params.get("walkthrough")).toBeNull();
+      });
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(workspace.history.length).toBe(1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("quietly replace-removes a walkthrough with an invalid shape", async () => {
+    const invalid = Buffer.from(JSON.stringify({ artifactId: workflowId })).toString("base64");
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(invalid)}&q=Alpha`,
+    );
+    try {
+      await screen.findByRole("region", { name: "Workflow product behavior diagram" });
+      await waitFor(() => {
+        const params = new URLSearchParams(workspace.history.location.search);
+        expect(params.get("q")).toBe("Alpha");
+        expect(params.get("walkthrough")).toBeNull();
+      });
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(workspace.history.length).toBe(1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("quietly replace-removes a walkthrough that references unknown catalog IDs", async () => {
+    const encoded = await encodeWalkthrough({
+      artifactId: workflowId,
+      diagram: { steps: [{ elements: [{ type: "node", id: "missing" }], caption: "Nowhere" }] },
+    });
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    try {
+      await screen.findByRole("region", { name: "Workflow product behavior diagram" });
+      await waitFor(() => {
+        const params = new URLSearchParams(workspace.history.location.search);
+        expect(params.get("q")).toBe("Alpha");
+        expect(params.get("walkthrough")).toBeNull();
+      });
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(workspace.history.length).toBe(1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("quietly replace-removes a walkthrough for a different artifact", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough(secondWorkflowId));
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    try {
+      await screen.findByRole("region", { name: "Workflow product behavior diagram" });
+      await waitFor(() => {
+        const params = new URLSearchParams(workspace.history.location.search);
+        expect(params.get("q")).toBe("Alpha");
+        expect(params.get("walkthrough")).toBeNull();
+      });
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(workspace.history.length).toBe(1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("ends the walkthrough when selecting another artifact and restores step one on back", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      await user.click(within(region).getByRole("button", { name: "Next step" }));
+      expect(within(region).getByText("Spotlight the boundary")).toBeInTheDocument();
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Z workflow" }));
+      await screen.findByRole("region", { name: "Z workflow product behavior diagram" });
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      expect(workspace.history.location.search).toBe("");
+
+      await act(async () => workspace.history.back());
+      await screen.findByRole("region", { name: "Workflow product behavior diagram" });
+      const restored = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(restored).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(restored).getByText("1/2")).toBeInTheDocument();
+      expect(new URLSearchParams(workspace.history.location.search).get("q")).toBe("Alpha");
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("replace-removes only the walkthrough when closed", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      await user.click(within(region).getByRole("button", { name: "Next step" }));
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+      const lengthBefore = workspace.history.length;
+
+      await user.click(within(region).getByRole("button", { name: "Close walkthrough" }));
+      expect(screen.queryByRole("region", { name: "Walkthrough" })).not.toBeInTheDocument();
+      const params = new URLSearchParams(workspace.history.location.search);
+      expect(params.get("q")).toBe("Alpha");
+      expect(params.get("walkthrough")).toBeNull();
+      expect(workspace.history.length).toBe(lengthBefore);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("resets an identical spotlight delivery to the first step while keeping the query", async () => {
+    const walkthrough = workflowWalkthrough();
+    const encoded = await encodeWalkthrough(walkthrough);
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      await user.click(within(region).getByRole("button", { name: "Next step" }));
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+      const lengthBefore = workspace.history.length;
+
+      expect((await postSpotlight(workspace.app, walkthrough)).ok).toBe(true);
+      const reset = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(reset).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(reset).getByText("1/2")).toBeInTheDocument();
+      expect(new URLSearchParams(workspace.history.location.search).get("q")).toBe("Alpha");
+      expect(workspace.history.length).toBe(lengthBefore);
+
+      await user.click(within(reset).getByRole("button", { name: "Next step" }));
+      expect(within(reset).getByText("2/2")).toBeInTheDocument();
+      expect((await postSpotlight(workspace.app, walkthrough)).ok).toBe(true);
+      const replayed = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(replayed).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(replayed).getByText("1/2")).toBeInTheDocument();
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("pushes a different-artifact spotlight with the query cleared", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const designWalkthrough: ArtifactWalkthroughFixture = {
+      artifactId: designId,
+      diagram: { steps: [{ elements: [{ type: "node", id: "alpha" }], caption: "Design step one" }] },
+    };
+    const workspace = await openWorkspace(
+      `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}&q=Alpha`,
+    );
+    try {
+      await screen.findByRole("region", { name: "Walkthrough" });
+      const lengthBefore = workspace.history.length;
+
+      expect((await postSpotlight(workspace.app, designWalkthrough)).ok).toBe(true);
+      await screen.findByRole("region", { name: "Design code design diagram" });
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(region).getByText("Design step one")).toBeInTheDocument();
+      const params = new URLSearchParams(workspace.history.location.search);
+      expect(params.get("q")).toBeNull();
+      expect(params.get("walkthrough")).not.toBeNull();
+      expect(workspace.history.length).toBe(lengthBefore + 1);
+    } finally {
+      await workspace.dispose();
+    }
+  });
+
+  it("returns to the first step in a freshly mounted app", async () => {
+    const encoded = await encodeWalkthrough(workflowWalkthrough());
+    const entry = `/artifacts/${workflowId}?walkthrough=${encodeURIComponent(encoded)}`;
+    const first = await openWorkspace(entry);
+    const user = userEvent.setup();
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      await user.click(within(region).getByRole("button", { name: "Next step" }));
+      expect(within(region).getByText("Spotlight the boundary")).toBeInTheDocument();
+      expect(within(region).getByText("2/2")).toBeInTheDocument();
+    } finally {
+      await first.dispose();
+    }
+
+    const second = await openWorkspace(entry);
+    try {
+      const region = await screen.findByRole("region", { name: "Walkthrough" });
+      expect(within(region).getByText("Spotlight the Alpha trigger")).toBeInTheDocument();
+      expect(within(region).getByText("1/2")).toBeInTheDocument();
+    } finally {
+      await second.dispose();
     }
   });
 });

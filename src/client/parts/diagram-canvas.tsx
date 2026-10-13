@@ -17,11 +17,17 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useState,
 } from "react";
 
-import { DIAGRAM_FIT_VIEW_OPTIONS, DIAGRAM_MIN_ZOOM, fitViewFraming } from "@/client/parts/diagram-canvas.viewport";
+import {
+  DIAGRAM_MIN_ZOOM,
+  type DiagramCameraFrame,
+  fitViewFraming,
+  focusBoundsFraming,
+} from "@/client/parts/diagram-canvas.viewport";
 import type { AnnotationTarget } from "@/features/annotation/annotation-document";
 import type { DiagramLayoutPoint, DiagramViewFramingOptions } from "@/features/diagram/diagram-spatial";
 import { BoundingGroupNode, type BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
@@ -93,6 +99,10 @@ type DiagramCanvasProps = Readonly<{
    */
   resolveEdgeHighlight?: (origin: EdgeHighlightOrigin) => ReadonlySet<string>;
   initialView?: DiagramViewFramingOptions;
+  focusFrame?: DiagramCameraFrame;
+  /** A new identity requests framing; projection styling alone must not recenter the camera. */
+  focusRequestKey?: object;
+  reserveRight?: number;
 }>;
 
 export function DiagramCanvas({
@@ -107,6 +117,9 @@ export function DiagramCanvas({
   onNodesChange,
   resolveEdgeHighlight,
   initialView,
+  focusFrame,
+  focusRequestKey,
+  reserveRight = 0,
 }: DiagramCanvasProps) {
   const { resolvedTheme } = useTheme();
   const { zoom } = useViewport();
@@ -146,30 +159,33 @@ export function DiagramCanvas({
 
   const fitView = useCallback(async () => {
     if (!flowInstance || !initialView || !canvasElement) return;
-    await fitViewFraming(flowInstance, initialView, canvasElement);
-  }, [canvasElement, flowInstance, initialView]);
+    await fitViewFraming(flowInstance, initialView, canvasElement, reserveRight);
+  }, [canvasElement, flowInstance, initialView, reserveRight]);
   const focusNodes = useCallback(
     async (nodeIds: readonly string[]) => {
-      if (!flowInstance) return;
-      await flowInstance.fitView({
-        ...DIAGRAM_FIT_VIEW_OPTIONS,
-        nodes: nodeIds.map((id) => ({ id })),
-        duration: 500,
-      });
+      if (!flowInstance || !canvasElement || nodeIds.length === 0) return;
+      const bounds = flowInstance.getNodesBounds([...nodeIds]);
+      await focusBoundsFraming(flowInstance, bounds, canvasElement, reserveRight);
     },
-    [flowInstance],
+    [canvasElement, flowInstance, reserveRight],
   );
 
+  const frameRequestedView = useEffectEvent(() => {
+    if (focusFrame?.mode === "nodes") void focusNodes(focusFrame.nodeIds);
+    else if (focusFrame?.mode === "bounds" && flowInstance && canvasElement) {
+      void focusBoundsFraming(flowInstance, focusFrame.bounds, canvasElement, reserveRight);
+    } else void fitView();
+  });
   useEffect(() => {
     let secondFrame = 0;
     const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(() => void fitView());
+      secondFrame = requestAnimationFrame(frameRequestedView);
     });
     return () => {
       cancelAnimationFrame(firstFrame);
       cancelAnimationFrame(secondFrame);
     };
-  }, [fitView]);
+  }, [fitView, focusRequestKey]);
 
   function isInteractiveClick(event: MouseEvent): boolean {
     return event.target instanceof Element && Boolean(event.target.closest(interactiveElementSelector));

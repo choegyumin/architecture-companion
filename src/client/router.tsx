@@ -11,7 +11,10 @@ export function createWorkspaceRouter(client: DataClient, history?: RouterHistor
   const rootRoute = createRootRoute({
     component: WorkspaceRoute,
     notFoundComponent: WorkspaceRoute,
-    validateSearch: z.object({ q: z.string().optional().catch(undefined) }),
+    validateSearch: z.object({
+      q: z.string().optional().catch(undefined),
+      walkthrough: z.string().optional().catch(undefined),
+    }),
   });
   const artifactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/artifacts/$" });
   return createRouter({
