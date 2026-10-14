@@ -31,8 +31,18 @@ npx skills add choegyumin/architecture-companion
 
 ● 정적 분석을 통해 CartPage를 루트로 하는 컴포넌트 구조를 다이어그램으로 만들었습니다.
 
-  아티팩트 URL: http://127.0.0.1:4317
+  컴패니언 URL: http://127.0.0.1:4317
   아티팩트 이름: Code Design > Cart Page Component Structure
+
+❯ 수량 상태를 누가 소유하고, 변경이 화면 갱신까지 이어지는 과정을 단계별로 보여줘.
+
+● Spotlight를 실행해서 브라우저에 Walkthrough를 전달했습니다.
+
+  수량 변경이 화면에 반영되는 왕복 흐름을 4단계로 담았습니다.
+  화면에 현재 단계의 요소가 강조와 설명이 함께 표시됩니다. 방향키(← →)로 단계를 이동해 보세요.
+
+  만약 브라우저에 아티팩트를 열어두지 않았다면 다음 URL로 접속하세요:
+  http://127.0.0.1:4317/artifacts/.architecture-companion/artifacts/cart-page-component-structure.archcomp.json?walkthrough=…
 
 ❯ 댓글 확인하고 답변해줘.
 
@@ -95,7 +105,7 @@ npx skills add choegyumin/architecture-companion
 
 - **에이전트가 그리는 그림은 해석 결과입니다.** 코딩 에이전트에 다이어그램을 요청하면 모델이 코드를 읽고 떠올린 구조를 그립니다. 같은 코드로 다시 요청하면 다른 그림이 나올 수 있고, 그려진 관계가 어느 소스에서 왔는지 확인할 길이 없습니다. Architecture Companion은 정적 분석 결과를 근거로 다이어그램을 생성합니다.
 - **다이어그램 단위 추상화는 맥락을 끊습니다.** C4 모델처럼 다이어그램마다 한 계층 레벨씩 보여주는 방식에서는, 상위 레벨을 표현하면 내부 요소 사이의 관계를 볼 수 없고, 하위 레벨만 표현하면 상위 형제 요소와의 관계를 볼 수 없습니다. Architecture Companion은 다이어그램을 추상화하는 대신, 하나의 다이어그램 안에서 상호작용으로 표현할 정보를 바꿔 인지부하를 줄입니다.
-- **대부분의 다이어그램은 일회용입니다.** 다이어그램은 이해를 돕는 그림이며, 지금도 적극적으로 쓰입니다. 그러나 이해하고 나면 그 역할이 끝납니다. Architecture Companion은 Annotation 등의 기능으로 그림에 의견을 남기고 작업으로 이어 가서, 이해를 넘어 AI와의 협업을 지원합니다.
+- **대부분의 다이어그램은 일회용입니다.** 다이어그램은 이해를 돕는 그림이며, 지금도 적극적으로 쓰입니다. 그러나 이해하고 나면 그 역할이 끝납니다. Architecture Companion은 Annotation, Spotlight 등의 기능으로 그림에 의견을 남기고 작업으로 이어 가서, 이해를 넘어 AI와의 협업을 지원합니다.
 - **범용 도구는 의존 그래프에 머뭅니다.** 코드를 분석해 그리는 도구도 대부분 파일·모듈의 의존과 참조 관계까지만 표현합니다. Architecture Companion은 컴포넌트 렌더 트리처럼 질문의 종류에 맞는 분석과 시각적 표현을 제공합니다.
 
 Architecture Companion의 설계 철학과 배경은 [philosophy.md](docs/philosophy.md)에 더 자세히 담아 두었습니다.
