@@ -57,7 +57,7 @@ curl -X POST "http://127.0.0.1:<port>/api/spotlight" \
 
 ## URL direct entry
 
-When the Review UI is remote or already closed, or as a first-class alternative to the POST, share a URL that opens the artifact with the walkthrough applied:
+When the Review UI is not open locally and the POST cannot reach it, deliver through a URL that opens the artifact with the walkthrough applied:
 
 `<server-url>/artifacts/<full artifactId>?walkthrough=<encoded>`
 
@@ -88,6 +88,28 @@ console.log(url.href);
 - Only canonical unpadded base64url decodes. The screen removes an undecodable `walkthrough` parameter from the URL without any error, so verify the encoding when constructing URLs by hand.
 - Refreshing, navigating back and forward, and re-entering such a URL all restart the walkthrough at its first step.
 - Spotlighting again while a walkthrough is showing also restarts at the first step.
+
+## Reporting delivery
+
+After delivering a Spotlight, write the reply so that a reader without the screen open can still tell what was delivered. It includes:
+
+- That the Spotlight was delivered, plus a one-line summary of the walkthrough — what it covers and how many steps it has.
+- How to view it. On the screen, the current step's elements are highlighted and its explanation is shown. When there are two or more steps, also mention that the arrow keys (← →) move between steps; a single-step walkthrough needs no navigation hint.
+- The walkthrough URL. Share it even when the walkthrough was delivered by POST.
+
+An example reply for a delivered 3-step walkthrough:
+
+```text
+I ran a Spotlight and delivered a Walkthrough to the browser.
+
+It covers the flow from order creation to the inventory update in 3 steps.
+The screen highlights the current step's elements and shows its explanation. Try moving between steps with the arrow keys (← →).
+
+If you don't have the artifact open in a browser, open this URL:
+http://127.0.0.1:4317/artifacts/.architecture-companion/artifacts/checkout-workflow.archcomp.json?walkthrough=…
+```
+
+The example shows the information to include, not a layout or wording to copy.
 
 ## Review-screen state around a walkthrough
 
