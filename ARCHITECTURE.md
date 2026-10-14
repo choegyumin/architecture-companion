@@ -1,5 +1,7 @@
 # Architecture
 
+<!-- TODO: Keep this document to the overall architecture; split implementation behavior and policies out into the appropriate documents. -->
+
 ## Directory Structure
 
 ```text
@@ -109,11 +111,15 @@ flowchart TB
 
 ## URL State
 
-- 선택된 Artifact(`/artifacts/` 아래의 `artifactId`)와 검색 질의(`q`)는 URL 상태로 관리된다.
-- Artifact URL은 주소창 직접 입력과 공유로 열 수 있는 1급 진입 경로다.
-- 사용자가 Artifact를 전환하면 새 이력 항목을 만든다(push). 쿼리 파라미터는 비워진다.
-- 그 외의 URL 갱신은 현재 항목을 치환한다(replace). 쿼리 파라미터 갱신(검색 질의 입력/제거 등)과 루트·불명 경로를 첫 Artifact로 보내는 리다이렉트가 모두 여기에 속한다.
-- 따라서 검색어는 뒤로가기로 복원되지 않고, Artifact 단위 URL 상태(선택과 질의)는 back/forward로 그대로 복원된다.
+- The URL owns the selected Artifact (the full `artifactId` path under `/artifacts/`), the search query (`q`), and the walkthrough (`walkthrough`).
+- An Artifact URL is a first-class entry point that opens through the address bar or a shared link.
+- Switching Artifacts — by user selection or by receiving a Spotlight — pushes a new history entry and clears the query parameters.
+- Every other URL update replaces the current entry: query parameter updates such as typing or clearing the search query, and the redirect that sends the root and unknown paths to the first Artifact.
+- The search query is therefore not restored by going back, while the Artifact-level URL state (selection, query, and walkthrough) is restored as-is by back and forward navigation.
+
+## Highlight and dim precedence
+
+Highlight and dim effects follow the precedence user initiative > agent initiative > system feedback; the higher overwrites the lower. In the current implementation this is search > Spotlight > screen interaction (hover, focus, and the like). Overwrite through styles alone where possible, and never lock interactions.
 
 ## Diagram Rendering Relationships
 
