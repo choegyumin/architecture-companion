@@ -1,8 +1,8 @@
 {
   "type": "design",
   "title": "Review session sequence",
-  "updatedAt": "2026-10-13T13:45:35.613Z",
-  "vcs": { "revision": "e7794fd70b01fdbfe7abd3b37d2fe42d5c8cc8b5", "divergesFromRevision": false },
+  "updatedAt": "2026-10-14T09:26:46.020Z",
+  "vcs": { "revision": "1799eea27e2fc6820c45d72da9b721c0ce29dc95", "divergesFromRevision": false },
   "generator": "built-in:freeform",
   "instructions": "## Purpose\nReview the time-ordered interactions of a successful review session, from server startup and URL handoff through loading diagrams, rendering, opening source evidence, and saving comments.\n\n## Regeneration\nTrace src/cli/serve.command.ts, src/server/start-server.ts, src/server/create-app.ts, src/server/read-catalog.ts, src/server/file-annotation-repository.ts, src/client/pages/workspace-page.tsx, src/client/data-client.ts, src/client/widgets/diagram-renderer.tsx, and src/client/parts/diagram-canvas.tsx. Follow the source-opening and diagram-layout implementations referenced by the diagram. Represent the participating actors and runtime components as lifelines and their verified calls, returns, and asynchronous requests in execution order. Keep revision-update and comment-conflict alternatives in their separate behavior diagrams.",
   "diagram": {
@@ -44,7 +44,7 @@
           "title": "Browser",
           "kind": "participant",
           "type": "lifeline",
-          "links": [{ "href": "source:///src/client/main.tsx" }],
+          "links": [{ "href": "source:///src/client/main.tsx" }, { "href": "source:///src/client/router.tsx" }],
           "activations": [
             {
               "activationId": "act-browser-boot",
@@ -268,7 +268,7 @@
           "type": "message",
           "sourceNodeId": "browser",
           "targetNodeId": "workspace",
-          "label": "Mount WorkspacePage"
+          "label": "Route the URL and mount WorkspacePage"
         },
         {
           "edgeId": "m06a",
