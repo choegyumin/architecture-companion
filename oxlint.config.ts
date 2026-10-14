@@ -128,7 +128,27 @@ const boundaryLayers = [
     kind: "file",
     type: "client-router",
     pattern: "src/client/router.tsx",
-    dependencies: ["client-page", "client-data"],
+    dependencies: [
+      "client-page",
+      "client-data",
+      "shared-react-ui",
+      "shared-react",
+      "shared-browser",
+      "shared-universal",
+    ],
+  },
+  {
+    kind: "file",
+    type: "client-main",
+    pattern: "src/client/main.tsx",
+    dependencies: [
+      "client-router",
+      "client-data",
+      "shared-react-ui",
+      "shared-react",
+      "shared-browser",
+      "shared-universal",
+    ],
   },
   {
     kind: "element",
@@ -253,7 +273,7 @@ export default defineConfig({
     },
     "boundaries/root-path": packageRoot,
     "boundaries/include": ["src/**/*"],
-    "boundaries/ignore": ["src/client/main.tsx", "src/**/*.spec.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+    "boundaries/ignore": ["src/**/*.spec.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
     "boundaries/elements-single-match": false,
     "boundaries/elements": boundaryLayers
       .filter(({ kind }) => kind === "element")
