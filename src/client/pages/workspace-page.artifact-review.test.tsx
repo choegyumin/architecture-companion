@@ -2,15 +2,15 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { ARTIFACTS_RELATIVE_PATH } from "@/server/read-catalog";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
 import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 const checkoutDiagram = {
@@ -188,7 +188,7 @@ async function renderArtifact(catalog: RenderableArtifact) {
   const client = createDataClient("http://architecture-companion.test", async (input, init) =>
     app.request(input, init),
   );
-  const review = render(<WorkspacePage client={client} />);
+  const review = await renderWorkspace(client);
 
   return {
     client,

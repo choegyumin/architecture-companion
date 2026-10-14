@@ -8,6 +8,7 @@ src/
     pages/          # Screen-level UI flow, data access, and state synchronization
     widgets/        # Composition and behavior of self-contained feature UIs
     parts/          # Domain-aware UI that presents supplied data and actions
+    router.tsx      # App route configuration, connected by main.tsx
     data-client.ts  # Server communication boundary consumed by the frontend
   server/           # HTTP handling, file storage access, and server-side orchestration
 
@@ -90,6 +91,7 @@ flowchart TB
 
 - Imports between modules in the same layer must still respect each module's responsibilities. Circular dependencies are not allowed. Unless an exception is explicitly documented, the same dependency boundaries apply to type-only imports.
 - The default UI dependency direction is `pages → widgets → parts → shared`. Higher-level modules may import lower-level modules directly, but reverse imports are not allowed. Cross-page imports are also prohibited.
+- `router.tsx` owns app route configuration. `main.tsx` connects the router to the app. Pages read URL state and coordinate navigation; lower UI layers receive data and callbacks rather than importing the app router.
 - `features` owns domain schemas, types, and Domain Logic. Business Rules are the product's policies, conditions, constraints, and calculation methods; Domain Logic is the code that implements them independently of the UI. This layer does not handle rendering, UI flow orchestration, browser interactions, or network and file I/O. Do not place code in `features` merely because it is a pure function or is written in a `.ts` file rather than a `.tsx` file.
 - `parts` is a domain-aware presentation layer and, unlike `features`, may compose UI. Code coupled to the state, behavior, or presentation of components in `pages`, `widgets`, or `parts` is classified as Presentation Logic.
 - Code in `shared` must not have direct knowledge of higher-layer application policies, API contracts, global state, or execution flows. Consumers supply the data and policies it needs. General-purpose UI presentation and interactions are UI Logic, a subset of Presentation Logic, and do not encode product-specific requirements. Names, reuse counts, function purity, or potential reuse alone do not justify placing code in `shared`.
@@ -104,6 +106,14 @@ flowchart TB
 - `src/` — tests that target a single source file. They live next to the source file, share its name, and use the `.test` suffix: `<source>.test.ts`. They may be split into several files by the concern they verify: `<source>.<concern>.test.ts`.
 - `tests/` — scene tests that no single source file describes. They use dot-free kebab-case names with the `.test` suffix: `scene-test-name.test.ts`.
 - `specs/` — user journey tests. They use kebab-case names with the `.spec` suffix: `user-journey-name.spec.ts`.
+
+## URL State
+
+- 선택된 Artifact(`/artifacts/` 아래의 `artifactId`)와 검색 질의(`q`)는 URL 상태로 관리된다.
+- Artifact URL은 주소창 직접 입력과 공유로 열 수 있는 1급 진입 경로다.
+- 사용자가 Artifact를 전환하면 새 이력 항목을 만든다(push). 쿼리 파라미터는 비워진다.
+- 그 외의 URL 갱신은 현재 항목을 치환한다(replace). 쿼리 파라미터 갱신(검색 질의 입력/제거 등)과 루트·불명 경로를 첫 Artifact로 보내는 리다이렉트가 모두 여기에 속한다.
+- 따라서 검색어는 뒤로가기로 복원되지 않고, Artifact 단위 URL 상태(선택과 질의)는 back/forward로 그대로 복원된다.
 
 ## Diagram Rendering Relationships
 

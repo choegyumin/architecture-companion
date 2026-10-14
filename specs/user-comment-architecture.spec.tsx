@@ -2,15 +2,14 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OverlayProvider } from "overlay-kit";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
+import { renderWorkspace } from "../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../tests/helpers/write-catalog";
 
@@ -45,17 +44,8 @@ async function createReview() {
   return { scope, scopePath };
 }
 
-function renderWorkspace(scope: Awaited<ReturnType<typeof resolveCompanionScope>>) {
-  const app = createApp(scope);
-  const client = createDataClient("http://architecture-companion.test", async (input, init) =>
-    app.request(input, init),
-  );
-
-  return render(
-    <OverlayProvider>
-      <WorkspacePage client={client} />
-    </OverlayProvider>,
-  );
+function createClient(app: ReturnType<typeof createApp>) {
+  return createDataClient("http://architecture-companion.test", async (input, init) => app.request(input, init));
 }
 
 async function getCanvas(regionName: string): Promise<HTMLElement> {
@@ -67,7 +57,7 @@ async function getCanvas(regionName: string): Promise<HTMLElement> {
 describe("reviewer leaves feedback as diagram comments", () => {
   it("posts a comment on the canvas and still sees it after reopening the review", async () => {
     const { scope, scopePath } = await createReview();
-    let review = renderWorkspace(scope);
+    let review = await renderWorkspace(createClient(createApp(scope)));
 
     try {
       await userEvent.click(await screen.findByRole("button", { name: "Comment" }));
@@ -81,7 +71,7 @@ describe("reviewer leaves feedback as diagram comments", () => {
       );
 
       review.unmount();
-      review = renderWorkspace(scope);
+      review = await renderWorkspace(createClient(createApp(scope)));
       await getCanvas("Checkout workflow product behavior diagram");
       expect(
         await screen.findByRole("button", { name: "Comment: Please add a payment failure path." }),

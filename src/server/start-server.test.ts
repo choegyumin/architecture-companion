@@ -47,6 +47,27 @@ describe("server startup", () => {
     }
   });
 
+  it("serves the client for artifact deep links and unknown client paths without hiding missing API or asset routes", async () => {
+    const staticRoot = await mkdtemp(join(tmpdir(), "architecture-companion-client-routes-"));
+    let server: StartedServer | undefined;
+    try {
+      await writeFile(join(staticRoot, "index.html"), "<h1>Architecture Companion</h1>");
+      server = await startServer(
+        { path: "/consumer", isGitRepository: false },
+        { hostname: "127.0.0.1", port: 0, staticRoot },
+      );
+      const deepLink = await getText(`${server.url}/artifacts/src/diagram.archcomp.json?q=Alpha`);
+      const unknownClientPath = await getText(`${server.url}/unknown/client/path`);
+      expect(deepLink).toEqual({ status: 200, body: "<h1>Architecture Companion</h1>" });
+      expect(unknownClientPath).toEqual({ status: 200, body: "<h1>Architecture Companion</h1>" });
+      expect((await getText(`${server.url}/api/unknown`)).status).toBe(404);
+      expect((await getText(`${server.url}/assets/missing.js`)).status).toBe(404);
+    } finally {
+      await server?.close();
+      await rm(staticRoot, { recursive: true });
+    }
+  });
+
   it("fails to start on a port already in use", async () => {
     let server: StartedServer | undefined;
 

@@ -35,6 +35,36 @@ describe("NodeSearch", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("renders and filters the caller's query without moving the viewport", async () => {
+    const { rerender } = render(<NodeSearch searchQuery="Alpha" />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    expect(input).toHaveValue("Alpha");
+    await userEvent.click(input);
+    expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Beta" })).not.toBeInTheDocument();
+    rerender(<NodeSearch searchQuery="Beta" />);
+    expect(input).toHaveValue("Beta");
+    expect(screen.getByRole("option", { name: "Beta" })).toBeInTheDocument();
+    expect(mocks.fitView).not.toHaveBeenCalled();
+  });
+
+  it("reports input and Escape changes without keeping another controlled query", async () => {
+    const onSearchQueryChange = vi.fn();
+    const { rerender } = render(<NodeSearch searchQuery="Alpha" onSearchQueryChange={onSearchQueryChange} />);
+    const input = screen.getByRole("combobox", { name: "Search nodes" });
+    fireEvent.change(input, { target: { value: "Beta" } });
+    expect(onSearchQueryChange).toHaveBeenLastCalledWith("Beta");
+    expect(input).toHaveValue("Alpha");
+    rerender(<NodeSearch searchQuery="Beta" onSearchQueryChange={onSearchQueryChange} />);
+    expect(input).toHaveValue("Beta");
+    await userEvent.click(input);
+    await userEvent.keyboard("{Escape}");
+    expect(onSearchQueryChange).toHaveBeenLastCalledWith("");
+    rerender(<NodeSearch searchQuery="" onSearchQueryChange={onSearchQueryChange} />);
+    expect(input).toHaveValue("");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
   it("allows caller addons to replace or remove the default search icon", () => {
     const { container, rerender } = render(<NodeSearch />);
     expect(container.querySelector("svg")).toBeInTheDocument();
@@ -275,24 +305,17 @@ describe("NodeSearch", () => {
 
   it("throws without warning for invalid custom labels even with custom search", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const getNodeLabel = (() => undefined) as unknown as (node: Node) => string;
     render(<NodeSearch getNodeLabel={getNodeLabel} onSearch={() => [alpha]} />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "a" } });
-    expect(
-      report.mock.calls.some(
-        ([error]) =>
-          error instanceof TypeError &&
-          error.message === "NodeSearch: getNodeLabel must return a string for node alpha.",
-      ),
-    ).toBe(true);
+    expect(() => {
+      fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "a" } });
+    }).toThrow("NodeSearch: getNodeLabel must return a string for node alpha.");
     expect(warn).not.toHaveBeenCalled();
   });
 
   it("propagates custom getter errors without warning", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const error = new Error("Cannot read title");
     render(
       <NodeSearch
@@ -302,8 +325,9 @@ describe("NodeSearch", () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "a" } });
-    expect(report.mock.calls.some(([reported]) => reported === error)).toBe(true);
+    expect(() => {
+      fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "a" } });
+    }).toThrow(error);
     expect(warn).not.toHaveBeenCalled();
   });
 });

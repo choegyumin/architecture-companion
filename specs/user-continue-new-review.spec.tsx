@@ -2,12 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OverlayProvider } from "overlay-kit";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import type { AnnotationDocument } from "@/features/annotation/annotation-document";
 import type { CompanionCatalog } from "@/features/catalog/catalog";
 import { createApp } from "@/server/create-app";
@@ -16,6 +14,7 @@ import { getAnnotationDocumentRelativePath } from "@/server/file-annotation-repo
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 import { createReviewUpdates, type ReviewUpdates } from "@/server/review-updates";
 
+import { renderWorkspace } from "../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../tests/helpers/write-catalog";
 
@@ -83,11 +82,7 @@ describe("reviewer continues a review after the catalog is revised", () => {
       const client = createDataClient("http://architecture-companion.test", async (input, init) =>
         app.request(input, init),
       );
-      const review = render(
-        <OverlayProvider>
-          <WorkspacePage client={client} />
-        </OverlayProvider>,
-      );
+      const review = await renderWorkspace(client);
 
       try {
         expect(await screen.findByText("Checkout submitted")).toBeInTheDocument();

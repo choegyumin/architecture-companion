@@ -125,6 +125,12 @@ const boundaryLayers = [
     dependencies: ["feature", "shared-browser", "shared-universal"],
   },
   {
+    kind: "file",
+    type: "client-router",
+    pattern: "src/client/router.tsx",
+    dependencies: ["client-page", "client-data"],
+  },
+  {
     kind: "element",
     type: "client-part",
     pattern: "src/client/parts",

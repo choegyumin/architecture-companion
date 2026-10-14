@@ -2,13 +2,13 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 
 import { createDataClient } from "@/client/data-client";
-import { WorkspacePage } from "@/client/pages/workspace-page";
 import { createApp } from "@/server/create-app";
 import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
 import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
 import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
@@ -97,7 +97,7 @@ describe("source links in a review", () => {
         app.request(input, init),
       );
 
-      render(<WorkspacePage client={client} />);
+      await renderWorkspace(client);
       const workflowLink = await findSourceLink("workflow.ts");
       await act(async () => {
         fireEvent.click(workflowLink);
@@ -142,7 +142,7 @@ describe("source links in a review", () => {
         await realpath(join(scopePath, "src/workflow.ts")),
         await realpath(join(scopePath, "src/checkout-page.test.ts")),
       ];
-      render(<WorkspacePage client={client} />);
+      await renderWorkspace(client);
       fireEvent.click(await screen.findByRole("button", { name: "Comment" }));
       const diagramLink = await findSourceLink("user-review-architecture.spec.tsx");
       const workflowLink = await findSourceLink("workflow.ts");
