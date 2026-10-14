@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { Node } from "@xyflow/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { NodeSearch } from "@/shared/react-flow/node-search";
+import { ElementSearch } from "@/shared/react-flow/element-search";
 
 const mocks = vi.hoisted(() => {
   const state = { nodes: [] as Node[] };
@@ -27,7 +27,7 @@ const beta: Node = { id: "beta", type: "rectangle", position: { x: 0, y: 0 }, da
 type TitledNode = Node<{ label: string; title: string }, "rectangle">;
 const titled: TitledNode = { ...alpha, type: "rectangle", data: { label: "Hidden", title: "Readable title" } };
 
-describe("NodeSearch", () => {
+describe("ElementSearch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.state.nodes = [alpha, beta];
@@ -36,13 +36,13 @@ describe("NodeSearch", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("renders and filters the caller's query without moving the viewport", async () => {
-    const { rerender } = render(<NodeSearch searchQuery="Alpha" />);
+    const { rerender } = render(<ElementSearch searchQuery="Alpha" />);
     const input = screen.getByRole("combobox", { name: "Search nodes" });
     expect(input).toHaveValue("Alpha");
     await userEvent.click(input);
     expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Beta" })).not.toBeInTheDocument();
-    rerender(<NodeSearch searchQuery="Beta" />);
+    rerender(<ElementSearch searchQuery="Beta" />);
     expect(input).toHaveValue("Beta");
     expect(screen.getByRole("option", { name: "Beta" })).toBeInTheDocument();
     expect(mocks.fitView).not.toHaveBeenCalled();
@@ -50,33 +50,33 @@ describe("NodeSearch", () => {
 
   it("reports input and Escape changes without keeping another controlled query", async () => {
     const onSearchQueryChange = vi.fn();
-    const { rerender } = render(<NodeSearch searchQuery="Alpha" onSearchQueryChange={onSearchQueryChange} />);
+    const { rerender } = render(<ElementSearch searchQuery="Alpha" onSearchQueryChange={onSearchQueryChange} />);
     const input = screen.getByRole("combobox", { name: "Search nodes" });
     fireEvent.change(input, { target: { value: "Beta" } });
     expect(onSearchQueryChange).toHaveBeenLastCalledWith("Beta");
     expect(input).toHaveValue("Alpha");
-    rerender(<NodeSearch searchQuery="Beta" onSearchQueryChange={onSearchQueryChange} />);
+    rerender(<ElementSearch searchQuery="Beta" onSearchQueryChange={onSearchQueryChange} />);
     expect(input).toHaveValue("Beta");
     await userEvent.click(input);
     await userEvent.keyboard("{Escape}");
     expect(onSearchQueryChange).toHaveBeenLastCalledWith("");
-    rerender(<NodeSearch searchQuery="" onSearchQueryChange={onSearchQueryChange} />);
+    rerender(<ElementSearch searchQuery="" onSearchQueryChange={onSearchQueryChange} />);
     expect(input).toHaveValue("");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
   it("allows caller addons to replace or remove the default search icon", () => {
-    const { container, rerender } = render(<NodeSearch />);
+    const { container, rerender } = render(<ElementSearch />);
     expect(container.querySelector("svg")).toBeInTheDocument();
 
     rerender(
-      <NodeSearch startInputAddon={<span>Scope</span>} endInputAddon={<button type="button">Search help</button>} />,
+      <ElementSearch startInputAddon={<span>Scope</span>} endInputAddon={<button type="button">Search help</button>} />,
     );
     expect(screen.getByText("Scope")).toBeVisible();
     expect(screen.getByRole("button", { name: "Search help" })).toBeVisible();
     expect(container.querySelector("svg")).not.toBeInTheDocument();
 
-    rerender(<NodeSearch startInputAddon={null} endInputAddon={null} />);
+    rerender(<ElementSearch startInputAddon={null} endInputAddon={null} />);
     expect(screen.queryByText("Scope")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Search help" })).not.toBeInTheDocument();
     expect(container.querySelector("svg")).not.toBeInTheDocument();
@@ -84,7 +84,7 @@ describe("NodeSearch", () => {
 
   it("fits the first match on Enter and closes the list while retaining the query", async () => {
     const user = userEvent.setup();
-    render(<NodeSearch />);
+    render(<ElementSearch />);
     const input = screen.getByRole("combobox", { name: "Search nodes" });
 
     await user.type(input, "ALP");
@@ -106,7 +106,7 @@ describe("NodeSearch", () => {
     const second = { ...beta, id: "render-second", data: { label: "Render" } };
     const third = { ...alpha, id: "render-third", data: { label: "RenderPanel" } };
     mocks.state.nodes = [first, second, third];
-    render(<NodeSearch />);
+    render(<ElementSearch />);
     const input = screen.getByRole("combobox", { name: "Search nodes" });
 
     await user.type(input, "render");
@@ -137,7 +137,7 @@ describe("NodeSearch", () => {
     "confirms the current match with %s instead of cycling",
     async (key) => {
       const user = userEvent.setup();
-      render(<NodeSearch />);
+      render(<ElementSearch />);
       const input = screen.getByRole("combobox", { name: "Search nodes" });
       await user.type(input, "a");
       await user.keyboard("{ArrowDown}{ArrowDown}");
@@ -158,7 +158,7 @@ describe("NodeSearch", () => {
     const user = userEvent.setup();
     render(
       <>
-        <NodeSearch />
+        <ElementSearch />
         <button type="button">Outside search</button>
       </>,
     );
@@ -197,7 +197,7 @@ describe("NodeSearch", () => {
   it("uses getNodeLabel for both default search and result text", async () => {
     const user = userEvent.setup();
     mocks.state.nodes = [titled];
-    render(<NodeSearch<TitledNode> getNodeLabel={(node) => node.data.title} />);
+    render(<ElementSearch<TitledNode> getNodeLabel={(node) => node.data.title} />);
 
     await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "readable");
     expect(screen.getByRole("option", { name: "Readable title" })).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe("NodeSearch", () => {
     const onSearch = vi.fn(() => [titled]);
     const onSelectNode = vi.fn((title: string) => title);
     render(
-      <NodeSearch
+      <ElementSearch
         getNodeLabel={(node) => `Result: ${node.data.title.toUpperCase()}`}
         onSearch={onSearch}
         onSelectNode={(node) => onSelectNode(node.data.title)}
@@ -237,7 +237,7 @@ describe("NodeSearch", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const missing: Node = { ...alpha, id: "missing", data: {} };
     const numeric: Node = { ...beta, id: "numeric", data: { label: 42 } };
-    render(<NodeSearch />);
+    render(<ElementSearch />);
     const input = screen.getByRole("combobox", { name: "Search nodes" });
 
     await user.type(input, "alpha");
@@ -247,7 +247,7 @@ describe("NodeSearch", () => {
     await user.clear(input);
     await user.type(input, "missing");
     expect(screen.getByRole("option", { name: "missing" })).toBeInTheDocument();
-    expect(warn).toHaveBeenCalledExactlyOnceWith("NodeSearch: Could not resolve a string label for 2 nodes.", {
+    expect(warn).toHaveBeenCalledExactlyOnceWith("ElementSearch: Could not resolve a string label for 2 nodes.", {
       nodeIds: ["missing", "numeric"],
     });
 
@@ -268,11 +268,11 @@ describe("NodeSearch", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const nodes = Array.from({ length: 300 }, (_, index): Node => ({ ...alpha, id: `node-${index}`, data: {} }));
     mocks.state.nodes = nodes;
-    render(<NodeSearch />);
+    render(<ElementSearch />);
 
     await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "unmatched");
 
-    expect(warn).toHaveBeenCalledExactlyOnceWith("NodeSearch: Could not resolve a string label for 300 nodes.", {
+    expect(warn).toHaveBeenCalledExactlyOnceWith("ElementSearch: Could not resolve a string label for 300 nodes.", {
       nodeIds: nodes.map((node) => node.id),
     });
   });
@@ -282,12 +282,12 @@ describe("NodeSearch", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const missing: Node = { ...alpha, id: "missing", data: {} };
     const onSearch = vi.fn(() => [missing]);
-    render(<NodeSearch onSearch={onSearch} />);
+    render(<ElementSearch onSearch={onSearch} />);
 
     await user.type(screen.getByRole("combobox", { name: "Search nodes" }), "unrelated");
     expect(screen.getByRole("option", { name: "missing" })).toBeInTheDocument();
     expect(mocks.getNodes).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledExactlyOnceWith("NodeSearch: Could not resolve a string label for 1 node.", {
+    expect(warn).toHaveBeenCalledExactlyOnceWith("ElementSearch: Could not resolve a string label for 1 node.", {
       nodeIds: ["missing"],
     });
   });
@@ -295,7 +295,7 @@ describe("NodeSearch", () => {
   it("resolves labels during search without calling the getter again in render", () => {
     const getNodeLabel = vi.fn((node: TitledNode) => node.data.title);
     mocks.state.nodes = [titled];
-    render(<NodeSearch<TitledNode> getNodeLabel={getNodeLabel} />);
+    render(<ElementSearch<TitledNode> getNodeLabel={getNodeLabel} />);
 
     fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "readable" } });
 
@@ -306,11 +306,11 @@ describe("NodeSearch", () => {
   it("throws without warning for invalid custom labels even with custom search", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const getNodeLabel = (() => undefined) as unknown as (node: Node) => string;
-    render(<NodeSearch getNodeLabel={getNodeLabel} onSearch={() => [alpha]} />);
+    render(<ElementSearch getNodeLabel={getNodeLabel} onSearch={() => [alpha]} />);
 
     expect(() => {
       fireEvent.change(screen.getByRole("combobox", { name: "Search nodes" }), { target: { value: "a" } });
-    }).toThrow("NodeSearch: getNodeLabel must return a string for node alpha.");
+    }).toThrow("ElementSearch: getNodeLabel must return a string for node alpha.");
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -318,7 +318,7 @@ describe("NodeSearch", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const error = new Error("Cannot read title");
     render(
-      <NodeSearch
+      <ElementSearch
         getNodeLabel={() => {
           throw error;
         }}

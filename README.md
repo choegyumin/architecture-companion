@@ -34,8 +34,18 @@ Diagrams are grounded in your code and help you understand it visually. You can 
 
 ● I used static analysis to create a component structure diagram rooted at CartPage.
 
-  Artifact URL: http://127.0.0.1:4317
+  Companion URL: http://127.0.0.1:4317
   Artifact name: Code Design > Cart Page Component Structure
+
+❯ Show me, step by step, who owns the quantity state and how a change updates the screen.
+
+● I ran a Spotlight and delivered a Walkthrough to the browser.
+
+  It covers the round trip from a quantity change to the updated screen in 4 steps.
+  The screen highlights the current step's elements and shows its explanation. Try moving between steps with the arrow keys (← →).
+
+  If you don't have the artifact open in a browser, open this URL:
+  http://127.0.0.1:4317/artifacts/.architecture-companion/artifacts/cart-page-component-structure.archcomp.json?walkthrough=…
 
 ❯ Check the comments and answer the questions.
 
@@ -104,10 +114,8 @@ Diagrams are one of the best tools for understanding code. But you can already g
 
 - **Agent-generated diagrams are interpretations.** When you ask a coding agent for a diagram, the model reads the code and draws the structure it infers. Asking again about the same code may yield a different diagram, and there is no way to check which source the depicted relationships came from. Architecture Companion generates diagrams grounded in static analysis results.
 - **Diagram-level abstraction breaks context.** In approaches such as the C4 model, each diagram shows one level of the hierarchy. Showing a higher level hides relationships between internal elements, while showing only a lower level hides relationships with sibling elements at higher levels. Instead of abstracting the diagram itself, Architecture Companion reduces cognitive load by letting you interactively change what is shown within a single diagram.
-- **Most diagrams are disposable.** Diagrams are still actively used to help people understand. Once you understand, though, their job is done. With features such as Annotation, Architecture Companion lets you leave feedback on diagrams and turn that feedback into follow-up work, supporting collaboration with AI beyond understanding alone.
+- **Most diagrams are disposable.** Diagrams are still actively used to help people understand. Once you understand, though, their job is done. With features such as Annotation and Spotlight, Architecture Companion lets you leave feedback on diagrams and turn that feedback into follow-up work, supporting collaboration with AI beyond understanding alone.
 - **General-purpose tools stop at dependency graphs.** Even tools that analyze code to generate diagrams mostly show only dependencies and references between files or modules. Architecture Companion tailors its analysis and visual representations to the question, with diagrams such as component render trees.
-
-<!-- TODO: Add Spotlight (working name) to the "Most diagrams are disposable." bullet -->
 
 [philosophy.md](docs/philosophy.md) explains Architecture Companion's design philosophy and background in more detail.
 

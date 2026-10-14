@@ -59,7 +59,11 @@ export function projectedComponentStructureNodeId(node: ProjectedComponentStruct
   return node.type === "default" ? node.nodeId : node.id;
 }
 
-/** One displayed hop: split segments carry the port they leave from and the guards their label renders. */
+/**
+ * One displayed hop: split segments carry the port they leave from and the
+ * guards their label renders. `originEdgeIds` names the stored edges the hop
+ * renders — empty for a dead case, which renders nothing stored.
+ */
 export type ProjectedComponentStructureEdge = Readonly<{
   id: string;
   source: string;
@@ -67,6 +71,7 @@ export type ProjectedComponentStructureEdge = Readonly<{
   sourcePort?: string;
   guards: DiagramRouteRequirementRuleset;
   activeWhen?: DiagramRouteRequirementRuleset;
+  originEdgeIds: readonly string[];
 }>;
 
 export type ProjectedComponentStructureGraph = Readonly<{

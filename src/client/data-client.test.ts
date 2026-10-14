@@ -17,6 +17,76 @@ function createSseResponse(chunks: readonly string[]): Response {
 }
 
 describe("DataClient", () => {
+  it("delivers a parsed spotlight event to the spotlight callback", async () => {
+    const walkthrough = {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      diagram: { steps: [{ elements: [{ type: "node", id: "submit" }], caption: "The submit trigger." }] },
+    };
+    const fetcher: typeof fetch = vi.fn(async () =>
+      createSseResponse([
+        'event: review\r\ndata: {"revision":0}\r\n\r\n',
+        `event: spotlight\r\ndata: ${JSON.stringify(walkthrough)}\r\n\r\n`,
+      ]),
+    );
+    const onUpdate = vi.fn();
+    const onSpotlight = vi.fn();
+    const unsubscribe = createDataClient(baseUrl, fetcher).subscribeToReviewUpdates(onUpdate, undefined, onSpotlight);
+
+    try {
+      await vi.waitFor(() => expect(onSpotlight).toHaveBeenCalledOnce());
+      expect(onSpotlight).toHaveBeenCalledWith(walkthrough);
+      expect(onUpdate).toHaveBeenCalledOnce();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("ignores malformed and invalid spotlight events without breaking the review stream", async () => {
+    const fetcher: typeof fetch = vi.fn(async () =>
+      createSseResponse([
+        "event: spotlight\r\ndata: {broken\r\n\r\n",
+        'event: spotlight\r\ndata: {"artifactId":".architecture-companion/artifacts/checkout-workflow.archcomp.json","diagram":{"steps":[{"elements":[]}]}}\r\n\r\n',
+        'event: review\r\ndata: {"revision":0}\r\n\r\n',
+      ]),
+    );
+    const onUpdate = vi.fn();
+    const onError = vi.fn();
+    const onSpotlight = vi.fn();
+    const unsubscribe = createDataClient(baseUrl, fetcher).subscribeToReviewUpdates(onUpdate, onError, onSpotlight);
+
+    try {
+      await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
+      expect(onSpotlight).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("reports a throwing spotlight callback through the stream error boundary", async () => {
+    const walkthrough = {
+      artifactId: ".architecture-companion/artifacts/checkout-workflow.archcomp.json",
+      diagram: { steps: [{ elements: [], caption: "The whole flow." }] },
+    };
+    const fetcher: typeof fetch = vi.fn(async () =>
+      createSseResponse([`event: spotlight\r\ndata: ${JSON.stringify(walkthrough)}\r\n\r\n`]),
+    );
+    const onSpotlight = vi.fn(() => {
+      throw new Error("Spotlight consumer failed.");
+    });
+    const onError = vi.fn();
+    const unsubscribe = createDataClient(baseUrl, fetcher).subscribeToReviewUpdates(vi.fn(), onError, onSpotlight);
+
+    try {
+      await vi.waitFor(() => expect(onSpotlight).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "Spotlight consumer failed." })),
+      );
+    } finally {
+      unsubscribe();
+    }
+  });
+
   it("ignores malformed SSE data and delivers only review events", async () => {
     const fetcher: typeof fetch = vi.fn(async () =>
       createSseResponse(["event: unrelated\r\ndata: {broken\r\n\r\n", "event: review\r\ndata: {broken}\r\n\r\n"]),

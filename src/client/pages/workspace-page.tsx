@@ -1,8 +1,8 @@
 import { addEventListener } from "@base-ui/utils/addEventListener";
 import { platform } from "@base-ui/utils/platform";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { FolderSearch, MessageSquarePlus } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Focus, FolderSearch, MessageSquarePlus, X } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from "react";
 
 import type { DataClient } from "@/client/data-client";
 import type {
@@ -17,7 +17,16 @@ import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotati
 import { createAnnotations } from "@/features/annotation/manage-annotations";
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
 import type { CompanionCatalogRevisionId } from "@/features/catalog/catalog-revision-id";
+import {
+  type ArtifactWalkthrough,
+  decodeArtifactWalkthrough,
+  encodeArtifactWalkthrough,
+  validateWalkthroughAgainstCatalog,
+} from "@/features/walkthrough/artifact-walkthrough";
+import { ExplanationPanel } from "@/shared/react-flow/diagram-overlays";
 import { confirmDialog } from "@/shared/react-ui/alert-dialog";
+import { Button } from "@/shared/react-ui/button";
+import { CardContent } from "@/shared/react-ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/react-ui/empty";
 import { Kbd } from "@/shared/react-ui/kbd";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs";
@@ -174,6 +183,65 @@ function WorkspaceShell({ actions, children, navigation, scopeName }: WorkspaceS
         <div className="flex-1 rounded-3xl bg-muted p-3">{children}</div>
       </div>
     </main>
+  );
+}
+
+function WalkthroughExplanation({
+  walkthrough,
+  stepIndex,
+  onStepChange,
+  onClose,
+}: Readonly<{
+  walkthrough: ArtifactWalkthrough;
+  stepIndex: number;
+  onStepChange: (index: number) => void;
+  onClose: () => void;
+}>) {
+  const { steps } = walkthrough.diagram;
+  const caption = steps[stepIndex]?.caption ?? "";
+  const multiple = steps.length > 1;
+  return (
+    <ExplanationPanel aria-label="Walkthrough" role="region" className="min-h-0">
+      <CardContent className="flex min-h-0 items-center gap-1.5">
+        <Focus aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        {multiple ? (
+          <>
+            <Button
+              aria-label="Previous step"
+              disabled={stepIndex === 0}
+              onClick={() => onStepChange(stepIndex - 1)}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {stepIndex + 1}/{steps.length}
+            </span>
+            <Button
+              aria-label="Next step"
+              disabled={stepIndex === steps.length - 1}
+              onClick={() => onStepChange(stepIndex + 1)}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+            <span className="flex-1" />
+          </>
+        ) : (
+          <p className="min-h-0 flex-1 overflow-y-auto text-xs whitespace-pre-wrap">{caption}</p>
+        )}
+        <Button aria-label="Close walkthrough" onClick={onClose} size="icon-xs" variant="ghost">
+          <X aria-hidden="true" />
+        </Button>
+      </CardContent>
+      {multiple ? (
+        <CardContent className="min-h-0 shrink overflow-y-auto text-xs whitespace-pre-wrap" aria-live="polite">
+          {caption}
+        </CardContent>
+      ) : null}
+    </ExplanationPanel>
   );
 }
 
@@ -412,15 +480,88 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
   const activeArtifact =
     catalog?.artifacts.find((artifact) => artifact.artifactId === artifactId) ?? behaviors.at(0) ?? designs.at(0);
 
+  const walkthrough = useMemo(() => {
+    if (!catalog || !activeArtifact || !search.walkthrough) return undefined;
+    const decoded = decodeArtifactWalkthrough(search.walkthrough);
+    return decoded &&
+      decoded.artifactId === activeArtifact.artifactId &&
+      validateWalkthroughAgainstCatalog(catalog, decoded).status === "ok"
+      ? decoded
+      : undefined;
+  }, [activeArtifact, catalog, search.walkthrough]);
+  const walkthroughKey = JSON.stringify([artifactId, search.walkthrough]);
+  const [walkthroughPosition, setWalkthroughPosition] = useState({ key: walkthroughKey, index: 0, replay: 0 });
+  if (walkthroughPosition.key !== walkthroughKey) {
+    setWalkthroughPosition({ ...walkthroughPosition, key: walkthroughKey, index: 0 });
+  }
+  const stepIndex = walkthroughPosition.key === walkthroughKey ? walkthroughPosition.index : 0;
+  const walkthroughElements = useMemo(
+    () =>
+      walkthrough
+        ? [
+            ...walkthrough.diagram.steps[walkthroughPosition.key === walkthroughKey ? walkthroughPosition.index : 0]!
+              .elements,
+          ]
+        : undefined,
+    [walkthrough, walkthroughKey, walkthroughPosition],
+  );
+  const invalidWalkthrough = search.walkthrough !== undefined && Boolean(catalog && activeArtifact && !walkthrough);
   useEffect(() => {
-    if (!activeArtifact || (artifactId === activeArtifact.artifactId && search.q !== "")) return;
+    if (!activeArtifact || (artifactId === activeArtifact.artifactId && search.q !== "" && !invalidWalkthrough)) return;
     void navigate({
       to: "/artifacts/$",
       params: { _splat: activeArtifact.artifactId },
-      search: (previous) => ({ ...previous, q: previous.q || undefined }),
+      search: (previous) => ({
+        ...previous,
+        q: previous.q || undefined,
+        walkthrough: invalidWalkthrough ? undefined : previous.walkthrough,
+      }),
       replace: true,
     });
-  }, [activeArtifact, artifactId, navigate, search.q]);
+  }, [activeArtifact, artifactId, invalidWalkthrough, navigate, search.q]);
+
+  const receiveSpotlight = useEffectEvent((payload: ArtifactWalkthrough) => {
+    const encoded = encodeArtifactWalkthrough(payload);
+    const sameArtifact = payload.artifactId === activeArtifact?.artifactId;
+    setWalkthroughPosition((previous) => ({
+      key: JSON.stringify([payload.artifactId, encoded]),
+      index: 0,
+      replay: previous.replay + 1,
+    }));
+    void navigate({
+      to: "/artifacts/$",
+      params: { _splat: payload.artifactId },
+      search: (previous) => (sameArtifact ? { ...previous, walkthrough: encoded } : { walkthrough: encoded }),
+      replace: sameArtifact,
+    });
+  });
+
+  useEffect(() => {
+    if (!walkthrough || walkthrough.diagram.steps.length === 1) return;
+    return addEventListener(document, "keydown", (event) => {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey
+      )
+        return;
+      const target = event.target instanceof Element ? event.target : document.activeElement;
+      if (
+        target?.closest(
+          'input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], [role="spinbutton"]',
+        )
+      )
+        return;
+      const index = event.key === "ArrowLeft" ? stepIndex - 1 : event.key === "ArrowRight" ? stepIndex + 1 : -1;
+      if (index < 0 || index >= walkthrough.diagram.steps.length) return;
+      event.preventDefault();
+      setWalkthroughPosition((previous) => ({ ...previous, index }));
+    });
+  }, [stepIndex, walkthrough]);
 
   function selectArtifact(nextId: string): void {
     if (nextId === activeArtifact?.artifactId) return;
@@ -569,6 +710,9 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       (error) => {
         if (cancelled) return;
         dispatchReview({ type: "load-failed", mode: "refresh", message: error.message });
+      },
+      (payload) => {
+        if (!cancelled) receiveSpotlight(payload);
       },
     );
     void synchronizeReview("initial");
@@ -997,6 +1141,24 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
                   artifact={activeDiagramCollection.activeDiagram}
                   commentEnabled={annotationState.isModeEnabled}
                   onOpenSource={openSource}
+                  walkthroughElements={walkthroughElements}
+                  explanationPanel={
+                    walkthrough ? (
+                      <WalkthroughExplanation
+                        walkthrough={walkthrough}
+                        stepIndex={stepIndex}
+                        onStepChange={(index) => setWalkthroughPosition((previous) => ({ ...previous, index }))}
+                        onClose={() => {
+                          void navigate({
+                            to: "/artifacts/$",
+                            params: { _splat: activeDiagramCollection.activeDiagram.artifactId },
+                            search: (previous) => ({ ...previous, walkthrough: undefined }),
+                            replace: true,
+                          });
+                        }}
+                      />
+                    ) : undefined
+                  }
                   searchQuery={search.q ?? ""}
                   onSearchQueryChange={(query) => {
                     void navigate({

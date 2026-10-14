@@ -25,8 +25,9 @@ import type { Artifact, DependencyGraphDiagram } from "@/features/artifact/artif
 import { type DependencyDiagramGraph, diagramEdgeDisplay } from "@/features/diagram/diagram-graph";
 import type { DiagramLayout, DiagramNodeSizes } from "@/features/diagram/diagram-spatial";
 import type { BoundingGroupReactFlowNode } from "@/shared/react-flow/bounding-group-node";
+import { ActiveIndicator } from "@/shared/react-flow/diagram-overlays";
 import { Button } from "@/shared/react-ui/button";
-import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/react-ui/item";
+import { ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/react-ui/item";
 import { getOrThrow } from "@/shared/universal/get-or-throw";
 
 export type DependencyFocus =
@@ -324,38 +325,6 @@ function describeDependencyFocus(artifact: Artifact, focus: DependencyFocus): st
   return `${focus.edgeIds.length} edges: ${source.title} → ${target.title}`;
 }
 
-function DependencyGraphFocusIndicator({
-  artifact,
-  focus,
-  onClear,
-}: Readonly<{
-  artifact: Artifact;
-  focus: DependencyFocus;
-  onClear: () => void;
-}>) {
-  return (
-    <Item
-      aria-live="polite"
-      className="absolute top-4 left-1/2 w-fit -translate-x-1/2 rounded-full shadow-md"
-      role="status"
-      size="sm"
-      variant="muted"
-    >
-      <ItemMedia variant="icon">
-        <Focus aria-hidden="true" />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle className="max-w-md">{describeDependencyFocus(artifact, focus)}</ItemTitle>
-      </ItemContent>
-      <ItemActions>
-        <Button aria-label="Clear focus" onClick={onClear} size="icon-sm" variant="ghost" className="-m-1.5 ml-0">
-          <X aria-hidden="true" />
-        </Button>
-      </ItemActions>
-    </Item>
-  );
-}
-
 export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
   const [focus, setFocus] = useState<DependencyFocus>();
   const canFocus =
@@ -380,15 +349,34 @@ export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
   return (
     <DiagramView
       {...props}
+      activeIndicator={
+        focus ? (
+          <ActiveIndicator>
+            <ItemMedia variant="icon">
+              <Focus aria-hidden="true" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle className="max-w-md">{describeDependencyFocus(props.artifact, focus)}</ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                aria-label="Clear focus"
+                className="-m-1.5 ml-0"
+                onClick={() => setFocus(undefined)}
+                size="icon-sm"
+                variant="ghost"
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </ItemActions>
+          </ActiveIndicator>
+        ) : null
+      }
       buildRenderModel={buildRenderModel}
       calculateLayout={calculateLayout}
       onGroupActivate={canFocus ? (id) => setFocus({ type: "group", id }) : undefined}
       onNodeActivate={canFocus ? (id) => setFocus({ type: "node", id }) : undefined}
       onPaneActivate={canFocus ? () => setFocus(undefined) : undefined}
-    >
-      {focus ? (
-        <DependencyGraphFocusIndicator artifact={props.artifact} focus={focus} onClear={() => setFocus(undefined)} />
-      ) : null}
-    </DiagramView>
+    />
   );
 }

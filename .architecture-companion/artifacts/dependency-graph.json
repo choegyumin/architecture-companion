@@ -1,8 +1,8 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-13T15:51:05.278Z",
-  "vcs": { "revision": "0d804d16131a9601e6b6678a7f93b188e4ed29bd", "divergesFromRevision": false },
+  "updatedAt": "2026-10-14T09:24:11.277Z",
+  "vcs": { "revision": "1799eea27e2fc6820c45d72da9b721c0ce29dc95", "divergesFromRevision": false },
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
   "diagram": {
@@ -50,6 +50,11 @@
         {
           "groupId": "group:directory:src/features/diagram",
           "title": "diagram",
+          "parentGroupId": "group:directory:src/features"
+        },
+        {
+          "groupId": "group:directory:src/features/walkthrough",
+          "title": "walkthrough",
           "parentGroupId": "group:directory:src/features"
         },
         { "groupId": "group:directory:src/plugins", "title": "plugins" },
@@ -138,6 +143,12 @@
         {
           "nodeId": "external:@hono/node-server",
           "title": "@hono/node-server",
+          "groupId": "group:external-packages",
+          "kind": "External package"
+        },
+        {
+          "nodeId": "external:@tanstack/react-router",
+          "title": "@tanstack/react-router",
           "groupId": "group:external-packages",
           "kind": "External package"
         },
@@ -353,6 +364,18 @@
           "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-view.tsx" }]
         },
         {
+          "nodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "title": "diagram-view.walkthrough.ts",
+          "groupId": "group:directory:src/client/parts",
+          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-view.walkthrough.ts" }]
+        },
+        {
+          "nodeId": "file:src/client/router.tsx",
+          "title": "router.tsx",
+          "groupId": "group:directory:src/client",
+          "links": [{ "text": "source", "href": "source:///src/client/router.tsx" }]
+        },
+        {
           "nodeId": "file:src/client/widgets/component-structure-diagram-renderer.layout.ts",
           "title": "component-structure-diagram-renderer.layout.ts",
           "groupId": "group:directory:src/client/widgets",
@@ -517,6 +540,12 @@
           "title": "elk-core.ts",
           "groupId": "group:directory:src/features/diagram",
           "links": [{ "text": "source", "href": "source:///src/features/diagram/elk-core.ts" }]
+        },
+        {
+          "nodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
+          "title": "artifact-walkthrough.ts",
+          "groupId": "group:directory:src/features/walkthrough",
+          "links": [{ "text": "source", "href": "source:///src/features/walkthrough/artifact-walkthrough.ts" }]
         },
         {
           "nodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
@@ -754,6 +783,12 @@
           "links": [{ "text": "source", "href": "source:///src/shared/react-flow/connection-edge.tsx" }]
         },
         {
+          "nodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
+          "title": "diagram-overlays.tsx",
+          "groupId": "group:directory:src/shared/react-flow",
+          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/diagram-overlays.tsx" }]
+        },
+        {
           "nodeId": "file:src/shared/react-flow/diamond-node.tsx",
           "title": "diamond-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
@@ -770,6 +805,12 @@
           "title": "edge-paths.ts",
           "groupId": "group:directory:src/shared/react-flow",
           "links": [{ "text": "source", "href": "source:///src/shared/react-flow/edge-paths.ts" }]
+        },
+        {
+          "nodeId": "file:src/shared/react-flow/element-search.tsx",
+          "title": "element-search.tsx",
+          "groupId": "group:directory:src/shared/react-flow",
+          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/element-search.tsx" }]
         },
         {
           "nodeId": "file:src/shared/react-flow/fragment-node.tsx",
@@ -794,12 +835,6 @@
           "title": "message-edge-label-placement.ts",
           "groupId": "group:directory:src/shared/react-flow",
           "links": [{ "text": "source", "href": "source:///src/shared/react-flow/message-edge-label-placement.ts" }]
-        },
-        {
-          "nodeId": "file:src/shared/react-flow/node-search.tsx",
-          "title": "node-search.tsx",
-          "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/node-search.tsx" }]
         },
         {
           "nodeId": "file:src/shared/react-flow/polyline-edge-label-placement.ts",
@@ -868,6 +903,12 @@
           "links": [{ "text": "source", "href": "source:///src/shared/react-ui/item.tsx" }]
         },
         {
+          "nodeId": "file:src/shared/react-ui/kbd.tsx",
+          "title": "kbd.tsx",
+          "groupId": "group:directory:src/shared/react-ui",
+          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/kbd.tsx" }]
+        },
+        {
           "nodeId": "file:src/shared/react-ui/label.tsx",
           "title": "label.tsx",
           "groupId": "group:directory:src/shared/react-ui",
@@ -932,6 +973,12 @@
           "title": "toggle.tsx",
           "groupId": "group:directory:src/shared/react-ui",
           "links": [{ "text": "source", "href": "source:///src/shared/react-ui/toggle.tsx" }]
+        },
+        {
+          "nodeId": "file:src/shared/react-ui/tooltip.tsx",
+          "title": "tooltip.tsx",
+          "groupId": "group:directory:src/shared/react-ui",
+          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/tooltip.tsx" }]
         },
         {
           "nodeId": "file:src/shared/react/class-name.ts",
@@ -1078,10 +1125,20 @@
           "targetNodeId": "file:src/features/catalog/catalog.ts"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:runtime",
+          "sourceNodeId": "file:src/client/data-client.ts",
+          "targetNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fdata-client.ts:file%3Asrc%2Fserver%2Fcreate-app.ts:type-only",
           "sourceNodeId": "file:src/client/data-client.ts",
           "targetNodeId": "file:src/server/create-app.ts",
           "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3A%40tanstack%2Freact-router:runtime",
+          "sourceNodeId": "file:src/client/main.tsx",
+          "targetNodeId": "external:@tanstack/react-router"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -1109,9 +1166,9 @@
           "targetNodeId": "file:src/client/data-client.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:runtime",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Frouter.tsx:runtime",
           "sourceNodeId": "file:src/client/main.tsx",
-          "targetNodeId": "file:src/client/pages/workspace-page.tsx"
+          "targetNodeId": "file:src/client/router.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-provider.tsx:runtime",
@@ -1127,6 +1184,11 @@
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3A%40base-ui%2Futils:runtime",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
           "targetNodeId": "external:@base-ui/utils"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3A%40tanstack%2Freact-router:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "external:@tanstack/react-router"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:external%3Alucide-react:runtime",
@@ -1189,14 +1251,39 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/shared/react-flow/diagram-overlays.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Falert-dialog.tsx:runtime",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
           "targetNodeId": "file:src/shared/react-ui/alert-dialog.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/shared/react-ui/button.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/shared/react-ui/card.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fempty.tsx:runtime",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
           "targetNodeId": "file:src/shared/react-ui/empty.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fkbd.tsx:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/shared/react-ui/kbd.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftabs.tsx:runtime",
@@ -1212,6 +1299,11 @@
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:runtime",
           "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
           "targetNodeId": "file:src/shared/react-ui/toggle.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftooltip.tsx:runtime",
+          "sourceNodeId": "file:src/client/pages/workspace-page.tsx",
+          "targetNodeId": "file:src/shared/react-ui/tooltip.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fannotation-layer.pin-drag.ts:external%3Areact:runtime",
@@ -1297,11 +1389,6 @@
           "targetNodeId": "external:@xyflow/react"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3Alucide-react:runtime",
-          "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
-          "targetNodeId": "external:lucide-react"
-        },
-        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:external%3Areact:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
           "targetNodeId": "external:react"
@@ -1322,11 +1409,6 @@
           "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
           "targetNodeId": "file:src/features/diagram/diagram-spatial.ts",
           "kind": "type-only"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-          "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
-          "targetNodeId": "file:src/shared/react/class-name.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbounding-group-node.tsx:runtime",
@@ -1364,11 +1446,6 @@
           "targetNodeId": "file:src/shared/react-flow/lifeline-node.tsx"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:runtime",
-          "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
-          "targetNodeId": "file:src/shared/react-flow/node-search.tsx"
-        },
-        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.tsx:file%3Asrc%2Fshared%2Freact-flow%2Frectangle-node.tsx:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-canvas.tsx",
           "targetNodeId": "file:src/shared/react-flow/rectangle-node.tsx"
@@ -1379,10 +1456,9 @@
           "targetNodeId": "file:src/shared/react-ui/theme-context.ts"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:external%3A%40xyflow%2Freact:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:external%3A%40xyflow%2Freact:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-canvas.viewport.ts",
-          "targetNodeId": "external:@xyflow/react",
-          "kind": "type-only"
+          "targetNodeId": "external:@xyflow/react"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
@@ -1470,6 +1546,11 @@
           "kind": "type-only"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:external%3A%40base-ui%2Futils:runtime",
+          "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
+          "targetNodeId": "external:@base-ui/utils"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:external%3A%40xyflow%2Freact:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
           "targetNodeId": "external:@xyflow/react"
@@ -1498,6 +1579,11 @@
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.react-flow.tsx:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
           "targetNodeId": "file:src/client/parts/diagram-view.react-flow.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:runtime",
+          "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
+          "targetNodeId": "file:src/client/parts/diagram-view.walkthrough.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
@@ -1538,9 +1624,69 @@
           "targetNodeId": "file:src/shared/react-flow/base-overlay-panel.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:runtime",
+          "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
+          "targetNodeId": "file:src/shared/react-flow/element-search.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
           "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
           "targetNodeId": "file:src/shared/react-ui/button.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fkbd.tsx:runtime",
+          "sourceNodeId": "file:src/client/parts/diagram-view.tsx",
+          "targetNodeId": "file:src/shared/react-ui/kbd.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:file%3Asrc%2Fclient%2Fparts%2Fdiagram-canvas.viewport.ts:type-only",
+          "sourceNodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "targetNodeId": "file:src/client/parts/diagram-canvas.viewport.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.react-flow.tsx:type-only",
+          "sourceNodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "targetNodeId": "file:src/client/parts/diagram-view.react-flow.tsx",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:type-only",
+          "sourceNodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "targetNodeId": "file:src/features/annotation/annotation-document.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-spatial.ts:type-only",
+          "sourceNodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "targetNodeId": "file:src/features/diagram/diagram-spatial.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fparts%2Fdiagram-view.walkthrough.ts:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+          "sourceNodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
+          "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Frouter.tsx:external%3A%40tanstack%2Freact-router:runtime",
+          "sourceNodeId": "file:src/client/router.tsx",
+          "targetNodeId": "external:@tanstack/react-router"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Frouter.tsx:external%3Azod:runtime",
+          "sourceNodeId": "file:src/client/router.tsx",
+          "targetNodeId": "external:zod"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Frouter.tsx:file%3Asrc%2Fclient%2Fdata-client.ts:type-only",
+          "sourceNodeId": "file:src/client/router.tsx",
+          "targetNodeId": "file:src/client/data-client.ts",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Frouter.tsx:file%3Asrc%2Fclient%2Fpages%2Fworkspace-page.tsx:runtime",
+          "sourceNodeId": "file:src/client/router.tsx",
+          "targetNodeId": "file:src/client/pages/workspace-page.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.layout.ts:file%3Asrc%2Ffeatures%2Fdiagram%2Fdiagram-graph.ts:type-only",
@@ -1637,6 +1783,11 @@
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fbase-edge-label.tsx:runtime",
           "sourceNodeId": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
           "targetNodeId": "file:src/shared/react-flow/base-edge-label.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:runtime",
+          "sourceNodeId": "file:src/client/widgets/component-structure-diagram-renderer.tsx",
+          "targetNodeId": "file:src/shared/react-flow/diagram-overlays.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fcomponent-structure-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fdiamond-node.tsx:type-only",
@@ -1755,6 +1906,11 @@
           "sourceNodeId": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
           "targetNodeId": "file:src/shared/react-flow/bounding-group-node.tsx",
           "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:runtime",
+          "sourceNodeId": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
+          "targetNodeId": "file:src/shared/react-flow/diagram-overlays.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fwidgets%2Fdependency-graph-diagram-renderer.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
@@ -2082,6 +2238,27 @@
           "targetNodeId": "file:src/shared/universal/get-or-throw.ts"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:external%3Azod:runtime",
+          "sourceNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
+          "targetNodeId": "external:zod"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:file%3Asrc%2Ffeatures%2Fannotation%2Fannotation-document.ts:runtime",
+          "sourceNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
+          "targetNodeId": "file:src/features/annotation/annotation-document.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:file%3Asrc%2Ffeatures%2Fartifact%2Fartifact.ts:runtime",
+          "sourceNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
+          "targetNodeId": "file:src/features/artifact/artifact.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:type-only",
+          "sourceNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
+          "targetNodeId": "file:src/features/catalog/catalog.ts",
+          "kind": "type-only"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:external%3Adependency-cruiser:runtime",
           "sourceNodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
           "targetNodeId": "external:dependency-cruiser"
@@ -2262,6 +2439,11 @@
           "sourceNodeId": "file:src/server/create-app.ts",
           "targetNodeId": "file:src/features/catalog/catalog-revision-id.ts",
           "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Ffeatures%2Fwalkthrough%2Fartifact-walkthrough.ts:runtime",
+          "sourceNodeId": "file:src/server/create-app.ts",
+          "targetNodeId": "file:src/features/walkthrough/artifact-walkthrough.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fcreate-app.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",
@@ -2525,6 +2707,27 @@
           "targetNodeId": "file:src/shared/react-flow/base-edge-label.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:external%3Areact:type-only",
+          "sourceNodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
+          "targetNodeId": "external:react",
+          "kind": "type-only"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
+          "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcard.tsx:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
+          "targetNodeId": "file:src/shared/react-ui/card.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiagram-overlays.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fitem.tsx:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
+          "targetNodeId": "file:src/shared/react-ui/item.tsx"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiamond-node.tsx:external%3A%40xyflow%2Freact:runtime",
           "sourceNodeId": "file:src/shared/react-flow/diamond-node.tsx",
           "targetNodeId": "external:@xyflow/react"
@@ -2533,6 +2736,31 @@
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fdiamond-node.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
           "sourceNodeId": "file:src/shared/react-flow/diamond-node.tsx",
           "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:external%3A%40xyflow%2Freact:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/element-search.tsx",
+          "targetNodeId": "external:@xyflow/react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:external%3Alucide-react:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/element-search.tsx",
+          "targetNodeId": "external:lucide-react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:external%3Areact:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/element-search.tsx",
+          "targetNodeId": "external:react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/element-search.tsx",
+          "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Felement-search.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcombobox.tsx:runtime",
+          "sourceNodeId": "file:src/shared/react-flow/element-search.tsx",
+          "targetNodeId": "file:src/shared/react-ui/combobox.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Ffragment-node.tsx:external%3A%40xyflow%2Freact:type-only",
@@ -2575,31 +2803,6 @@
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Flifeline-node.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fbutton.tsx:runtime",
           "sourceNodeId": "file:src/shared/react-flow/lifeline-node.tsx",
           "targetNodeId": "file:src/shared/react-ui/button.tsx"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:external%3A%40xyflow%2Freact:runtime",
-          "sourceNodeId": "file:src/shared/react-flow/node-search.tsx",
-          "targetNodeId": "external:@xyflow/react"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:external%3Alucide-react:runtime",
-          "sourceNodeId": "file:src/shared/react-flow/node-search.tsx",
-          "targetNodeId": "external:lucide-react"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:external%3Areact:runtime",
-          "sourceNodeId": "file:src/shared/react-flow/node-search.tsx",
-          "targetNodeId": "external:react"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
-          "sourceNodeId": "file:src/shared/react-flow/node-search.tsx",
-          "targetNodeId": "file:src/shared/react/class-name.ts"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Fnode-search.tsx:file%3Asrc%2Fshared%2Freact-ui%2Fcombobox.tsx:runtime",
-          "sourceNodeId": "file:src/shared/react-flow/node-search.tsx",
-          "targetNodeId": "file:src/shared/react-ui/combobox.tsx"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-flow%2Frectangle-node.tsx:external%3A%40xyflow%2Freact:runtime",
@@ -2778,6 +2981,11 @@
           "targetNodeId": "file:src/shared/react-ui/separator.tsx"
         },
         {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Fkbd.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+          "sourceNodeId": "file:src/shared/react-ui/kbd.tsx",
+          "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Flabel.tsx:external%3Areact:runtime",
           "sourceNodeId": "file:src/shared/react-ui/label.tsx",
           "targetNodeId": "external:react"
@@ -2916,6 +3124,16 @@
         {
           "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftoggle.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
           "sourceNodeId": "file:src/shared/react-ui/toggle.tsx",
+          "targetNodeId": "file:src/shared/react/class-name.ts"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftooltip.tsx:external%3A%40base-ui%2Freact:runtime",
+          "sourceNodeId": "file:src/shared/react-ui/tooltip.tsx",
+          "targetNodeId": "external:@base-ui/react"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fshared%2Freact-ui%2Ftooltip.tsx:file%3Asrc%2Fshared%2Freact%2Fclass-name.ts:runtime",
+          "sourceNodeId": "file:src/shared/react-ui/tooltip.tsx",
           "targetNodeId": "file:src/shared/react/class-name.ts"
         }
       ]

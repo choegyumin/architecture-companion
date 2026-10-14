@@ -77,7 +77,7 @@ const layout = {
 vi.mock("@/client/parts/diagram-view", () => ({
   DiagramView: ({
     buildRenderModel,
-    children,
+    activeIndicator,
     artifact,
     onOpenSource,
     onGroupActivate,
@@ -91,7 +91,7 @@ vi.mock("@/client/parts/diagram-view", () => ({
     ) => ReturnType<
       typeof import("@/client/widgets/dependency-graph-diagram-renderer").buildDependencyGraphDiagramReactFlowRenderModel
     >;
-    children?: ReactNode;
+    activeIndicator?: ReactNode;
     artifact: Artifact;
     onOpenSource: (href: string) => void;
     onGroupActivate?: (id: string) => void;
@@ -113,7 +113,7 @@ vi.mock("@/client/parts/diagram-view", () => ({
         {aggregate?.type === "connection" && aggregate.data?.labelAction ? (
           <button onClick={aggregate.data.labelAction.onActivate}>{aggregate.data.labelAction.ariaLabel}</button>
         ) : null}
-        {children}
+        {activeIndicator}
       </div>
     );
   },
