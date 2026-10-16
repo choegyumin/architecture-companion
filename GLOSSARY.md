@@ -2,6 +2,8 @@
 
 This glossary describes the concepts used to create and regenerate source-grounded Architecture Companion artifacts, review the product behavior and code design they represent, and use feedback to guide follow-up work.
 
+Use the terms in this glossary in their original language, regardless of the language of the conversation. Do not translate them into the user's language. The original terms are already the shared language between the user and the agent, and translations create confusion rather than aiding communication.
+
 ## Language
 
 **Companion**:
