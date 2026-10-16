@@ -67,6 +67,9 @@ Diagrams are grounded in your code and help you understand it visually. You can 
   I'll start working on these changes.
 ```
 
+> [!WARNING]
+> On large-scale projects, performance suffers and diagrams become hard to read when zoomed out. Narrow the analysis scope to roughly a single domain, or a single page for even larger projects. This will be fixed soon.
+
 <!-- TODO: Screenshots -->
 
 <!-- TODO: Demo URL -->

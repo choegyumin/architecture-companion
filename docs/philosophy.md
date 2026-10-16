@@ -44,4 +44,6 @@ This is also why I build features and automatic layouts tailored to users' requi
 
 Still, Architecture Companion focuses on representing design and structure, including Module Composition and Module Responsibilities. It is not concerned with turning every line of code in the Code layer into a diagram. At that level, reading the code directly or asking an agent is generally more efficient. Recording every detail in artifacts would also require updates for even small changes, causing maintenance costs to grow dramatically. Diagrams tell you where to look; the code and agents answer questions about what is inside. Architecture Companion relies on this delegation and division of roles.
 
+Also, Architecture Companion is not a knowledge graph. The diagrams and artifacts it produces exist to help people understand code and judge the design, not to serve as a knowledge base that agents query. If you need such a tool, use something like Graphify. Architecture Companion does not aim to take its place.
+
 Let this philosophy guide your decisions, feature planning, and code implementation. This is my request to every person and agent contributing to the repository.
