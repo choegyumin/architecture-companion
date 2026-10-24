@@ -477,6 +477,12 @@ export default defineConfig({
         //   message: "Use `@repo/logger` instead of direct `console` calls.",
         // },
         {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.property.name='stopPropagation'], CallExpression[callee.type='MemberExpression'][callee.property.name='stopImmediatePropagation']",
+          message:
+            "Preserve event propagation. Each subscriber must ignore irrelevant events with a condition and early return (for example, using `closest()`). Do not block propagation merely to keep an ancestor handler from running. Only suppress an event that should never have occurred when the browser behavior that produced it cannot be undone. Use `oxlint-disable-next-line repo/no-restricted-syntax -- <reason>` and explain why subscriber-side filtering cannot resolve it.",
+        },
+        {
           selector: "MemberExpression[object.name='React'][property.name='createContext']",
           message: "Use `createSafeContext` from `@/shared/react/safe-context` instead `React.createContext`.",
         },
