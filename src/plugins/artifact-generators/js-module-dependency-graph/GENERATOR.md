@@ -25,19 +25,19 @@ Use to review how JavaScript or TypeScript source modules depend on one another 
 node "<generator-directory>/run.js" \
   --base "<scope>" \
   [--tsconfig "<tsconfig-path>"] \
-  [--exclude-path "<pattern>" ...] \
+  [--ignore-path "<pattern>" ...] \
   <scope-relative-source-path>...
 ```
 
 - Specify at least one source path. Files and directories are both allowed, but they must be within the scope.
 - `--tsconfig` accepts an absolute or scope-relative path to an existing file within the scope. If omitted, `<scope>/tsconfig.json` is used when present; parent directories are not searched.
-- `--exclude-path` can be repeated. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
+- `--ignore-path` can be repeated to ignore paths during source collection. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
 
 ## Analysis scope
 
 Source collection follows `.gitignore` files in the scope root and its subdirectories; it does not read rules above the scope. Recursive traversal skips `.git` and `node_modules` directories it encounters, but does not exclude test or generated files by name alone.
 
-`--exclude-path` patterns are applied after the rules from each `.gitignore`. A later `!` pattern can undo an earlier exclusion, but a child cannot be re-included while its parent directory remains excluded. Explicitly specified input paths themselves bypass exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories. Generation fails if no source files remain to analyze.
+`--ignore-path` patterns are applied after the rules from each `.gitignore`. A later `!` pattern can undo an earlier exclusion, but a child cannot be re-included while its parent directory remains excluded. Explicitly specified input paths themselves bypass exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories. Generation fails if no source files remain to analyze.
 
 Excluded file nodes and their incident edges are removed together. The analyzer does not create new descendant relationships or shortcut edges, or infer unresolved dependencies. It emits only dependencies confirmed by dependency-cruiser's resolution, and silently omits missing or ambiguous references.
 

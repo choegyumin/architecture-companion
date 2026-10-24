@@ -47,7 +47,7 @@ async function readIgnoreFileContents(ignoreFilePath: string): Promise<string | 
 
 function addRules(rules: Ignore, contents: string | undefined): Ignore {
   // Later rules win, so a child .gitignore is appended after everything it
-  // inherits and inline --exclude-path patterns are appended after all of them.
+  // inherits and inline --ignore-path patterns are appended after all of them.
   return contents === undefined ? rules : ignore().add(rules).add(contents);
 }
 

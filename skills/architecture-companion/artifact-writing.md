@@ -61,7 +61,7 @@ Run from the scope root:
 ```sh
 node "<generator-directory>/run.js" \
   --base "." \
-  --exclude-path "*.test.*" \
+  --ignore-path "*.test.*" \
   "src/checkout"
 ```
 

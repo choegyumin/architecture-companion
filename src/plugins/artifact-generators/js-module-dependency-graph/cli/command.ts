@@ -13,7 +13,7 @@ export type JsModuleDependencyGraphCommandEnvironment = Readonly<{
 }>;
 
 const usage =
-  "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--exclude-path <glob> ...] <source-path>...";
+  "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--ignore-path <glob> ...] <source-path>...";
 
 export async function writeJsModuleDependencyGraph(options: ModuleGraphOptions): Promise<string> {
   const graph = await buildModuleGraph(options);
@@ -32,7 +32,7 @@ export async function executeJsModuleDependencyGraphCommand(
     allowPositionals: true,
     options: {
       base: { type: "string" },
-      "exclude-path": { type: "string", multiple: true },
+      "ignore-path": { type: "string", multiple: true },
       tsconfig: { type: "string" },
     },
     strict: true,
@@ -43,7 +43,7 @@ export async function executeJsModuleDependencyGraphCommand(
   const graphPath = await environment.writeGraph({
     scopePath: values.base,
     sourcePaths: positionals,
-    ...(values["exclude-path"] ? { exclude: values["exclude-path"] } : {}),
+    ...(values["ignore-path"] ? { exclude: values["ignore-path"] } : {}),
     ...(values.tsconfig ? { tsConfigPath: values.tsconfig } : {}),
   });
   environment.writeStdout(`${JSON.stringify({ graphPath })}\n`);
