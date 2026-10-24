@@ -3,6 +3,11 @@ import { useMergedRefs } from "@base-ui/utils/useMergedRefs";
 import { useCallback, useEffect, useRef } from "react";
 
 import { createSafeContext } from "@/shared/react/safe-context";
+import {
+  MULTI_LINE_FIELD_SELECTORS,
+  SINGLE_LINE_FIELD_SELECTORS,
+  SUBMIT_BUTTON_SELECTORS,
+} from "@/shared/universal/element-selectors";
 
 function mergeSelectors(...selectors: string[]): string {
   return selectors
@@ -26,11 +31,6 @@ const FormConfigContext = createSafeContext<FormConfig>({
   defaultValue: {},
   displayName: "FormConfigContext",
 });
-
-const SINGLE_LINE_FIELD_SELECTORS =
-  'input, select, [role="checkbox"], [role="combobox"], [role="radio"], [role="slider"], [role="spinbutton"], [role="switch"], [role="textbox"]:not([aria-multiline="true"])';
-const MULTI_LINE_FIELD_SELECTORS = 'textarea, [role="textbox"][aria-multiline="true"]';
-const SUBMIT_BUTTON_SELECTORS = 'input[type="submit"], button[type="submit"], button:not([type])';
 
 type FormProps = React.ComponentPropsWithRef<"form"> & {
   /** The shortcut that triggers the submit event. */

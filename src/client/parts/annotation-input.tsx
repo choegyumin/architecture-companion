@@ -2,6 +2,7 @@ import { platform } from "@base-ui/utils/platform";
 import { type ReactNode, useEffectEvent, useLayoutEffect, useRef } from "react";
 
 import type { AnnotationAnchor, AnnotationTarget } from "@/features/annotation/annotation-document";
+import { FIELD_SELECTORS } from "@/shared/universal/element-selectors";
 
 import type { AnnotationCanvasController } from "./annotation-layer";
 
@@ -101,7 +102,8 @@ export function AnnotationInput({
           !event.metaKey &&
           !event.shiftKey &&
           (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
-          !element.closest("input, textarea, select, [contenteditable], [data-comment-ui]");
+          !element.closest(FIELD_SELECTORS) &&
+          !commentUI;
         if (searchShortcut || walkthroughShortcut) event.preventDefault();
         if (!owner || commentUI || event.key === "Tab" || ["Alt", "Control", "Meta", "Shift"].includes(event.key))
           return;

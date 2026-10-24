@@ -45,6 +45,7 @@ import { LabeledGroupNode, type LabeledGroupReactFlowNode } from "@/shared/react
 import { LifelineNode, type LifelineReactFlowNode } from "@/shared/react-flow/lifeline-node";
 import { RectangleNode, type RectangleReactFlowNode } from "@/shared/react-flow/rectangle-node";
 import { useTheme } from "@/shared/react-ui/theme-context";
+import { ACTION_BUTTON_SELECTORS, FIELD_SELECTORS } from "@/shared/universal/element-selectors";
 
 export type DiagramReactFlowNode =
   | RectangleReactFlowNode
@@ -79,8 +80,7 @@ const diagramNodeTypes = {
 const diagramEdgeTypes = {
   connection: ConnectionEdge,
 } satisfies EdgeRendererRegistry<DiagramReactFlowEdge>;
-const interactiveElementSelector =
-  "a, button, form, input, select, textarea, [contenteditable='true'], [role='button'], [data-diagram-interactive]";
+const interactiveElementSelector = `${FIELD_SELECTORS}, ${ACTION_BUTTON_SELECTORS}, a, form, label`;
 
 type DiagramCanvasProps = Readonly<{
   className?: string;

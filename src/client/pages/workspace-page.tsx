@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/react-ui/tabs
 import { ThemeToggle } from "@/shared/react-ui/theme-toggle";
 import { Toggle } from "@/shared/react-ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/react-ui/tooltip";
+import { FIELD_SELECTORS } from "@/shared/universal/element-selectors";
 
 type ReviewResponse = Awaited<ReturnType<DataClient["getReview"]>>;
 type ReviewBundle = Readonly<{
@@ -550,12 +551,7 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
       )
         return;
       const target = event.target instanceof Element ? event.target : document.activeElement;
-      if (
-        target?.closest(
-          'input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], [role="spinbutton"]',
-        )
-      )
-        return;
+      if (target?.closest(FIELD_SELECTORS)) return;
       const index = event.key === "ArrowLeft" ? stepIndex - 1 : event.key === "ArrowRight" ? stepIndex + 1 : -1;
       if (index < 0 || index >= walkthrough.diagram.steps.length) return;
       event.preventDefault();

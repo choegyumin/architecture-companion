@@ -1201,7 +1201,7 @@ function ComponentStructureContent(props: DiagramRendererProps) {
             // guard edge labels, which name the exact rule they show.
             children:
               ownedControls.length > 0 ? (
-                <div className="nodrag nopan mt-3 flex max-w-full flex-col gap-1.5" data-diagram-interactive>
+                <div className="nodrag nopan mt-3 flex max-w-full flex-col gap-1.5">
                   {ownedControls.map((control) => {
                     const pair = getPolarityPairCases(control);
                     return control.type === "branch" && !pair ? (
