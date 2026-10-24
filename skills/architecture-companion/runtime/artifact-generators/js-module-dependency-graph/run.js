@@ -276637,10 +276637,12 @@ function validateGraphIntegrity(graph) {
       path: ["edges", index, "edgeId"]
     }))
   ];
-  graphElements.forEach(({ key, path: path2 }, index) => {
-    if (graphElements.findIndex(({ key: candidate }) => candidate === key) !== index) {
+  const elementIds = /* @__PURE__ */ new Set();
+  graphElements.forEach(({ key, path: path2 }) => {
+    if (elementIds.has(key)) {
       issues.push({ code: "custom", path: [...path2], message: `Duplicate diagram element ID: ${key}` });
     }
+    elementIds.add(key);
   });
   const groupIds = new Set(graph.groups.map(({ groupId }) => groupId));
   const nodeById = new Map(graph.nodes.map((node2) => [node2.nodeId, node2]));
