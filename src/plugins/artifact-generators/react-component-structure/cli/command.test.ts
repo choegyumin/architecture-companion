@@ -185,6 +185,147 @@ describe("React component structure command", () => {
     );
   });
 
+  it.each([2, 8])(
+    "preserves rendering paths in a chain of %i branches that reuses a condition",
+    async (branchCount) => {
+      await withFixture(
+        {
+          "src/app.tsx": `
+          ${Array.from({ length: branchCount }, (_, index) => `function View${index + 1}() { return <span />; }`).join("\n")}
+          function Fallback() { return <footer />; }
+          export function App({ a, b, c, d, e, f, g, h }: Record<string, boolean>) {
+            if (a && b) return <View1 />;
+            else if (a) return <View2 />;
+            ${["c", "d", "e", "f", "g", "h"]
+              .slice(0, branchCount - 2)
+              .map((condition, index) => `else if (${condition}) return <View${index + 3} />;`)
+              .join("\n")}
+            return <Fallback />;
+          }
+        `,
+          "src/healthy.tsx": `
+          function Leaf() { return <main />; }
+          export function Healthy() { return <Leaf />; }
+        `,
+        },
+        async (scopePath) => {
+          const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src"], {
+            writeStdout: () => undefined,
+          });
+          try {
+            const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+            expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual([
+              "App",
+              "Fallback",
+              "Healthy",
+              "Leaf",
+              ...Array.from({ length: branchCount }, (_, index) => `View${index + 1}`),
+            ]);
+            const app = graph.nodes.find(({ title }) => title === "App")!;
+            const controls = graph.layoutContext.controls;
+            const names = ["a", "b", "c", "d", "e", "f", "g", "h"].slice(0, branchCount);
+            for (let bits = 0; bits < 2 ** branchCount; bits += 1) {
+              const input = Object.fromEntries(names.map((name, index) => [name, Boolean(bits & (1 << index))]));
+              const choices = new Map(
+                controls.map((control) => {
+                  expect(names).toContain(control.label);
+                  const enabled = input[control.label];
+                  const value =
+                    control.type === "conditional"
+                      ? enabled
+                        ? "on"
+                        : "off"
+                      : control.cases.find(({ label }) => label === (enabled ? control.label : `!${control.label}`))!
+                          .caseId;
+                  return [control.controlId, value];
+                }),
+              );
+              const targets = new Set(
+                graph.edges
+                  .filter(
+                    (edge) =>
+                      edge.sourceNodeId === app.nodeId &&
+                      (edge.type !== "control" ||
+                        edge.activeWhen.some((rule) =>
+                          rule.every(({ controlId, value }) => choices.get(controlId) === value),
+                        )),
+                  )
+                  .map(({ targetNodeId }) => graph.nodes.find(({ nodeId }) => nodeId === targetNodeId)!.title),
+              );
+              const expected =
+                input.a && input.b
+                  ? "View1"
+                  : input.a
+                    ? "View2"
+                    : input.c
+                      ? "View3"
+                      : input.d
+                        ? "View4"
+                        : input.e
+                          ? "View5"
+                          : input.f
+                            ? "View6"
+                            : input.g
+                              ? "View7"
+                              : input.h
+                                ? "View8"
+                                : "Fallback";
+              expect({ input, targets: [...targets] }).toEqual({ input, targets: [expected] });
+            }
+          } finally {
+            await rm(dirname(graphPath), { recursive: true });
+          }
+        },
+      );
+    },
+  );
+
+  it.each([
+    {
+      kind: "direct",
+      body: "if (ready) return <First />; else if (ready) return <Unreachable />; return <Fallback />;",
+      titles: ["App", "Fallback", "First"],
+    },
+    {
+      kind: "supplied",
+      body: "return <Receiver>{ready ? <First /> : ready ? <Unreachable /> : <Fallback />}</Receiver>;",
+      titles: ["App", "Fallback", "First", "Receiver"],
+    },
+  ])("omits unreachable $kind targets when a branch repeats an earlier condition", async ({ body, titles }) => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function First() { return <span />; }
+          function Unreachable() { return <aside />; }
+          function Fallback() { return <footer />; }
+          function Receiver({ children }) { return <>{children}</>; }
+          export function App({ ready }) { ${body} }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(titles);
+          const ready = graph.layoutContext.controls.find(({ label }) => label === "ready")!;
+          for (const [title, value] of [
+            ["First", "ready"],
+            ["Fallback", "!ready"],
+          ]) {
+            const target = graph.nodes.find((node) => node.title === title)!;
+            expect(graph.edges.filter(({ targetNodeId }) => targetNodeId === target.nodeId)).toEqual([
+              expect.objectContaining({ type: "control", activeWhen: [[{ controlId: ready.controlId, value }]] }),
+            ]);
+          }
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
   it("applies --root through the command seam", async () => {
     await withFixture(
       {

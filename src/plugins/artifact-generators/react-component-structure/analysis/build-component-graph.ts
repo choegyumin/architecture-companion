@@ -3035,6 +3035,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const policy = targetVisibility(targetUse.target.id);
       const supplierSource = targetVisibility(owner.target.id).boundaryVisible ? owner : source;
       const targetRulesets = combineRulesets(instantiateRuleset(targetUseRuleset, owner, supplierSource), ruleset);
+      if (targetRulesets.length === 0) return;
       if (!policy.boundaryVisible) {
         processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName }, targetRulesets);
         return;
@@ -3121,6 +3122,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const instance = ensureComponentInstance(source, use, source);
       const policy = targetVisibility(use.target.id);
       const ruleset = instantiateRuleset(context.useRulesets.get(use.id) ?? [[]], source, source);
+      if (ruleset.length === 0) return;
       if (policy.boundaryVisible) {
         makeVisible(instance);
         addFinalRelationship({ source: source.id, target: instance.id, kind: "inline-render", ruleset });
@@ -3702,7 +3704,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         };
         rewritten.push(...buildRules(0, []));
       }
-      return rewritten;
+      // Folding distinct controls can make a rule require conflicting values.
+      // Recombine from an empty rule to discard only impossible paths.
+      return combineRulesets([[]], rewritten);
     };
 
     const controls = new Map<string, GeneratedControl>();
