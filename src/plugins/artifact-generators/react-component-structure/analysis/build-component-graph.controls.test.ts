@@ -766,13 +766,11 @@ describe("component rendering controls", () => {
     );
     expect(leafEdges.flatMap(({ layoutContext }) => layoutContext!.composition!.origins)).toHaveLength(3);
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
-    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
-      expect.arrayContaining([
-        { supplierDefinitionId: "component:app.tsx#App", slot: "header" },
-        { supplierDefinitionId: "component:app.tsx#App", slot: "footer" },
-        { supplierDefinitionId: "component:app.tsx#Other", slot: "header" },
-      ]),
-    );
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual([
+      { supplierDefinitionId: "component:app.tsx#Other", slot: "header" },
+      { supplierDefinitionId: "component:app.tsx#App", slot: "header" },
+      { supplierDefinitionId: "component:app.tsx#App", slot: "footer" },
+    ]);
   });
 
   it("merges equivalent instance controls and keeps every supplier-prop origin pair", async () => {
@@ -789,13 +787,11 @@ describe("component rendering controls", () => {
     const branch = graph.nodes.find(({ title }) => title === "Branch")!;
     expect(graph.layoutContext.controls).toMatchObject([{ ownerNodeId: branch.nodeId, label: "show", type: "branch" }]);
     const leaf = graph.nodes.find(({ title }) => title === "Leaf")!;
-    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual(
-      expect.arrayContaining([
-        { supplierDefinitionId: "component:app.tsx#First", slot: "children" },
-        { supplierDefinitionId: "component:app.tsx#First", slot: "panel" },
-        { supplierDefinitionId: "component:app.tsx#Second", slot: "children" },
-      ]),
-    );
+    expect(leaf.type === "default" && leaf.layoutContext!.origins).toEqual([
+      { supplierDefinitionId: "component:app.tsx#Second", slot: "children" },
+      { supplierDefinitionId: "component:app.tsx#First", slot: "panel" },
+      { supplierDefinitionId: "component:app.tsx#First", slot: "children" },
+    ]);
     expect(leaf.type === "default" && leaf.layoutContext!.origins).toHaveLength(3);
   });
 
