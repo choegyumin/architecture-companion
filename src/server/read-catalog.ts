@@ -5,8 +5,12 @@ import ignore, { type Ignore } from "ignore";
 import micromatch from "micromatch";
 
 import { type Artifact, parseArtifact } from "@/features/artifact/artifact";
-import { type CatalogConfig, catalogConfigSchema, type CompanionCatalog } from "@/features/catalog/catalog";
-import { validateCatalog } from "@/server/validate-catalog";
+import {
+  type CatalogConfig,
+  catalogConfigSchema,
+  catalogEntrySchema,
+  type CompanionCatalog,
+} from "@/features/catalog/catalog";
 
 export const ARTIFACTS_RELATIVE_PATH = ".architecture-companion/artifacts";
 export const CONFIG_RELATIVE_PATH = ".architecture-companion/config.json";
@@ -121,5 +125,14 @@ export async function readCatalog(scopePath: string): Promise<ReadCatalogResult>
     else artifacts.push(artifact);
   }
   if (errors.length > 0) return { status: "invalid", message: errors.join("; ") };
-  return { status: "valid", catalog: validateCatalog({ artifacts }) };
+
+  // Discovery supplies unique paths; the documents are already normalized above.
+  try {
+    for (const artifact of artifacts) catalogEntrySchema.parse(artifact);
+  } catch (error) {
+    throw new Error(`Invalid catalog: ${error instanceof Error ? error.message : "Invalid artifact path"}`, {
+      cause: error,
+    });
+  }
+  return { status: "valid", catalog: { artifacts } };
 }

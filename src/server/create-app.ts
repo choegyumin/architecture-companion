@@ -11,7 +11,7 @@ import {
 } from "@/features/walkthrough/artifact-walkthrough";
 import type { CompanionScope } from "@/server/companion-scope";
 import { createAnnotationEtag } from "@/server/create-annotation-etag";
-import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
+import { hashNormalizedCatalog } from "@/server/create-catalog-revision-id";
 import {
   AnnotationDocumentConflictError,
   createFileAnnotationRepository,
@@ -87,7 +87,7 @@ class InvalidCatalogForAnnotationsError extends Error {}
 async function readCatalogRevision(scopePath: string): Promise<ReadCatalogRevisionResult> {
   const result = await readCatalog(scopePath);
   if (result.status !== "valid") return result;
-  return { status: "valid", catalogRevisionId: createCatalogRevisionId(result.catalog) };
+  return { status: "valid", catalogRevisionId: hashNormalizedCatalog(result.catalog) };
 }
 
 async function validateCatalogRevision(
@@ -126,7 +126,7 @@ export function createApp(scope: CompanionScope, dependencies: CreateAppDependen
         return context.json({
           scope,
           catalog: result.catalog,
-          catalogRevisionId: createCatalogRevisionId(result.catalog),
+          catalogRevisionId: hashNormalizedCatalog(result.catalog),
         });
       }
 

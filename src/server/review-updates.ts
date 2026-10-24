@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
+import { hashNormalizedCatalog } from "@/server/create-catalog-revision-id";
 import {
   assertAnnotationDocumentPathIsSafe,
   getAnnotationDocumentRelativePath,
@@ -39,7 +39,7 @@ function getReadErrorReason(error: unknown): string {
 async function readAnnotations(scopePath: string, catalog: ReadCatalogResult): Promise<AnnotationFingerprint> {
   if (catalog.status !== "valid") return null;
 
-  const catalogRevisionId = createCatalogRevisionId(catalog.catalog);
+  const catalogRevisionId = hashNormalizedCatalog(catalog.catalog);
   const relativePath = getAnnotationDocumentRelativePath(catalogRevisionId);
 
   try {

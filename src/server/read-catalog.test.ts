@@ -138,6 +138,15 @@ describe("catalog reading", () => {
     });
   });
 
+  // These filenames are legal on POSIX, but not normalized Artifact IDs.
+  it.runIf(process.platform !== "win32").each(["src\\checkout.archcomp.json", "C:checkout.archcomp.json"])(
+    "rejects a discovered filename outside the Artifact ID contract: %s",
+    async (path) => {
+      await save(path);
+      await expect(readCatalog(scopePath)).rejects.toThrow("Artifact ID must be a scope-relative file path");
+    },
+  );
+
   it("reads both artifact types from one central directory", async () => {
     await save(`${ARTIFACTS_RELATIVE_PATH}/workflow.json`);
     await save(`${ARTIFACTS_RELATIVE_PATH}/structure.json`, { ...checkoutBehavior, type: "design" });
@@ -170,6 +179,37 @@ describe("catalog reading", () => {
     await mkdir(join(scopePath, ARTIFACTS_RELATIVE_PATH), { recursive: true });
     await writeFile(join(scopePath, ARTIFACTS_RELATIVE_PATH, "README.md"), "not an artifact");
     expect(await readCatalog(scopePath)).toEqual({ status: "valid", catalog: { artifacts: [] } });
+  });
+
+  it("reports graph integrity errors from every invalid artifact with their paths", async () => {
+    await save("duplicate.archcomp.json", {
+      ...checkoutBehavior,
+      diagram: {
+        ...checkoutBehavior.diagram,
+        graph: {
+          ...checkoutBehavior.diagram.graph,
+          nodes: [checkoutBehavior.diagram.graph.nodes.at(0), checkoutBehavior.diagram.graph.nodes.at(0)],
+        },
+      },
+    });
+    await save("dangling.archcomp.json", {
+      ...checkoutBehavior,
+      diagram: {
+        ...checkoutBehavior.diagram,
+        graph: {
+          ...checkoutBehavior.diagram.graph,
+          edges: [{ edgeId: "missing", sourceNodeId: "checkout-page", targetNodeId: "missing-node" }],
+        },
+      },
+    });
+
+    const result = await readCatalog(scopePath);
+    expect(result.status).toBe("invalid");
+    if (result.status !== "invalid") throw new Error("Expected invalid catalog");
+    expect(result.message).toContain("duplicate.archcomp.json. Invalid artifact: diagram.graph.nodes.1.nodeId:");
+    expect(result.message).toContain("Duplicate diagram element ID: checkout-page");
+    expect(result.message).toContain("dangling.archcomp.json. Invalid artifact: diagram.graph.edges.0.targetNodeId:");
+    expect(result.message).toContain("Diagram edge missing targets unknown node missing-node");
   });
 
   it("reports invalid JSON and invalid artifact data with their paths", async () => {
