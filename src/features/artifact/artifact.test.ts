@@ -856,6 +856,48 @@ describe("artifact parsing", () => {
     ).toThrow("Diagram edge uses-payment-client targets unknown node missing");
   });
 
+  it.each([
+    { layoutId: "general", generator: "built-in:freeform" },
+    { layoutId: "general", generator: "built-in:flowchart" },
+    { layoutId: "dependency-graph", generator: "built-in:js-module-dependency-graph" },
+  ])("reports every repeated ID in graph order for $layoutId with $generator", ({ layoutId, generator }) => {
+    const document = {
+      ...validDiagram,
+      generator,
+      diagram: {
+        layout: { layoutId },
+        graph: {
+          groups: [
+            { groupId: "shared", title: "First group" },
+            { groupId: "shared", title: "Second group" },
+            { groupId: "shared", title: "Third group" },
+          ],
+          nodes: [
+            { nodeId: "shared", title: "First node" },
+            { nodeId: "shared", title: "Second node" },
+          ],
+          edges: [
+            { edgeId: "shared", sourceNodeId: "shared", targetNodeId: "shared" },
+            { edgeId: "shared", sourceNodeId: "shared", targetNodeId: "shared" },
+          ],
+        },
+      },
+    };
+
+    expect(() => parseArtifact(document)).toThrow(
+      new Error(
+        [
+          "Invalid artifact: diagram.graph.groups.1.groupId: Duplicate diagram element ID: shared",
+          "diagram.graph.groups.2.groupId: Duplicate diagram element ID: shared",
+          "diagram.graph.nodes.0.nodeId: Duplicate diagram element ID: shared",
+          "diagram.graph.nodes.1.nodeId: Duplicate diagram element ID: shared",
+          "diagram.graph.edges.0.edgeId: Duplicate diagram element ID: shared",
+          "diagram.graph.edges.1.edgeId: Duplicate diagram element ID: shared",
+        ].join("; "),
+      ),
+    );
+  });
+
   it("rejects missing groups and group cycles", () => {
     expect(() =>
       parseArtifact({

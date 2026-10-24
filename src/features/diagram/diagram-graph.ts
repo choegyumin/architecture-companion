@@ -260,10 +260,12 @@ function validateGraphIntegrity(graph: DiagramGraphLike): readonly GraphIssue[] 
       path: ["edges", index, "edgeId"] as const,
     })),
   ];
-  graphElements.forEach(({ key, path }, index) => {
-    if (graphElements.findIndex(({ key: candidate }) => candidate === key) !== index) {
+  const elementIds = new Set<string>();
+  graphElements.forEach(({ key, path }) => {
+    if (elementIds.has(key)) {
       issues.push({ code: "custom", path: [...path], message: `Duplicate diagram element ID: ${key}` });
     }
+    elementIds.add(key);
   });
 
   const groupIds = new Set(graph.groups.map(({ groupId }) => groupId));
