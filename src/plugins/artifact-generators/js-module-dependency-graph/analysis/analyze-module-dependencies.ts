@@ -8,7 +8,7 @@ import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
-import type { DiscoveredSourceFile } from "./collect-source-files";
+import { createLocalModuleBoundaryFilter, type DiscoveredSourceFile } from "./collect-source-files";
 
 export type DependencyKind = "runtime" | "type-only";
 
@@ -291,7 +291,9 @@ export async function analyzeModuleDependencies(
   scopePath: string,
   discoveredSources: readonly DiscoveredSourceFile[],
   tsConfigPath: string | undefined,
+  excludePatterns: readonly string[],
 ): Promise<readonly AnalyzedModule[]> {
+  const isLocalModuleBoundary = createLocalModuleBoundaryFilter(scopePath, excludePatterns);
   const sourceByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
   const modules = await cruiseDependencies(
     scopePath,
@@ -318,7 +320,12 @@ export async function analyzeModuleDependencies(
 
       try {
         const canonicalResolvedPath = await realpath(resolve(scopePath, dependency.resolved));
-        if (sourceByPath.has(canonicalResolvedPath)) localTargetPath = canonicalResolvedPath;
+        if (
+          sourceByPath.has(canonicalResolvedPath) ||
+          (!isExternalDependency(dependency) && (await isLocalModuleBoundary(canonicalResolvedPath)))
+        ) {
+          localTargetPath = canonicalResolvedPath;
+        }
       } catch (error) {
         if (!isMissingPathError(error)) throw error;
       }

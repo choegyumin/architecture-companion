@@ -2043,8 +2043,11 @@ describe("React component structure generator", () => {
 
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
-        expect(graph.nodes.map(({ nodeId }) => nodeId)).toEqual(["component:src/app.tsx#App"]);
-        expect(graph.edges).toEqual([]);
+        expect(graph.nodes.map(({ nodeId }) => nodeId)).toEqual([
+          "component:packages/ui-kit/index.tsx#Button",
+          "component:src/app.tsx#App",
+        ]);
+        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Button", supplies: [] }]);
       },
     );
   });
@@ -2086,10 +2089,14 @@ describe("React component structure generator", () => {
         const graph = await buildComponentGraph({ scopePath, sourcePaths: ["src"] });
 
         expect(graph.nodes.map(({ nodeId }) => nodeId)).toEqual([
+          "component:packages/ui-kit/components.tsx#Widget",
           "component:src/app.tsx#App",
           "external:ui-kit#Boundary",
         ]);
-        expect(edgeFacts(graph)).toEqual([{ source: "App", target: "Boundary", supplies: [] }]);
+        expect(edgeFacts(graph)).toEqual([
+          { source: "App", target: "Boundary", supplies: [] },
+          { source: "App", target: "Widget", supplies: [] },
+        ]);
       },
     );
   });

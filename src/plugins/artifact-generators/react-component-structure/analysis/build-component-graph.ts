@@ -21,7 +21,7 @@ import {
 import { combineRulesets, unionRulesets } from "@/features/diagram/diagram-route-requirement-rules";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
-import { collectSourceFiles } from "./collect-source-files";
+import { collectSourceFiles, filterUnignoredSourcePaths } from "./collect-source-files";
 import { loadTypeScript } from "./load-typescript";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
@@ -150,10 +150,13 @@ type ComponentDefinition = Readonly<{
   classComponent: boolean;
 }>;
 
+type ComponentReference = Pick<ComponentDefinition, "id" | "name" | "relativePath" | "declaration">;
+
 type ComponentTarget = Readonly<{
   id: string;
   title: string;
   externalPackage?: string;
+  localBoundaryPath?: string;
   definition?: ComponentDefinition;
 }>;
 
@@ -254,7 +257,8 @@ type AnalysisContext = Readonly<{
   checker: ts.TypeChecker;
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>;
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>;
-  externalTargets: Map<string, ComponentTarget>;
+  boundarySourcePaths: ReadonlySet<string>;
+  boundaryTargets: Map<string, ComponentTarget>;
   uses: Map<string, ComponentUse>;
   directUseIdsByOwner: Map<string, string[]>;
   analyzedUseIds: Set<string>;
@@ -707,7 +711,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol>,
     reportUnsupported?: UnsupportedReporter,
-  ): ComponentDefinition | undefined {
+  ): ComponentReference | undefined {
     const factory = call.arguments.at(0);
     const imported =
       factory && ts.isArrowFunction(factory) && factory.parameters.length === 0 && !ts.isBlock(factory.body)
@@ -860,7 +864,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol>,
     reportUnsupported?: UnsupportedReporter,
-  ): ComponentDefinition | undefined {
+  ): ComponentReference | undefined {
     const unsupported = (): undefined => {
       reportUnsupported?.(
         call,
@@ -910,7 +914,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     visited: ReadonlySet<ts.Symbol> = new Set(),
     reportUnsupported?: UnsupportedReporter,
     symbolOverride?: ts.Symbol,
-  ): ComponentDefinition | undefined {
+  ): ComponentReference | undefined {
     if (ts.isJsxNamespacedName(expression)) return undefined;
     const unwrapped = unwrapExpression(expression);
     if (ts.isCallExpression(unwrapped)) {
@@ -969,12 +973,39 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     );
   }
 
+  function uncollectedComponentReference(
+    declaration: ts.Declaration,
+    context: AnalysisContext,
+  ): ComponentReference | undefined {
+    const sourceFile = declaration.getSourceFile();
+    if (!context.boundarySourcePaths.has(resolve(sourceFile.fileName))) return undefined;
+    let name: string;
+    let identityName: string;
+    if (ts.isFunctionDeclaration(declaration) || ts.isClassDeclaration(declaration)) {
+      if (ts.isFunctionDeclaration(declaration) && !declaration.body) return undefined;
+      const anonymousDefault = !declaration.name && isDefaultExportDeclaration(declaration);
+      if (!declaration.name && !anonymousDefault) return undefined;
+      name = declaration.name?.text ?? defaultExportName(sourceFile);
+      identityName = anonymousDefault ? "default" : name;
+    } else if (ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name)) {
+      if (!declaration.initializer || !unwrapFunction(declaration.initializer, context.checker)) return undefined;
+      name = identityName = declaration.name.text;
+    } else if (ts.isExportAssignment(declaration)) {
+      if (!unwrapFunction(declaration.expression, context.checker)) return undefined;
+      name = defaultExportName(sourceFile);
+      identityName = "default";
+    } else return undefined;
+    if (!isComponentName(name)) return undefined;
+    const relativePath = toPosixPath(relative(context.scopePath, sourceFile.fileName));
+    return { id: createComponentId(relativePath, identityName), name, relativePath, declaration };
+  }
+
   function resolveDefinition(
     symbol: ts.Symbol | undefined,
     context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol> = new Set(),
     reportUnsupported?: UnsupportedReporter,
-  ): ComponentDefinition | undefined {
+  ): ComponentReference | undefined {
     if (!symbol || visited.has(symbol)) return undefined;
     const { checker, definitionsBySymbol, definitionsByDeclaration } = context;
     const nextVisited = new Set(visited).add(symbol);
@@ -982,7 +1013,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const direct = canonical ? definitionsBySymbol.get(canonical) : undefined;
     if (direct) return direct;
     for (const declaration of canonical?.declarations ?? symbol.declarations ?? []) {
-      const definition = definitionsByDeclaration.get(declaration);
+      const definition =
+        definitionsByDeclaration.get(declaration) ?? uncollectedComponentReference(declaration, context);
       if (definition) return definition;
       if (ts.isExportAssignment(declaration)) {
         const resolved = resolveComponentExpression(declaration.expression, context, nextVisited, reportUnsupported);
@@ -1358,20 +1390,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const checker = context.checker;
     const external = resolveExternalReference(expression, context, symbolOverride);
     if (!external) {
-      const definition = resolveComponentExpression(
+      const reference = resolveComponentExpression(
         expression,
         context,
         new Set(),
         context.reportUnsupported,
         symbolOverride,
       );
-      return definition ? { id: definition.id, title: definition.name, definition } : undefined;
+      if (!reference) return undefined;
+      const definition = context.definitionsByDeclaration.get(reference.declaration);
+      if (definition) return { id: definition.id, title: definition.name, definition };
+      const existing = context.boundaryTargets.get(reference.id);
+      if (existing) return existing;
+      const target = { id: reference.id, title: reference.name, localBoundaryPath: reference.relativePath };
+      context.boundaryTargets.set(target.id, target);
+      return target;
     }
     const target = externalReferenceIdentity(external, checker);
     if (target.externalPackage === "react" && /(?:^|\.)Fragment$/.test(target.title)) return undefined;
-    const existing = context.externalTargets.get(target.id);
+    const existing = context.boundaryTargets.get(target.id);
     if (existing) return existing;
-    context.externalTargets.set(target.id, target);
+    context.boundaryTargets.set(target.id, target);
     return target;
   }
 
@@ -3123,7 +3162,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
   function createVisibilityByTarget(
     definitions: readonly ComponentDefinition[],
-    externalTargets: ReadonlyMap<string, ComponentTarget>,
+    boundaryTargets: ReadonlyMap<string, ComponentTarget>,
     excludeFilePatterns: readonly string[],
     excludeComponentPatterns: readonly string[],
   ): ReadonlyMap<string, ComponentVisibility> {
@@ -3138,9 +3177,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         implementationAnalyzed: !hidden,
       });
     }
-    for (const target of externalTargets.values()) {
+    for (const target of boundaryTargets.values()) {
       visibility.set(target.id, {
-        boundaryVisible: !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
+        boundaryVisible:
+          !(target.localBoundaryPath && excludeFileRules?.ignores(target.localBoundaryPath)) &&
+          !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
         implementationAnalyzed: false,
       });
     }
@@ -3514,7 +3555,10 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         type: "default",
         nodeId: id,
         title: target.title,
-        description: `${target.externalPackage} boundary`,
+        description: target.localBoundaryPath
+          ? `${target.localBoundaryPath}\nOutside collection scope; internals not analyzed.`
+          : `${target.externalPackage} boundary`,
+        ...(target.localBoundaryPath ? { links: [{ href: sourceHref(target.localBoundaryPath) }] } : {}),
         layoutContext: nodeLayoutContext(id, target.id),
       }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ nodeId }) => nodeId));
@@ -4410,10 +4454,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
+      boundarySourcePaths: await filterUnignoredSourcePaths(
+        scopePath,
+        program
+          .getSourceFiles()
+          .map((sourceFile) => resolve(sourceFile.fileName))
+          .filter((path) => !selectedRulesets.has(path)),
+      ),
       reportUnsupported: options.onDiagnostic ? reportUnsupported : undefined,
       memberWrites,
       bindingWrites,
-      externalTargets: new Map(),
+      boundaryTargets: new Map(),
       uses: new Map(),
       directUseIdsByOwner: new Map(),
       analyzedUseIds: new Set(),
@@ -4502,7 +4553,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const visibility = createVisibilityByTarget(
       definitions,
-      context.externalTargets,
+      context.boundaryTargets,
       options.excludeFilePatterns ?? [],
       options.excludeComponentPatterns ?? [],
     );

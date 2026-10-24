@@ -132,6 +132,252 @@ describe("React component structure command", () => {
     });
   });
 
+  it("connects resolved local references outside collection without analyzing their implementations", async () => {
+    await withFixture(
+      {
+        "src/pages/app.tsx": `
+          import { AliasPanel } from "@/shared/alias-panel";
+          import RelativePanel from "../shared/relative-panel";
+          export function App() { return <><AliasPanel /><RelativePanel /></>; }
+        `,
+        "src/shared/alias-panel.tsx": `
+          import { DeepLeaf } from "./deep-leaf";
+          export function AliasPanel() { return <DeepLeaf />; }
+          export function Unused() { return <aside />; }
+        `,
+        "src/shared/relative-panel.tsx": `export default function RelativePanel() { return <footer />; }`,
+        "src/shared/deep-leaf.tsx": `export function DeepLeaf() { return <span />; }`,
+      },
+      async (scopePath) => {
+        const outputs: string[] = [];
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src/pages", "--root", "App"],
+          {
+            writeStdout: (output) => outputs.push(output),
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["AliasPanel", "App", "RelativePanel"]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/pages/app.tsx#App", "component:src/shared/alias-panel.tsx#AliasPanel"],
+            ["component:src/pages/app.tsx#App", "component:src/shared/relative-panel.tsx#RelativePanel"],
+          ]);
+          expect(graph.nodes.find(({ title }) => title === "AliasPanel")).toMatchObject({
+            description: "src/shared/alias-panel.tsx\nOutside collection scope; internals not analyzed.",
+            links: [{ href: "source:///src/shared/alias-panel.tsx" }],
+            layoutContext: { definitionId: "component:src/shared/alias-panel.tsx#AliasPanel", origins: [] },
+          });
+          expect(graph.layoutContext).toMatchObject({ rootNodeIds: ["component:src/pages/app.tsx#App"], controls: [] });
+          expect(outputs).toEqual([`${JSON.stringify({ graphPath })}\n`]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each<{ name: string; files: Record<string, string>; paths: string[]; expected: string[] }>([
+    {
+      name: "an ignored ancestor directory",
+      files: { ".gitignore": "src/shared/\n" },
+      paths: ["src/pages"],
+      expected: ["App"],
+    },
+    {
+      name: "a nested ignore rule",
+      files: { "src/shared/.gitignore": "src/shared/panel.tsx\n" },
+      paths: ["src/pages"],
+      expected: ["App"],
+    },
+    {
+      name: "an ignored parent that its own rules cannot re-include",
+      files: { ".gitignore": "src/shared/\n", "src/shared/.gitignore": "!src/shared/\n!src/shared/panel.tsx\n" },
+      paths: ["src/pages"],
+      expected: ["App"],
+    },
+    {
+      name: "a later re-inclusion",
+      files: { ".gitignore": "src/shared/*\n!src/shared/panel.tsx\n" },
+      paths: ["src/pages"],
+      expected: ["App", "Panel"],
+    },
+    {
+      name: "an explicit ignored file",
+      files: { ".gitignore": "src/shared/\n" },
+      paths: ["src/pages", "src/shared/panel.tsx"],
+      expected: ["App", "Leaf", "Panel"],
+    },
+  ])("preserves collection exclusion priority for $name", async ({ files, paths, expected }) => {
+    await withFixture(
+      {
+        ...files,
+        "src/pages/app.tsx": `import { Panel } from "../shared/panel"; export function App() { return <Panel />; }`,
+        "src/shared/panel.tsx": `function Leaf() { return <span />; } export function Panel() { return <Leaf />; }`,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, ...paths], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(expected);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each([
+    { flags: [], visible: true },
+    { flags: ["--exclude-path", "src/shared/"], visible: false },
+    { flags: ["--exclude-component", "Panel"], visible: false },
+    { flags: ["--exclude-path", "src/shared/*", "--exclude-path", "!src/shared/panel.tsx"], visible: true },
+  ])(
+    "applies display filters to an uncollected boundary without losing supplied composition: $flags",
+    async ({ flags, visible }) => {
+      await withFixture(
+        {
+          "src/app.tsx": `
+          import { Panel } from "./shared/panel";
+          function Content() { return <span />; }
+          export function App({ ready }) { return ready ? <Panel header={<Content />} /> : null; }
+        `,
+          "src/shared/panel.tsx": `
+          function Internal() { return <aside />; }
+          export function Panel({ header }) { return <><Internal />{header}</>; }
+        `,
+        },
+        async (scopePath) => {
+          const graphPath = await executeReactComponentStructureCommand(
+            ["--base", scopePath, "src/app.tsx", ...flags],
+            {
+              writeStdout: () => undefined,
+            },
+          );
+          try {
+            const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+            expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(
+              visible ? ["App", "Content", "Panel"] : ["App", "Content"],
+            );
+            const supplied = graph.edges.find(({ targetNodeId }) => targetNodeId === "component:src/app.tsx#Content");
+            expect(supplied).toMatchObject({
+              sourceNodeId: visible ? "component:src/shared/panel.tsx#Panel" : "component:src/app.tsx#App",
+              layoutContext: {
+                composition: {
+                  type: "node",
+                  slot: "header",
+                  origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "header" }],
+                },
+              },
+            });
+            expect(graph.layoutContext.controls).toHaveLength(1);
+            expect(graph.layoutContext.controls.at(0)).toMatchObject({
+              ownerNodeId: "component:src/app.tsx#App",
+              label: "ready",
+            });
+            expect(graph.edges.filter(({ type }) => type === "control")).toHaveLength(1);
+          } finally {
+            await rm(dirname(graphPath), { recursive: true });
+          }
+        },
+      );
+    },
+  );
+
+  it("connects static wrappers and loaders to uncollected component identities without analyzing their bodies", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T): T;`,
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable<T>(load: () => Promise<{ default: T }>): T;`,
+        "src/app.tsx": `
+          import { memo } from "react";
+          import loadable from "@loadable/component";
+          import { Card, Part } from "./shared/card";
+          const Wrapped = Object.assign(memo(Card), { Sub: Part });
+          const Loaded = loadable(() => import("@/shared/panel"));
+          export function App() { return <><Wrapped /><Wrapped.Sub /><Loaded /></>; }
+        `,
+        "src/shared/card.tsx": `
+          const Internal = () => <span />;
+          export const Card = () => <Internal />;
+          export const Part = () => <footer />;
+        `,
+        "src/shared/panel.tsx": `export default function () { return <article />; }`,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src/app.tsx"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+            "component:src/app.tsx#App",
+            "component:src/shared/card.tsx#Card",
+            "component:src/shared/card.tsx#Part",
+            "component:src/shared/panel.tsx#default",
+          ]);
+          expect(graph.edges.map(({ targetNodeId }) => targetNodeId).toSorted()).toEqual([
+            "component:src/shared/card.tsx#Card",
+            "component:src/shared/card.tsx#Part",
+            "component:src/shared/panel.tsx#default",
+          ]);
+          expect(graph.edges.every(({ sourceNodeId }) => sourceNodeId === "component:src/app.tsx#App")).toBe(true);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("keeps unresolved, unsupported, and out-of-base references out of local boundaries while retaining npm boundaries", async () => {
+    await withFixture(
+      {
+        "node_modules/ui-kit/index.d.ts": `export declare function External(): any;`,
+        "outside/panel.tsx": `export function Outside() { return <aside />; }`,
+        "src/shared.tsx": `
+          function helper() { return () => <footer />; }
+          export const Unknown = helper();
+        `,
+        "src/app.tsx": `
+          import { External } from "ui-kit";
+          import { Missing } from "./missing";
+          import { Unknown } from "./shared";
+          import { Outside } from "../outside/panel";
+          import { Outside as Linked } from "./link";
+          export function App() { return <><External /><Missing /><Unknown /><Outside /><Linked /></>; }
+        `,
+      },
+      async (scopePath) => {
+        await symlink(join(scopePath, "node_modules"), join(scopePath, "src/node_modules"), "junction");
+        await symlink(join(scopePath, "outside/panel.tsx"), join(scopePath, "src/link.tsx"), "file");
+        const graphPath = await executeReactComponentStructureCommand(["--base", join(scopePath, "src"), "app.tsx"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+            "component:app.tsx#App",
+            "external:ui-kit#External",
+          ]);
+          expect(graph.edges).toHaveLength(1);
+          expect(graph.nodes.find(({ title }) => title === "External")).toMatchObject({
+            description: "ui-kit boundary",
+          });
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
   it("connects a const-bound memo export to its original component and rendering body", async () => {
     await withFixture(
       {

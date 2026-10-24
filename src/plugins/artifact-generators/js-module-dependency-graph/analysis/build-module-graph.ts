@@ -168,12 +168,24 @@ async function buildDiagramGraph(
   discoveredSources: readonly DiscoveredSourceFile[],
   analyzedModules: readonly AnalyzedModule[],
 ): Promise<DependencyDiagramGraph> {
-  const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
+  const collectedPaths = new Set(discoveredSources.map(({ absolutePath }) => absolutePath));
+  const localSourcesByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
+  for (const { dependencies } of analyzedModules) {
+    for (const { target } of dependencies) {
+      if (target.type !== "local-module" || localSourcesByPath.has(target.absolutePath)) continue;
+      localSourcesByPath.set(target.absolutePath, {
+        absolutePath: target.absolutePath,
+        relativePath: toPosixPath(relative(scopePath, target.absolutePath)),
+      });
+    }
+  }
+  const localSources = [...localSourcesByPath.values()];
+  const localGrouping = await buildLocalGrouping(scopePath, localSources);
   const groups = new Map(localGrouping.groups.map((group) => [group.groupId, group]));
   const localNodeByPath = new Map<string, string>();
   const nodes: ModuleGraphInput["nodes"][number][] = [];
 
-  for (const { absolutePath, relativePath } of discoveredSources) {
+  for (const { absolutePath, relativePath } of localSources) {
     const id = moduleNodeId(relativePath);
     const groupId = localGrouping.groupIdByFile.get(absolutePath);
     localNodeByPath.set(absolutePath, id);
@@ -181,6 +193,9 @@ async function buildDiagramGraph(
       type: "default",
       nodeId: id,
       title: basename(relativePath),
+      ...(!collectedPaths.has(absolutePath)
+        ? { description: "Outside collection scope; internals not analyzed." }
+        : {}),
       ...(groupId ? { groupId } : {}),
       links: [{ text: "source", href: sourceHref(relativePath) }],
     });
@@ -237,6 +252,11 @@ export async function buildModuleGraph(options: ModuleGraphOptions): Promise<Dep
   const scopePath = await resolveScopePath(options.scopePath);
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
   const discoveredSources = await collectSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);
-  const analyzedModules = await analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath);
+  const analyzedModules = await analyzeModuleDependencies(
+    scopePath,
+    discoveredSources,
+    tsConfigPath,
+    options.exclude ?? [],
+  );
   return buildDiagramGraph(scopePath, discoveredSources, analyzedModules);
 }
