@@ -203,4 +203,217 @@ describe("dependency graph layout", () => {
     expect(route?.some(({ y }) => y < filePosition.y)).toBe(true);
     expect(route?.every(({ x }) => x >= filePosition.x && x <= filePosition.x + (file?.size.width ?? 0))).toBe(true);
   });
+
+  it("preserves the full layout for unordered groups, unequal depths and virtual ID collisions", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "leaf", title: "Leaf", parentGroupId: "middle", type: "default" },
+        { groupId: "direct-nodes:", title: "Child", parentGroupId: "direct-nodes", type: "default" },
+        { groupId: "direct-nodes", title: "Parent", type: "default" },
+        { groupId: "middle", title: "Middle", parentGroupId: "direct-nodes", type: "default" },
+        { groupId: "empty", title: "Empty", type: "default" },
+      ],
+      nodes: [
+        { nodeId: "a", title: "a", groupId: "leaf", type: "default" },
+        { nodeId: "r", title: "r", type: "default" },
+        { nodeId: "b", title: "b", groupId: "direct-nodes", type: "default" },
+        { nodeId: "s", title: "s", type: "default" },
+        { nodeId: "c", title: "c", groupId: "direct-nodes:", type: "default" },
+      ],
+      edges: [
+        { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+        { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
+        { edgeId: "r-a", type: "default", sourceNodeId: "r", targetNodeId: "a" },
+        { edgeId: "c-r", type: "default", sourceNodeId: "c", targetNodeId: "r" },
+        { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c" },
+        { edgeId: "s-r", type: "default", sourceNodeId: "s", targetNodeId: "r" },
+      ],
+    });
+    const nodeSizes = {
+      a: { width: 288, height: 58 },
+      r: { width: 320, height: 78 },
+      b: { width: 352, height: 98 },
+      s: { width: 384, height: 118 },
+      c: { width: 416, height: 138 },
+    };
+
+    expect(await layoutDependencyGraph(graph, nodeSizes)).toEqual({
+      groups: [
+        { id: "direct-nodes", position: { x: 48, y: 48 }, size: { width: 1248, height: 1028 } },
+        {
+          id: "direct-nodes:",
+          parentId: "direct-nodes",
+          position: { x: 336, y: 634 },
+          size: { width: 576, height: 314 },
+        },
+        { id: "middle", parentId: "direct-nodes", position: { x: 80, y: 96 }, size: { width: 608, height: 410 } },
+        { id: "leaf", parentId: "middle", position: { x: 80, y: 96 }, size: { width: 448, height: 234 } },
+        { id: "empty", position: { x: 2192, y: 48 }, size: { width: 448, height: 176 } },
+      ],
+      nodes: [
+        { id: "c", position: { x: 80, y: 96 }, size: { width: 416, height: 138 }, parentId: "direct-nodes:" },
+        { id: "a", position: { x: 80, y: 96 }, size: { width: 288, height: 58 }, parentId: "leaf" },
+        { id: "b", position: { x: 816, y: 96 }, size: { width: 352, height: 98 }, parentId: "direct-nodes" },
+        { id: "r", position: { x: 1584, y: 262 }, size: { width: 320, height: 78 } },
+        { id: "s", position: { x: 1552, y: 48 }, size: { width: 384, height: 118 } },
+      ],
+      edges: [
+        {
+          id: "a-b",
+          points: [
+            { x: 576, y: 365 },
+            { x: 864, y: 193 },
+          ],
+        },
+        {
+          id: "b-a",
+          points: [
+            { x: 864, y: 193 },
+            { x: 576, y: 365 },
+          ],
+        },
+        {
+          id: "r-a",
+          points: [
+            { x: 1584, y: 301 },
+            { x: 576, y: 365 },
+          ],
+        },
+        {
+          id: "c-r",
+          points: [
+            { x: 880, y: 847 },
+            { x: 1584, y: 301 },
+          ],
+        },
+        {
+          id: "a-c",
+          points: [
+            { x: 432, y: 394 },
+            { x: 672, y: 778 },
+          ],
+        },
+        {
+          id: "s-r",
+          points: [
+            { x: 1744, y: 166 },
+            { x: 1744, y: 262 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    });
+  });
+
+  it("preserves the full multigraph layout with cycles, parallel edges and self loops", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "left", title: "left", type: "default" },
+        { groupId: "right", title: "right", type: "default" },
+        { groupId: "tail", title: "tail", type: "default" },
+      ],
+      nodes: [
+        { nodeId: "a", title: "a", groupId: "left", type: "default" },
+        { nodeId: "b", title: "b", groupId: "left", type: "default" },
+        { nodeId: "c", title: "c", groupId: "right", type: "default" },
+        { nodeId: "d", title: "d", groupId: "tail", type: "default" },
+        { nodeId: "e", title: "e", type: "default" },
+      ],
+      edges: [
+        { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
+        { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c" },
+        { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
+        { edgeId: "a-loop", type: "default", sourceNodeId: "a", targetNodeId: "a" },
+        { edgeId: "c-a", type: "default", sourceNodeId: "c", targetNodeId: "a" },
+        { edgeId: "parallel", type: "default", sourceNodeId: "a", targetNodeId: "c" },
+        { edgeId: "c-d", type: "default", sourceNodeId: "c", targetNodeId: "d" },
+        { edgeId: "e-loop", type: "default", sourceNodeId: "e", targetNodeId: "e" },
+      ],
+    });
+    const nodeSizes = {
+      a: { width: 288, height: 58 },
+      b: { width: 320, height: 78 },
+      c: { width: 352, height: 98 },
+      d: { width: 384, height: 118 },
+      e: { width: 416, height: 138 },
+    };
+
+    expect(await layoutDependencyGraph(graph, nodeSizes)).toEqual({
+      groups: [
+        { id: "left", position: { x: 48, y: 48 }, size: { width: 832, height: 254 } },
+        { id: "right", position: { x: 1136, y: 48 }, size: { width: 512, height: 274 } },
+        { id: "tail", position: { x: 912, y: 514 }, size: { width: 544, height: 294 } },
+      ],
+      nodes: [
+        { id: "a", position: { x: 80, y: 96 }, size: { width: 288, height: 58 }, parentId: "left" },
+        { id: "b", position: { x: 432, y: 96 }, size: { width: 320, height: 78 }, parentId: "left" },
+        { id: "c", position: { x: 80, y: 96 }, size: { width: 352, height: 98 }, parentId: "right" },
+        { id: "d", position: { x: 80, y: 96 }, size: { width: 384, height: 118 }, parentId: "tail" },
+        { id: "e", position: { x: 1904, y: 48 }, size: { width: 416, height: 138 } },
+      ],
+      edges: [
+        {
+          id: "a-b",
+          points: [
+            { x: 416, y: 173 },
+            { x: 480, y: 183 },
+          ],
+        },
+        {
+          id: "a-c",
+          points: [
+            { x: 416, y: 173 },
+            { x: 1216, y: 193 },
+          ],
+        },
+        {
+          id: "b-a",
+          points: [
+            { x: 480, y: 183 },
+            { x: 416, y: 173 },
+          ],
+        },
+        {
+          id: "a-loop",
+          points: [
+            { x: 344, y: 144 },
+            { x: 344, y: 128 },
+            { x: 200, y: 128 },
+            { x: 200, y: 144 },
+          ],
+        },
+        {
+          id: "c-a",
+          points: [
+            { x: 1216, y: 193 },
+            { x: 416, y: 173 },
+          ],
+        },
+        {
+          id: "parallel",
+          points: [
+            { x: 416, y: 173 },
+            { x: 1216, y: 193 },
+          ],
+        },
+        {
+          id: "c-d",
+          points: [
+            { x: 1392, y: 242 },
+            { x: 1184, y: 610 },
+          ],
+        },
+        {
+          id: "e-loop",
+          points: [
+            { x: 2216, y: 48 },
+            { x: 2216, y: 32 },
+            { x: 2008, y: 32 },
+            { x: 2008, y: 48 },
+          ],
+        },
+      ],
+      initialView: { mode: "fit" },
+    });
+  });
 });
