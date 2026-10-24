@@ -13,7 +13,7 @@ type Gesture = {
   cancelled: boolean;
 };
 
-type AnnotationInputProps = Readonly<{
+type AnnotationInteractionBoundaryProps = Readonly<{
   ariaLabel: string;
   children: ReactNode;
   controller: AnnotationCanvasController;
@@ -30,14 +30,14 @@ function suppressDiagramInput(event: Event): void {
   event.stopPropagation();
 }
 
-export function AnnotationInput({
+export function AnnotationInteractionBoundary({
   ariaLabel,
   children,
   controller,
   enabled,
   resolveTarget,
   screenToCanvasPoint,
-}: AnnotationInputProps) {
+}: AnnotationInteractionBoundaryProps) {
   const surface = useRef<HTMLDivElement>(null);
   const overlay = useRef<HTMLDivElement>(null);
   const getTarget = useEffectEvent(resolveTarget);

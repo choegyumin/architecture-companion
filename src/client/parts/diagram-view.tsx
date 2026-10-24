@@ -13,7 +13,7 @@ import {
   useState,
 } from "react";
 
-import { AnnotationInput } from "@/client/parts/annotation-input";
+import { AnnotationInteractionBoundary } from "@/client/parts/annotation-interaction-boundary";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
 import {
@@ -364,7 +364,7 @@ function DiagramViewContent({
   );
 
   return (
-    <AnnotationInput
+    <AnnotationInteractionBoundary
       ariaLabel={ariaLabel}
       controller={annotations}
       enabled={commentEnabled ?? annotations.isCommentMode}
@@ -476,7 +476,7 @@ function DiagramViewContent({
           );
         }}
       />
-    </AnnotationInput>
+    </AnnotationInteractionBoundary>
   );
 }
 
