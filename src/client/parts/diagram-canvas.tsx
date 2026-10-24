@@ -258,6 +258,7 @@ export function DiagramCanvas({
         onNodeClick={handleNodeClick}
         onNodesChange={onNodesChange}
         onPaneClick={handlePaneClick}
+        onlyRenderVisibleElements
         panOnDrag
         // WheelEvent cannot distinguish a trackpad from a mouse, so use macOS as the proxy.
         panOnScroll={isMacOS}
