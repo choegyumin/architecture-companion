@@ -453,6 +453,18 @@ export default defineConfig({
             message: "Use `Suspense` from `@suspensive/react` instead `react`.",
           },
           */
+          {
+            name: "cn",
+            message: "The `cn` npm package is a shadcn mis-install. Use `cn` from `@/shared/react/class-name` instead.",
+          },
+          {
+            name: "clsx",
+            message: "Use `cn` from `@/shared/react/class-name` instead of importing `clsx` directly.",
+          },
+          {
+            name: "tailwind-merge",
+            message: "Use `cn` from `@/shared/react/class-name` instead of importing `tailwind-merge` directly.",
+          },
         ],
       },
     ],
