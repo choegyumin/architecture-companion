@@ -20,7 +20,7 @@ const companionCatalogShapeSchema = z
   })
   .strict();
 
-const catalogEntrySchema = z.object({ artifactId: artifactIdSchema }).passthrough();
+export const catalogEntrySchema = z.object({ artifactId: artifactIdSchema }).passthrough();
 
 export type CompanionCatalog = Readonly<{
   artifacts: readonly Artifact[];

@@ -3160,13 +3160,18 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             slot: prop,
           }));
     }
+    const originsByTarget = new Map<string, ComponentComposition["origins"]>();
+    for (const relationship of relationships) {
+      if (relationship.kind === "inline-render") continue;
+      const origins = originsByTarget.get(relationship.target) ?? [];
+      for (const origin of compositionOrigins(relationship)) origins.push(origin);
+      originsByTarget.set(relationship.target, origins);
+    }
     function nodeLayoutContext(
       id: string,
       definitionId: string,
     ): NonNullable<ComponentStructureDiagramNode["layoutContext"]> {
-      const origins = relationships.flatMap((relationship) =>
-        relationship.target === id ? compositionOrigins(relationship) : [],
-      );
+      const origins = originsByTarget.get(id) ?? [];
       return {
         definitionId,
         origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()],

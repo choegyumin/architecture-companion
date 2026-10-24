@@ -298,8 +298,8 @@ function DiagramViewContent({
     void camera.focusNodes([node.id]);
   }
 
-  return (
-    <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
+  const accessibleElements = useMemo(
+    () => (
       <ul aria-label="Diagram elements and connections" className="sr-only">
         {artifact.diagram.graph.nodes.map((node) => (
           <li key={node.nodeId}>
@@ -319,6 +319,13 @@ function DiagramViewContent({
           </li>
         ))}
       </ul>
+    ),
+    [artifact],
+  );
+
+  return (
+    <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
+      {accessibleElements}
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
         edges={

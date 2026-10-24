@@ -36,6 +36,15 @@ type Scope = Readonly<{
   nodes: readonly DiagramLayoutNode[];
   groups: readonly DiagramLayoutGroup[];
 }>;
+type ScopeInputs = {
+  parent?: ScopeInputs;
+  depth: number;
+  index: number;
+  children: DependencyDiagramGraph["groups"][number][];
+  nodes: DefaultDiagramNode[];
+  connections: (readonly [number, number])[];
+  directConnections: (readonly [number, number])[];
+};
 
 function rankComponents(count: number, connections: readonly (readonly [number, number])[]) {
   const outgoing = Array.from({ length: count }, () => new Set<number>());
@@ -176,15 +185,9 @@ function arrangeItems(
 function layoutDirectNodes(
   nodes: readonly DefaultDiagramNode[],
   nodeSizes: DiagramNodeSizes,
-  graph: DependencyDiagramGraph,
+  connections: readonly (readonly [number, number])[],
   directId: string,
 ): Item {
-  const indexes = new Map(nodes.map((node, index) => [node.nodeId, index]));
-  const connections = graph.edges.flatMap((edge): (readonly [number, number])[] => {
-    const source = indexes.get(edge.sourceNodeId);
-    const target = indexes.get(edge.targetNodeId);
-    return source === undefined || target === undefined ? [] : [[source, target]];
-  });
   const items = nodes.map((node) => ({
     id: node.nodeId,
     size: getOrThrow(nodeSizes[node.nodeId], `Missing measured node size: ${node.nodeId}`),
@@ -208,42 +211,78 @@ export function layoutDependencyGraph(
   graph: DependencyDiagramGraph,
   nodeSizes: DiagramNodeSizes,
 ): Promise<DiagramLayout> {
-  const groupById = new Map(graph.groups.map((group) => [group.groupId, group]));
-  const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
+  const scopes = new Map<string | undefined, ScopeInputs>(
+    [undefined, ...graph.groups.map((group) => group.groupId)].map((id) => [
+      id,
+      { depth: 0, index: 0, children: [], nodes: [], connections: [], directConnections: [] },
+    ]),
+  );
   let directId = "direct-nodes";
-  while (groupById.has(directId)) directId += ":";
-
-  function ownerOf(nodeId: string, parentId: string | undefined): string | undefined {
-    const node = nodesById.get(nodeId);
-    if (!node) return undefined;
-    let groupId = node.groupId;
-    if (groupId === parentId) return directId;
-    while (groupId) {
-      const group = groupById.get(groupId);
-      if (!group) return undefined;
-      if (group.parentGroupId === parentId) return group.groupId;
-      groupId = group.parentGroupId;
-    }
-    return undefined;
+  while (scopes.has(directId)) directId += ":";
+  graph.groups.forEach((group) => {
+    const scope = getOrThrow(scopes.get(group.groupId), "Missing dependency scope");
+    const parent = getOrThrow(scopes.get(group.parentGroupId), "Missing dependency parent scope");
+    scope.parent = parent;
+    scope.index = parent.children.length;
+    parent.children.push(group);
+  });
+  const pendingScopes = [getOrThrow(scopes.get(undefined), "Missing dependency root scope")];
+  for (let index = 0; index < pendingScopes.length; index += 1) {
+    const parent = getOrThrow(pendingScopes[index], "Missing dependency scope");
+    parent.children.forEach((group) => {
+      const scope = getOrThrow(scopes.get(group.groupId), "Missing dependency child scope");
+      scope.depth = parent.depth + 1;
+      pendingScopes.push(scope);
+    });
   }
+  const nodesById = new Map<string, { scope: ScopeInputs; index: number }>();
+  graph.nodes.forEach((node) => {
+    const scope = getOrThrow(scopes.get(node.groupId), "Missing dependency node scope");
+    nodesById.set(node.nodeId, { scope, index: scope.nodes.length });
+    scope.nodes.push(node);
+  });
+  graph.edges.forEach((edge) => {
+    const source = getOrThrow(nodesById.get(edge.sourceNodeId), "Missing dependency source node");
+    const target = getOrThrow(nodesById.get(edge.targetNodeId), "Missing dependency target node");
+    if (source.scope === target.scope) {
+      source.scope.directConnections.push([source.index, target.index]);
+      return;
+    }
+    let sourceScope = source.scope;
+    let targetScope = target.scope;
+    let sourceIndex = sourceScope.children.length;
+    let targetIndex = targetScope.children.length;
+    // Only the lowest common scope sees different items; higher scopes see one child.
+    while (sourceScope.depth > targetScope.depth) {
+      sourceIndex = sourceScope.index;
+      sourceScope = getOrThrow(sourceScope.parent, "Missing dependency source parent");
+    }
+    while (targetScope.depth > sourceScope.depth) {
+      targetIndex = targetScope.index;
+      targetScope = getOrThrow(targetScope.parent, "Missing dependency target parent");
+    }
+    while (sourceScope !== targetScope) {
+      sourceIndex = sourceScope.index;
+      sourceScope = getOrThrow(sourceScope.parent, "Missing dependency source parent");
+      targetIndex = targetScope.index;
+      targetScope = getOrThrow(targetScope.parent, "Missing dependency target parent");
+    }
+    sourceScope.connections.push([sourceIndex, targetIndex]);
+  });
 
   function layoutScope(parentId: string | undefined): Scope {
     const padding = parentId ? GROUP_PADDING : ROOT_PADDING;
-    const children = graph.groups.filter((group) => group.parentGroupId === parentId);
-    const directNodes = graph.nodes.filter(
-      (node): node is DefaultDiagramNode => node.groupId === parentId && node.type === "default",
-    );
+    const {
+      children,
+      nodes: directNodes,
+      connections,
+      directConnections,
+    } = getOrThrow(scopes.get(parentId), "Missing dependency scope");
     const items: Item[] = children.map((group) => {
       const contents = layoutScope(group.groupId);
       return { id: group.groupId, size: contents.size, nodes: contents.nodes, groups: contents.groups };
     });
-    if (directNodes.length > 0) items.push(layoutDirectNodes(directNodes, nodeSizes, graph, directId));
-    const indexes = new Map(items.map((item, index) => [item.id, index]));
-    const connections = graph.edges.flatMap((edge): (readonly [number, number])[] => {
-      const source = indexes.get(ownerOf(edge.sourceNodeId, parentId) ?? "");
-      const target = indexes.get(ownerOf(edge.targetNodeId, parentId) ?? "");
-      return source === undefined || target === undefined || source === target ? [] : [[source, target]];
-    });
+    if (directNodes.length > 0) items.push(layoutDirectNodes(directNodes, nodeSizes, directConnections, directId));
     const arranged = arrangeItems(items, connections, parentId ? GROUP_GAP : ROOT_GAP);
     const groups: DiagramLayoutGroup[] = [];
     const nodes: DiagramLayoutNode[] = [];

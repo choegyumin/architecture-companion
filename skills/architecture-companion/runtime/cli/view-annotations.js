@@ -23937,10 +23937,12 @@ function validateGraphIntegrity(graph) {
       path: ["edges", index, "edgeId"]
     }))
   ];
-  graphElements.forEach(({ key, path }, index) => {
-    if (graphElements.findIndex(({ key: candidate }) => candidate === key) !== index) {
+  const elementIds = /* @__PURE__ */ new Set();
+  graphElements.forEach(({ key, path }) => {
+    if (elementIds.has(key)) {
       issues.push({ code: "custom", path: [...path], message: `Duplicate diagram element ID: ${key}` });
     }
+    elementIds.add(key);
   });
   const groupIds = new Set(graph.groups.map(({ groupId }) => groupId));
   const nodeById = new Map(graph.nodes.map((node2) => [node2.nodeId, node2]));
@@ -24440,38 +24442,10 @@ var companionCatalogShapeSchema = external_exports.object({
   artifacts: external_exports.array(external_exports.unknown()).readonly()
 }).strict();
 var catalogEntrySchema = external_exports.object({ artifactId: artifactIdSchema }).passthrough();
-function parseCatalog(input2) {
-  const shape = companionCatalogShapeSchema.safeParse(input2);
-  if (!shape.success) {
-    const messages = shape.error.issues.map(({ message }) => message).join("; ");
-    throw new Error(`Invalid catalog: ${messages}`, { cause: shape.error });
-  }
-  let catalog;
-  const parseEntry = (input3) => {
-    const { artifactId, ...document } = catalogEntrySchema.parse(input3);
-    return { ...parseArtifact(document), artifactId };
-  };
-  try {
-    catalog = { artifacts: shape.data.artifacts.map(parseEntry) };
-  } catch (error62) {
-    throw new Error(`Invalid catalog: ${error62 instanceof Error ? error62.message : "Unknown artifact shape"}`, {
-      cause: error62
-    });
-  }
-  const issues = [];
-  const ids = /* @__PURE__ */ new Set();
-  for (const artifact of catalog.artifacts) {
-    if (ids.has(artifact.artifactId)) issues.push(`Duplicate artifact path: ${artifact.artifactId}`);
-    ids.add(artifact.artifactId);
-  }
-  if (issues.length > 0) throw new Error(`Invalid catalog: ${issues.join("; ")}`);
-  return catalog;
-}
 
 // src/server/create-catalog-revision-id.ts
-function createCatalogRevisionId(catalog) {
-  const canonicalCatalog = parseCatalog(catalog);
-  const digest = createHash("sha256").update(JSON.stringify(canonicalCatalog)).digest("hex");
+function hashNormalizedCatalog(catalog) {
+  const digest = createHash("sha256").update(JSON.stringify(catalog)).digest("hex");
   return parseCatalogRevisionId(digest);
 }
 
@@ -24480,13 +24454,6 @@ var import_ignore = __toESM(require_ignore(), 1);
 var import_micromatch = __toESM(require_micromatch(), 1);
 import { readdir, readFile as readFile2 } from "fs/promises";
 import { join as join2 } from "path";
-
-// src/server/validate-catalog.ts
-function validateCatalog(input2) {
-  return parseCatalog(input2);
-}
-
-// src/server/read-catalog.ts
 var ARTIFACTS_RELATIVE_PATH = ".architecture-companion/artifacts";
 var CONFIG_RELATIVE_PATH = ".architecture-companion/config.json";
 function isFileSystemError2(error62, code) {
@@ -24584,7 +24551,14 @@ async function readCatalog(scopePath) {
     else artifacts.push(artifact);
   }
   if (errors.length > 0) return { status: "invalid", message: errors.join("; ") };
-  return { status: "valid", catalog: validateCatalog({ artifacts }) };
+  try {
+    for (const artifact of artifacts) catalogEntrySchema.parse(artifact);
+  } catch (error62) {
+    throw new Error(`Invalid catalog: ${error62 instanceof Error ? error62.message : "Invalid artifact path"}`, {
+      cause: error62
+    });
+  }
+  return { status: "valid", catalog: { artifacts } };
 }
 
 // src/server/read-active-revision-annotations.ts
@@ -24600,7 +24574,7 @@ async function readActiveRevisionAnnotations(scopePath, annotationRepository) {
       revisionAnnotations: { catalogRevisionId: null, document: null }
     };
   }
-  const catalogRevisionId = createCatalogRevisionId(catalogResult.catalog);
+  const catalogRevisionId = hashNormalizedCatalog(catalogResult.catalog);
   try {
     return {
       status: "valid",

@@ -1,5 +1,5 @@
 import type { RevisionAnnotationsRead } from "@/features/annotation/revision-annotations";
-import { createCatalogRevisionId } from "@/server/create-catalog-revision-id";
+import { hashNormalizedCatalog } from "@/server/create-catalog-revision-id";
 import type { RevisionAnnotationRepository } from "@/server/file-annotation-repository";
 import { readCatalog } from "@/server/read-catalog";
 
@@ -24,7 +24,7 @@ export async function readActiveRevisionAnnotations(
     };
   }
 
-  const catalogRevisionId = createCatalogRevisionId(catalogResult.catalog);
+  const catalogRevisionId = hashNormalizedCatalog(catalogResult.catalog);
 
   try {
     return {

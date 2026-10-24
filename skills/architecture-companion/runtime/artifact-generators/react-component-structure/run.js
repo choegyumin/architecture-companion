@@ -23654,10 +23654,12 @@ function validateGraphIntegrity(graph) {
       path: ["edges", index, "edgeId"]
     }))
   ];
-  graphElements.forEach(({ key, path }, index) => {
-    if (graphElements.findIndex(({ key: candidate }) => candidate === key) !== index) {
+  const elementIds = /* @__PURE__ */ new Set();
+  graphElements.forEach(({ key, path }) => {
+    if (elementIds.has(key)) {
       issues.push({ code: "custom", path: [...path], message: `Duplicate diagram element ID: ${key}` });
     }
+    elementIds.add(key);
   });
   const groupIds = new Set(graph.groups.map(({ groupId }) => groupId));
   const nodeById = new Map(graph.nodes.map((node2) => [node2.nodeId, node2]));
@@ -26595,10 +26597,15 @@ function createComponentGraphBuilder(ts) {
         slot: prop
       }));
     }
+    const originsByTarget = /* @__PURE__ */ new Map();
+    for (const relationship of relationships) {
+      if (relationship.kind === "inline-render") continue;
+      const origins = originsByTarget.get(relationship.target) ?? [];
+      for (const origin of compositionOrigins(relationship)) origins.push(origin);
+      originsByTarget.set(relationship.target, origins);
+    }
     function nodeLayoutContext(id, definitionId) {
-      const origins = relationships.flatMap(
-        (relationship) => relationship.target === id ? compositionOrigins(relationship) : []
-      );
+      const origins = originsByTarget.get(id) ?? [];
       return {
         definitionId,
         origins: [...new Map(origins.map((origin) => [JSON.stringify(origin), origin])).values()]
