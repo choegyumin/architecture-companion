@@ -11,6 +11,7 @@ export type BaseEdgeLabelProps = Readonly<{
   icon?: ReactNode;
   active?: boolean;
   ariaLabel?: string;
+  edgeId?: string;
   href?: string;
   onActivate?: (event: MouseEvent<HTMLAnchorElement>, href: string) => void;
   onSelect?: () => void;
@@ -24,6 +25,7 @@ export function BaseEdgeLabel({
   icon,
   active = true,
   ariaLabel,
+  edgeId,
   href,
   onActivate,
   onSelect,
@@ -49,6 +51,7 @@ export function BaseEdgeLabel({
     return (
       <button
         aria-label={ariaLabel}
+        data-edge-id={edgeId}
         className={cn(
           "nodrag nopan max-w-72 cursor-pointer rounded-md border bg-background px-2 py-1 text-left text-xs shadow-sm",
           "hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
@@ -69,7 +72,7 @@ export function BaseEdgeLabel({
 
   if (!href)
     return (
-      <span aria-label={ariaLabel} className={className} style={style}>
+      <span aria-label={ariaLabel} className={className} data-edge-id={edgeId} style={style}>
         {content}
       </span>
     );
@@ -77,6 +80,7 @@ export function BaseEdgeLabel({
   return (
     <a
       aria-label={ariaLabel}
+      data-edge-id={edgeId}
       className={cn("nodrag nopan pointer-events-auto text-primary underline-offset-4 hover:underline", className)}
       href={href}
       onClick={(event) => onActivate?.(event, href)}

@@ -13,6 +13,7 @@ import {
   useState,
 } from "react";
 
+import { AnnotationInput } from "@/client/parts/annotation-input";
 import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
 import { AnnotationLayer } from "@/client/parts/annotation-layer";
 import {
@@ -131,6 +132,7 @@ function DiagramLinksPanel({ links, onOpenSource }: DiagramLinksPanelProps) {
 function DiagramViewContent({
   ariaLabel,
   annotations,
+  commentEnabled,
   activeIndicator,
   explanationPanel,
   referencePanel,
@@ -168,7 +170,7 @@ function DiagramViewContent({
   const [nodes, setNodes, onNodesChange] = useNodesState<DiagramReactFlowNode>(measurementNodes);
   const [state, setState] = useState<DiagramLayoutState>({ status: "measuring" });
   const hasStartedLayout = useRef(false);
-  const { getNodes } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
+  const { getNodes, screenToFlowPosition } = useReactFlow<DiagramReactFlowNode, DiagramReactFlowEdge>();
   const latestLayoutInputs = useRef({ artifact, getNodes, calculateLayout, measurementNodes });
 
   useEffect(() => {
@@ -298,6 +300,44 @@ function DiagramViewContent({
     void camera.focusNodes([node.id]);
   }
 
+  function resolveAnnotationTarget(element: Element): AnnotationTarget | undefined {
+    const owner = element.closest("[data-edge-id], .react-flow__edge[data-id], .react-flow__node[data-id]");
+    if (!owner) return undefined;
+    const id = owner.getAttribute("data-edge-id") ?? owner.getAttribute("data-id");
+    if (!id) return undefined;
+    const graph = artifact.diagram.graph;
+    if (owner.matches(".react-flow__node")) {
+      const mapped = rendered?.status === "ready" ? rendered.model.nodeTargets?.get(id) : undefined;
+      if (mapped) return mapped;
+      if (graph.nodes.some((node) => node.nodeId === id)) return { type: "node", id };
+      if (graph.groups.some((group) => group.groupId === id)) return { type: "group", id };
+      return undefined;
+    }
+    if (rendered?.status === "ready") {
+      const mapped = rendered.model.edgeTargets?.get(id);
+      if (mapped) return mapped;
+      const storedIds = rendered.model.graphEdgeIds?.get(id);
+      if (storedIds) {
+        const edges = graph.edges.filter((edge) => storedIds.includes(edge.edgeId));
+        const first = edges.at(0);
+        if (!first) return undefined;
+        if (edges.length === 1) return { type: "edge", id: first.edgeId };
+        if (
+          edges.every((edge) => edge.sourceNodeId === first.sourceNodeId && edge.targetNodeId === first.targetNodeId)
+        ) {
+          return {
+            type: "edge-set",
+            sourceId: first.sourceNodeId,
+            targetId: first.targetNodeId,
+            edgeIds: edges.map((edge) => edge.edgeId),
+          };
+        }
+        return undefined;
+      }
+    }
+    return graph.edges.some((edge) => edge.edgeId === id) ? { type: "edge", id } : undefined;
+  }
+
   const accessibleElements = useMemo(
     () => (
       <ul aria-label="Diagram elements and connections" className="sr-only">
@@ -324,7 +364,13 @@ function DiagramViewContent({
   );
 
   return (
-    <div aria-label={ariaLabel} className="relative h-full min-h-0 overflow-hidden bg-background" role="region">
+    <AnnotationInput
+      ariaLabel={ariaLabel}
+      controller={annotations}
+      enabled={commentEnabled ?? annotations.isCommentMode}
+      resolveTarget={resolveAnnotationTarget}
+      screenToCanvasPoint={screenToFlowPosition}
+    >
       {accessibleElements}
       <DiagramCanvas
         className={cn(annotations.isCommentMode && "[&_.react-flow__pane]:cursor-crosshair")}
@@ -339,21 +385,6 @@ function DiagramViewContent({
         focusFrame={walkthroughPresentation?.frame}
         focusRequestKey={walkthroughElements}
         reserveRight={walkthroughElements !== undefined ? 360 : 0}
-        onCanvasClick={
-          annotations.isCommentMode
-            ? (point, target) => {
-                const selected: AnnotationTarget | undefined =
-                  target?.type === "edge" && rendered?.status === "ready"
-                    ? (rendered.model.edgeTargets?.get(target.id) ?? target)
-                    : target;
-                annotations.begin({
-                  ...annotations.surface,
-                  ...(selected ? { target: selected } : {}),
-                  point,
-                });
-              }
-            : undefined
-        }
         onGroupActivate={onGroupActivate}
         onNodeActivate={onNodeActivate}
         onPaneActivate={onPaneActivate}
@@ -445,13 +476,14 @@ function DiagramViewContent({
           );
         }}
       />
-    </div>
+    </AnnotationInput>
   );
 }
 
 export function DiagramView({
   ariaLabel,
   annotations,
+  commentEnabled,
   activeIndicator,
   explanationPanel,
   referencePanel,
@@ -474,6 +506,7 @@ export function DiagramView({
       <DiagramViewContent
         ariaLabel={ariaLabel ?? `${artifact.title} diagram`}
         annotations={annotations}
+        commentEnabled={commentEnabled}
         artifact={artifact}
         onOpenSource={onOpenSource}
         calculateLayout={calculateLayout}

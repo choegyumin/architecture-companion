@@ -45,6 +45,8 @@ export type DiagramReactFlowRenderModel = Readonly<{
   nodes: readonly DiagramReactFlowNode[];
   edges: readonly DiagramReactFlowEdge[];
   edgeTargets?: ReadonlyMap<string, AnnotationTarget>;
+  /** Stored owners of display-only nodes such as Control decision nodes. */
+  nodeTargets?: ReadonlyMap<string, AnnotationTarget>;
   /**
    * Maps a render edge id to the stored edge ids it renders. Unset leaves the
    * resolution to the consumer; an empty list marks an edge that renders

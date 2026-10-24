@@ -330,10 +330,7 @@ function describeDependencyFocus(artifact: Artifact, focus: DependencyFocus): st
 
 export function DependencyGraphDiagramRenderer(props: DiagramRendererProps) {
   const [focus, setFocus] = useState<DependencyFocus>();
-  const canFocus =
-    !(props.commentEnabled ?? props.annotations.isCommentMode) &&
-    !props.annotations.isManaging &&
-    !props.annotations.isPublishing;
+  const canFocus = !props.annotations.isManaging && !props.annotations.isPublishing;
   const buildRenderModel = useCallback(
     (artifact: Artifact, layout: DiagramLayout, onOpenSource: (href: string) => void) =>
       buildDependencyGraphDiagramReactFlowRenderModel(artifact, layout, onOpenSource, {

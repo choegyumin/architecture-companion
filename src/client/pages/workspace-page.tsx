@@ -675,8 +675,16 @@ export function WorkspacePage({ client }: WorkspacePageProps) {
     dispatchAnnotation({ type: "mode-changed", enabled: false });
   }, []);
 
-  useEffect(() => addEventListener(document, "keydown", handleAnnotationModeKeyDown), [handleAnnotationModeKeyDown]);
-  useEffect(() => addEventListener(document, "keyup", handleAnnotationModeKeyUp), [handleAnnotationModeKeyUp]);
+  // Track held keys at the same capture boundary that consumes Diagram input.
+  // Otherwise a consumed key can leave Alt mode or the pressed-key set stale.
+  useEffect(
+    () => addEventListener(window, "keydown", handleAnnotationModeKeyDown, { capture: true }),
+    [handleAnnotationModeKeyDown],
+  );
+  useEffect(
+    () => addEventListener(window, "keyup", handleAnnotationModeKeyUp, { capture: true }),
+    [handleAnnotationModeKeyUp],
+  );
   useEffect(() => addEventListener(globalThis.window, "blur", handleAnnotationModeBlur), [handleAnnotationModeBlur]);
 
   useEffect(() => {

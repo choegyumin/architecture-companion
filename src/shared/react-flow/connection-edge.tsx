@@ -55,6 +55,7 @@ export function ConnectionEdge({ id, data, label, markerEnd, markerStart, style 
   const anchoredControls = labelControls.map(({ anchorSide, control, position }) => (
     <div
       className="nodrag nopan absolute flex w-max flex-col gap-2"
+      data-edge-id={id}
       key={`${position.x},${position.y}`}
       style={{
         ...labelStyle,
@@ -78,6 +79,7 @@ export function ConnectionEdge({ id, data, label, markerEnd, markerStart, style 
           ) : data.labelAction ? (
             <BaseEdgeLabel
               ariaLabel={data.labelAction.ariaLabel}
+              edgeId={id}
               className={cn("absolute w-max text-center", data.labelClassName)}
               onSelect={data.labelAction.onActivate}
               style={labelStyle}
@@ -94,6 +96,7 @@ export function ConnectionEdge({ id, data, label, markerEnd, markerStart, style 
                 "nodrag nopan absolute w-max rounded-md border bg-background px-2 py-1 text-center text-xs shadow-sm",
                 data.labelClassName,
               )}
+              data-edge-id={id}
               style={labelStyle}
             >
               {eyebrow}

@@ -1321,6 +1321,13 @@ function ComponentStructureContent(props: DiagramRendererProps) {
         // for dead cases — so highlight origins never fall back to treating a
         // synthetic projected id as a stored one.
         graphEdgeIds: new Map(projected.edges.map((edge) => [edge.id, edge.originEdgeIds])),
+        nodeTargets: new Map(
+          projected.nodes.flatMap((node) =>
+            node.type === "decision" || node.type === "non-component"
+              ? [[node.id, { type: "node" as const, id: node.control.ownerNodeId }] as const]
+              : [],
+          ),
+        ),
       };
     },
     [controls, decorateNodes, onSelect, projected, selection],
