@@ -2,7 +2,8 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { createDataClient } from "@/client/data-client";
 import { createApp } from "@/server/create-app";
@@ -79,6 +80,50 @@ async function findSourceLink(label: string): Promise<HTMLAnchorElement> {
 }
 
 describe("source links in a review", () => {
+  it.each([
+    { surface: "Artifact", label: "user-review-architecture.spec.tsx", target: undefined },
+    { surface: "Node", label: "workflow.ts", target: { type: "node", id: "submit" } as const },
+  ])("comments instead of opening the $surface source link in Comment mode", async ({ label, target }) => {
+    const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-comment-source-"));
+    const openedPaths: string[] = [];
+    let review: Awaited<ReturnType<typeof renderWorkspace>> | undefined;
+    try {
+      await writeCatalog(scopePath, catalog);
+      await mkdir(join(scopePath, "src"));
+      await mkdir(join(scopePath, "specs"));
+      await writeFile(join(scopePath, "src/workflow.ts"), "export const workflow = true;\n");
+      await writeFile(join(scopePath, "specs/user-review-architecture.spec.tsx"), "export const review = true;\n");
+      const app = createApp(await resolveCompanionScope(scopePath), {
+        openPath: async ({ path }) => {
+          openedPaths.push(path);
+        },
+      });
+      const client = createDataClient("http://architecture-companion.test", async (input, init) =>
+        app.request(input, init),
+      );
+      review = await renderWorkspace(client);
+      const link = await findSourceLink(label);
+      await userEvent.click(screen.getByRole("button", { name: "Comment" }));
+      fireEvent.click(link);
+      const composer = await screen.findByRole("form", { name: "Add comment" });
+      await userEvent.type(within(composer).getByLabelText("Comment text"), "Review the linked element");
+      await userEvent.click(within(composer).getByRole("button", { name: "Post" }));
+      await screen.findByRole("button", { name: "Comment: Review the linked element" });
+      const document = (await client.getAnnotations()).document;
+      expect(document?.annotations).toHaveLength(1);
+      expect(document?.annotations.at(0)?.anchor).toEqual({
+        canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        point: { x: expect.any(Number), y: expect.any(Number) },
+        ...(target ? { target } : {}),
+      });
+      expect(openedPaths).toEqual([]);
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      review?.unmount();
+      await rm(scopePath, { recursive: true });
+    }
+  });
+
   it("shows an English error when the operating system cannot open the source", async () => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-source-review-"));
 
@@ -143,7 +188,6 @@ describe("source links in a review", () => {
         await realpath(join(scopePath, "src/checkout-page.test.ts")),
       ];
       await renderWorkspace(client);
-      fireEvent.click(await screen.findByRole("button", { name: "Comment" }));
       const diagramLink = await findSourceLink("user-review-architecture.spec.tsx");
       const workflowLink = await findSourceLink("workflow.ts");
       await act(async () => {

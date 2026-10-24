@@ -158,9 +158,6 @@ describe("WorkspacePage comment management", () => {
       const commentTool = await screen.findByRole("button", { name: "Comment" });
       await userEvent.click(commentTool);
       expect(commentTool).toHaveAttribute("aria-pressed", "true");
-      await userEvent.click(screen.getByRole("button", { name: "Fit View" }));
-      expect(screen.queryByRole("form", { name: "Add comment" })).not.toBeInTheDocument();
-
       fireEvent.click(await getCanvas("Workflow product behavior diagram"), { clientX: 80, clientY: 60 });
       const composer = await screen.findByRole("form", { name: "Add comment" });
       await userEvent.type(within(composer).getByLabelText("Comment text"), "Discard this draft");
@@ -170,6 +167,30 @@ describe("WorkspacePage comment management", () => {
 
       expect(screen.queryByRole("form", { name: "Add comment" })).not.toBeInTheDocument();
       expect(screen.queryByLabelText("Comment: Discard this draft")).not.toBeInTheDocument();
+    } finally {
+      review.unmount();
+      await rm(scopePath, { recursive: true });
+    }
+  });
+
+  it("treats Fit View activation as a Canvas comment in Comment mode", async () => {
+    const { scopePath, scope } = await createReview();
+    const client = createClient(createApp(scope));
+    const review = await renderWorkspace(client);
+    try {
+      await getCanvas("Workflow product behavior diagram");
+      await userEvent.click(screen.getByRole("button", { name: "Comment" }));
+      await userEvent.click(screen.getByRole("button", { name: "Fit View" }));
+      const composer = await screen.findByRole("form", { name: "Add comment" });
+      await userEvent.type(within(composer).getByLabelText("Comment text"), "Review this Canvas position");
+      await userEvent.click(within(composer).getByRole("button", { name: "Post" }));
+      await screen.findByRole("button", { name: "Comment: Review this Canvas position" });
+      const document = await getAnnotationDocument(client);
+      expect(document.annotations).toHaveLength(1);
+      expect(document.annotations.at(0)?.anchor).toEqual({
+        canvasId: "behavior:.architecture-companion/artifacts/checkout-workflow.archcomp.json",
+        point: { x: expect.any(Number), y: expect.any(Number) },
+      });
     } finally {
       review.unmount();
       await rm(scopePath, { recursive: true });

@@ -1,13 +1,20 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
-import type { DiagramRendererProps } from "@/client/parts/diagram-view";
-import { DependencyGraphDiagramRenderer } from "@/client/widgets/dependency-graph-diagram-renderer";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { createDataClient } from "@/client/data-client";
 import type { Artifact } from "@/features/artifact/artifact";
 import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
-import type { DiagramLayout } from "@/features/diagram/diagram-spatial";
+import { createApp } from "@/server/create-app";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
+
+import { installDiagramMeasurements } from "../../../tests/helpers/diagram-measurements";
+import { renderWorkspace } from "../../../tests/helpers/render-workspace";
+import { waitForDiagramReady } from "../../../tests/helpers/wait-for-diagram";
+import { writeCatalog } from "../../../tests/helpers/write-catalog";
 
 const diagram = {
   artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
@@ -38,144 +45,109 @@ const diagram = {
   },
 } satisfies Artifact;
 
-const layout = {
-  groups: [
-    { id: "source", position: { x: 0, y: 0 }, size: { width: 400, height: 400 } },
-    { id: "target", position: { x: 0, y: 600 }, size: { width: 400, height: 220 } },
-  ],
-  nodes: [
-    { id: "one", parentId: "source", position: { x: 50, y: 90 }, size: { width: 288, height: 80 } },
-    { id: "two", parentId: "source", position: { x: 50, y: 250 }, size: { width: 288, height: 80 } },
-    { id: "other", parentId: "target", position: { x: 50, y: 90 }, size: { width: 288, height: 80 } },
-  ],
-  edges: [
-    {
-      id: "one-other",
-      points: [
-        { x: 194, y: 170 },
-        { x: 194, y: 690 },
-      ],
-    },
-    {
-      id: "two-other",
-      points: [
-        { x: 194, y: 330 },
-        { x: 194, y: 690 },
-      ],
-    },
-    {
-      id: "one-two",
-      points: [
-        { x: 194, y: 170 },
-        { x: 194, y: 250 },
-      ],
-    },
-  ],
-  initialView: { mode: "fit" },
-} satisfies DiagramLayout;
-
-vi.mock("@/client/parts/diagram-view", () => ({
-  DiagramView: ({
-    buildRenderModel,
-    activeIndicator,
-    artifact,
-    onOpenSource,
-    onGroupActivate,
-    onNodeActivate,
-    onPaneActivate,
-  }: {
-    buildRenderModel: (
-      artifact: Artifact,
-      layout: DiagramLayout,
-      onOpenSource: (href: string) => void,
-    ) => ReturnType<
-      typeof import("@/client/widgets/dependency-graph-diagram-renderer").buildDependencyGraphDiagramReactFlowRenderModel
-    >;
-    activeIndicator?: ReactNode;
-    artifact: Artifact;
-    onOpenSource: (href: string) => void;
-    onGroupActivate?: (id: string) => void;
-    onNodeActivate?: (id: string) => void;
-    onPaneActivate?: () => void;
-  }) => {
-    const model = buildRenderModel(artifact, layout, onOpenSource);
-    const group = model.nodes.find((node) => node.type === "labeled-group" && node.id === "source");
-    const aggregate = model.edges.find((edge) => edge.type === "connection" && edge.source === "source");
-    return (
-      <div>
-        <output data-testid="visible-edges">{model.edges.map(({ id }) => id).join("|")}</output>
-        <button onClick={() => onGroupActivate?.("source")}>Select group area</button>
-        <output data-testid="group-activatable">
-          {group?.type === "labeled-group" ? String(Boolean(group.data.activatable)) : "false"}
-        </output>
-        <button onClick={() => onNodeActivate?.("one")}>Select node</button>
-        <button onClick={() => onPaneActivate?.()}>Select pane</button>
-        {aggregate?.type === "connection" && aggregate.data?.labelAction ? (
-          <button onClick={aggregate.data.labelAction.onActivate}>{aggregate.data.labelAction.ariaLabel}</button>
-        ) : null}
-        {activeIndicator}
-      </div>
-    );
-  },
-}));
-
-const annotations = { isCommentMode: false, isManaging: false, isPublishing: false } as AnnotationCanvasController;
-const props: DiagramRendererProps = { artifact: diagram, annotations, onOpenSource: vi.fn() };
+async function createReview(beforeSave?: () => Promise<void>) {
+  const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-dependency-focus-"));
+  await writeCatalog(scopePath, { artifacts: [diagram] });
+  const app = createApp(await resolveCompanionScope(scopePath));
+  const client = createDataClient("http://architecture-companion.test", async (input, init) => {
+    if (init?.method === "PUT") await beforeSave?.();
+    return app.request(input, init);
+  });
+  const review = await renderWorkspace(client);
+  const region = await screen.findByRole("region", { name: "Dependencies code design diagram" });
+  await waitForDiagramReady(region);
+  await within(region).findByRole("button", { name: "Show 2 edges from source to target" });
+  return { scopePath, review, region };
+}
 
 describe("dependency graph focus", () => {
-  it("switches among group, node, aggregate, and no-focus projections without relayout", async () => {
-    const { rerender } = render(<DependencyGraphDiagramRenderer {...props} commentEnabled={false} />);
-    const visible = screen.getByTestId("visible-edges");
+  let restoreMeasurements: () => void;
+  beforeEach(() => {
+    restoreMeasurements = installDiagramMeasurements();
+  });
+  afterEach(() => restoreMeasurements());
+  it("focuses groups, nodes, and aggregate relations and clears focus", async () => {
+    const { scopePath, review, region } = await createReview();
+    try {
+      fireEvent.click(within(region).getByLabelText("Group: Source"));
+      expect(within(region).getByText("Focused on Source")).toBeInTheDocument();
 
-    expect(visible.textContent?.split("|")).toHaveLength(1);
-    expect(screen.getByTestId("group-activatable")).toHaveTextContent("true");
-    expect(screen.queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
-    expect(visible.textContent?.split("|")).toHaveLength(2);
-    expect(visible).toHaveTextContent("one-two");
-    expect(screen.getByText("Focused on Source")).toBeInTheDocument();
+      fireEvent.click(within(region).getByLabelText("One"));
+      expect(within(region).getByText("Focused on One")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Select node" }));
-    expect(visible.textContent?.split("|")).toHaveLength(2);
-    expect(visible).toHaveTextContent("one-other|one-two");
-    expect(screen.getByText("Focused on One")).toBeInTheDocument();
+      fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }));
+      await userEvent.click(await within(region).findByRole("button", { name: "Show 2 edges from source to target" }));
+      expect(within(region).getByText("2 edges: One → Other")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Select pane" }));
-    await userEvent.click(screen.getByRole("button", { name: "Show 2 edges from source to target" }));
-    expect(visible).toHaveTextContent("one-other|two-other");
-    expect(screen.getByText("2 edges: One → Other")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Comment" }));
+      fireEvent.click(within(region).getByLabelText("Group: Source"));
+      const composer = await within(region).findByRole("form", { name: "Add comment" });
+      expect(within(region).getByText("2 edges: One → Other")).toBeInTheDocument();
+      await userEvent.click(within(composer).getByRole("button", { name: "Cancel" }));
+      fireEvent.click(within(region).getByLabelText("One"));
+      await userEvent.click(
+        within(await within(region).findByRole("form", { name: "Add comment" })).getByRole("button", {
+          name: "Cancel",
+        }),
+      );
+      fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }));
+      expect(within(region).getByText("2 edges: One → Other")).toBeInTheDocument();
+      await userEvent.click(
+        within(await within(region).findByRole("form", { name: "Add comment" })).getByRole("button", {
+          name: "Cancel",
+        }),
+      );
 
-    rerender(
-      <DependencyGraphDiagramRenderer
-        {...props}
-        commentEnabled
-        annotations={{ ...annotations, isCommentMode: true }}
-      />,
-    );
-    expect(visible).toHaveTextContent("one-other|two-other");
-    expect(screen.getByTestId("group-activatable")).toHaveTextContent("false");
-    expect(screen.queryByRole("button", { name: "Show 2 edges from source to target" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
-    await userEvent.click(screen.getByRole("button", { name: "Select node" }));
-    await userEvent.click(screen.getByRole("button", { name: "Select pane" }));
-    expect(visible).toHaveTextContent("one-other|two-other");
-
-    rerender(<DependencyGraphDiagramRenderer {...props} commentEnabled={false} />);
-    expect(visible).toHaveTextContent("one-other|two-other");
-    await userEvent.click(screen.getByRole("button", { name: "Clear focus" }));
-    expect(visible.textContent?.split("|")).toHaveLength(1);
-    expect(screen.queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Comment" }));
+      await userEvent.click(within(region).getByRole("button", { name: "Clear focus" }));
+      expect(within(region).queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Show 2 edges from source to target" })).toBeInTheDocument();
+    } finally {
+      review.unmount();
+      await rm(scopePath, { recursive: true });
+    }
   });
 
-  it("does not enable focus when the Comment toggle is on during management", async () => {
-    render(
-      <DependencyGraphDiagramRenderer {...props} annotations={{ ...annotations, isManaging: true }} commentEnabled />,
-    );
-    const visible = screen.getByTestId("visible-edges");
+  it("does not enable focus when Comment is turned on during a pending edit save", async () => {
+    let holdSave = false;
+    let releaseSave = () => {};
+    const pendingSave = new Promise<void>((resolve) => {
+      releaseSave = resolve;
+    });
+    const { scopePath, review, region } = await createReview(async () => {
+      if (holdSave) await pendingSave;
+    });
+    try {
+      const commentTool = screen.getByRole("button", { name: "Comment" });
+      await userEvent.click(commentTool);
+      fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }));
+      const composer = await within(region).findByRole("form", { name: "Add comment" });
+      await userEvent.type(within(composer).getByLabelText("Comment text"), "Review dependencies");
+      await userEvent.click(within(composer).getByRole("button", { name: "Post" }));
+      const pin = await within(region).findByRole("button", { name: "Comment: Review dependencies" });
+      await userEvent.click(commentTool);
+      await userEvent.click(pin);
+      const editor = await within(region).findByRole("form", { name: "Edit comment" });
+      await userEvent.type(within(editor).getByLabelText("Comment text"), " together");
+      holdSave = true;
+      await userEvent.click(within(editor).getByRole("button", { name: "Save" }));
+      await within(editor).findByRole("button", { name: "Saving…" });
 
-    await userEvent.click(screen.getByRole("button", { name: "Select group area" }));
-    await userEvent.click(screen.getByRole("button", { name: "Select node" }));
-    expect(visible.textContent?.split("|")).toHaveLength(1);
-    expect(screen.queryByRole("button", { name: "Show 2 edges from source to target" })).not.toBeInTheDocument();
+      await userEvent.click(commentTool);
+      expect(commentTool).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(within(region).getByLabelText("Group: Source"));
+      fireEvent.click(within(region).getByLabelText("One"));
+      fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }));
+      expect(within(region).queryByText(/Focused on|edges:/)).not.toBeInTheDocument();
+      expect(within(region).queryByRole("form", { name: "Add comment" })).not.toBeInTheDocument();
+
+      releaseSave();
+      await waitFor(() => expect(within(region).queryByRole("form", { name: "Edit comment" })).not.toBeInTheDocument());
+      expect(within(region).getByRole("button", { name: "Comment: Review dependencies together" })).toBeInTheDocument();
+    } finally {
+      releaseSave();
+      review.unmount();
+      await rm(scopePath, { recursive: true });
+    }
   });
 });

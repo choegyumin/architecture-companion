@@ -1,23 +1,21 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { type ReactNode, useState } from "react";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import type { AnnotationCanvasController } from "@/client/parts/annotation-layer";
-import { DiagramRenderer } from "@/client/widgets/diagram-renderer";
-import {
-  type AnnotationAnchor,
-  type AnnotationDocument,
-  parseAnnotationDocument,
-} from "@/features/annotation/annotation-document";
-import { type AnnotationDraft, createAnnotationDraft } from "@/features/annotation/create-annotation-draft";
+import { fireEvent, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { createDataClient } from "@/client/data-client";
 import type { Artifact } from "@/features/artifact/artifact";
 import { dependencyDiagramGraphSchema } from "@/features/diagram/diagram-graph";
+import { createApp } from "@/server/create-app";
+import { resolveCompanionScope } from "@/server/resolve-companion-scope";
 
-const sizes = {
-  one: { width: 288, height: 80 },
-  two: { width: 288, height: 80 },
-  other: { width: 288, height: 80 },
-};
+import { installDiagramMeasurements } from "./helpers/diagram-measurements";
+import { renderWorkspace } from "./helpers/render-workspace";
+import { waitForDiagramReady } from "./helpers/wait-for-diagram";
+import { writeCatalog } from "./helpers/write-catalog";
+
 const diagram = {
   artifactId: ".architecture-companion/artifacts/dependencies.archcomp.json",
   type: "design",
@@ -47,117 +45,72 @@ const diagram = {
   },
 } satisfies Artifact;
 
-vi.mock("@xyflow/react", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@xyflow/react")>()),
-  ReactFlowProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-  useNodesState: (initial: unknown[]) => {
-    const [nodes, setNodes] = useState(initial);
-    return [nodes, setNodes, vi.fn()];
-  },
-  useReactFlow: () => ({ getNodes: () => [] }),
-}));
-vi.mock("@/client/parts/diagram-view.react-flow", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/client/parts/diagram-view.react-flow")>()),
-  resolveDiagramNodeSizes: () => sizes,
-}));
-vi.mock("@/client/parts/diagram-canvas", () => ({
-  DiagramCanvas: ({
-    edges,
-    onCanvasClick,
-    onNodeActivate,
-    onPaneActivate,
-  }: {
-    edges: readonly { id: string; source: string; target: string }[];
-    onCanvasClick?: (point: { x: number; y: number }, target: { type: "edge"; id: string }) => void;
-    onNodeActivate?: (id: string) => void;
-    onPaneActivate?: () => void;
-  }) => {
-    const aggregate = edges.find(({ source, target }) => source === "source" && target === "target");
-    const original = edges.find(({ id }) => id === "one-other");
-    return (
-      <div>
-        <output data-testid="visible-edges">{edges.map(({ id }) => id).join("|")}</output>
-        <button onClick={() => aggregate && onCanvasClick?.({ x: 40, y: 75 }, { type: "edge", id: aggregate.id })}>
-          Comment aggregate
-        </button>
-        <button onClick={() => original && onCanvasClick?.({ x: 50, y: 85 }, { type: "edge", id: original.id })}>
-          Comment original
-        </button>
-        <button onClick={() => onNodeActivate?.("one")}>Focus node</button>
-        <button onClick={() => onPaneActivate?.()}>Clear focus</button>
-      </div>
-    );
-  },
-}));
-vi.mock("@/shared/react-flow/base-overlay-panel", () => ({ BaseOverlayPanel: () => null }));
-
 describe("dependency graph Comment snapshot", () => {
-  it("saves aggregate endpoints, original IDs, and canvas point from click time after focus changes", async () => {
-    let document: AnnotationDocument = { annotations: [] };
-    let nextId = 0;
-    const drafts = createAnnotationDraft({
-      repository: {
-        load: async () => document,
-        save: async (next) => {
-          document = parseAnnotationDocument(next);
-        },
-      },
-      currentUser: { load: async () => ({ id: "reviewer", name: "Reviewer" }) },
-      createId: () => `id-${++nextId}`,
-      now: () => "2026-09-24T00:00:00.000Z",
-    });
-    let clickedDraft: AnnotationDraft | undefined;
+  let restoreMeasurements: () => void;
+  beforeEach(() => {
+    restoreMeasurements = installDiagramMeasurements();
+  });
+  afterEach(() => restoreMeasurements());
 
-    function Review() {
-      const [commentEnabled, setCommentEnabled] = useState(true);
-      const [draft, setDraft] = useState<AnnotationDraft>();
-      const annotations = {
-        surface: { canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json" },
-        isCommentMode: commentEnabled,
-        isManaging: false,
-        isPublishing: false,
-        begin: (anchor: AnnotationAnchor) => {
-          clickedDraft = drafts.begin(anchor);
-          setDraft(clickedDraft);
-        },
-      } as AnnotationCanvasController;
-      return (
-        <div>
-          <button onClick={() => setCommentEnabled(!commentEnabled)}>Toggle Comment</button>
-          <output data-testid="draft">{JSON.stringify(draft?.anchor)}</output>
-          <DiagramRenderer
-            annotations={annotations}
-            commentEnabled={commentEnabled}
-            artifact={diagram}
-            onOpenSource={vi.fn()}
-          />
-        </div>
-      );
+  it("publishes the clicked aggregate Anchor after focus changes and retains it while another edge is reviewed", async () => {
+    const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-dependency-comment-"));
+    await writeCatalog(scopePath, { artifacts: [diagram] });
+    const app = createApp(await resolveCompanionScope(scopePath));
+    const client = createDataClient("http://architecture-companion.test", async (input, init) =>
+      app.request(input, init),
+    );
+    const review = await renderWorkspace(client);
+
+    try {
+      const region = await screen.findByRole("region", { name: "Dependencies code design diagram" });
+      await waitForDiagramReady(region);
+      const aggregate = await within(region).findByRole("button", { name: "Show 2 edges from source to target" });
+      const clicked = aggregate.getBoundingClientRect();
+      const commentTool = screen.getByRole("button", { name: "Comment" });
+      await userEvent.click(commentTool);
+      await userEvent.click(aggregate);
+      const composer = await within(region).findByRole("form", { name: "Add comment" });
+      expect(within(region).queryByRole("button", { name: "Clear focus" })).not.toBeInTheDocument();
+
+      await userEvent.click(commentTool);
+      fireEvent.click(within(region).getByLabelText("One"));
+      expect(within(region).getByText("Focused on One")).toBeInTheDocument();
+      await userEvent.type(within(composer).getByLabelText("Comment text"), "Review both dependencies");
+      await userEvent.click(within(composer).getByRole("button", { name: "Post" }));
+      const pin = await within(region).findByRole("button", { name: "Comment: Review both dependencies" });
+      const saved = (await client.getAnnotations()).document?.annotations.at(0)?.anchor;
+      expect(saved).toEqual({
+        canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
+        point: { x: expect.any(Number), y: expect.any(Number) },
+        target: { type: "edge-set", sourceId: "source", targetId: "target", edgeIds: ["one-other", "two-other"] },
+      });
+      // The DOM environment supplies measurements, not physical hit testing.
+      // Observe the rendered Pin at the activation point; native clicks are checked in the browser.
+      expect(Number.parseFloat(pin.style.left)).toBeCloseTo(clicked.left + clicked.width / 2);
+      expect(Number.parseFloat(pin.style.top)).toBeCloseTo(clicked.top + clicked.height / 2);
+
+      fireEvent.click(within(region).getByRole("group", { name: "Artifact canvas" }));
+      fireEvent.click(within(region).getByLabelText("One"));
+      expect(within(region).getByText("Focused on One")).toBeInTheDocument();
+      expect((await client.getAnnotations()).document?.annotations.at(0)?.anchor).toEqual(saved);
+
+      await userEvent.click(commentTool);
+      fireEvent.click(await within(region).findByLabelText("Edge from one to other"));
+      const nextComposer = await within(region).findByRole("form", { name: "Add comment" });
+      await userEvent.type(within(nextComposer).getByLabelText("Comment text"), "Review one dependency");
+      await userEvent.click(within(nextComposer).getByRole("button", { name: "Post" }));
+      await within(region).findByRole("button", { name: "Comment: Review one dependency" });
+      const document = (await client.getAnnotations()).document;
+      expect(document?.annotations).toHaveLength(2);
+      expect(document?.annotations.at(0)?.anchor).toEqual(saved);
+      expect(document?.annotations.at(1)?.anchor).toEqual({
+        canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
+        point: { x: expect.any(Number), y: expect.any(Number) },
+        target: { type: "edge", id: "one-other" },
+      });
+    } finally {
+      review.unmount();
+      await rm(scopePath, { recursive: true });
     }
-
-    render(<Review />);
-    await waitFor(() => expect(screen.getByTestId("visible-edges").textContent).toContain("aggregate:"));
-    await userEvent.click(screen.getByRole("button", { name: "Comment aggregate" }));
-    expect(clickedDraft?.anchor).toEqual({
-      canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
-      point: { x: 40, y: 75 },
-      target: { type: "edge-set", sourceId: "source", targetId: "target", edgeIds: ["one-other", "two-other"] },
-    });
-
-    await userEvent.click(screen.getByRole("button", { name: "Toggle Comment" }));
-    await userEvent.click(screen.getByRole("button", { name: "Focus node" }));
-    expect(screen.getByTestId("visible-edges")).toHaveTextContent("one-other|one-two");
-    expect(JSON.parse(screen.getByTestId("draft").textContent ?? "null")).toEqual(clickedDraft?.anchor);
-    if (!clickedDraft) throw new Error("Missing aggregate draft");
-    expect((await drafts.publish(drafts.change(clickedDraft, "Review both dependencies"))).status).toBe("published");
-    expect(document.annotations.at(0)?.anchor).toEqual(clickedDraft.anchor);
-
-    await userEvent.click(screen.getByRole("button", { name: "Toggle Comment" }));
-    await userEvent.click(screen.getByRole("button", { name: "Comment original" }));
-    expect(clickedDraft?.anchor).toEqual({
-      canvasId: "design:.architecture-companion/artifacts/dependencies.archcomp.json",
-      point: { x: 50, y: 85 },
-      target: { type: "edge", id: "one-other" },
-    });
   });
 });
