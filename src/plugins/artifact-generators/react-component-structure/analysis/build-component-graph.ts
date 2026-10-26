@@ -3787,6 +3787,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               nodeId: id,
               title: definition.name,
               description: definition.relativePath,
+              synthetic: false,
               links: [{ href: sourceHref(definition.relativePath) }],
               layoutContext: nodeLayoutContext(id, target.id),
             },
@@ -3801,6 +3802,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         type: "default",
         nodeId: id,
         title: target.title,
+        synthetic: !target.localBoundaryPath,
         description: target.localBoundaryPath
           ? `${target.localBoundaryPath}\nOutside collection scope; internals not analyzed.`
           : `${target.externalPackage} boundary`,

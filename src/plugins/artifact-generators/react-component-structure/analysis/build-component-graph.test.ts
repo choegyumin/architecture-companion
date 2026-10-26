@@ -1277,6 +1277,12 @@ describe("React component structure generator", () => {
           "component:src/app.tsx#Content",
           "external:ui-kit#Button",
         ]);
+        expect(graph.nodes.find(({ nodeId }) => nodeId === "external:ui-kit#Button")).toMatchObject({
+          synthetic: true,
+        });
+        expect(graph.nodes.find(({ nodeId }) => nodeId === "component:src/app.tsx#App")).toMatchObject({
+          synthetic: false,
+        });
         expect(edgeFacts(graph)).toEqual([
           { source: "App", target: "Button", supplies: [] },
           { source: "Button", target: "Content", supplies: ["App:children"] },
