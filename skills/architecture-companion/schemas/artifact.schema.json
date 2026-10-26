@@ -369,6 +369,10 @@
           "type": "string",
           "minLength": 1
         },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
+        },
         "type": {
           "default": "default",
           "type": "string",
@@ -399,6 +403,10 @@
         "parentGroupId": {
           "type": "string",
           "minLength": 1
+        },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
         },
         "type": {
           "type": "string",
@@ -434,6 +442,10 @@
         "groupId": {
           "type": "string",
           "minLength": 1
+        },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
         },
         "description": {
           "type": "string",
@@ -483,6 +495,10 @@
           "type": "string",
           "minLength": 1
         },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
+        },
         "type": {
           "type": "string",
           "const": "diamond"
@@ -509,6 +525,10 @@
         "groupId": {
           "type": "string",
           "minLength": 1
+        },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
         },
         "description": {
           "type": "string",
@@ -619,6 +639,10 @@
         "groupId": {
           "type": "string",
           "minLength": 1
+        },
+        "synthetic": {
+          "default": false,
+          "type": "boolean"
         },
         "description": {
           "type": "string",
@@ -996,6 +1020,10 @@
               "groupId": {
                 "type": "string",
                 "minLength": 1
+              },
+              "synthetic": {
+                "default": false,
+                "type": "boolean"
               },
               "description": {
                 "type": "string",

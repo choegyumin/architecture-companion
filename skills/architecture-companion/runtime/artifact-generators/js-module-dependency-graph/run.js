@@ -276520,7 +276520,9 @@ var diagramControlSchema = external_exports.discriminatedUnion("type", [
 var diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: external_exports.string().min(1),
-  groupId: diagramIdSchema.optional()
+  groupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
@@ -276604,7 +276606,9 @@ var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
 var diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: external_exports.string().min(1),
-  parentGroupId: diagramIdSchema.optional()
+  parentGroupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramGroupSchema = external_exports.object({
   ...diagramGroupBaseShape,
@@ -276995,12 +276999,16 @@ var componentStructureDiagramGraphSchema = external_exports.object({
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
 }).meta({ id: "ComponentStructureGraph" });
+var omitDefaultSynthetic = (element) => {
+  const { synthetic: _synthetic, ...withoutMarker } = element;
+  return element.synthetic ? element : withoutMarker;
+};
 function toDiagramGraphInput(graph) {
   if ("layoutContext" in graph) {
     const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
     return {
-      groups: graph.groups.map(({ type: _type, ...group }) => group),
-      nodes: graph.nodes.map(({ type: _type, ...node2 }) => node2),
+      groups: graph.groups.map(({ type: _type, ...group }) => omitDefaultSynthetic(group)),
+      nodes: graph.nodes.map(({ type: _type, ...node2 }) => omitDefaultSynthetic(node2)),
       edges: graph.edges.map(({ layoutContext: edgeContext, ...edge }) => {
         const context = edgeContext.composition === null ? {} : { layoutContext: edgeContext };
         if (edge.type === "default") {
@@ -277027,18 +277035,18 @@ function toDiagramGraphInput(graph) {
     groups: graph.groups.map((group) => {
       if (group.type === "default") {
         const { type: _type, ...input2 } = group;
-        return input2;
+        return omitDefaultSynthetic(input2);
       }
       if (!group.hideTitle) {
         const { hideTitle: _hideTitle, ...input2 } = group;
-        return input2;
+        return omitDefaultSynthetic(input2);
       }
-      return group;
+      return omitDefaultSynthetic(group);
     }),
     nodes: graph.nodes.map((node2) => {
-      if (node2.type !== "default") return node2;
+      if (node2.type !== "default") return omitDefaultSynthetic(node2);
       const { type: _type, ...input2 } = node2;
-      return input2;
+      return omitDefaultSynthetic(input2);
     }),
     edges: graph.edges.map((edge) => {
       if (edge.type === "default") {
@@ -277072,9 +277080,9 @@ function isMissingPathError(error62) {
 }
 
 // src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts
-import { lstat, mkdtemp, realpath, rm, writeFile as writeFile2 } from "fs/promises";
+import { lstat as lstat2, mkdtemp, realpath as realpath2, rm, writeFile as writeFile2 } from "fs/promises";
 import { tmpdir } from "os";
-import { dirname as dirname6, join as join14, resolve as resolve5 } from "path";
+import { dirname as dirname7, join as join15, resolve as resolve6 } from "path";
 
 // node_modules/.pnpm/dependency-cruiser@18.3.1/node_modules/dependency-cruiser/src/main/format.mjs
 init_assert_validity();
@@ -277651,6 +277659,136 @@ function extractTSConfig(pTSConfigFileName) {
   return lReturnValue;
 }
 
+// src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts
+var import_ignore2 = __toESM(require_ignore2(), 1);
+import { lstat, readdir, readFile as readFile2, realpath } from "fs/promises";
+import { dirname as dirname6, extname as extname7, join as join14, relative as relative7, resolve as resolve5 } from "path";
+var sourceExtensions = [".tsx", ".mts", ".cts", ".ts", ".jsx", ".mjs", ".cjs", ".js"];
+var sourceExtensionSet = new Set(sourceExtensions);
+var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
+async function resolveScopePath(scopePath) {
+  const resolvedPath = await realpath(resolve5(scopePath));
+  if (!(await lstat(resolvedPath)).isDirectory()) throw new Error(`Base must be a directory: ${scopePath}`);
+  return resolvedPath;
+}
+async function resolveSourceRoots(scopePath, sourcePaths) {
+  if (sourcePaths.length === 0) throw new Error("At least one source path is required.");
+  return Promise.all(
+    sourcePaths.map(async (sourcePath) => {
+      const resolvedPath = await realpath(resolve5(scopePath, sourcePath));
+      if (!isPathInside(scopePath, resolvedPath)) {
+        throw new Error(`Source path must stay inside the base: ${sourcePath}`);
+      }
+      return resolvedPath;
+    })
+  );
+}
+async function readIgnoreFileContents(ignoreFilePath) {
+  let contents;
+  try {
+    contents = await readFile2(ignoreFilePath, "utf8");
+  } catch (error62) {
+    if (isMissingPathError(error62)) return void 0;
+    throw error62;
+  }
+  return contents;
+}
+function addRules(rules, contents) {
+  return contents === void 0 ? rules : (0, import_ignore2.default)().add(rules).add(contents);
+}
+async function collectInheritedRules(scopePath, directoryPath) {
+  let rules = (0, import_ignore2.default)();
+  const directoryRelativePath = relative7(scopePath, directoryPath);
+  let currentPath = scopePath;
+  for (const segment of ["", ...directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : []]) {
+    if (segment) currentPath = join14(currentPath, segment);
+    rules = addRules(rules, await readIgnoreFileContents(join14(currentPath, ".gitignore")));
+  }
+  return rules;
+}
+function isPathIgnored(testRules, relativePath, isDirectory) {
+  return testRules.ignores(relativePath) || isDirectory && testRules.ignores(`${relativePath}/`);
+}
+function createLocalModuleBoundaryFilter(scopePath, excludePatterns) {
+  const inlineRules = excludePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludePatterns]) : void 0;
+  const rulesByDirectory = /* @__PURE__ */ new Map();
+  function getDirectoryRules(directoryPath) {
+    const cachedRules = rulesByDirectory.get(directoryPath);
+    if (cachedRules) return cachedRules;
+    const rules = (async () => {
+      if (directoryPath === scopePath) {
+        return addRules((0, import_ignore2.default)(), await readIgnoreFileContents(join14(directoryPath, ".gitignore")));
+      }
+      const parentRules = await getDirectoryRules(dirname6(directoryPath));
+      if (!parentRules) return void 0;
+      const relativePath = toPosixPath(relative7(scopePath, directoryPath));
+      const testRules = inlineRules ? (0, import_ignore2.default)().add(parentRules).add(inlineRules) : parentRules;
+      if (isPathIgnored(testRules, relativePath, true)) return void 0;
+      return addRules(parentRules, await readIgnoreFileContents(join14(directoryPath, ".gitignore")));
+    })();
+    rulesByDirectory.set(directoryPath, rules);
+    return rules;
+  }
+  return async (absolutePath) => {
+    if (absolutePath === scopePath || !isPathInside(scopePath, absolutePath)) return false;
+    const relativePath = toPosixPath(relative7(scopePath, absolutePath));
+    if (relativePath.split("/").some((segment) => alwaysIgnoredDirectoryNames.has(segment))) return false;
+    const directoryRules = await getDirectoryRules(dirname6(absolutePath));
+    if (!directoryRules) return false;
+    const testRules = inlineRules ? (0, import_ignore2.default)().add(directoryRules).add(inlineRules) : directoryRules;
+    return !isPathIgnored(testRules, relativePath, false) && (await lstat(absolutePath)).isFile();
+  };
+}
+async function collectSourceFiles(scopePath, sourcePaths, excludePatterns) {
+  const sourceRoots = await resolveSourceRoots(scopePath, sourcePaths);
+  const inlineRules = excludePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludePatterns]) : void 0;
+  const discoveredSources = /* @__PURE__ */ new Map();
+  const visitedDirectories = /* @__PURE__ */ new Set();
+  async function visitFile(resolvedPath) {
+    const relativePath = toPosixPath(relative7(scopePath, resolvedPath));
+    if (!sourceExtensionSet.has(extname7(relativePath))) return;
+    discoveredSources.set(resolvedPath, { absolutePath: resolvedPath, relativePath });
+  }
+  async function visitDirectory(directoryPath, inheritedRules) {
+    if (visitedDirectories.has(directoryPath)) return;
+    visitedDirectories.add(directoryPath);
+    const directoryRules = addRules(inheritedRules, await readIgnoreFileContents(join14(directoryPath, ".gitignore")));
+    const testRules = inlineRules ? (0, import_ignore2.default)().add(directoryRules).add(inlineRules) : directoryRules;
+    for (const entry of await readdir(directoryPath)) {
+      const canonicalPath = await realpath(join14(directoryPath, entry));
+      if (!isPathInside(scopePath, canonicalPath)) {
+        const relativePath = toPosixPath(relative7(scopePath, join14(directoryPath, entry)));
+        throw new Error(`Source path resolves outside the base: ${relativePath}`);
+      }
+      const entryRelativePath = toPosixPath(relative7(scopePath, canonicalPath));
+      const entryStat = await lstat(canonicalPath);
+      if (entryStat.isDirectory()) {
+        if (alwaysIgnoredDirectoryNames.has(entry)) continue;
+        if (isPathIgnored(testRules, entryRelativePath, true)) continue;
+        await visitDirectory(canonicalPath, directoryRules);
+        continue;
+      }
+      if (!entryStat.isFile()) continue;
+      if (isPathIgnored(testRules, entryRelativePath, false)) continue;
+      await visitFile(canonicalPath);
+    }
+  }
+  for (const sourceRoot of sourceRoots) {
+    const inheritedRules = sourceRoot === scopePath ? (0, import_ignore2.default)() : await collectInheritedRules(scopePath, dirname6(sourceRoot));
+    const rootStat = await lstat(sourceRoot);
+    if (rootStat.isDirectory()) {
+      await visitDirectory(sourceRoot, inheritedRules);
+    } else if (rootStat.isFile()) {
+      await visitFile(sourceRoot);
+    }
+  }
+  const files = [...discoveredSources.values()].toSorted(
+    (left, right) => left.relativePath < right.relativePath ? -1 : left.relativePath > right.relativePath ? 1 : 0
+  );
+  if (files.length === 0) throw new Error("No JavaScript or TypeScript source files remained after filtering.");
+  return files;
+}
+
 // src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts
 var externalDependencyTypes = /* @__PURE__ */ new Set([
   "npm",
@@ -277707,10 +277845,10 @@ function isCoreDependency(dependency) {
   return dependency.coreModule || dependency.dependencyTypes.includes("core");
 }
 async function resolveTsConfigPath(scopePath, tsConfigPath) {
-  const candidatePath = resolve5(scopePath, tsConfigPath ?? "tsconfig.json");
+  const candidatePath = resolve6(scopePath, tsConfigPath ?? "tsconfig.json");
   let canonicalPath;
   try {
-    canonicalPath = await realpath(candidatePath);
+    canonicalPath = await realpath2(candidatePath);
   } catch (error62) {
     if (isMissingPathError(error62) && tsConfigPath === void 0) return void 0;
     throw error62;
@@ -277718,7 +277856,7 @@ async function resolveTsConfigPath(scopePath, tsConfigPath) {
   if (!isPathInside(scopePath, canonicalPath)) {
     throw new Error(`TypeScript config must stay inside the base: ${tsConfigPath ?? "tsconfig.json"}`);
   }
-  if (!(await lstat(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
+  if (!(await lstat2(canonicalPath)).isFile()) throw new Error(`TypeScript config must be a file: ${tsConfigPath}`);
   return canonicalPath;
 }
 async function prepareTsConfig(tsConfigPath) {
@@ -277727,14 +277865,14 @@ async function prepareTsConfig(tsConfigPath) {
   if (compilerOptions.options.baseUrl || !compilerOptions.options.paths) {
     return { compilerOptions, fileName: tsConfigPath, temporaryDirectory: void 0 };
   }
-  const temporaryDirectory = await mkdtemp(join14(tmpdir(), "architecture-companion-tsconfig-"));
-  const compatibilityConfigPath = join14(temporaryDirectory, "tsconfig.json");
+  const temporaryDirectory = await mkdtemp(join15(tmpdir(), "architecture-companion-tsconfig-"));
+  const compatibilityConfigPath = join15(temporaryDirectory, "tsconfig.json");
   await writeFile2(
     compatibilityConfigPath,
     `${JSON.stringify(
       {
         compilerOptions: {
-          baseUrl: dirname6(tsConfigPath),
+          baseUrl: dirname7(tsConfigPath),
           paths: compilerOptions.options.paths
         }
       },
@@ -277746,7 +277884,7 @@ async function prepareTsConfig(tsConfigPath) {
   return {
     compilerOptions: {
       ...compilerOptions,
-      options: { ...compilerOptions.options, baseUrl: dirname6(tsConfigPath) }
+      options: { ...compilerOptions.options, baseUrl: dirname7(tsConfigPath) }
     },
     fileName: compatibilityConfigPath,
     temporaryDirectory
@@ -277859,7 +277997,8 @@ async function cruiseDependencies(scopePath, sourcePaths, tsConfigPath) {
     if (tsConfig.temporaryDirectory) await rm(tsConfig.temporaryDirectory, { recursive: true });
   }
 }
-async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath) {
+async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath, excludePatterns) {
+  const isLocalModuleBoundary = createLocalModuleBoundaryFilter(scopePath, excludePatterns);
   const sourceByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
   const modules = await cruiseDependencies(
     scopePath,
@@ -277870,7 +278009,7 @@ async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigP
   for (const module of modules) {
     let absoluteSourcePath;
     try {
-      absoluteSourcePath = await realpath(resolve5(scopePath, module.source));
+      absoluteSourcePath = await realpath2(resolve6(scopePath, module.source));
     } catch (error62) {
       if (isMissingPathError(error62)) continue;
       throw error62;
@@ -277882,8 +278021,10 @@ async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigP
       const kind = dependencyKind(dependency);
       let localTargetPath;
       try {
-        const canonicalResolvedPath = await realpath(resolve5(scopePath, dependency.resolved));
-        if (sourceByPath.has(canonicalResolvedPath)) localTargetPath = canonicalResolvedPath;
+        const canonicalResolvedPath = await realpath2(resolve6(scopePath, dependency.resolved));
+        if (sourceByPath.has(canonicalResolvedPath) || !isExternalDependency(dependency) && await isLocalModuleBoundary(canonicalResolvedPath)) {
+          localTargetPath = canonicalResolvedPath;
+        }
       } catch (error62) {
         if (!isMissingPathError(error62)) throw error62;
       }
@@ -277900,106 +278041,6 @@ async function analyzeModuleDependencies(scopePath, discoveredSources, tsConfigP
     analyzedModules.push({ absolutePath: absoluteSourcePath, dependencies });
   }
   return analyzedModules;
-}
-
-// src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts
-var import_ignore2 = __toESM(require_ignore2(), 1);
-import { lstat as lstat2, readdir, readFile as readFile2, realpath as realpath2 } from "fs/promises";
-import { dirname as dirname7, extname as extname7, join as join15, relative as relative7, resolve as resolve6 } from "path";
-var sourceExtensions = [".tsx", ".mts", ".cts", ".ts", ".jsx", ".mjs", ".cjs", ".js"];
-var sourceExtensionSet = new Set(sourceExtensions);
-var alwaysIgnoredDirectoryNames = /* @__PURE__ */ new Set([".git", "node_modules"]);
-async function resolveScopePath(scopePath) {
-  const resolvedPath = await realpath2(resolve6(scopePath));
-  if (!(await lstat2(resolvedPath)).isDirectory()) throw new Error(`Base must be a directory: ${scopePath}`);
-  return resolvedPath;
-}
-async function resolveSourceRoots(scopePath, sourcePaths) {
-  if (sourcePaths.length === 0) throw new Error("At least one source path is required.");
-  return Promise.all(
-    sourcePaths.map(async (sourcePath) => {
-      const resolvedPath = await realpath2(resolve6(scopePath, sourcePath));
-      if (!isPathInside(scopePath, resolvedPath)) {
-        throw new Error(`Source path must stay inside the base: ${sourcePath}`);
-      }
-      return resolvedPath;
-    })
-  );
-}
-async function readIgnoreFileContents(ignoreFilePath) {
-  let contents;
-  try {
-    contents = await readFile2(ignoreFilePath, "utf8");
-  } catch (error62) {
-    if (isMissingPathError(error62)) return void 0;
-    throw error62;
-  }
-  return contents;
-}
-function addRules(rules, contents) {
-  return contents === void 0 ? rules : (0, import_ignore2.default)().add(rules).add(contents);
-}
-async function collectInheritedRules(scopePath, directoryPath) {
-  let rules = (0, import_ignore2.default)();
-  const directoryRelativePath = relative7(scopePath, directoryPath);
-  let currentPath = scopePath;
-  for (const segment of ["", ...directoryRelativePath ? directoryRelativePath.split(/[\\/]/) : []]) {
-    if (segment) currentPath = join15(currentPath, segment);
-    rules = addRules(rules, await readIgnoreFileContents(join15(currentPath, ".gitignore")));
-  }
-  return rules;
-}
-function isPathIgnored(testRules, relativePath, isDirectory) {
-  return testRules.ignores(relativePath) || isDirectory && testRules.ignores(`${relativePath}/`);
-}
-async function collectSourceFiles(scopePath, sourcePaths, excludePatterns) {
-  const sourceRoots = await resolveSourceRoots(scopePath, sourcePaths);
-  const inlineRules = excludePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludePatterns]) : void 0;
-  const discoveredSources = /* @__PURE__ */ new Map();
-  const visitedDirectories = /* @__PURE__ */ new Set();
-  async function visitFile(resolvedPath) {
-    const relativePath = toPosixPath(relative7(scopePath, resolvedPath));
-    if (!sourceExtensionSet.has(extname7(relativePath))) return;
-    discoveredSources.set(resolvedPath, { absolutePath: resolvedPath, relativePath });
-  }
-  async function visitDirectory(directoryPath, inheritedRules) {
-    if (visitedDirectories.has(directoryPath)) return;
-    visitedDirectories.add(directoryPath);
-    const directoryRules = addRules(inheritedRules, await readIgnoreFileContents(join15(directoryPath, ".gitignore")));
-    const testRules = inlineRules ? (0, import_ignore2.default)().add(directoryRules).add(inlineRules) : directoryRules;
-    for (const entry of await readdir(directoryPath)) {
-      const canonicalPath = await realpath2(join15(directoryPath, entry));
-      if (!isPathInside(scopePath, canonicalPath)) {
-        const relativePath = toPosixPath(relative7(scopePath, join15(directoryPath, entry)));
-        throw new Error(`Source path resolves outside the base: ${relativePath}`);
-      }
-      const entryRelativePath = toPosixPath(relative7(scopePath, canonicalPath));
-      const entryStat = await lstat2(canonicalPath);
-      if (entryStat.isDirectory()) {
-        if (alwaysIgnoredDirectoryNames.has(entry)) continue;
-        if (isPathIgnored(testRules, entryRelativePath, true)) continue;
-        await visitDirectory(canonicalPath, directoryRules);
-        continue;
-      }
-      if (!entryStat.isFile()) continue;
-      if (isPathIgnored(testRules, entryRelativePath, false)) continue;
-      await visitFile(canonicalPath);
-    }
-  }
-  for (const sourceRoot of sourceRoots) {
-    const inheritedRules = sourceRoot === scopePath ? (0, import_ignore2.default)() : await collectInheritedRules(scopePath, dirname7(sourceRoot));
-    const rootStat = await lstat2(sourceRoot);
-    if (rootStat.isDirectory()) {
-      await visitDirectory(sourceRoot, inheritedRules);
-    } else if (rootStat.isFile()) {
-      await visitFile(sourceRoot);
-    }
-  }
-  const files = [...discoveredSources.values()].toSorted(
-    (left, right) => left.relativePath < right.relativePath ? -1 : left.relativePath > right.relativePath ? 1 : 0
-  );
-  if (files.length === 0) throw new Error("No JavaScript or TypeScript source files remained after filtering.");
-  return files;
 }
 
 // src/plugins/artifact-generators/js-module-dependency-graph/analysis/build-module-graph.ts
@@ -278096,11 +278137,23 @@ async function buildLocalGrouping(scopePath, discoveredSources) {
   return { groups, groupIdByFile };
 }
 async function buildDiagramGraph(scopePath, discoveredSources, analyzedModules) {
-  const localGrouping = await buildLocalGrouping(scopePath, discoveredSources);
+  const collectedPaths = new Set(discoveredSources.map(({ absolutePath }) => absolutePath));
+  const localSourcesByPath = new Map(discoveredSources.map((source) => [source.absolutePath, source]));
+  for (const { dependencies } of analyzedModules) {
+    for (const { target } of dependencies) {
+      if (target.type !== "local-module" || localSourcesByPath.has(target.absolutePath)) continue;
+      localSourcesByPath.set(target.absolutePath, {
+        absolutePath: target.absolutePath,
+        relativePath: toPosixPath(relative8(scopePath, target.absolutePath))
+      });
+    }
+  }
+  const localSources = [...localSourcesByPath.values()];
+  const localGrouping = await buildLocalGrouping(scopePath, localSources);
   const groups = new Map(localGrouping.groups.map((group) => [group.groupId, group]));
   const localNodeByPath = /* @__PURE__ */ new Map();
   const nodes = [];
-  for (const { absolutePath, relativePath } of discoveredSources) {
+  for (const { absolutePath, relativePath } of localSources) {
     const id = moduleNodeId(relativePath);
     const groupId = localGrouping.groupIdByFile.get(absolutePath);
     localNodeByPath.set(absolutePath, id);
@@ -278108,6 +278161,7 @@ async function buildDiagramGraph(scopePath, discoveredSources, analyzedModules) 
       type: "default",
       nodeId: id,
       title: basename(relativePath),
+      ...!collectedPaths.has(absolutePath) ? { description: "Outside collection scope; internals not analyzed." } : {},
       ...groupId ? { groupId } : {},
       links: [{ text: "source", href: sourceHref(relativePath) }]
     });
@@ -278128,11 +278182,13 @@ async function buildDiagramGraph(scopePath, discoveredSources, analyzedModules) 
           nodeId: target,
           kind: "External package",
           title: dependency.target.packageName,
-          groupId: "group:external-packages"
+          groupId: "group:external-packages",
+          synthetic: true
         });
         groups.set("group:external-packages", {
           groupId: "group:external-packages",
-          title: "External packages"
+          title: "External packages",
+          synthetic: true
         });
       }
       if (!target) continue;
@@ -278156,12 +278212,17 @@ async function buildModuleGraph(options) {
   const scopePath = await resolveScopePath(options.scopePath);
   const tsConfigPath = await resolveTsConfigPath(scopePath, options.tsConfigPath);
   const discoveredSources = await collectSourceFiles(scopePath, options.sourcePaths, options.exclude ?? []);
-  const analyzedModules = await analyzeModuleDependencies(scopePath, discoveredSources, tsConfigPath);
+  const analyzedModules = await analyzeModuleDependencies(
+    scopePath,
+    discoveredSources,
+    tsConfigPath,
+    options.exclude ?? []
+  );
   return buildDiagramGraph(scopePath, discoveredSources, analyzedModules);
 }
 
 // src/plugins/artifact-generators/js-module-dependency-graph/cli/command.ts
-var usage = "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--exclude-path <glob> ...] <source-path>...";
+var usage = "Usage: js-module-dependency-graph --base <directory> [--tsconfig <path>] [--ignore-path <glob> ...] <source-path>...";
 async function writeJsModuleDependencyGraph(options) {
   const graph = await buildModuleGraph(options);
   const temporaryDirectory = await mkdtemp2(join17(tmpdir2(), "architecture-companion-js-module-dependency-graph-"));
@@ -278176,7 +278237,7 @@ async function executeJsModuleDependencyGraphCommand(args, environment) {
     allowPositionals: true,
     options: {
       base: { type: "string" },
-      "exclude-path": { type: "string", multiple: true },
+      "ignore-path": { type: "string", multiple: true },
       tsconfig: { type: "string" }
     },
     strict: true
@@ -278185,7 +278246,7 @@ async function executeJsModuleDependencyGraphCommand(args, environment) {
   const graphPath = await environment.writeGraph({
     scopePath: values.base,
     sourcePaths: positionals,
-    ...values["exclude-path"] ? { exclude: values["exclude-path"] } : {},
+    ...values["ignore-path"] ? { exclude: values["ignore-path"] } : {},
     ...values.tsconfig ? { tsConfigPath: values.tsconfig } : {}
   });
   environment.writeStdout(`${JSON.stringify({ graphPath })}

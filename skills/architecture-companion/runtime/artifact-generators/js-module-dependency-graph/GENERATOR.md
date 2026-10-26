@@ -1,6 +1,6 @@
 ---
 id: js-module-dependency-graph
-description: Map verified JavaScript and TypeScript module dependencies, directory and package groups, external package boundaries, and type-only edges.
+description: Map verified JavaScript and TypeScript module dependencies, directory and package groups, uncollected local module and external package boundaries, and type-only edges.
 ---
 
 # JavaScript module dependency graph generator
@@ -25,21 +25,23 @@ Use to review how JavaScript or TypeScript source modules depend on one another 
 node "<generator-directory>/run.js" \
   --base "<scope>" \
   [--tsconfig "<tsconfig-path>"] \
-  [--exclude-path "<pattern>" ...] \
+  [--ignore-path "<pattern>" ...] \
   <scope-relative-source-path>...
 ```
 
 - Specify at least one source path. Files and directories are both allowed, but they must be within the scope.
 - `--tsconfig` accepts an absolute or scope-relative path to an existing file within the scope. If omitted, `<scope>/tsconfig.json` is used when present; parent directories are not searched.
-- `--exclude-path` can be repeated. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
+- `--ignore-path` can be repeated to ignore paths during source collection. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
 
 ## Analysis scope
 
 Source collection follows `.gitignore` files in the scope root and its subdirectories; it does not read rules above the scope. Recursive traversal skips `.git` and `node_modules` directories it encounters, but does not exclude test or generated files by name alone.
 
-`--exclude-path` patterns are applied after the rules from each `.gitignore`. A later `!` pattern can undo an earlier exclusion, but a child cannot be re-included while its parent directory remains excluded. Explicitly specified input paths themselves bypass exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories. Generation fails if no source files remain to analyze.
+`--ignore-path` patterns are applied after the rules from each `.gitignore`. A later `!` pattern can undo an earlier exclusion, but a child cannot be re-included while its parent directory remains excluded. Explicitly specified input paths themselves bypass exclusion checks; their descendants are still subject to exclusion rules, including those inherited from parent directories. Generation fails if no source files remain to analyze.
 
-Excluded file nodes and their incident edges are removed together. The analyzer does not create new descendant relationships or shortcut edges, or infer unresolved dependencies. It emits only dependencies confirmed by dependency-cruiser's resolution, and silently omits missing or ambiguous references.
+Files excluded by `.gitignore` or `--ignore-path` and their incident edges remain omitted, unless explicitly selected as input files. A confirmed local dependency that is inside the base but was not collected from the selected source paths is retained as a file boundary, provided it is not excluded. Its node contains the file name, source link, and the description `Outside collection scope; internals not analyzed.` Its outgoing dependencies are not included; it does not expand source collection.
+
+The analyzer does not create new descendant relationships or shortcut edges, or infer unresolved dependencies. It emits only dependencies confirmed by dependency-cruiser's resolution, and silently omits missing or ambiguous references. Resolved paths outside the base are not local boundaries, and `node_modules` dependencies retain their external-package treatment.
 
 ## Output
 
@@ -53,7 +55,7 @@ This file contains only a candidate graph with `groups`, `nodes`, and `edges` fo
 
 ## Interpretation and integration
 
-Local source modules are nodes identified by their source files. Directory groups and nested package boundaries form the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. Package internals are not expanded.
+Local source modules and uncollected local file boundaries are nodes identified by their source files. Uncollected boundaries use the same default node presentation as other local modules, with a description identifying their unanalyzed internals. Both follow the same directory groups and nested package boundaries in the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. The external packages group and its nodes carry `synthetic: true` because they are presentation boundaries rather than facts grounded in collected source; local modules, directory groups, and package groups omit the marker. Package internals are not expanded.
 
 When groups exist, the overview hides relationships within top-level groups and aggregates relationships between groups or nodes outside groups, displaying them as `×N`. Focus a group, node, or aggregated path to inspect the relevant underlying edges. Without groups, the overview shows the underlying edges directly.
 
