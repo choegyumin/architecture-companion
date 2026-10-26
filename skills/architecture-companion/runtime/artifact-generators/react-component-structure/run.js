@@ -27070,6 +27070,7 @@ function createComponentGraphBuilder(ts) {
           nodeId: id,
           title: definition.name,
           description: definition.relativePath,
+          synthetic: false,
           links: [{ href: sourceHref(definition.relativePath) }],
           layoutContext: nodeLayoutContext(id, target.id)
         }
@@ -27080,6 +27081,7 @@ function createComponentGraphBuilder(ts) {
       type: "default",
       nodeId: id,
       title: target.title,
+      synthetic: !target.localBoundaryPath,
       description: target.localBoundaryPath ? `${target.localBoundaryPath}
 Outside collection scope; internals not analyzed.` : `${target.externalPackage} boundary`,
       ...target.localBoundaryPath ? { links: [{ href: sourceHref(target.localBoundaryPath) }] } : {},
