@@ -209,7 +209,6 @@ export function ElementSearch<NodeType extends Node = Node>({
             }
             if (event.key === "Escape") {
               event.preventDefault();
-              event.stopPropagation();
               changeSearchString("");
             } else if (event.key === "Enter") {
               // A plain Enter with a highlighted match presses it through the
@@ -217,7 +216,6 @@ export function ElementSearch<NodeType extends Node = Node>({
               // cases the combobox ignores are confirmed here instead.
               if (currentIndex === -1 || event.shiftKey) {
                 event.preventDefault();
-                event.stopPropagation();
                 confirm(currentIndex === -1 ? 0 : currentIndex);
               }
             }

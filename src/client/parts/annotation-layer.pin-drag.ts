@@ -1,4 +1,4 @@
-import { type MouseEvent, type PointerEvent, useRef, useState } from "react";
+import { type PointerEvent, useRef, useState } from "react";
 
 type Point = Readonly<{ x: number; y: number }>;
 
@@ -71,8 +71,7 @@ export function useAnnotationPinDrag({ disabled, move, open, screenToCanvasPoint
     setDrag(undefined);
   }
 
-  function openAnnotation(event: MouseEvent<HTMLButtonElement>, annotationId: string): void {
-    event.stopPropagation();
+  function openAnnotation(annotationId: string): void {
     if (draggedAnnotation.current === annotationId) {
       draggedAnnotation.current = undefined;
       return;

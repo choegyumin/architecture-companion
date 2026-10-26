@@ -1,12 +1,4 @@
-import {
-  type CSSProperties,
-  type FormEvent,
-  type KeyboardEvent,
-  type MouseEvent,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, type FormEvent, type KeyboardEvent, useLayoutEffect, useRef, useState } from "react";
 
 import {
   getAnnotationComposerPlacement,
@@ -78,10 +70,6 @@ type Size = Readonly<{ height: number; width: number }>;
 
 function pointStyle(point: Point): CSSProperties {
   return { left: point.x, top: point.y };
-}
-
-function stopCanvasClick(event: MouseEvent<HTMLElement>): void {
-  event.stopPropagation();
 }
 
 function closeOnEscape(event: KeyboardEvent<HTMLFormElement>, close: () => Promise<boolean>): void {
@@ -175,7 +163,7 @@ export function AnnotationLayer({
             data-comment-ui
             disabled={controller.isManaging && drag?.annotationId !== annotation.id}
             key={annotation.id}
-            onClick={(event) => openAnnotation(event, annotation.id)}
+            onClick={() => openAnnotation(annotation.id)}
             onPointerCancel={(event) => cancelDrag(event, annotation.id)}
             onPointerDown={(event) => startDrag(event, annotation.id, annotation.anchor.point)}
             onPointerMove={(event) => continueDrag(event, annotation.id)}
@@ -194,7 +182,6 @@ export function AnnotationLayer({
           aria-label="Edit comment"
           className="pointer-events-auto absolute w-72"
           data-comment-ui
-          onClick={stopCanvasClick}
           onKeyDown={(event) => closeOnEscape(event, controller.closeEdit)}
           onSubmit={(event) => void submitEdit(event)}
           ref={composer}
@@ -309,7 +296,6 @@ export function AnnotationLayer({
             aria-label="Add comment"
             className="pointer-events-auto absolute w-72"
             data-comment-ui
-            onClick={stopCanvasClick}
             onKeyDown={(event) => closeOnEscape(event, controller.cancel)}
             onSubmit={submitDraft}
             ref={composer}

@@ -54,10 +54,7 @@ export function BaseEdgeLabel({
           "hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           className,
         )}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSelect();
-        }}
+        onClick={onSelect}
         onBlur={() => onHighlightChange?.(false)}
         onFocus={() => onHighlightChange?.(true)}
         onMouseEnter={() => onHighlightChange?.(true)}

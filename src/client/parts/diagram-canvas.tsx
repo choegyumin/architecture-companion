@@ -80,7 +80,7 @@ const diagramEdgeTypes = {
   connection: ConnectionEdge,
 } satisfies EdgeRendererRegistry<DiagramReactFlowEdge>;
 const interactiveElementSelector =
-  "a, button, form, input, select, textarea, [contenteditable='true'], [role='button']";
+  "a, button, form, input, select, textarea, [contenteditable='true'], [role='button'], [data-diagram-interactive]";
 
 type DiagramCanvasProps = Readonly<{
   className?: string;
@@ -194,7 +194,6 @@ export function DiagramCanvas({
   function handleCanvasClick(event: MouseEvent, target?: AnnotationTarget): void {
     if (!onCanvasClick || !flowInstance || isInteractiveClick(event)) return;
     event.preventDefault();
-    event.stopPropagation();
     const point = flowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
     onCanvasClick(point, target);
   }
