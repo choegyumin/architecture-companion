@@ -11,7 +11,8 @@ import {
 } from "../analysis/build-component-graph";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
-  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...]
+  [--hoc <name> ...] [--loader <package> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
@@ -33,6 +34,8 @@ function parseArguments(args: readonly string[]): ParsedArguments {
   const excludeFilePatterns: string[] = [];
   const excludeComponentPatterns: string[] = [];
   const rootPatterns: string[] = [];
+  const hocNames: string[] = [];
+  const loaderSpecifiers: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
@@ -53,6 +56,12 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     } else if (option === "--root") {
       rootPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--hoc") {
+      hocNames.push(readValue(args, index, option));
+      index += 1;
+    } else if (option === "--loader") {
+      loaderSpecifiers.push(readValue(args, index, option));
+      index += 1;
     } else if (option.startsWith("--")) {
       throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
@@ -68,6 +77,8 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {}),
     ...(excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}),
     ...(rootPatterns.length > 0 ? { rootPatterns } : {}),
+    ...(hocNames.length > 0 ? { hocNames } : {}),
+    ...(loaderSpecifiers.length > 0 ? { loaderSpecifiers } : {}),
   };
 }
 

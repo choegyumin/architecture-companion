@@ -311,10 +311,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src/app.tsx"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src/app.tsx", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
@@ -474,9 +477,12 @@ describe("React component structure command", () => {
         `,
         },
         async (scopePath) => {
-          const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-            writeStdout: () => undefined,
-          });
+          const graphPath = await executeReactComponentStructureCommand(
+            ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+            {
+              writeStdout: () => undefined,
+            },
+          );
           try {
             const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
             expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
@@ -516,10 +522,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel", "Shell"]);
@@ -577,6 +586,165 @@ describe("React component structure command", () => {
     );
   });
 
+  it("connects a declared hoc result to its original component", async () => {
+    await withFixture(
+      {
+        "node_modules/router-hoc/index.d.ts": `export declare function withRouter<T>(component: T): T;`,
+        "src/login.tsx": `
+          import { withRouter } from "router-hoc";
+          function RawLogin() { return <form />; }
+          const Login = withRouter(RawLogin);
+          export default Login;
+        `,
+        "src/app.tsx": `
+          import Login from "./login";
+          export function App() { return <Login />; }
+        `,
+      },
+      async (scopePath) => {
+        const undeclaredPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App"],
+          { writeStdout: () => undefined },
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(undeclaredPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+        } finally {
+          await rm(dirname(undeclaredPath), { recursive: true });
+        }
+
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--hoc", "withRouter"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "RawLogin"]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId])).toEqual([
+            ["component:src/app.tsx#App", "component:src/login.tsx#RawLogin"],
+          ]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("connects a supplied declared hoc component through a package receiver", async () => {
+    await withFixture(
+      {
+        "node_modules/router-hoc/index.d.ts": `export declare function withRouter<T>(component: T): T;`,
+        "node_modules/shell-out/index.d.ts": `export function Shell(props: { component: unknown }): null;`,
+        "src/login.tsx": `
+          import { withRouter } from "router-hoc";
+          function RawLogin() { return <form />; }
+          const Login = withRouter(RawLogin);
+          export default Login;
+        `,
+        "src/app.tsx": `
+          import Login from "./login";
+          import { Shell } from "shell-out";
+          export function App() { return <Shell component={Login} />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--hoc", "withRouter"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "RawLogin", "Shell"]);
+          const titles = new Map(graph.nodes.map((node) => [node.nodeId, node.title]));
+          expect(
+            graph.edges
+              .map(({ sourceNodeId, targetNodeId }) => `${titles.get(sourceNodeId)} -> ${titles.get(targetNodeId)}`)
+              .toSorted(),
+          ).toEqual(["App -> Shell", "Shell -> RawLogin"]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("warns when a declared hoc receives an unprovable argument", async () => {
+    await withFixture(
+      {
+        "node_modules/router-hoc/index.d.ts": `export declare function withRouter(component: unknown): unknown;`,
+        "src/app.tsx": `
+          import { withRouter } from "router-hoc";
+          function Panel() { return <main />; }
+          function choose(value) { return value; }
+          const Wrapped = withRouter(choose(Panel));
+          export function App() { return <Wrapped />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--hoc", "withRouter"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+          expect(warnings).toEqual([
+            expect.stringMatching(
+              /^\[unsupported-hoc\] src\/app\.tsx:\d+:\d+: Expected a static component reference\.\n$/,
+            ),
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("does not treat an undeclared loader package as a factory", async () => {
+    await withFixture(
+      {
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable<T>(load: () => Promise<{ default: T }>): T;`,
+        "src/panel.tsx": `export default function Panel() { return <span />; }`,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          const Loaded = loadable(() => import("./panel"));
+          export function App() { return <Loaded />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
   it("warns once for a used unsupported loader without warning about unused factories or changing stdout", async () => {
     await withFixture(
       {
@@ -600,7 +768,7 @@ describe("React component structure command", () => {
           writeStderr: (output: string) => warnings.push(output),
         };
         const graphPath = await executeReactComponentStructureCommand(
-          ["--base", scopePath, "src", "--root", "App"],
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
           environment,
         );
         try {
@@ -609,7 +777,7 @@ describe("React component structure command", () => {
           expect(graph.edges).toEqual([]);
           expect(outputs).toEqual([`${JSON.stringify({ graphPath })}\n`]);
           expect(warnings).toEqual([
-            `[unsupported-loadable] src/loader.tsx:2:23: Expected loadable(() => import("static string")) without options.\n`,
+            `[unsupported-loader] src/loader.tsx:2:23: Expected loader(() => import("static string")) without options.\n`,
           ]);
         } finally {
           await rm(dirname(graphPath), { recursive: true });
@@ -800,10 +968,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
@@ -844,10 +1015,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel"]);
@@ -880,14 +1054,17 @@ describe("React component structure command", () => {
           ["--exclude-component", "App"],
         ]) {
           const warnings: string[] = [];
-          const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", ...filter], {
-            writeStdout: () => undefined,
-            writeStderr: (output) => warnings.push(output),
-          });
+          const graphPath = await executeReactComponentStructureCommand(
+            ["--base", scopePath, "src", ...filter, "--loader", "@loadable/component"],
+            {
+              writeStdout: () => undefined,
+              writeStderr: (output) => warnings.push(output),
+            },
+          );
           try {
             const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
             expect(graph.nodes.map(({ title }) => title)).toEqual(["Healthy"]);
-            expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-loadable\] /)]);
+            expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-loader\] /)]);
           } finally {
             await rm(dirname(graphPath), { recursive: true });
           }
@@ -964,10 +1141,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel", "Sub"]);
@@ -1047,10 +1227,13 @@ describe("React component structure command", () => {
       },
       async (scopePath) => {
         const warnings: string[] = [];
-        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
-          writeStdout: () => undefined,
-          writeStderr: (output) => warnings.push(output),
-        });
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App", "--loader", "@loadable/component"],
+          {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          },
+        );
         try {
           const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
           expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);

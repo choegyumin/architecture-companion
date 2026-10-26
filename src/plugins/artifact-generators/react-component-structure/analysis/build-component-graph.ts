@@ -114,8 +114,9 @@ type BuilderEdge = Readonly<{
 export type ComponentGraphDiagnostic = Readonly<{
   code:
     | "unsupported-react-wrapper"
+    | "unsupported-hoc"
     | "unsupported-object-assign-member"
-    | "unsupported-loadable"
+    | "unsupported-loader"
     | "unsupported-component-binding";
   relativePath: string;
   line: number;
@@ -132,6 +133,8 @@ export type ComponentGraphOptions = Readonly<{
   excludeFilePatterns?: readonly string[];
   excludeComponentPatterns?: readonly string[];
   rootPatterns?: readonly string[];
+  hocNames?: readonly string[];
+  loaderSpecifiers?: readonly string[];
   onDiagnostic?: (diagnostic: ComponentGraphDiagnostic) => void;
 }>;
 
@@ -268,6 +271,8 @@ type AnalysisContext = Readonly<{
   reportUnsupported?: UnsupportedReporter;
   memberWrites: ReadonlyMap<string, ReadonlySet<ts.Node>>;
   bindingWrites: ReadonlySet<ts.Symbol>;
+  hocNames: ReadonlySet<string>;
+  loaderSpecifiers: ReadonlySet<string>;
 }>;
 
 // AST predicates, enum values, the checker, and declarations must use the same compiler.
@@ -712,22 +717,33 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     );
   }
 
-  function isLoadableCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+  // Loader packages stay identified by import origin: the callee must default-
+  // import from a module the caller declared through --loader. A declared HOC
+  // name is the caller's own assertion about a call shape, so the callee's
+  // local identifier text is the match, not the imported module.
+  function isDeclaredLoaderCall(call: ts.CallExpression, context: AnalysisContext): boolean {
     const callee = unwrapExpression(call.expression);
     if (!ts.isIdentifier(callee)) return false;
-    const symbol = checker.getSymbolAtLocation(callee);
-    return getImportModuleSpecifier(symbol) === "@loadable/component" && getImportedName(symbol) === "default";
+    const symbol = context.checker.getSymbolAtLocation(callee);
+    const specifier = getImportModuleSpecifier(symbol);
+    return specifier !== undefined && context.loaderSpecifiers.has(specifier) && getImportedName(symbol) === "default";
+  }
+
+  function isDeclaredHocCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.hocNames.has(callee.text);
   }
 
   function isKnownComponentFactoryCall(call: ts.CallExpression, context: AnalysisContext): boolean {
     return (
       isReactWrapperCall(call, context.checker) ||
       isObjectAssignCall(call, context) ||
-      isLoadableCall(call, context.checker)
+      isDeclaredLoaderCall(call, context) ||
+      isDeclaredHocCall(call, context)
     );
   }
 
-  function resolveLoadableComponent(
+  function resolveLoaderComponent(
     call: ts.CallExpression,
     context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol>,
@@ -748,8 +764,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     if (call.arguments.length !== 1 || !specifier || !ts.isStringLiteral(specifier)) {
       reportUnsupported?.(
         call,
-        "unsupported-loadable",
-        'Expected loadable(() => import("static string")) without options.',
+        "unsupported-loader",
+        'Expected loader(() => import("static string")) without options.',
       );
       return undefined;
     }
@@ -939,10 +955,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     if (isJsxNamespacedName(expression)) return undefined;
     const unwrapped = unwrapExpression(expression);
     if (ts.isCallExpression(unwrapped)) {
-      if (isLoadableCall(unwrapped, context.checker))
-        return resolveLoadableComponent(unwrapped, context, visited, reportUnsupported);
+      if (isDeclaredLoaderCall(unwrapped, context))
+        return resolveLoaderComponent(unwrapped, context, visited, reportUnsupported);
       const reactWrapper = isReactWrapperCall(unwrapped, context.checker);
-      if (!reactWrapper && !isObjectAssignCall(unwrapped, context)) return undefined;
+      const declaredHoc = !reactWrapper && isDeclaredHocCall(unwrapped, context);
+      if (!reactWrapper && !declaredHoc && !isObjectAssignCall(unwrapped, context)) return undefined;
       const base = unwrapped.arguments.at(0);
       if (base && isMutableComponentReference(base, context)) {
         reportUnsupported?.(unwrapped, "unsupported-component-binding", "Expected an immutable component reference.");
@@ -950,7 +967,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
       const wrapped = base ? unwrapExpression(base) : undefined;
       if (
-        reactWrapper &&
+        (reactWrapper || declaredHoc) &&
         (!wrapped ||
           !(
             ts.isIdentifier(wrapped) ||
@@ -958,7 +975,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
             (ts.isCallExpression(wrapped) && isKnownComponentFactoryCall(wrapped, context))
           ))
       ) {
-        reportUnsupported?.(unwrapped, "unsupported-react-wrapper", "Expected a static component reference.");
+        reportUnsupported?.(
+          unwrapped,
+          declaredHoc ? "unsupported-hoc" : "unsupported-react-wrapper",
+          "Expected a static component reference.",
+        );
         return undefined;
       }
       return base ? resolveComponentExpression(base, context, visited, reportUnsupported) : undefined;
@@ -4487,6 +4508,8 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       reportUnsupported: options.onDiagnostic ? reportUnsupported : undefined,
       memberWrites,
       bindingWrites,
+      hocNames: new Set(options.hocNames ?? []),
+      loaderSpecifiers: new Set(options.loaderSpecifiers ?? []),
       boundaryTargets: new Map(),
       uses: new Map(),
       directUseIdsByOwner: new Map(),
