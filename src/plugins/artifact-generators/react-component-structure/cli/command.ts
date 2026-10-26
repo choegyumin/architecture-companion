@@ -4,13 +4,19 @@ import { dirname, join } from "node:path";
 
 import { toDiagramGraphInput } from "@/features/diagram/diagram-graph";
 
-import { buildComponentGraph, type ComponentGraphOptions } from "../analysis/build-component-graph";
+import {
+  buildComponentGraph,
+  type ComponentGraphDiagnostic,
+  type ComponentGraphOptions,
+} from "../analysis/build-component-graph";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
-  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...]
+  [--hoc <name> ...] [--loader <package> ...] [--render <name> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
+  writeStderr?: (output: string) => void;
 }>;
 
 type ParsedArguments = ComponentGraphOptions;
@@ -28,6 +34,9 @@ function parseArguments(args: readonly string[]): ParsedArguments {
   const excludeFilePatterns: string[] = [];
   const excludeComponentPatterns: string[] = [];
   const rootPatterns: string[] = [];
+  const hocNames: string[] = [];
+  const loaderSpecifiers: string[] = [];
+  const renderNames: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
@@ -48,6 +57,15 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     } else if (option === "--root") {
       rootPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--hoc") {
+      hocNames.push(readValue(args, index, option));
+      index += 1;
+    } else if (option === "--loader") {
+      loaderSpecifiers.push(readValue(args, index, option));
+      index += 1;
+    } else if (option === "--render") {
+      renderNames.push(readValue(args, index, option));
+      index += 1;
     } else if (option.startsWith("--")) {
       throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
@@ -63,6 +81,9 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {}),
     ...(excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {}),
     ...(rootPatterns.length > 0 ? { rootPatterns } : {}),
+    ...(hocNames.length > 0 ? { hocNames } : {}),
+    ...(loaderSpecifiers.length > 0 ? { loaderSpecifiers } : {}),
+    ...(renderNames.length > 0 ? { renderNames } : {}),
   };
 }
 
@@ -71,13 +92,17 @@ export async function executeReactComponentStructureCommand(
   environment: CommandEnvironment,
 ): Promise<string> {
   const options = parseArguments(args);
-  const graph = await buildComponentGraph(options);
+  const diagnostics: ComponentGraphDiagnostic[] = [];
+  const graph = await buildComponentGraph({ ...options, onDiagnostic: (diagnostic) => diagnostics.push(diagnostic) });
   const resolvedOutputPath = join(
     await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")),
     "graph.json",
   );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(toDiagramGraphInput(graph), undefined, 2)}\n`);
+  for (const { code, relativePath, line, column, reason } of diagnostics) {
+    environment.writeStderr?.(`[${code}] ${relativePath}:${line}:${column}: ${reason}\n`);
+  }
   environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}\n`);
   return resolvedOutputPath;
 }

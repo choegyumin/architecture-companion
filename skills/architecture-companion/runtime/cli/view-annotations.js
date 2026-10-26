@@ -23820,7 +23820,9 @@ var diagramControlSchema = external_exports.discriminatedUnion("type", [
 var diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: external_exports.string().min(1),
-  groupId: diagramIdSchema.optional()
+  groupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
@@ -23904,7 +23906,9 @@ var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
 var diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: external_exports.string().min(1),
-  parentGroupId: diagramIdSchema.optional()
+  parentGroupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramGroupSchema = external_exports.object({
   ...diagramGroupBaseShape,

@@ -33,7 +33,7 @@ function catalog(nodeTitle: string): CompanionCatalog {
           layout: { layoutId: "general" },
           graph: {
             groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: nodeTitle }],
+            nodes: [{ synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title: nodeTitle }],
             edges: [],
           },
         },

@@ -13,7 +13,7 @@ const validDiagram = {
   diagram: {
     layout: { layoutId: "general" },
     graph: {
-      groups: [{ groupId: "checkout", title: "Checkout", type: "default" }],
+      groups: [{ groupId: "checkout", title: "Checkout", type: "default", synthetic: false }],
       nodes: [
         {
           nodeId: "checkout-page",
@@ -23,9 +23,17 @@ const validDiagram = {
           description: "Coordinates checkout",
           details: ["Loads the cart", "Submits the order"],
           groupId: "checkout",
+          synthetic: false,
           links: [{ text: "checkout-page.tsx", href: "source:///src/checkout-page.tsx#L1-L20" }],
         },
-        { nodeId: "payment-client", type: "default", kind: "client", title: "Payment client", groupId: "checkout" },
+        {
+          nodeId: "payment-client",
+          type: "default",
+          kind: "client",
+          title: "Payment client",
+          groupId: "checkout",
+          synthetic: false,
+        },
       ],
       edges: [
         {
@@ -49,8 +57,8 @@ const validSequenceDiagram = {
     graph: {
       groups: [],
       nodes: [
-        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", synthetic: false, activations: [] },
+        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", synthetic: false, activations: [] },
       ],
       edges: [
         {
@@ -116,12 +124,12 @@ const validFlowchartDiagram = {
   diagram: {
     layout: { layoutId: "general" },
     graph: {
-      groups: [{ groupId: "fulfillment", title: "Fulfillment", type: "default" }],
+      groups: [{ groupId: "fulfillment", title: "Fulfillment", type: "default", synthetic: false }],
       nodes: [
-        { nodeId: "request", type: "default", kind: "start", title: "Checkout requested" },
-        { nodeId: "in-stock", type: "diamond", title: "Item in stock?" },
-        { nodeId: "charge", type: "default", title: "Charge payment", groupId: "fulfillment" },
-        { nodeId: "backorder", type: "default", title: "Create backorder", groupId: "fulfillment" },
+        { nodeId: "request", type: "default", kind: "start", title: "Checkout requested", synthetic: false },
+        { nodeId: "in-stock", type: "diamond", title: "Item in stock?", synthetic: false },
+        { nodeId: "charge", type: "default", title: "Charge payment", groupId: "fulfillment", synthetic: false },
+        { nodeId: "backorder", type: "default", title: "Create backorder", groupId: "fulfillment", synthetic: false },
       ],
       edges: [
         { edgeId: "begin", type: "default", sourceNodeId: "request", targetNodeId: "in-stock" },
@@ -993,6 +1001,7 @@ describe("artifact parsing", () => {
               type: "lifeline",
               kind: "participant",
               title: "Client",
+              synthetic: false,
               activations: [
                 {
                   activationId: "request",
@@ -1001,7 +1010,14 @@ describe("artifact parsing", () => {
                 },
               ],
             },
-            { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+            {
+              nodeId: "server",
+              type: "lifeline",
+              kind: "participant",
+              title: "Server",
+              synthetic: false,
+              activations: [],
+            },
           ],
           edges: [
             {

@@ -23,6 +23,7 @@ const sequenceDiagram = {
       groups: [],
       nodes: [
         {
+          synthetic: false,
           nodeId: "participant",
           type: "lifeline",
           kind: "participant",
@@ -44,7 +45,7 @@ describe("diagram view React Flow adapter", () => {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ nodeId: "component", type: "default", title: "Component" }],
+          nodes: [{ synthetic: false, nodeId: "component", type: "default", title: "Component" }],
           edges: [],
         },
       },
@@ -81,9 +82,17 @@ describe("diagram view React Flow adapter", () => {
         graph: {
           ...sequenceDiagram.diagram.graph,
           nodes: [
-            { nodeId: "default", type: "default", kind: "step", title: "Default" },
-            { nodeId: "lifeline", type: "lifeline", kind: "participant", title: "Lifeline", activations: [] },
+            { synthetic: false, nodeId: "default", type: "default", kind: "step", title: "Default" },
             {
+              synthetic: false,
+              nodeId: "lifeline",
+              type: "lifeline",
+              kind: "participant",
+              title: "Lifeline",
+              activations: [],
+            },
+            {
+              synthetic: false,
               nodeId: "fragment",
               type: "fragment",
               kind: "phase",
@@ -126,9 +135,16 @@ describe("diagram view React Flow adapter", () => {
         layout: { layoutId: "general" },
         graph: {
           groups: [
-            { groupId: "boundary", type: "bounding", title: "Boundary", description: "Review region", hideTitle: true },
+            {
+              groupId: "boundary",
+              type: "bounding",
+              title: "Boundary",
+              synthetic: false,
+              description: "Review region",
+              hideTitle: true,
+            },
           ],
-          nodes: [{ nodeId: "choice", type: "diamond", title: "Continue?", groupId: "boundary" }],
+          nodes: [{ synthetic: false, nodeId: "choice", type: "diamond", title: "Continue?", groupId: "boundary" }],
           edges: [],
         },
       },

@@ -23537,7 +23537,9 @@ var diagramControlSchema = external_exports.discriminatedUnion("type", [
 var diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: external_exports.string().min(1),
-  groupId: diagramIdSchema.optional()
+  groupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramNodeSchema = external_exports.object({
   ...diagramNodeBaseShape,
@@ -23621,7 +23623,9 @@ var diagramEdgeSchema = external_exports.discriminatedUnion("type", [
 var diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: external_exports.string().min(1),
-  parentGroupId: diagramIdSchema.optional()
+  parentGroupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: external_exports.boolean().default(false)
 };
 var defaultDiagramGroupSchema = external_exports.object({
   ...diagramGroupBaseShape,
@@ -24012,12 +24016,16 @@ var componentStructureDiagramGraphSchema = external_exports.object({
 }).strict().superRefine((graph, context) => {
   for (const issue2 of validateComponentStructureGraph(graph)) context.addIssue(issue2);
 }).meta({ id: "ComponentStructureGraph" });
+var omitDefaultSynthetic = (element) => {
+  const { synthetic: _synthetic, ...withoutMarker } = element;
+  return element.synthetic ? element : withoutMarker;
+};
 function toDiagramGraphInput(graph) {
   if ("layoutContext" in graph) {
     const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
     return {
-      groups: graph.groups.map(({ type: _type, ...group }) => group),
-      nodes: graph.nodes.map(({ type: _type, ...node2 }) => node2),
+      groups: graph.groups.map(({ type: _type, ...group }) => omitDefaultSynthetic(group)),
+      nodes: graph.nodes.map(({ type: _type, ...node2 }) => omitDefaultSynthetic(node2)),
       edges: graph.edges.map(({ layoutContext: edgeContext, ...edge }) => {
         const context = edgeContext.composition === null ? {} : { layoutContext: edgeContext };
         if (edge.type === "default") {
@@ -24044,18 +24052,18 @@ function toDiagramGraphInput(graph) {
     groups: graph.groups.map((group) => {
       if (group.type === "default") {
         const { type: _type, ...input2 } = group;
-        return input2;
+        return omitDefaultSynthetic(input2);
       }
       if (!group.hideTitle) {
         const { hideTitle: _hideTitle, ...input2 } = group;
-        return input2;
+        return omitDefaultSynthetic(input2);
       }
-      return group;
+      return omitDefaultSynthetic(group);
     }),
     nodes: graph.nodes.map((node2) => {
-      if (node2.type !== "default") return node2;
+      if (node2.type !== "default") return omitDefaultSynthetic(node2);
       const { type: _type, ...input2 } = node2;
-      return input2;
+      return omitDefaultSynthetic(input2);
     }),
     edges: graph.edges.map((edge) => {
       if (edge.type === "default") {
@@ -24163,6 +24171,36 @@ async function collectInheritedIgnoreRules(scopePath, directoryPath) {
 }
 function isPathIgnored(rules, relativePath, isDirectory) {
   return rules.ignores(relativePath) || isDirectory && rules.ignores(`${relativePath}/`);
+}
+async function filterUnignoredSourcePaths(scopePath, sourcePaths) {
+  const rulesByDirectory = /* @__PURE__ */ new Map();
+  async function directoryRules(directoryPath) {
+    const cached2 = rulesByDirectory.get(directoryPath);
+    if (cached2) return cached2;
+    const rules = (async () => {
+      if (directoryPath === scopePath)
+        return addIgnoreRules((0, import_ignore.default)(), await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+      const parentRules = await directoryRules(dirname(directoryPath));
+      const relativePath = toPosixPath(relative2(scopePath, directoryPath));
+      if (!parentRules || isPathIgnored(parentRules, relativePath, true)) return void 0;
+      return addIgnoreRules(parentRules, await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+    })();
+    rulesByDirectory.set(directoryPath, rules);
+    return rules;
+  }
+  const accepted = /* @__PURE__ */ new Set();
+  for (const sourcePath of sourcePaths) {
+    if (!isPathInside(scopePath, sourcePath) || !sourceExtensions.has(extname(sourcePath))) continue;
+    if (toPosixPath(relative2(scopePath, sourcePath)).split("/").some((segment) => alwaysIgnoredDirectoryNames.has(segment)))
+      continue;
+    const canonicalPath = await realpath(sourcePath);
+    if (!isPathInside(scopePath, canonicalPath)) continue;
+    const relativePath = toPosixPath(relative2(scopePath, canonicalPath));
+    if (relativePath.split("/").some((segment) => alwaysIgnoredDirectoryNames.has(segment))) continue;
+    const rules = await directoryRules(dirname(canonicalPath));
+    if (rules && !isPathIgnored(rules, relativePath, false)) accepted.add(sourcePath);
+  }
+  return accepted;
 }
 async function collectSourceFiles(scopePath, sourcePaths) {
   const files = /* @__PURE__ */ new Set();
@@ -24427,6 +24465,17 @@ function createComponentGraphBuilder(ts) {
     [ts.SyntaxKind.EqualsEqualsToken]: { family: "loosely-equal", inverted: false },
     [ts.SyntaxKind.ExclamationEqualsToken]: { family: "loosely-equal", inverted: true }
   };
+  function isSatisfiesExpression(node2) {
+    return typeof ts.isSatisfiesExpression === "function" && ts.isSatisfiesExpression(node2);
+  }
+  function isJsxNamespacedName(node2) {
+    return typeof ts.isJsxNamespacedName === "function" && ts.isJsxNamespacedName(node2);
+  }
+  function indexSignatureMemberType(name, type, checker) {
+    if (typeof checker.getIndexInfosOfType !== "function" || typeof checker.getStringLiteralType !== "function")
+      return void 0;
+    return checker.getIndexInfosOfType(type).find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+  }
   function formatDiagnostic(diagnostic) {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
   }
@@ -24472,7 +24521,7 @@ function createComponentGraphBuilder(ts) {
   }
   function unwrapExpression(expression) {
     let current = expression;
-    while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current) || ts.isNonNullExpression(current) || ts.isSatisfiesExpression(current) || ts.isTypeAssertionExpression(current)) {
+    while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current) || ts.isNonNullExpression(current) || isSatisfiesExpression(current) || ts.isTypeAssertionExpression(current)) {
       current = current.expression;
     }
     return current;
@@ -24509,16 +24558,63 @@ function createComponentGraphBuilder(ts) {
     return void 0;
   }
   function isCreateElementCall(node2, checker) {
+    return ts.isCallExpression(node2) && isReactExportedCall(node2, checker, "createElement");
+  }
+  function isReactExportedCall(call, checker, name) {
+    const callee = unwrapExpression(call.expression);
+    if (ts.isIdentifier(callee)) {
+      const symbol2 = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol2) === "react" && getImportedName(symbol2) === name;
+    }
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== name) return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+  }
+  function isCreateContextCall(node2, checker) {
+    return ts.isCallExpression(node2) && isReactExportedCall(node2, checker, "createContext");
+  }
+  function isCloneElementCall(node2, checker) {
+    return ts.isCallExpression(node2) && isReactExportedCall(node2, checker, "cloneElement");
+  }
+  function isCreatePortalCall(node2, checker) {
     if (!ts.isCallExpression(node2)) return false;
     const callee = unwrapExpression(node2.expression);
-    if (ts.isPropertyAccessExpression(callee)) {
-      if (callee.name.text !== "createElement") return false;
-      const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
-      return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+    if (ts.isIdentifier(callee)) {
+      const symbol2 = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol2) === "react-dom" && getImportedName(symbol2) === "createPortal";
     }
-    if (!ts.isIdentifier(callee)) return false;
-    const symbol2 = checker.getSymbolAtLocation(callee);
-    return getImportModuleSpecifier(symbol2) === "react" && getImportedName(symbol2) === "createElement";
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "createPortal") return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return getImportModuleSpecifier(checker.getSymbolAtLocation(receiver)) === "react-dom";
+  }
+  function isUseMemoCall(node2, checker) {
+    return ts.isCallExpression(node2) && isReactExportedCall(node2, checker, "useMemo");
+  }
+  function memoizedFactory(node2) {
+    const [factory] = node2.arguments;
+    return factory !== void 0 && (ts.isArrowFunction(factory) || ts.isFunctionExpression(factory)) ? factory : void 0;
+  }
+  function isReactChildrenMapCall(node2, checker) {
+    if (!ts.isCallExpression(node2)) return false;
+    const callee = unwrapExpression(node2.expression);
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "map") return false;
+    const receiver = unwrapExpression(callee.expression);
+    if (ts.isIdentifier(receiver)) {
+      const symbol2 = checker.getSymbolAtLocation(receiver);
+      return getImportModuleSpecifier(symbol2) === "react" && getImportedName(symbol2) === "Children";
+    }
+    if (!ts.isPropertyAccessExpression(receiver) || receiver.name.text !== "Children") return false;
+    const base = leftmostIdentifier(receiver.expression) ?? receiver.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(base), checker);
+  }
+  function isReactContextAccessorTag(tagName, checker) {
+    if (!ts.isPropertyAccessExpression(tagName)) return false;
+    if (tagName.name.text !== "Provider" && tagName.name.text !== "Consumer") return false;
+    const receiver = unwrapExpression(tagName.expression);
+    const symbol2 = checker.getSymbolAtLocation(receiver);
+    return (canonicalSymbol(symbol2, checker)?.declarations ?? symbol2?.declarations ?? []).some(
+      (declaration) => ts.isVariableDeclaration(declaration) && declaration.initializer !== void 0 && isCreateContextCall(declaration.initializer, checker)
+    );
   }
   function isArrayRenderingMethodCall(call, checker) {
     const callee = unwrapExpression(call.expression);
@@ -24714,44 +24810,289 @@ function createComponentGraphBuilder(ts) {
     if ((symbol2.flags & ts.SymbolFlags.Alias) === 0) return symbol2;
     return checker.getAliasedSymbol(symbol2);
   }
-  function resolveDefinition(symbol2, checker, definitionsBySymbol, definitionsByDeclaration, visited = /* @__PURE__ */ new Set()) {
+  function isObjectAssignCall(call, context) {
+    const callee = unwrapExpression(call.expression);
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "assign" || !ts.isIdentifier(callee.expression) || callee.expression.text !== "Object")
+      return false;
+    const receiver = context.checker.getSymbolAtLocation(callee.expression);
+    const signature = context.checker.getResolvedSignature(call)?.getDeclaration();
+    return !!signature && context.program.isSourceFileDefaultLibrary(signature.getSourceFile()) && !!receiver?.declarations?.some(
+      (declaration) => context.program.isSourceFileDefaultLibrary(declaration.getSourceFile())
+    );
+  }
+  function isDeclaredLoaderCall(call, context) {
+    const callee = unwrapExpression(call.expression);
+    if (!ts.isIdentifier(callee)) return false;
+    const symbol2 = context.checker.getSymbolAtLocation(callee);
+    const specifier = getImportModuleSpecifier(symbol2);
+    return specifier !== void 0 && context.loaderSpecifiers.has(specifier) && getImportedName(symbol2) === "default";
+  }
+  function isDeclaredHocCall(call, context) {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.hocNames.has(callee.text);
+  }
+  function isDeclaredRenderCall(call, context) {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.renderNames.has(callee.text);
+  }
+  function isKnownComponentFactoryCall(call, context) {
+    return isReactWrapperCall(call, context.checker) || isObjectAssignCall(call, context) || isDeclaredLoaderCall(call, context) || isDeclaredHocCall(call, context);
+  }
+  function resolveLoaderComponent(call, context, visited, reportUnsupported) {
+    const factory = call.arguments.at(0);
+    const imported = factory && ts.isArrowFunction(factory) && factory.parameters.length === 0 && !ts.isBlock(factory.body) ? unwrapExpression(factory.body) : void 0;
+    const specifier = imported && ts.isCallExpression(imported) && imported.expression.kind === ts.SyntaxKind.ImportKeyword && imported.arguments.length === 1 ? imported.arguments.at(0) : void 0;
+    if (call.arguments.length !== 1 || !specifier || !ts.isStringLiteral(specifier)) {
+      reportUnsupported?.(
+        call,
+        "unsupported-loader",
+        'Expected loader(() => import("static string")) without options.'
+      );
+      return void 0;
+    }
+    const moduleSymbol = context.checker.getSymbolAtLocation(specifier);
+    const sourceFile = moduleSymbol?.declarations?.find(ts.isSourceFile);
+    if (!sourceFile) return void 0;
+    const exported = defaultExportSymbol(sourceFile, context.checker);
+    const mutable = (canonicalSymbol(exported, context.checker)?.declarations ?? []).some((declaration) => {
+      if (ts.isExportAssignment(declaration)) return isMutableComponentReference(declaration.expression, context);
+      return (ts.isVariableDeclaration(declaration) || ts.isFunctionDeclaration(declaration) || ts.isClassDeclaration(declaration)) && !!declaration.name && ts.isIdentifier(declaration.name) && isMutableComponentReference(declaration.name, context);
+    });
+    if (mutable) {
+      reportUnsupported?.(call, "unsupported-component-binding", "Expected an immutable default component export.");
+      return void 0;
+    }
+    return resolveDefinition(exported, context, visited, reportUnsupported);
+  }
+  function referenceFactoryCall(symbol2, context, visited = /* @__PURE__ */ new Set()) {
+    if (!symbol2) return void 0;
+    const reference = localImmutableReference(symbol2, context, visited);
+    if (!reference || reference.initializers.length !== 1) return void 0;
+    const expression = unwrapExpression(reference.initializers.at(0));
+    if (ts.isCallExpression(expression)) return expression;
+    if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) {
+      return referenceFactoryCall(context.checker.getSymbolAtLocation(expression), context, reference.visitedSymbols);
+    }
+    return void 0;
+  }
+  function isMutableComponentReference(expression, context, visited = /* @__PURE__ */ new Set(), symbolOverride) {
+    const reference = unwrapExpression(expression);
+    if (ts.isPropertyAccessExpression(reference) && isMutableComponentReference(reference.expression, context, visited))
+      return true;
+    if (!ts.isIdentifier(reference) && !ts.isPropertyAccessExpression(reference)) return false;
+    const symbol2 = canonicalSymbol(symbolOverride ?? context.checker.getSymbolAtLocation(reference), context.checker);
+    if (!symbol2) return false;
+    if (visited.has(symbol2) || context.bindingWrites.has(symbol2)) return true;
+    const next = new Set(visited).add(symbol2);
+    return (symbol2.declarations ?? []).some((declaration) => {
+      if (ts.isVariableDeclaration(declaration)) {
+        if (!ts.isVariableDeclarationList(declaration.parent) || (declaration.parent.flags & ts.NodeFlags.Const) === 0)
+          return true;
+        return !!declaration.initializer && isMutableComponentReference(declaration.initializer, context, next);
+      }
+      return ts.isExportAssignment(declaration) && isMutableComponentReference(declaration.expression, context, next);
+    });
+  }
+  function writtenMemberKeys(operation, context) {
+    let targets;
+    if (ts.isBinaryExpression(operation)) targets = [operation.left];
+    else if (ts.isPrefixUnaryExpression(operation) || ts.isPostfixUnaryExpression(operation))
+      targets = [operation.operand];
+    else if (ts.isDeleteExpression(operation)) targets = [operation.expression];
+    else if ((ts.isForInStatement(operation) || ts.isForOfStatement(operation)) && !ts.isVariableDeclarationList(operation.initializer))
+      targets = [operation.initializer];
+    else if (ts.isCallExpression(operation) && isObjectAssignCall(operation, context)) {
+      const source = operation.arguments.at(1);
+      if (operation.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return void 0;
+      const keys2 = /* @__PURE__ */ new Set();
+      for (const property of source.properties) {
+        if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) return void 0;
+        const key = propertyNameText(property.name);
+        if (!key) return void 0;
+        keys2.add(key);
+      }
+      return keys2;
+    } else return void 0;
+    const keys = /* @__PURE__ */ new Set();
+    function collect(target) {
+      const unwrapped = unwrapExpression(target);
+      if (ts.isBinaryExpression(unwrapped) && unwrapped.operatorToken.kind === ts.SyntaxKind.EqualsToken)
+        return collect(unwrapped.left);
+      if (ts.isPropertyAccessExpression(unwrapped)) {
+        keys.add(unwrapped.name.text);
+        return true;
+      }
+      if (ts.isElementAccessExpression(unwrapped)) {
+        if (!ts.isStringLiteralLike(unwrapped.argumentExpression)) return false;
+        keys.add(unwrapped.argumentExpression.text);
+        return true;
+      }
+      if (ts.isArrayLiteralExpression(unwrapped)) {
+        for (const element of unwrapped.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          if (!collect(ts.isSpreadElement(element) ? element.expression : element)) return false;
+        }
+        return true;
+      }
+      if (ts.isObjectLiteralExpression(unwrapped)) {
+        for (const property of unwrapped.properties) {
+          if (ts.isShorthandPropertyAssignment(property)) continue;
+          if (ts.isPropertyAssignment(property)) {
+            if (!collect(property.initializer)) return false;
+          } else if (ts.isSpreadAssignment(property)) {
+            if (!collect(property.expression)) return false;
+          } else return false;
+        }
+        return true;
+      }
+      return false;
+    }
+    return targets.every(collect) ? keys : void 0;
+  }
+  function assignedComponentMember(call, name, context, visited, reportUnsupported) {
+    const unsupported = () => {
+      reportUnsupported?.(
+        call,
+        "unsupported-object-assign-member",
+        `Cannot statically resolve Object.assign member "${name}".`
+      );
+      return void 0;
+    };
+    const base = call.arguments.at(0);
+    const definition = base ? resolveComponentExpression(base, context, visited) : void 0;
+    if (!definition) return void 0;
+    const source = call.arguments.at(1);
+    if (call.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return unsupported();
+    const members2 = /* @__PURE__ */ new Map();
+    for (const property2 of source.properties) {
+      if (!ts.isPropertyAssignment(property2) && !ts.isShorthandPropertyAssignment(property2) || ts.isComputedPropertyName(property2.name))
+        return unsupported();
+      const key = propertyNameText(property2.name);
+      if (!key || ["__proto__", "prototype", "constructor"].includes(key) || members2.has(key)) return unsupported();
+      members2.set(key, property2);
+    }
+    const conflictingWrite = [...context.memberWrites.get(definition.id) ?? []].some((operation) => {
+      if (operation === call) return false;
+      const keys = writtenMemberKeys(operation, context);
+      return keys === void 0 || [...keys].some((key) => members2.has(key));
+    });
+    if (conflictingWrite) return unsupported();
+    const property = members2.get(name);
+    if (!property) return unsupported();
+    const value = ts.isShorthandPropertyAssignment(property) ? property.name : unwrapExpression(property.initializer);
+    if (!ts.isIdentifier(value) && !ts.isPropertyAccessExpression(value)) return unsupported();
+    const valueSymbol = ts.isShorthandPropertyAssignment(property) ? context.checker.getShorthandAssignmentValueSymbol(property) : void 0;
+    if (isMutableComponentReference(value, context, /* @__PURE__ */ new Set(), valueSymbol)) return unsupported();
+    return resolveComponentExpression(value, context, visited, reportUnsupported, valueSymbol);
+  }
+  function resolveComponentExpression(expression, context, visited = /* @__PURE__ */ new Set(), reportUnsupported, symbolOverride) {
+    if (isJsxNamespacedName(expression)) return void 0;
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isCallExpression(unwrapped)) {
+      if (isDeclaredLoaderCall(unwrapped, context))
+        return resolveLoaderComponent(unwrapped, context, visited, reportUnsupported);
+      const reactWrapper = isReactWrapperCall(unwrapped, context.checker);
+      const declaredHoc = !reactWrapper && isDeclaredHocCall(unwrapped, context);
+      if (!reactWrapper && !declaredHoc && !isObjectAssignCall(unwrapped, context)) return void 0;
+      const base = unwrapped.arguments.at(0);
+      if (base && isMutableComponentReference(base, context)) {
+        reportUnsupported?.(unwrapped, "unsupported-component-binding", "Expected an immutable component reference.");
+        return void 0;
+      }
+      const wrapped = base ? unwrapExpression(base) : void 0;
+      if ((reactWrapper || declaredHoc) && (!wrapped || !(ts.isIdentifier(wrapped) || ts.isPropertyAccessExpression(wrapped) || ts.isCallExpression(wrapped) && isKnownComponentFactoryCall(wrapped, context)))) {
+        reportUnsupported?.(
+          unwrapped,
+          declaredHoc ? "unsupported-hoc" : "unsupported-react-wrapper",
+          "Expected a static component reference."
+        );
+        return void 0;
+      }
+      return base ? resolveComponentExpression(base, context, visited, reportUnsupported) : void 0;
+    }
+    if (ts.isPropertyAccessExpression(unwrapped) && !symbolOverride) {
+      const receiver = context.checker.getSymbolAtLocation(unwrapped.expression);
+      const factory = referenceFactoryCall(receiver, context);
+      if (factory && isObjectAssignCall(factory, context)) {
+        const canonical = canonicalSymbol(receiver, context.checker);
+        if (canonical && visited.has(canonical)) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-object-assign-member",
+            `Cannot statically resolve Object.assign member "${unwrapped.name.text}".`
+          );
+          return void 0;
+        }
+        return assignedComponentMember(
+          factory,
+          unwrapped.name.text,
+          context,
+          canonical ? new Set(visited).add(canonical) : visited,
+          reportUnsupported
+        );
+      }
+    }
+    if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return void 0;
+    return resolveDefinition(
+      symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped),
+      context,
+      visited,
+      reportUnsupported
+    );
+  }
+  function uncollectedComponentReference(declaration, context) {
+    const sourceFile = declaration.getSourceFile();
+    if (!context.boundarySourcePaths.has(resolve3(sourceFile.fileName))) return void 0;
+    let name;
+    let identityName;
+    if (ts.isFunctionDeclaration(declaration) || ts.isClassDeclaration(declaration)) {
+      if (ts.isFunctionDeclaration(declaration) && !declaration.body) return void 0;
+      const anonymousDefault = !declaration.name && isDefaultExportDeclaration(declaration);
+      if (!declaration.name && !anonymousDefault) return void 0;
+      name = declaration.name?.text ?? defaultExportName(sourceFile);
+      identityName = anonymousDefault ? "default" : name;
+    } else if (ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name)) {
+      if (!declaration.initializer || !unwrapFunction(declaration.initializer, context.checker)) return void 0;
+      name = identityName = declaration.name.text;
+    } else if (ts.isExportAssignment(declaration)) {
+      if (!unwrapFunction(declaration.expression, context.checker)) return void 0;
+      name = defaultExportName(sourceFile);
+      identityName = "default";
+    } else return void 0;
+    if (!isComponentName(name)) return void 0;
+    const relativePath = toPosixPath(relative3(context.scopePath, sourceFile.fileName));
+    return { id: createComponentId(relativePath, identityName), name, relativePath, declaration };
+  }
+  function resolveDefinition(symbol2, context, visited = /* @__PURE__ */ new Set(), reportUnsupported) {
     if (!symbol2 || visited.has(symbol2)) return void 0;
+    const { checker, definitionsBySymbol, definitionsByDeclaration } = context;
     const nextVisited = new Set(visited).add(symbol2);
     const canonical = canonicalSymbol(symbol2, checker);
     const direct = canonical ? definitionsBySymbol.get(canonical) : void 0;
     if (direct) return direct;
     for (const declaration of canonical?.declarations ?? symbol2.declarations ?? []) {
-      const definition = definitionsByDeclaration.get(declaration);
+      const definition = definitionsByDeclaration.get(declaration) ?? uncollectedComponentReference(declaration, context);
       if (definition) return definition;
       if (ts.isExportAssignment(declaration)) {
-        const expression = unwrapExpression(declaration.expression);
-        if (ts.isCallExpression(expression) && isReactWrapperCall(expression, checker) && expression.arguments.length > 0) {
-          const wrapped = unwrapExpression(expression.arguments.at(0));
-          if (ts.isIdentifier(wrapped) || ts.isPropertyAccessExpression(wrapped)) {
-            const aliasedDefinition = resolveDefinition(
-              checker.getSymbolAtLocation(wrapped),
-              checker,
-              definitionsBySymbol,
-              definitionsByDeclaration,
-              nextVisited
-            );
-            if (aliasedDefinition) return aliasedDefinition;
-          }
-        }
-        continue;
+        const resolved = resolveComponentExpression(declaration.expression, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
       if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
         const initializer3 = unwrapExpression(declaration.initializer);
-        if (ts.isIdentifier(initializer3) || ts.isPropertyAccessExpression(initializer3)) {
-          const aliasedDefinition = resolveDefinition(
-            checker.getSymbolAtLocation(initializer3),
-            checker,
-            definitionsBySymbol,
-            definitionsByDeclaration,
-            nextVisited
+        const factory = ts.isCallExpression(initializer3) ? initializer3 : ts.isIdentifier(initializer3) || ts.isPropertyAccessExpression(initializer3) ? referenceFactoryCall(checker.getSymbolAtLocation(initializer3), context) : void 0;
+        const knownFactory = factory && isKnownComponentFactoryCall(factory, context);
+        const mutable = !ts.isVariableDeclarationList(declaration.parent) || (declaration.parent.flags & ts.NodeFlags.Const) === 0 || !!canonical && context.bindingWrites.has(canonical);
+        if (knownFactory && mutable) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-component-binding",
+            "Factory results require a const binding without reassignment."
           );
-          if (aliasedDefinition) return aliasedDefinition;
+          continue;
         }
+        if (ts.isCallExpression(initializer3) && mutable) continue;
+        const resolved = resolveComponentExpression(initializer3, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
     }
     return void 0;
@@ -24759,7 +25100,7 @@ function createComponentGraphBuilder(ts) {
   function leftmostIdentifier(expression) {
     if (ts.isIdentifier(expression)) return expression;
     if (ts.isPropertyAccessExpression(expression)) return leftmostIdentifier(expression.expression);
-    if (ts.isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
+    if (isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
     return void 0;
   }
   function externalPackageName(moduleSpecifier) {
@@ -24818,7 +25159,7 @@ function createComponentGraphBuilder(ts) {
     let type = checker.getTypeOfSymbolAtLocation(symbol2, location);
     for (const name of names) {
       const member = checker.getPropertyOfType(type, name);
-      const nextType = member ? checker.getTypeOfSymbolAtLocation(member, location) : checker.getIndexInfosOfType(type).find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+      const nextType = member ? checker.getTypeOfSymbolAtLocation(member, location) : indexSignatureMemberType(name, type, checker);
       if (!nextType) return void 0;
       members2.push({ name, symbol: member, type: nextType });
       type = nextType;
@@ -24875,7 +25216,9 @@ function createComponentGraphBuilder(ts) {
         context.host,
         void 0,
         void 0,
-        context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier)
+        // Older programs have no per-usage module mode; undefined matches
+        // their own resolution semantics.
+        typeof context.program.getModeForUsageLocation === "function" ? context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier) : void 0
       ).resolvedModule;
       if (resolved?.isExternalLibraryImport) {
         const packageName2 = externalPackageName(binding.moduleSpecifier.text);
@@ -24921,7 +25264,7 @@ function createComponentGraphBuilder(ts) {
     return packageName ? { packageName, symbol: externalSymbol } : void 0;
   }
   function externalReferencePath(expression) {
-    if (ts.isJsxNamespacedName(expression)) return void 0;
+    if (isJsxNamespacedName(expression)) return void 0;
     let current = unwrapExpression(expression);
     const members2 = [];
     while (ts.isPropertyAccessExpression(current)) {
@@ -24967,20 +25310,27 @@ function createComponentGraphBuilder(ts) {
     const checker = context.checker;
     const external = resolveExternalReference(expression, context, symbolOverride);
     if (!external) {
-      const symbol2 = symbolOverride ?? checker.getSymbolAtLocation(expression);
-      const definition = resolveDefinition(
-        symbol2,
-        checker,
-        context.definitionsBySymbol,
-        context.definitionsByDeclaration
+      const reference = resolveComponentExpression(
+        expression,
+        context,
+        /* @__PURE__ */ new Set(),
+        context.reportUnsupported,
+        symbolOverride
       );
-      return definition ? { id: definition.id, title: definition.name, definition } : void 0;
+      if (!reference) return void 0;
+      const definition = context.definitionsByDeclaration.get(reference.declaration);
+      if (definition) return { id: definition.id, title: definition.name, definition };
+      const existing2 = context.boundaryTargets.get(reference.id);
+      if (existing2) return existing2;
+      const target2 = { id: reference.id, title: reference.name, localBoundaryPath: reference.relativePath };
+      context.boundaryTargets.set(target2.id, target2);
+      return target2;
     }
     const target = externalReferenceIdentity(external, checker);
     if (target.externalPackage === "react" && /(?:^|\.)Fragment$/.test(target.title)) return void 0;
-    const existing = context.externalTargets.get(target.id);
+    const existing = context.boundaryTargets.get(target.id);
     if (existing) return existing;
-    context.externalTargets.set(target.id, target);
+    context.boundaryTargets.set(target.id, target);
     return target;
   }
   function componentUseId(ownerId, node2, targetId, scopePath) {
@@ -25162,7 +25512,7 @@ function createComponentGraphBuilder(ts) {
       if (rootSymbol && externalSymbolOrigin(rootSymbol, context)) return void 0;
       if (resolveExternalReference(unwrapped, context, void 0, visitedSymbols)) return void 0;
     }
-    if (resolveDefinition(referenceSymbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)) {
+    if (resolveDefinition(referenceSymbol, context)) {
       return void 0;
     }
     return reference;
@@ -25254,6 +25604,15 @@ function createComponentGraphBuilder(ts) {
     const rules = { exact: /* @__PURE__ */ new Map(), spreads: [] };
     const mutableSpreads = rules.spreads;
     let activeRuleset = [[]];
+    let activePropAliases;
+    function incomingPropOf(expression) {
+      const direct = getIncomingProp(expression, bindings, context.checker);
+      if (direct !== void 0 || !activePropAliases) return direct;
+      const unwrapped = unwrapExpression(expression);
+      if (!ts.isIdentifier(unwrapped)) return void 0;
+      const symbol2 = context.checker.getSymbolAtLocation(unwrapped);
+      return symbol2 ? activePropAliases.get(symbol2) : void 0;
+    }
     function terminal(propName, kind) {
       addExactRule(rules, propName, { type: "terminal", kind, ruleset: activeRuleset });
     }
@@ -25326,7 +25685,7 @@ function createComponentGraphBuilder(ts) {
         if (ts.isExpression(node2) && controlledExpression(node2, definition.id, ruleset, context, (value, next) => visit2(value, next, false)))
           return;
         if (ts.isCallExpression(node2)) {
-          const propName = getIncomingProp(node2.expression, bindings, context.checker);
+          const propName = incomingPropOf(node2.expression);
           if (propName) {
             const entry = { propName, ruleset };
             props.set(JSON.stringify(entry), entry);
@@ -25361,7 +25720,7 @@ function createComponentGraphBuilder(ts) {
         ))
           return;
         const unwrapped = unwrapExpression(candidate);
-        const directProp = candidateSymbol ? bindings.propSymbols.get(candidateSymbol) : getIncomingProp(unwrapped, bindings, context.checker);
+        const directProp = candidateSymbol ? bindings.propSymbols.get(candidateSymbol) : incomingPropOf(unwrapped);
         if (directProp) {
           const entry = { propName: directProp, ruleset };
           props.set(JSON.stringify(entry), entry);
@@ -25483,15 +25842,33 @@ function createComponentGraphBuilder(ts) {
         activeExpressions.delete(expression);
       }
     }
+    function analyzeArrayRenderingCallback(call) {
+      const callback = call.arguments.find(
+        (argument) => ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)
+      );
+      if (!callback) return;
+      const callee = unwrapExpression(call.expression);
+      const arrayExpression = isReactChildrenMapCall(call, context.checker) ? call.arguments.at(0) : ts.isPropertyAccessExpression(callee) ? callee.expression : void 0;
+      const propName = arrayExpression ? incomingPropOf(arrayExpression) : void 0;
+      const parameter = callback.parameters.at(0);
+      const parameterSymbol = parameter && ts.isIdentifier(parameter.name) ? context.checker.getSymbolAtLocation(parameter.name) : void 0;
+      const previous = activePropAliases;
+      if (propName && parameterSymbol) activePropAliases = /* @__PURE__ */ new Map([[parameterSymbol, propName]]);
+      try {
+        controlledReturns(callback.body, definition.id, context, analyzeRendered, activeRuleset);
+      } finally {
+        activePropAliases = previous;
+      }
+    }
     function analyzeRenderedValue(expression) {
       const unwrapped = unwrapExpression(expression);
-      const directProp = getIncomingProp(unwrapped, bindings, context.checker);
+      const directProp = incomingPropOf(unwrapped);
       if (directProp) {
         terminal(directProp, "node-prop");
         return;
       }
       if (ts.isCallExpression(unwrapped)) {
-        const invokedProp = getIncomingProp(unwrapped.expression, bindings, context.checker);
+        const invokedProp = incomingPropOf(unwrapped.expression);
         if (invokedProp) {
           terminal(invokedProp, "render-prop");
           return;
@@ -25500,12 +25877,28 @@ function createComponentGraphBuilder(ts) {
           analyzeCreateElement(unwrapped);
           return;
         }
-        if (isArrayRenderingMethodCall(unwrapped, context.checker)) {
-          for (const argument of unwrapped.arguments) {
-            if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-              controlledReturns(argument.body, definition.id, context, analyzeRendered, activeRuleset);
-            }
-          }
+        if (isCloneElementCall(unwrapped, context.checker)) {
+          const [element] = unwrapped.arguments;
+          if (element) analyzeRendered(element);
+          return;
+        }
+        if (isCreatePortalCall(unwrapped, context.checker)) {
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
+        if (isUseMemoCall(unwrapped, context.checker)) {
+          const factory = memoizedFactory(unwrapped);
+          if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, activeRuleset);
+          return;
+        }
+        if (isDeclaredRenderCall(unwrapped, context)) {
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
+        if (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker)) {
+          analyzeArrayRenderingCallback(unwrapped);
         }
         return;
       }
@@ -25528,6 +25921,9 @@ function createComponentGraphBuilder(ts) {
         const target = targetForReference(opening.tagName, context);
         const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id, context.scopePath) : void 0;
         analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
+        if (!target && ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          for (const child of unwrapped.children) analyzeJsxChild(child);
+        }
         return;
       }
       if (ts.isArrayLiteralExpression(unwrapped)) {
@@ -25555,6 +25951,7 @@ function createComponentGraphBuilder(ts) {
       const componentProp = getIncomingProp(tagExpression, bindings, context.checker);
       if (componentProp) {
         terminal(componentProp, "component-prop");
+        for (const child of children) analyzeRendered(child);
         return;
       }
       if (ts.isStringLiteral(tagExpression)) {
@@ -25653,6 +26050,8 @@ function createComponentGraphBuilder(ts) {
           addUseRuleset(context, use.id, ruleset, rulesetsByUse);
           analyzeJsxComponentUsage(unwrapped, use, context);
           uses.set(use.id, use);
+        } else if (ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          for (const child of unwrapped.children) collectChild(child, ruleset);
         }
         return;
       }
@@ -25672,7 +26071,34 @@ function createComponentGraphBuilder(ts) {
         }
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) collect(element, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory)
+          controlledReturns(
+            factory.body,
+            ownerId,
+            context,
+            (returned, next) => collect(returned, next, visitedSymbols),
+            ruleset
+          );
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(
@@ -26240,7 +26666,10 @@ function createComponentGraphBuilder(ts) {
           return;
         }
         const target = targetForReference(tagExpression, context);
-        if (!target) return;
+        if (!target) {
+          for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child, ruleset);
+          return;
+        }
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
         addUseRuleset(context, use.id, ruleset);
@@ -26251,7 +26680,27 @@ function createComponentGraphBuilder(ts) {
         for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, ruleset);
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) analyzeRendered(element, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(argument.body, definition.id, context, analyzeRendered, ruleset);
@@ -26333,7 +26782,7 @@ function createComponentGraphBuilder(ts) {
   function matchesComponentPattern(id, title, patterns) {
     return import_micromatch.default.match([title, id], patterns).length > 0;
   }
-  function createVisibilityByTarget(definitions, externalTargets, excludeFilePatterns, excludeComponentPatterns) {
+  function createVisibilityByTarget(definitions, boundaryTargets, excludeFilePatterns, excludeComponentPatterns) {
     const excludeFileRules = excludeFilePatterns.length > 0 ? (0, import_ignore2.default)().add([...excludeFilePatterns]) : void 0;
     const visibility = /* @__PURE__ */ new Map();
     for (const definition of definitions) {
@@ -26343,9 +26792,9 @@ function createComponentGraphBuilder(ts) {
         implementationAnalyzed: !hidden
       });
     }
-    for (const target of externalTargets.values()) {
+    for (const target of boundaryTargets.values()) {
       visibility.set(target.id, {
-        boundaryVisible: !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
+        boundaryVisible: !(target.localBoundaryPath && excludeFileRules?.ignores(target.localBoundaryPath)) && !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
         implementationAnalyzed: false
       });
     }
@@ -26496,6 +26945,7 @@ function createComponentGraphBuilder(ts) {
       const policy = targetVisibility(targetUse.target.id);
       const supplierSource = targetVisibility(owner.target.id).boundaryVisible ? owner : source;
       const targetRulesets = combineRulesets(instantiateRuleset(targetUseRuleset, owner, supplierSource), ruleset);
+      if (targetRulesets.length === 0) return;
       if (!policy.boundaryVisible) {
         processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName }, targetRulesets);
         return;
@@ -26569,6 +27019,7 @@ function createComponentGraphBuilder(ts) {
       const instance = ensureComponentInstance(source, use, source);
       const policy = targetVisibility(use.target.id);
       const ruleset = instantiateRuleset(context.useRulesets.get(use.id) ?? [[]], source, source);
+      if (ruleset.length === 0) return;
       if (policy.boundaryVisible) {
         makeVisible(instance);
         addFinalRelationship({ source: source.id, target: instance.id, kind: "inline-render", ruleset });
@@ -26619,6 +27070,7 @@ function createComponentGraphBuilder(ts) {
           nodeId: id,
           title: definition.name,
           description: definition.relativePath,
+          synthetic: false,
           links: [{ href: sourceHref(definition.relativePath) }],
           layoutContext: nodeLayoutContext(id, target.id)
         }
@@ -26629,7 +27081,10 @@ function createComponentGraphBuilder(ts) {
       type: "default",
       nodeId: id,
       title: target.title,
-      description: `${target.externalPackage} boundary`,
+      synthetic: !target.localBoundaryPath,
+      description: target.localBoundaryPath ? `${target.localBoundaryPath}
+Outside collection scope; internals not analyzed.` : `${target.externalPackage} boundary`,
+      ...target.localBoundaryPath ? { links: [{ href: sourceHref(target.localBoundaryPath) }] } : {},
       layoutContext: nodeLayoutContext(id, target.id)
     }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ nodeId }) => nodeId));
@@ -26987,7 +27442,7 @@ function createComponentGraphBuilder(ts) {
         };
         rewritten.push(...buildRules(0, []));
       }
-      return rewritten;
+      return combineRulesets([[]], rewritten);
     };
     const controls = /* @__PURE__ */ new Map();
     for (const control of context.controls.values()) {
@@ -27303,6 +27758,25 @@ function createComponentGraphBuilder(ts) {
       const symbol2 = canonicalSymbol(definition.symbol, checker);
       if (symbol2) definitionsBySymbol.set(symbol2, definition);
     }
+    const reported = /* @__PURE__ */ new Set();
+    const reportUnsupported = (call, code, reason) => {
+      const sourceFile = call.getSourceFile();
+      if (!options.onDiagnostic || !selectedRulesets.has(resolve3(sourceFile.fileName))) return;
+      const position = call.getStart(sourceFile);
+      const key = `${sourceFile.fileName}:${position}:${code}:${reason}`;
+      if (reported.has(key)) return;
+      reported.add(key);
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(position);
+      options.onDiagnostic({
+        code,
+        relativePath: toPosixPath(relative3(scopePath, sourceFile.fileName)),
+        line: line + 1,
+        column: character + 1,
+        reason
+      });
+    };
+    const memberWrites = /* @__PURE__ */ new Map();
+    const bindingWrites = /* @__PURE__ */ new Set();
     const context = {
       scopePath,
       program,
@@ -27310,7 +27784,17 @@ function createComponentGraphBuilder(ts) {
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
-      externalTargets: /* @__PURE__ */ new Map(),
+      boundarySourcePaths: await filterUnignoredSourcePaths(
+        scopePath,
+        program.getSourceFiles().map((sourceFile) => resolve3(sourceFile.fileName)).filter((path) => !selectedRulesets.has(path))
+      ),
+      reportUnsupported: options.onDiagnostic ? reportUnsupported : void 0,
+      memberWrites,
+      bindingWrites,
+      hocNames: new Set(options.hocNames ?? []),
+      loaderSpecifiers: new Set(options.loaderSpecifiers ?? []),
+      renderNames: new Set(options.renderNames ?? []),
+      boundaryTargets: /* @__PURE__ */ new Map(),
       uses: /* @__PURE__ */ new Map(),
       directUseIdsByOwner: /* @__PURE__ */ new Map(),
       analyzedUseIds: /* @__PURE__ */ new Set(),
@@ -27318,6 +27802,64 @@ function createComponentGraphBuilder(ts) {
       useRulesets: /* @__PURE__ */ new Map(),
       propBindings: new Map(definitions.map((definition) => [definition.id, createPropBindings(definition, checker)]))
     };
+    const writes = [];
+    function recordReferenceWrite(expression, operation) {
+      let root = unwrapExpression(expression);
+      if (ts.isArrayLiteralExpression(root)) {
+        for (const element of root.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          recordReferenceWrite(ts.isSpreadElement(element) ? element.expression : element, operation);
+        }
+        return;
+      }
+      if (ts.isObjectLiteralExpression(root)) {
+        for (const property of root.properties) {
+          if (ts.isPropertyAssignment(property)) recordReferenceWrite(property.initializer, operation);
+          else if (ts.isShorthandPropertyAssignment(property)) recordReferenceWrite(property.name, operation);
+          else if (ts.isSpreadAssignment(property)) recordReferenceWrite(property.expression, operation);
+        }
+        return;
+      }
+      if (ts.isBinaryExpression(root) && root.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+        recordReferenceWrite(root.left, operation);
+        return;
+      }
+      if (ts.isIdentifier(root)) {
+        const symbol2 = canonicalSymbol(checker.getSymbolAtLocation(root), checker);
+        if (symbol2) bindingWrites.add(symbol2);
+        return;
+      }
+      if (!ts.isPropertyAccessExpression(root) && !ts.isElementAccessExpression(root)) return;
+      while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
+        root = unwrapExpression(root.expression);
+      writes.push({ root, operation });
+    }
+    function collectReferenceWrites(node2) {
+      if (ts.isBinaryExpression(node2) && node2.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node2.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
+        recordReferenceWrite(node2.left, node2);
+      } else if ((ts.isPrefixUnaryExpression(node2) || ts.isPostfixUnaryExpression(node2)) && (node2.operator === ts.SyntaxKind.PlusPlusToken || node2.operator === ts.SyntaxKind.MinusMinusToken)) {
+        recordReferenceWrite(node2.operand, node2);
+      } else if (ts.isDeleteExpression(node2)) {
+        recordReferenceWrite(node2.expression, node2);
+      } else if ((ts.isForInStatement(node2) || ts.isForOfStatement(node2)) && !ts.isVariableDeclarationList(node2.initializer)) {
+        recordReferenceWrite(node2.initializer, node2);
+      } else if (ts.isCallExpression(node2) && isObjectAssignCall(node2, context)) {
+        const root = node2.arguments.at(0);
+        if (root) writes.push({ root, operation: node2 });
+      }
+      ts.forEachChild(node2, collectReferenceWrites);
+    }
+    for (const sourceFile of sourceFiles) collectReferenceWrites(sourceFile);
+    const resolvedWrites = writes.map(({ root, operation }) => ({
+      definition: resolveComponentExpression(root, context),
+      operation
+    }));
+    for (const { definition, operation } of resolvedWrites) {
+      if (!definition) continue;
+      const operations = memberWrites.get(definition.id) ?? /* @__PURE__ */ new Set();
+      operations.add(operation);
+      memberWrites.set(definition.id, operations);
+    }
     for (const definition of definitions) analyzeDefinitionUsages(definition, context);
     const rulesByComponentId = /* @__PURE__ */ new Map();
     for (const definition of definitions) {
@@ -27327,7 +27869,7 @@ function createComponentGraphBuilder(ts) {
     mergePolarityConditionals(context, rulesByComponentId);
     const visibility = createVisibilityByTarget(
       definitions,
-      context.externalTargets,
+      context.boundaryTargets,
       options.excludeFilePatterns ?? [],
       options.excludeComponentPatterns ?? []
     );
@@ -27357,7 +27899,8 @@ async function buildComponentGraph(options) {
 
 // src/plugins/artifact-generators/react-component-structure/cli/command.ts
 var usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
-  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
+  [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...]
+  [--hoc <name> ...] [--loader <package> ...] [--render <name> ...] <source-path>...`;
 function readValue(args, index, option) {
   const value = args.at(index + 1);
   if (!value || value.startsWith("--")) throw new Error(`${option} requires a value.
@@ -27371,6 +27914,9 @@ function parseArguments(args) {
   const excludeFilePatterns = [];
   const excludeComponentPatterns = [];
   const rootPatterns = [];
+  const hocNames = [];
+  const loaderSpecifiers = [];
+  const renderNames = [];
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
     if (option === "--base") {
@@ -27392,6 +27938,15 @@ ${usage}`);
     } else if (option === "--root") {
       rootPatterns.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--hoc") {
+      hocNames.push(readValue(args, index, option));
+      index += 1;
+    } else if (option === "--loader") {
+      loaderSpecifiers.push(readValue(args, index, option));
+      index += 1;
+    } else if (option === "--render") {
+      renderNames.push(readValue(args, index, option));
+      index += 1;
     } else if (option.startsWith("--")) {
       throw new Error(`Unknown argument: ${option}
 ${usage}`);
@@ -27406,12 +27961,16 @@ ${usage}`);
     ...tsconfigPath ? { tsconfigPath } : {},
     ...excludeFilePatterns.length > 0 ? { excludeFilePatterns } : {},
     ...excludeComponentPatterns.length > 0 ? { excludeComponentPatterns } : {},
-    ...rootPatterns.length > 0 ? { rootPatterns } : {}
+    ...rootPatterns.length > 0 ? { rootPatterns } : {},
+    ...hocNames.length > 0 ? { hocNames } : {},
+    ...loaderSpecifiers.length > 0 ? { loaderSpecifiers } : {},
+    ...renderNames.length > 0 ? { renderNames } : {}
   };
 }
 async function executeReactComponentStructureCommand(args, environment) {
   const options = parseArguments(args);
-  const graph = await buildComponentGraph(options);
+  const diagnostics = [];
+  const graph = await buildComponentGraph({ ...options, onDiagnostic: (diagnostic) => diagnostics.push(diagnostic) });
   const resolvedOutputPath = join3(
     await mkdtemp2(join3(tmpdir2(), "architecture-companion-react-components-")),
     "graph.json"
@@ -27419,6 +27978,10 @@ async function executeReactComponentStructureCommand(args, environment) {
   await mkdir2(dirname2(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(toDiagramGraphInput(graph), void 0, 2)}
 `);
+  for (const { code, relativePath, line, column, reason } of diagnostics) {
+    environment.writeStderr?.(`[${code}] ${relativePath}:${line}:${column}: ${reason}
+`);
+  }
   environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}
 `);
   return resolvedOutputPath;
@@ -27428,7 +27991,8 @@ async function executeReactComponentStructureCommand(args, environment) {
 async function main() {
   try {
     await executeReactComponentStructureCommand(process.argv.slice(2), {
-      writeStdout: (output2) => process.stdout.write(output2)
+      writeStdout: (output2) => process.stdout.write(output2),
+      writeStderr: (output2) => process.stderr.write(output2)
     });
   } catch (error62) {
     process.stderr.write(`${error62 instanceof Error ? error62.message : String(error62)}

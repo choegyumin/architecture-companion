@@ -41,10 +41,10 @@ function catalog(): CompanionCatalog {
         diagram: {
           layout: { layoutId: "general" },
           graph: {
-            groups: [{ type: "default", groupId: "checkout", title: "Checkout" }],
+            groups: [{ synthetic: false, type: "default", groupId: "checkout", title: "Checkout" }],
             nodes: [
-              { type: "default", nodeId: "submit", kind: "trigger", title: "Submit" },
-              { type: "default", nodeId: "receipt", kind: "page", title: "Receipt" },
+              { synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title: "Submit" },
+              { synthetic: false, type: "default", nodeId: "receipt", kind: "page", title: "Receipt" },
             ],
             edges: [
               { type: "default", edgeId: "confirm", sourceNodeId: "submit", targetNodeId: "receipt", label: "Confirm" },

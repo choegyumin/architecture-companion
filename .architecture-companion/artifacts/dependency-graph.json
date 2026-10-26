@@ -1,16 +1,27 @@
 {
   "type": "design",
   "title": "JavaScript module dependency graph",
-  "updatedAt": "2026-10-14T09:24:11.277Z",
-  "vcs": { "revision": "1799eea27e2fc6820c45d72da9b721c0ce29dc95", "divergesFromRevision": false },
+  "updatedAt": "2026-10-26T14:22:04.323Z",
+  "vcs": {
+    "revision": "00a875472d69cc63eafefd8011ad2833cc3c0d76",
+    "divergesFromRevision": false
+  },
   "generator": "built-in:js-module-dependency-graph",
-  "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --exclude-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --exclude-path \"*.test.*\" \\\n  \"src\"\n```",
+  "instructions": "## Purpose\nReview JavaScript and TypeScript module dependencies in src, including directory boundaries, external packages, and runtime versus type-only dependencies.\n\n## Regeneration\nRun from the scope root:\n\n```sh\nnode \"<generator-directory>/run.js\" \\\n  --base \".\" \\\n  --tsconfig \"tsconfig.json\" \\\n  --ignore-path \"src/plugins/artifact-generators/js-module-dependency-graph/packaging/**\" \\\n  --ignore-path \"*.test.*\" \\\n  \"src\"\n```",
   "diagram": {
-    "layout": { "layoutId": "dependency-graph" },
+    "layout": {
+      "layoutId": "dependency-graph"
+    },
     "graph": {
       "groups": [
-        { "groupId": "group:directory:src/cli", "title": "cli" },
-        { "groupId": "group:directory:src/client", "title": "client" },
+        {
+          "groupId": "group:directory:src/cli",
+          "title": "cli"
+        },
+        {
+          "groupId": "group:directory:src/client",
+          "title": "client"
+        },
         {
           "groupId": "group:directory:src/client/pages",
           "title": "pages",
@@ -26,7 +37,10 @@
           "title": "widgets",
           "parentGroupId": "group:directory:src/client"
         },
-        { "groupId": "group:directory:src/features", "title": "features" },
+        {
+          "groupId": "group:directory:src/features",
+          "title": "features"
+        },
         {
           "groupId": "group:directory:src/features/annotation",
           "title": "annotation",
@@ -57,7 +71,10 @@
           "title": "walkthrough",
           "parentGroupId": "group:directory:src/features"
         },
-        { "groupId": "group:directory:src/plugins", "title": "plugins" },
+        {
+          "groupId": "group:directory:src/plugins",
+          "title": "plugins"
+        },
         {
           "groupId": "group:directory:src/plugins/artifact-generators",
           "title": "artifact-generators",
@@ -98,8 +115,14 @@
           "title": "packaging",
           "parentGroupId": "group:directory:src/plugins/artifact-generators/react-component-structure"
         },
-        { "groupId": "group:directory:src/server", "title": "server" },
-        { "groupId": "group:directory:src/shared", "title": "shared" },
+        {
+          "groupId": "group:directory:src/server",
+          "title": "server"
+        },
+        {
+          "groupId": "group:directory:src/shared",
+          "title": "shared"
+        },
         {
           "groupId": "group:directory:src/shared/node",
           "title": "node",
@@ -125,262 +148,420 @@
           "title": "universal",
           "parentGroupId": "group:directory:src/shared"
         },
-        { "groupId": "group:external-packages", "title": "External packages" }
+        {
+          "groupId": "group:external-packages",
+          "title": "External packages",
+          "synthetic": true
+        }
       ],
       "nodes": [
         {
           "nodeId": "external:@base-ui/react",
           "title": "@base-ui/react",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:@base-ui/utils",
           "title": "@base-ui/utils",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:@hono/node-server",
           "title": "@hono/node-server",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:@tanstack/react-router",
           "title": "@tanstack/react-router",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:@xyflow/react",
           "title": "@xyflow/react",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:class-variance-authority",
           "title": "class-variance-authority",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:clsx",
           "title": "clsx",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:dependency-cruiser",
           "title": "dependency-cruiser",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:elkjs",
           "title": "elkjs",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:hono",
           "title": "hono",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:ignore",
           "title": "ignore",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:lucide-react",
           "title": "lucide-react",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:micromatch",
           "title": "micromatch",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:overlay-kit",
           "title": "overlay-kit",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:react",
           "title": "react",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:react-dom",
           "title": "react-dom",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:tailwind-merge",
           "title": "tailwind-merge",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
         {
           "nodeId": "external:typescript",
           "title": "typescript",
           "groupId": "group:external-packages",
+          "synthetic": true,
           "kind": "External package"
         },
-        { "nodeId": "external:zod", "title": "zod", "groupId": "group:external-packages", "kind": "External package" },
+        {
+          "nodeId": "external:zod",
+          "title": "zod",
+          "groupId": "group:external-packages",
+          "synthetic": true,
+          "kind": "External package"
+        },
         {
           "nodeId": "file:src/cli/serve.command.ts",
           "title": "serve.command.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/serve.command.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/serve.command.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/serve.ts",
           "title": "serve.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/serve.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/serve.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/validate-schemas.command.ts",
           "title": "validate-schemas.command.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/validate-schemas.command.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/validate-schemas.command.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/validate-schemas.ts",
           "title": "validate-schemas.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/validate-schemas.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/validate-schemas.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-annotations.command.ts",
           "title": "view-annotations.command.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-annotations.command.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-annotations.command.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-annotations.ts",
           "title": "view-annotations.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-annotations.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-annotations.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-artifacts.command.ts",
           "title": "view-artifacts.command.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-artifacts.command.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-artifacts.command.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-artifacts.ts",
           "title": "view-artifacts.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-artifacts.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-artifacts.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-generators.command.ts",
           "title": "view-generators.command.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-generators.command.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-generators.command.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/cli/view-generators.ts",
           "title": "view-generators.ts",
           "groupId": "group:directory:src/cli",
-          "links": [{ "text": "source", "href": "source:///src/cli/view-generators.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/cli/view-generators.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/data-client.ts",
           "title": "data-client.ts",
           "groupId": "group:directory:src/client",
-          "links": [{ "text": "source", "href": "source:///src/client/data-client.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/data-client.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/main.tsx",
           "title": "main.tsx",
           "groupId": "group:directory:src/client",
-          "links": [{ "text": "source", "href": "source:///src/client/main.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/main.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/pages/workspace-page.tsx",
           "title": "workspace-page.tsx",
           "groupId": "group:directory:src/client/pages",
-          "links": [{ "text": "source", "href": "source:///src/client/pages/workspace-page.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/pages/workspace-page.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/annotation-layer.composer-placement.ts",
           "title": "annotation-layer.composer-placement.ts",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/annotation-layer.composer-placement.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/annotation-layer.composer-placement.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/annotation-layer.pin-drag.ts",
           "title": "annotation-layer.pin-drag.ts",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/annotation-layer.pin-drag.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/annotation-layer.pin-drag.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/annotation-layer.tsx",
           "title": "annotation-layer.tsx",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/annotation-layer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/annotation-layer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/artifact-list.tsx",
           "title": "artifact-list.tsx",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/artifact-list.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/artifact-list.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/diagram-canvas.tsx",
           "title": "diagram-canvas.tsx",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-canvas.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/diagram-canvas.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/diagram-canvas.viewport.ts",
           "title": "diagram-canvas.viewport.ts",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-canvas.viewport.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/diagram-canvas.viewport.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/diagram-view.react-flow.tsx",
           "title": "diagram-view.react-flow.tsx",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-view.react-flow.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/diagram-view.react-flow.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/diagram-view.tsx",
           "title": "diagram-view.tsx",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-view.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/diagram-view.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/parts/diagram-view.walkthrough.ts",
           "title": "diagram-view.walkthrough.ts",
           "groupId": "group:directory:src/client/parts",
-          "links": [{ "text": "source", "href": "source:///src/client/parts/diagram-view.walkthrough.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/parts/diagram-view.walkthrough.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/router.tsx",
           "title": "router.tsx",
           "groupId": "group:directory:src/client",
-          "links": [{ "text": "source", "href": "source:///src/client/router.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/router.tsx"
+            }
+          ]
+        },
+        {
+          "nodeId": "file:src/client/styles.css",
+          "title": "styles.css",
+          "groupId": "group:directory:src/client",
+          "description": "Outside collection scope; internals not analyzed.",
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/styles.css"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/component-structure-diagram-renderer.layout.ts",
           "title": "component-structure-diagram-renderer.layout.ts",
           "groupId": "group:directory:src/client/widgets",
           "links": [
-            { "text": "source", "href": "source:///src/client/widgets/component-structure-diagram-renderer.layout.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/component-structure-diagram-renderer.layout.ts"
+            }
           ]
         },
         {
@@ -388,7 +569,10 @@
           "title": "component-structure-diagram-renderer.tsx",
           "groupId": "group:directory:src/client/widgets",
           "links": [
-            { "text": "source", "href": "source:///src/client/widgets/component-structure-diagram-renderer.tsx" }
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/component-structure-diagram-renderer.tsx"
+            }
           ]
         },
         {
@@ -396,81 +580,142 @@
           "title": "dependency-graph-diagram-renderer.layout.ts",
           "groupId": "group:directory:src/client/widgets",
           "links": [
-            { "text": "source", "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.layout.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.layout.ts"
+            }
           ]
         },
         {
           "nodeId": "file:src/client/widgets/dependency-graph-diagram-renderer.tsx",
           "title": "dependency-graph-diagram-renderer.tsx",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/dependency-graph-diagram-renderer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/diagram-renderer.tsx",
           "title": "diagram-renderer.tsx",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/diagram-renderer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/diagram-renderer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/general-diagram-renderer.layout.ts",
           "title": "general-diagram-renderer.layout.ts",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/general-diagram-renderer.layout.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/general-diagram-renderer.layout.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/general-diagram-renderer.tsx",
           "title": "general-diagram-renderer.tsx",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/general-diagram-renderer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/general-diagram-renderer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/sequence-diagram-renderer.layout.ts",
           "title": "sequence-diagram-renderer.layout.ts",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/sequence-diagram-renderer.layout.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/sequence-diagram-renderer.layout.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/client/widgets/sequence-diagram-renderer.tsx",
           "title": "sequence-diagram-renderer.tsx",
           "groupId": "group:directory:src/client/widgets",
-          "links": [{ "text": "source", "href": "source:///src/client/widgets/sequence-diagram-renderer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/client/widgets/sequence-diagram-renderer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/annotation/annotation-document.ts",
           "title": "annotation-document.ts",
           "groupId": "group:directory:src/features/annotation",
-          "links": [{ "text": "source", "href": "source:///src/features/annotation/annotation-document.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/annotation/annotation-document.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/annotation/create-annotation-draft.ts",
           "title": "create-annotation-draft.ts",
           "groupId": "group:directory:src/features/annotation",
-          "links": [{ "text": "source", "href": "source:///src/features/annotation/create-annotation-draft.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/annotation/create-annotation-draft.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/annotation/manage-annotations.ts",
           "title": "manage-annotations.ts",
           "groupId": "group:directory:src/features/annotation",
-          "links": [{ "text": "source", "href": "source:///src/features/annotation/manage-annotations.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/annotation/manage-annotations.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/annotation/revision-annotations.ts",
           "title": "revision-annotations.ts",
           "groupId": "group:directory:src/features/annotation",
-          "links": [{ "text": "source", "href": "source:///src/features/annotation/revision-annotations.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/annotation/revision-annotations.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/artifact-generator/artifact-generator-id.ts",
           "title": "artifact-generator-id.ts",
           "groupId": "group:directory:src/features/artifact-generator",
-          "links": [{ "text": "source", "href": "source:///src/features/artifact-generator/artifact-generator-id.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/artifact-generator/artifact-generator-id.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/artifact-generator/artifact-generator-manifest.ts",
           "title": "artifact-generator-manifest.ts",
           "groupId": "group:directory:src/features/artifact-generator",
           "links": [
-            { "text": "source", "href": "source:///src/features/artifact-generator/artifact-generator-manifest.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/features/artifact-generator/artifact-generator-manifest.ts"
+            }
           ]
         },
         {
@@ -478,74 +723,132 @@
           "title": "artifact-generator-reference.ts",
           "groupId": "group:directory:src/features/artifact-generator",
           "links": [
-            { "text": "source", "href": "source:///src/features/artifact-generator/artifact-generator-reference.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/features/artifact-generator/artifact-generator-reference.ts"
+            }
           ]
         },
         {
           "nodeId": "file:src/features/artifact/artifact.ts",
           "title": "artifact.ts",
           "groupId": "group:directory:src/features/artifact",
-          "links": [{ "text": "source", "href": "source:///src/features/artifact/artifact.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/artifact/artifact.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/catalog/catalog-revision-id.ts",
           "title": "catalog-revision-id.ts",
           "groupId": "group:directory:src/features/catalog",
-          "links": [{ "text": "source", "href": "source:///src/features/catalog/catalog-revision-id.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/catalog/catalog-revision-id.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/catalog/catalog.ts",
           "title": "catalog.ts",
           "groupId": "group:directory:src/features/catalog",
-          "links": [{ "text": "source", "href": "source:///src/features/catalog/catalog.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/catalog/catalog.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/control-polarity.ts",
           "title": "control-polarity.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/control-polarity.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/control-polarity.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/diagram-graph.ts",
           "title": "diagram-graph.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/diagram-graph.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/diagram-graph.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/diagram-layout.ts",
           "title": "diagram-layout.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/diagram-layout.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/diagram-layout.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/diagram-link.ts",
           "title": "diagram-link.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/diagram-link.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/diagram-link.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/diagram-route-requirement-rules.ts",
           "title": "diagram-route-requirement-rules.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/diagram-route-requirement-rules.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/diagram-route-requirement-rules.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/diagram-spatial.ts",
           "title": "diagram-spatial.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/diagram-spatial.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/diagram-spatial.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/diagram/elk-core.ts",
           "title": "elk-core.ts",
           "groupId": "group:directory:src/features/diagram",
-          "links": [{ "text": "source", "href": "source:///src/features/diagram/elk-core.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/diagram/elk-core.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/features/walkthrough/artifact-walkthrough.ts",
           "title": "artifact-walkthrough.ts",
           "groupId": "group:directory:src/features/walkthrough",
-          "links": [{ "text": "source", "href": "source:///src/features/walkthrough/artifact-walkthrough.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/features/walkthrough/artifact-walkthrough.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
@@ -596,7 +899,10 @@
           "title": "run.ts",
           "groupId": "group:directory:src/plugins/artifact-generators/js-module-dependency-graph",
           "links": [
-            { "text": "source", "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/run.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/plugins/artifact-generators/js-module-dependency-graph/run.ts"
+            }
           ]
         },
         {
@@ -659,344 +965,627 @@
           "title": "run.ts",
           "groupId": "group:directory:src/plugins/artifact-generators/react-component-structure",
           "links": [
-            { "text": "source", "href": "source:///src/plugins/artifact-generators/react-component-structure/run.ts" }
+            {
+              "text": "source",
+              "href": "source:///src/plugins/artifact-generators/react-component-structure/run.ts"
+            }
           ]
         },
         {
           "nodeId": "file:src/server/companion-scope.ts",
           "title": "companion-scope.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/companion-scope.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/companion-scope.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/create-annotation-etag.ts",
           "title": "create-annotation-etag.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/create-annotation-etag.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/create-annotation-etag.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/create-app.ts",
           "title": "create-app.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/create-app.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/create-app.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/create-catalog-revision-id.ts",
           "title": "create-catalog-revision-id.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/create-catalog-revision-id.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/create-catalog-revision-id.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/file-annotation-repository.ts",
           "title": "file-annotation-repository.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/file-annotation-repository.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/file-annotation-repository.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/local-app-action-request.ts",
           "title": "local-app-action-request.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/local-app-action-request.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/local-app-action-request.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/open-source-reference.ts",
           "title": "open-source-reference.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/open-source-reference.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/open-source-reference.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/read-active-revision-annotations.ts",
           "title": "read-active-revision-annotations.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/read-active-revision-annotations.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/read-active-revision-annotations.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/read-catalog.ts",
           "title": "read-catalog.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/read-catalog.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/read-catalog.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/resolve-companion-scope.ts",
           "title": "resolve-companion-scope.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/resolve-companion-scope.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/resolve-companion-scope.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/review-updates.ts",
           "title": "review-updates.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/review-updates.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/review-updates.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/source-open-request.ts",
           "title": "source-open-request.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/source-open-request.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/source-open-request.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/start-server.ts",
           "title": "start-server.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/start-server.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/start-server.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/server/validate-catalog.ts",
           "title": "validate-catalog.ts",
           "groupId": "group:directory:src/server",
-          "links": [{ "text": "source", "href": "source:///src/server/validate-catalog.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/server/validate-catalog.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/node/open-local-path.ts",
           "title": "open-local-path.ts",
           "groupId": "group:directory:src/shared/node",
-          "links": [{ "text": "source", "href": "source:///src/shared/node/open-local-path.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/node/open-local-path.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/node/path.ts",
           "title": "path.ts",
           "groupId": "group:directory:src/shared/node",
-          "links": [{ "text": "source", "href": "source:///src/shared/node/path.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/node/path.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/base-edge-label.tsx",
           "title": "base-edge-label.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/base-edge-label.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/base-edge-label.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/base-overlay-panel.tsx",
           "title": "base-overlay-panel.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/base-overlay-panel.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/base-overlay-panel.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/bounding-group-node.tsx",
           "title": "bounding-group-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/bounding-group-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/bounding-group-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/connection-edge.tsx",
           "title": "connection-edge.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/connection-edge.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/connection-edge.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/diagram-overlays.tsx",
           "title": "diagram-overlays.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/diagram-overlays.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/diagram-overlays.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/diamond-node.tsx",
           "title": "diamond-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/diamond-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/diamond-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/edge-highlight.ts",
           "title": "edge-highlight.ts",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/edge-highlight.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/edge-highlight.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/edge-paths.ts",
           "title": "edge-paths.ts",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/edge-paths.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/edge-paths.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/element-search.tsx",
           "title": "element-search.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/element-search.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/element-search.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/fragment-node.tsx",
           "title": "fragment-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/fragment-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/fragment-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/labeled-group-node.tsx",
           "title": "labeled-group-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/labeled-group-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/labeled-group-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/lifeline-node.tsx",
           "title": "lifeline-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/lifeline-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/lifeline-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/message-edge-label-placement.ts",
           "title": "message-edge-label-placement.ts",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/message-edge-label-placement.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/message-edge-label-placement.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/polyline-edge-label-placement.ts",
           "title": "polyline-edge-label-placement.ts",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/polyline-edge-label-placement.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-flow/rectangle-node.tsx",
           "title": "rectangle-node.tsx",
           "groupId": "group:directory:src/shared/react-flow",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-flow/rectangle-node.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-flow/rectangle-node.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/alert-dialog.tsx",
           "title": "alert-dialog.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/alert-dialog.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/alert-dialog.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/button.tsx",
           "title": "button.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/button.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/button.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/card.tsx",
           "title": "card.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/card.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/card.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/combobox.tsx",
           "title": "combobox.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/combobox.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/combobox.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/drawer.tsx",
           "title": "drawer.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/drawer.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/drawer.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/empty.tsx",
           "title": "empty.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/empty.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/empty.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/field.tsx",
           "title": "field.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/field.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/field.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/form.tsx",
           "title": "form.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/form.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/form.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/item.tsx",
           "title": "item.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/item.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/item.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/kbd.tsx",
           "title": "kbd.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/kbd.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/kbd.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/label.tsx",
           "title": "label.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/label.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/label.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/select.tsx",
           "title": "select.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/select.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/select.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/separator.tsx",
           "title": "separator.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/separator.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/separator.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/switch.tsx",
           "title": "switch.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/switch.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/switch.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/tabs.tsx",
           "title": "tabs.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/tabs.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/tabs.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/textarea.tsx",
           "title": "textarea.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/textarea.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/textarea.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/theme-context.ts",
           "title": "theme-context.ts",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/theme-context.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/theme-context.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/theme-provider.tsx",
           "title": "theme-provider.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/theme-provider.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/theme-provider.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/theme-toggle.tsx",
           "title": "theme-toggle.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/theme-toggle.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/theme-toggle.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/toast.tsx",
           "title": "toast.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/toast.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/toast.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/toggle.tsx",
           "title": "toggle.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/toggle.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/toggle.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react-ui/tooltip.tsx",
           "title": "tooltip.tsx",
           "groupId": "group:directory:src/shared/react-ui",
-          "links": [{ "text": "source", "href": "source:///src/shared/react-ui/tooltip.tsx" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react-ui/tooltip.tsx"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react/class-name.ts",
           "title": "class-name.ts",
           "groupId": "group:directory:src/shared/react",
-          "links": [{ "text": "source", "href": "source:///src/shared/react/class-name.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react/class-name.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/react/safe-context.ts",
           "title": "safe-context.ts",
           "groupId": "group:directory:src/shared/react",
-          "links": [{ "text": "source", "href": "source:///src/shared/react/safe-context.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/react/safe-context.ts"
+            }
+          ]
         },
         {
           "nodeId": "file:src/shared/universal/get-or-throw.ts",
           "title": "get-or-throw.ts",
           "groupId": "group:directory:src/shared/universal",
-          "links": [{ "text": "source", "href": "source:///src/shared/universal/get-or-throw.ts" }]
+          "links": [
+            {
+              "text": "source",
+              "href": "source:///src/shared/universal/get-or-throw.ts"
+            }
+          ]
         }
       ],
       "edges": [
@@ -1169,6 +1758,11 @@
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Frouter.tsx:runtime",
           "sourceNodeId": "file:src/client/main.tsx",
           "targetNodeId": "file:src/client/router.tsx"
+        },
+        {
+          "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fclient%2Fstyles.css:runtime",
+          "sourceNodeId": "file:src/client/main.tsx",
+          "targetNodeId": "file:src/client/styles.css"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fclient%2Fmain.tsx:file%3Asrc%2Fshared%2Freact-ui%2Ftheme-provider.tsx:runtime",
@@ -2264,10 +2858,9 @@
           "targetNodeId": "external:dependency-cruiser"
         },
         {
-          "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:type-only",
+          "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fcollect-source-files.ts:runtime",
           "sourceNodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/analyze-module-dependencies.ts",
-          "targetNodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts",
-          "kind": "type-only"
+          "targetNodeId": "file:src/plugins/artifact-generators/js-module-dependency-graph/analysis/collect-source-files.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fplugins%2Fartifact-generators%2Fjs-module-dependency-graph%2Fanalysis%2Fanalyze-module-dependencies.ts:file%3Asrc%2Fshared%2Fnode%2Fpath.ts:runtime",
@@ -2574,11 +3167,6 @@
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fread-catalog.ts:file%3Asrc%2Ffeatures%2Fcatalog%2Fcatalog.ts:runtime",
           "sourceNodeId": "file:src/server/read-catalog.ts",
           "targetNodeId": "file:src/features/catalog/catalog.ts"
-        },
-        {
-          "edgeId": "dependency:file%3Asrc%2Fserver%2Fread-catalog.ts:file%3Asrc%2Fserver%2Fvalidate-catalog.ts:runtime",
-          "sourceNodeId": "file:src/server/read-catalog.ts",
-          "targetNodeId": "file:src/server/validate-catalog.ts"
         },
         {
           "edgeId": "dependency:file%3Asrc%2Fserver%2Fresolve-companion-scope.ts:file%3Asrc%2Fserver%2Fcompanion-scope.ts:type-only",

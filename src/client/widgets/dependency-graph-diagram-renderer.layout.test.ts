@@ -29,10 +29,11 @@ function doesNotOverlap(layout: DiagramLayout, leftId: string, rightId: string):
   );
 }
 
-const node = (nodeId: string, groupId?: string) => ({
+const node = (nodeId: string, groupId?: string, synthetic?: boolean) => ({
   nodeId,
   type: "default" as const,
   title: nodeId,
+  synthetic: synthetic ?? false,
   ...(groupId ? { groupId } : {}),
 });
 const edge = (edgeId: string, sourceNodeId: string, targetNodeId: string) => ({
@@ -99,6 +100,108 @@ describe("dependency graph layout", () => {
     expect(y("direct-a")).toBeLessThan(y("direct-b"));
     expect(doesNotOverlap(layout, "nested", "sibling")).toBe(true);
     expect(doesNotOverlap(layout, "app", "library")).toBe(true);
+  });
+
+  it("peels single wrapping shells until the top level shows real structure", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "src", title: "src" },
+        { groupId: "src/app", title: "app", parentGroupId: "src" },
+        { groupId: "src/app/features", title: "features", parentGroupId: "src/app" },
+        { groupId: "src/app/shared", title: "shared", parentGroupId: "src/app" },
+      ],
+      nodes: [node("feature-file", "src/app/features"), node("shared-file", "src/app/shared")],
+      edges: [edge("feature-shared", "feature-file", "shared-file")],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src/app/features", "src/app/shared"]);
+    expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
+    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("src/app/features");
+    expect(layout.nodes.find(({ id }) => id === "shared-file")?.parentId).toBe("src/app/shared");
+  });
+
+  it("peels a wrapping grounded shell beside a synthetic top-level group", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "src", title: "src" },
+        { groupId: "src/pages", title: "pages", parentGroupId: "src" },
+        { groupId: "external-packages", title: "External packages", synthetic: true },
+      ],
+      nodes: [node("page-file", "src/pages"), node("external:react", "external-packages", true)],
+      edges: [edge("page-react", "page-file", "external:react")],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["external-packages", "src/pages"]);
+    expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
+    expect(layout.nodes.find(({ id }) => id === "page-file")?.parentId).toBe("src/pages");
+    expect(layout.nodes.find(({ id }) => id === "external:react")?.parentId).toBe("external-packages");
+  });
+
+  it("peels a hand-authored wrapping group without direct files", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "service", title: "Service layer" },
+        { groupId: "service/api", title: "API", parentGroupId: "service" },
+      ],
+      nodes: [node("api-file", "service/api")],
+      edges: [],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["service/api"]);
+    expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
+    expect(layout.nodes.find(({ id }) => id === "api-file")?.parentId).toBe("service/api");
+  });
+
+  it("keeps a root that directly contains files", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "src", title: "src" },
+        { groupId: "src/pages", title: "pages", parentGroupId: "src" },
+      ],
+      nodes: [node("direct-file", "src"), node("page-file", "src/pages")],
+      edges: [edge("direct-page", "direct-file", "page-file")],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src", "src/pages"]);
+    expect(layout.groups.find(({ id }) => id === "src/pages")?.parentId).toBe("src");
+    expect(layout.nodes.find(({ id }) => id === "direct-file")?.parentId).toBe("src");
+  });
+
+  it("keeps a lone synthetic wrapper when no grounded root exists", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "external-packages", title: "External packages", synthetic: true },
+        { groupId: "external-packages/react", title: "React", parentGroupId: "external-packages" },
+      ],
+      nodes: [node("external:react", "external-packages/react", true)],
+      edges: [],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["external-packages", "external-packages/react"]);
+    expect(layout.groups.find(({ id }) => id === "external-packages/react")?.parentId).toBe("external-packages");
+    expect(layout.nodes.find(({ id }) => id === "external:react")?.parentId).toBe("external-packages/react");
+  });
+
+  it("keeps a wrapping shell beside a loose top-level node", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "src", title: "src" },
+        { groupId: "src/features", title: "features", parentGroupId: "src" },
+        { groupId: "src/shared", title: "shared", parentGroupId: "src" },
+      ],
+      nodes: [node("feature-file", "src/features"), node("shared-file", "src/shared"), node("root-file")],
+      edges: [edge("feature-shared", "feature-file", "shared-file")],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src", "src/features", "src/shared"]);
+    expect(layout.groups.find(({ id }) => id === "src/features")?.parentId).toBe("src");
+    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("src/features");
   });
 
   it("keeps fixed group padding and separate root and nested layer gaps", async () => {
@@ -207,18 +310,18 @@ describe("dependency graph layout", () => {
   it("preserves the full layout for unordered groups, unequal depths and virtual ID collisions", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "leaf", title: "Leaf", parentGroupId: "middle", type: "default" },
-        { groupId: "direct-nodes:", title: "Child", parentGroupId: "direct-nodes", type: "default" },
-        { groupId: "direct-nodes", title: "Parent", type: "default" },
-        { groupId: "middle", title: "Middle", parentGroupId: "direct-nodes", type: "default" },
-        { groupId: "empty", title: "Empty", type: "default" },
+        { synthetic: false, groupId: "leaf", title: "Leaf", parentGroupId: "middle", type: "default" },
+        { synthetic: false, groupId: "direct-nodes:", title: "Child", parentGroupId: "direct-nodes", type: "default" },
+        { synthetic: false, groupId: "direct-nodes", title: "Parent", type: "default" },
+        { synthetic: false, groupId: "middle", title: "Middle", parentGroupId: "direct-nodes", type: "default" },
+        { synthetic: false, groupId: "empty", title: "Empty", type: "default" },
       ],
       nodes: [
-        { nodeId: "a", title: "a", groupId: "leaf", type: "default" },
-        { nodeId: "r", title: "r", type: "default" },
-        { nodeId: "b", title: "b", groupId: "direct-nodes", type: "default" },
-        { nodeId: "s", title: "s", type: "default" },
-        { nodeId: "c", title: "c", groupId: "direct-nodes:", type: "default" },
+        { synthetic: false, nodeId: "a", title: "a", groupId: "leaf", type: "default" },
+        { synthetic: false, nodeId: "r", title: "r", type: "default" },
+        { synthetic: false, nodeId: "b", title: "b", groupId: "direct-nodes", type: "default" },
+        { synthetic: false, nodeId: "s", title: "s", type: "default" },
+        { synthetic: false, nodeId: "c", title: "c", groupId: "direct-nodes:", type: "default" },
       ],
       edges: [
         { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
@@ -308,16 +411,16 @@ describe("dependency graph layout", () => {
   it("preserves the full multigraph layout with cycles, parallel edges and self loops", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "left", title: "left", type: "default" },
-        { groupId: "right", title: "right", type: "default" },
-        { groupId: "tail", title: "tail", type: "default" },
+        { synthetic: false, groupId: "left", title: "left", type: "default" },
+        { synthetic: false, groupId: "right", title: "right", type: "default" },
+        { synthetic: false, groupId: "tail", title: "tail", type: "default" },
       ],
       nodes: [
-        { nodeId: "a", title: "a", groupId: "left", type: "default" },
-        { nodeId: "b", title: "b", groupId: "left", type: "default" },
-        { nodeId: "c", title: "c", groupId: "right", type: "default" },
-        { nodeId: "d", title: "d", groupId: "tail", type: "default" },
-        { nodeId: "e", title: "e", type: "default" },
+        { synthetic: false, nodeId: "a", title: "a", groupId: "left", type: "default" },
+        { synthetic: false, nodeId: "b", title: "b", groupId: "left", type: "default" },
+        { synthetic: false, nodeId: "c", title: "c", groupId: "right", type: "default" },
+        { synthetic: false, nodeId: "d", title: "d", groupId: "tail", type: "default" },
+        { synthetic: false, nodeId: "e", title: "e", type: "default" },
       ],
       edges: [
         { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },

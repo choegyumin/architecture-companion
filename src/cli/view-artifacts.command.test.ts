@@ -38,7 +38,11 @@ it("prints discovered artifact paths and content as one JSON line", async () => 
     instructions: "Review checkout behavior.",
     diagram: {
       layout: { layoutId: "general" },
-      graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
+      graph: {
+        groups: [],
+        nodes: [{ nodeId: "checkout", type: "default", title: "Checkout", synthetic: false }],
+        edges: [],
+      },
     },
   };
   await writeCatalog(scopePath, { artifacts: [artifact] });

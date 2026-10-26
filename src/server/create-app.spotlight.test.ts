@@ -31,7 +31,7 @@ function catalog(title: string): CompanionCatalog {
           layout: { layoutId: "general" },
           graph: {
             groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Submit" }],
+            nodes: [{ synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title: "Submit" }],
             edges: [],
           },
         },

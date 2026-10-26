@@ -21,7 +21,7 @@ import {
 import { combineRulesets, unionRulesets } from "@/features/diagram/diagram-route-requirement-rules";
 import { isMissingPathError, isPathInside, toPosixPath } from "@/shared/node/path";
 
-import { collectSourceFiles } from "./collect-source-files";
+import { collectSourceFiles, filterUnignoredSourcePaths } from "./collect-source-files";
 import { loadTypeScript } from "./load-typescript";
 
 /* eslint-disable no-use-before-define -- Recursive AST walkers use mutually recursive function declarations. */
@@ -111,6 +111,21 @@ type BuilderEdge = Readonly<{
   }>;
 }>;
 
+export type ComponentGraphDiagnostic = Readonly<{
+  code:
+    | "unsupported-react-wrapper"
+    | "unsupported-hoc"
+    | "unsupported-object-assign-member"
+    | "unsupported-loader"
+    | "unsupported-component-binding";
+  relativePath: string;
+  line: number;
+  column: number;
+  reason: string;
+}>;
+
+type UnsupportedReporter = (call: ts.CallExpression, code: ComponentGraphDiagnostic["code"], reason: string) => void;
+
 export type ComponentGraphOptions = Readonly<{
   scopePath: string;
   sourcePaths: readonly string[];
@@ -118,6 +133,10 @@ export type ComponentGraphOptions = Readonly<{
   excludeFilePatterns?: readonly string[];
   excludeComponentPatterns?: readonly string[];
   rootPatterns?: readonly string[];
+  hocNames?: readonly string[];
+  loaderSpecifiers?: readonly string[];
+  renderNames?: readonly string[];
+  onDiagnostic?: (diagnostic: ComponentGraphDiagnostic) => void;
 }>;
 
 type FunctionLike = ts.ArrowFunction | ts.FunctionDeclaration | ts.FunctionExpression;
@@ -135,10 +154,13 @@ type ComponentDefinition = Readonly<{
   classComponent: boolean;
 }>;
 
+type ComponentReference = Pick<ComponentDefinition, "id" | "name" | "relativePath" | "declaration">;
+
 type ComponentTarget = Readonly<{
   id: string;
   title: string;
   externalPackage?: string;
+  localBoundaryPath?: string;
   definition?: ComponentDefinition;
 }>;
 
@@ -239,13 +261,20 @@ type AnalysisContext = Readonly<{
   checker: ts.TypeChecker;
   definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>;
   definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>;
-  externalTargets: Map<string, ComponentTarget>;
+  boundarySourcePaths: ReadonlySet<string>;
+  boundaryTargets: Map<string, ComponentTarget>;
   uses: Map<string, ComponentUse>;
   directUseIdsByOwner: Map<string, string[]>;
   analyzedUseIds: Set<string>;
   controls: Map<string, GeneratedControl>;
   useRulesets: Map<string, DiagramRouteRequirementRuleset>;
   propBindings: ReadonlyMap<string, PropBindings>;
+  reportUnsupported?: UnsupportedReporter;
+  memberWrites: ReadonlyMap<string, ReadonlySet<ts.Node>>;
+  bindingWrites: ReadonlySet<ts.Symbol>;
+  hocNames: ReadonlySet<string>;
+  loaderSpecifiers: ReadonlySet<string>;
+  renderNames: ReadonlySet<string>;
 }>;
 
 // AST predicates, enum values, the checker, and declarations must use the same compiler.
@@ -263,6 +292,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     [ts.SyntaxKind.EqualsEqualsToken]: { family: "loosely-equal", inverted: false },
     [ts.SyntaxKind.ExclamationEqualsToken]: { family: "loosely-equal", inverted: true },
   };
+
+  // The loaded compiler may predate some syntax and checker APIs this analyzer
+  // asks about: `satisfies` arrived in 4.9 and JSX namespace names became a
+  // distinct node later, so an older parser never produces those nodes and
+  // false is exact. Older checkers lack index-signature key types, so that
+  // member lookup stays unresolved rather than approximated.
+  function isSatisfiesExpression(node: ts.Node): node is ts.SatisfiesExpression {
+    return typeof ts.isSatisfiesExpression === "function" && ts.isSatisfiesExpression(node);
+  }
+
+  function isJsxNamespacedName(node: ts.Node): node is ts.JsxNamespacedName {
+    return typeof ts.isJsxNamespacedName === "function" && ts.isJsxNamespacedName(node);
+  }
+
+  function indexSignatureMemberType(name: string, type: ts.Type, checker: ts.TypeChecker): ts.Type | undefined {
+    if (typeof checker.getIndexInfosOfType !== "function" || typeof checker.getStringLiteralType !== "function")
+      return undefined;
+    return checker
+      .getIndexInfosOfType(type)
+      .find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+  }
 
   function formatDiagnostic(diagnostic: ts.Diagnostic): string {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
@@ -321,7 +371,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ts.isAsExpression(current) ||
       ts.isParenthesizedExpression(current) ||
       ts.isNonNullExpression(current) ||
-      ts.isSatisfiesExpression(current) ||
+      isSatisfiesExpression(current) ||
       ts.isTypeAssertionExpression(current)
     ) {
       current = current.expression;
@@ -372,16 +422,79 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   function isCreateElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "createElement");
+  }
+
+  function isReactExportedCall(call: ts.CallExpression, checker: ts.TypeChecker, name: string): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (ts.isIdentifier(callee)) {
+      const symbol = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === name;
+    }
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== name) return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+  }
+
+  function isCreateContextCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "createContext");
+  }
+
+  function isCloneElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "cloneElement");
+  }
+
+  function isCreatePortalCall(node: ts.Node, checker: ts.TypeChecker): boolean {
     if (!ts.isCallExpression(node)) return false;
     const callee = unwrapExpression(node.expression);
-    if (ts.isPropertyAccessExpression(callee)) {
-      if (callee.name.text !== "createElement") return false;
-      const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
-      return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+    if (ts.isIdentifier(callee)) {
+      const symbol = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol) === "react-dom" && getImportedName(symbol) === "createPortal";
     }
-    if (!ts.isIdentifier(callee)) return false;
-    const symbol = checker.getSymbolAtLocation(callee);
-    return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === "createElement";
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "createPortal") return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return getImportModuleSpecifier(checker.getSymbolAtLocation(receiver)) === "react-dom";
+  }
+
+  function isUseMemoCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "useMemo");
+  }
+
+  function memoizedFactory(node: ts.CallExpression): ts.ArrowFunction | ts.FunctionExpression | undefined {
+    const [factory] = node.arguments;
+    return factory !== undefined && (ts.isArrowFunction(factory) || ts.isFunctionExpression(factory))
+      ? factory
+      : undefined;
+  }
+
+  function isReactChildrenMapCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    if (!ts.isCallExpression(node)) return false;
+    const callee = unwrapExpression(node.expression);
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "map") return false;
+    const receiver = unwrapExpression(callee.expression);
+    if (ts.isIdentifier(receiver)) {
+      const symbol = checker.getSymbolAtLocation(receiver);
+      return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === "Children";
+    }
+    if (!ts.isPropertyAccessExpression(receiver) || receiver.name.text !== "Children") return false;
+    const base = leftmostIdentifier(receiver.expression) ?? receiver.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(base), checker);
+  }
+
+  function isReactContextAccessorTag(
+    tagName: ts.JsxTagNameExpression | ts.Expression,
+    checker: ts.TypeChecker,
+  ): boolean {
+    if (!ts.isPropertyAccessExpression(tagName)) return false;
+    if (tagName.name.text !== "Provider" && tagName.name.text !== "Consumer") return false;
+    const receiver = unwrapExpression(tagName.expression);
+    const symbol = checker.getSymbolAtLocation(receiver);
+    return (canonicalSymbol(symbol, checker)?.declarations ?? symbol?.declarations ?? []).some(
+      (declaration) =>
+        ts.isVariableDeclaration(declaration) &&
+        declaration.initializer !== undefined &&
+        isCreateContextCall(declaration.initializer, checker),
+    );
   }
 
   function isArrayRenderingMethodCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
@@ -649,54 +762,402 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     return checker.getAliasedSymbol(symbol);
   }
 
+  function isObjectAssignCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (
+      !ts.isPropertyAccessExpression(callee) ||
+      callee.name.text !== "assign" ||
+      !ts.isIdentifier(callee.expression) ||
+      callee.expression.text !== "Object"
+    )
+      return false;
+    const receiver = context.checker.getSymbolAtLocation(callee.expression);
+    const signature = context.checker.getResolvedSignature(call)?.getDeclaration();
+    return (
+      !!signature &&
+      context.program.isSourceFileDefaultLibrary(signature.getSourceFile()) &&
+      !!receiver?.declarations?.some((declaration) =>
+        context.program.isSourceFileDefaultLibrary(declaration.getSourceFile()),
+      )
+    );
+  }
+
+  // Loader packages stay identified by import origin: the callee must default-
+  // import from a module the caller declared through --loader. A declared HOC
+  // name is the caller's own assertion about a call shape, so the callee's
+  // local identifier text is the match, not the imported module.
+  function isDeclaredLoaderCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (!ts.isIdentifier(callee)) return false;
+    const symbol = context.checker.getSymbolAtLocation(callee);
+    const specifier = getImportModuleSpecifier(symbol);
+    return specifier !== undefined && context.loaderSpecifiers.has(specifier) && getImportedName(symbol) === "default";
+  }
+
+  function isDeclaredHocCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.hocNames.has(callee.text);
+  }
+
+  // A declared render helper matches the same way as a declared HOC: the
+  // callee identifier's local name is the caller's assertion that the call
+  // renders its first argument.
+  function isDeclaredRenderCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.renderNames.has(callee.text);
+  }
+
+  function isKnownComponentFactoryCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    return (
+      isReactWrapperCall(call, context.checker) ||
+      isObjectAssignCall(call, context) ||
+      isDeclaredLoaderCall(call, context) ||
+      isDeclaredHocCall(call, context)
+    );
+  }
+
+  function resolveLoaderComponent(
+    call: ts.CallExpression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol>,
+    reportUnsupported?: UnsupportedReporter,
+  ): ComponentReference | undefined {
+    const factory = call.arguments.at(0);
+    const imported =
+      factory && ts.isArrowFunction(factory) && factory.parameters.length === 0 && !ts.isBlock(factory.body)
+        ? unwrapExpression(factory.body)
+        : undefined;
+    const specifier =
+      imported &&
+      ts.isCallExpression(imported) &&
+      imported.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      imported.arguments.length === 1
+        ? imported.arguments.at(0)
+        : undefined;
+    if (call.arguments.length !== 1 || !specifier || !ts.isStringLiteral(specifier)) {
+      reportUnsupported?.(
+        call,
+        "unsupported-loader",
+        'Expected loader(() => import("static string")) without options.',
+      );
+      return undefined;
+    }
+    const moduleSymbol = context.checker.getSymbolAtLocation(specifier);
+    const sourceFile = moduleSymbol?.declarations?.find(ts.isSourceFile);
+    if (!sourceFile) return undefined;
+    const exported = defaultExportSymbol(sourceFile, context.checker);
+    const mutable = (canonicalSymbol(exported, context.checker)?.declarations ?? []).some((declaration) => {
+      if (ts.isExportAssignment(declaration)) return isMutableComponentReference(declaration.expression, context);
+      return (
+        (ts.isVariableDeclaration(declaration) ||
+          ts.isFunctionDeclaration(declaration) ||
+          ts.isClassDeclaration(declaration)) &&
+        !!declaration.name &&
+        ts.isIdentifier(declaration.name) &&
+        isMutableComponentReference(declaration.name, context)
+      );
+    });
+    if (mutable) {
+      reportUnsupported?.(call, "unsupported-component-binding", "Expected an immutable default component export.");
+      return undefined;
+    }
+    return resolveDefinition(exported, context, visited, reportUnsupported);
+  }
+
+  function referenceFactoryCall(
+    symbol: ts.Symbol | undefined,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+  ): ts.CallExpression | undefined {
+    if (!symbol) return undefined;
+    const reference = localImmutableReference(symbol, context, visited);
+    if (!reference || reference.initializers.length !== 1) return undefined;
+    const expression = unwrapExpression(reference.initializers.at(0)!);
+    if (ts.isCallExpression(expression)) return expression;
+    if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) {
+      return referenceFactoryCall(context.checker.getSymbolAtLocation(expression), context, reference.visitedSymbols);
+    }
+    return undefined;
+  }
+
+  function isMutableComponentReference(
+    expression: ts.Expression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+    symbolOverride?: ts.Symbol,
+  ): boolean {
+    const reference = unwrapExpression(expression);
+    if (ts.isPropertyAccessExpression(reference) && isMutableComponentReference(reference.expression, context, visited))
+      return true;
+    if (!ts.isIdentifier(reference) && !ts.isPropertyAccessExpression(reference)) return false;
+    const symbol = canonicalSymbol(symbolOverride ?? context.checker.getSymbolAtLocation(reference), context.checker);
+    if (!symbol) return false;
+    if (visited.has(symbol) || context.bindingWrites.has(symbol)) return true;
+    const next = new Set(visited).add(symbol);
+    return (symbol.declarations ?? []).some((declaration) => {
+      if (ts.isVariableDeclaration(declaration)) {
+        if (!ts.isVariableDeclarationList(declaration.parent) || (declaration.parent.flags & ts.NodeFlags.Const) === 0)
+          return true;
+        return !!declaration.initializer && isMutableComponentReference(declaration.initializer, context, next);
+      }
+      return ts.isExportAssignment(declaration) && isMutableComponentReference(declaration.expression, context, next);
+    });
+  }
+
+  /** Member keys an explicit write operation changes, or undefined when unprovable. */
+  function writtenMemberKeys(operation: ts.Node, context: AnalysisContext): ReadonlySet<string> | undefined {
+    let targets: readonly ts.Expression[];
+    if (ts.isBinaryExpression(operation)) targets = [operation.left];
+    else if (ts.isPrefixUnaryExpression(operation) || ts.isPostfixUnaryExpression(operation))
+      targets = [operation.operand];
+    else if (ts.isDeleteExpression(operation)) targets = [operation.expression];
+    else if (
+      (ts.isForInStatement(operation) || ts.isForOfStatement(operation)) &&
+      !ts.isVariableDeclarationList(operation.initializer)
+    )
+      targets = [operation.initializer];
+    else if (ts.isCallExpression(operation) && isObjectAssignCall(operation, context)) {
+      const source = operation.arguments.at(1);
+      if (operation.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return undefined;
+      const keys = new Set<string>();
+      for (const property of source.properties) {
+        if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) return undefined;
+        const key = propertyNameText(property.name);
+        if (!key) return undefined;
+        keys.add(key);
+      }
+      return keys;
+    } else return undefined;
+
+    const keys = new Set<string>();
+    function collect(target: ts.Expression): boolean {
+      const unwrapped = unwrapExpression(target);
+      if (ts.isBinaryExpression(unwrapped) && unwrapped.operatorToken.kind === ts.SyntaxKind.EqualsToken)
+        return collect(unwrapped.left);
+      if (ts.isPropertyAccessExpression(unwrapped)) {
+        keys.add(unwrapped.name.text);
+        return true;
+      }
+      if (ts.isElementAccessExpression(unwrapped)) {
+        if (!ts.isStringLiteralLike(unwrapped.argumentExpression)) return false;
+        keys.add(unwrapped.argumentExpression.text);
+        return true;
+      }
+      if (ts.isArrayLiteralExpression(unwrapped)) {
+        for (const element of unwrapped.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          if (!collect(ts.isSpreadElement(element) ? element.expression : element)) return false;
+        }
+        return true;
+      }
+      if (ts.isObjectLiteralExpression(unwrapped)) {
+        for (const property of unwrapped.properties) {
+          // A shorthand property binds a variable, not a member of the written
+          // base, so it never conflicts with an assigned member.
+          if (ts.isShorthandPropertyAssignment(property)) continue;
+          if (ts.isPropertyAssignment(property)) {
+            if (!collect(property.initializer)) return false;
+          } else if (ts.isSpreadAssignment(property)) {
+            if (!collect(property.expression)) return false;
+          } else return false;
+        }
+        return true;
+      }
+      return false;
+    }
+    return targets.every(collect) ? keys : undefined;
+  }
+
+  function assignedComponentMember(
+    call: ts.CallExpression,
+    name: string,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol>,
+    reportUnsupported?: UnsupportedReporter,
+  ): ComponentReference | undefined {
+    const unsupported = (): undefined => {
+      reportUnsupported?.(
+        call,
+        "unsupported-object-assign-member",
+        `Cannot statically resolve Object.assign member "${name}".`,
+      );
+      return undefined;
+    };
+    const base = call.arguments.at(0);
+    const definition = base ? resolveComponentExpression(base, context, visited) : undefined;
+    if (!definition) return undefined;
+    const source = call.arguments.at(1);
+    if (call.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return unsupported();
+    const members = new Map<string, ts.PropertyAssignment | ts.ShorthandPropertyAssignment>();
+    for (const property of source.properties) {
+      if (
+        (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) ||
+        ts.isComputedPropertyName(property.name)
+      )
+        return unsupported();
+      const key = propertyNameText(property.name);
+      if (!key || ["__proto__", "prototype", "constructor"].includes(key) || members.has(key)) return unsupported();
+      members.set(key, property);
+    }
+    // Writes outside this call only matter where they can change an assigned
+    // member; unrelated metadata such as displayName does not.
+    const conflictingWrite = [...(context.memberWrites.get(definition.id) ?? [])].some((operation) => {
+      if (operation === call) return false;
+      const keys = writtenMemberKeys(operation, context);
+      return keys === undefined || [...keys].some((key) => members.has(key));
+    });
+    if (conflictingWrite) return unsupported();
+    const property = members.get(name);
+    if (!property) return unsupported();
+    const value = ts.isShorthandPropertyAssignment(property) ? property.name : unwrapExpression(property.initializer);
+    if (!ts.isIdentifier(value) && !ts.isPropertyAccessExpression(value)) return unsupported();
+    const valueSymbol = ts.isShorthandPropertyAssignment(property)
+      ? context.checker.getShorthandAssignmentValueSymbol(property)
+      : undefined;
+    if (isMutableComponentReference(value, context, new Set(), valueSymbol)) return unsupported();
+    return resolveComponentExpression(value, context, visited, reportUnsupported, valueSymbol);
+  }
+
+  function resolveComponentExpression(
+    expression: ts.Expression | ts.JsxTagNameExpression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+    reportUnsupported?: UnsupportedReporter,
+    symbolOverride?: ts.Symbol,
+  ): ComponentReference | undefined {
+    if (isJsxNamespacedName(expression)) return undefined;
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isCallExpression(unwrapped)) {
+      if (isDeclaredLoaderCall(unwrapped, context))
+        return resolveLoaderComponent(unwrapped, context, visited, reportUnsupported);
+      const reactWrapper = isReactWrapperCall(unwrapped, context.checker);
+      const declaredHoc = !reactWrapper && isDeclaredHocCall(unwrapped, context);
+      if (!reactWrapper && !declaredHoc && !isObjectAssignCall(unwrapped, context)) return undefined;
+      const base = unwrapped.arguments.at(0);
+      if (base && isMutableComponentReference(base, context)) {
+        reportUnsupported?.(unwrapped, "unsupported-component-binding", "Expected an immutable component reference.");
+        return undefined;
+      }
+      const wrapped = base ? unwrapExpression(base) : undefined;
+      if (
+        (reactWrapper || declaredHoc) &&
+        (!wrapped ||
+          !(
+            ts.isIdentifier(wrapped) ||
+            ts.isPropertyAccessExpression(wrapped) ||
+            (ts.isCallExpression(wrapped) && isKnownComponentFactoryCall(wrapped, context))
+          ))
+      ) {
+        reportUnsupported?.(
+          unwrapped,
+          declaredHoc ? "unsupported-hoc" : "unsupported-react-wrapper",
+          "Expected a static component reference.",
+        );
+        return undefined;
+      }
+      return base ? resolveComponentExpression(base, context, visited, reportUnsupported) : undefined;
+    }
+    if (ts.isPropertyAccessExpression(unwrapped) && !symbolOverride) {
+      const receiver = context.checker.getSymbolAtLocation(unwrapped.expression);
+      const factory = referenceFactoryCall(receiver, context);
+      if (factory && isObjectAssignCall(factory, context)) {
+        const canonical = canonicalSymbol(receiver, context.checker);
+        if (canonical && visited.has(canonical)) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-object-assign-member",
+            `Cannot statically resolve Object.assign member "${unwrapped.name.text}".`,
+          );
+          return undefined;
+        }
+        return assignedComponentMember(
+          factory,
+          unwrapped.name.text,
+          context,
+          canonical ? new Set(visited).add(canonical) : visited,
+          reportUnsupported,
+        );
+      }
+    }
+    if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return undefined;
+    return resolveDefinition(
+      symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped),
+      context,
+      visited,
+      reportUnsupported,
+    );
+  }
+
+  function uncollectedComponentReference(
+    declaration: ts.Declaration,
+    context: AnalysisContext,
+  ): ComponentReference | undefined {
+    const sourceFile = declaration.getSourceFile();
+    if (!context.boundarySourcePaths.has(resolve(sourceFile.fileName))) return undefined;
+    let name: string;
+    let identityName: string;
+    if (ts.isFunctionDeclaration(declaration) || ts.isClassDeclaration(declaration)) {
+      if (ts.isFunctionDeclaration(declaration) && !declaration.body) return undefined;
+      const anonymousDefault = !declaration.name && isDefaultExportDeclaration(declaration);
+      if (!declaration.name && !anonymousDefault) return undefined;
+      name = declaration.name?.text ?? defaultExportName(sourceFile);
+      identityName = anonymousDefault ? "default" : name;
+    } else if (ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name)) {
+      if (!declaration.initializer || !unwrapFunction(declaration.initializer, context.checker)) return undefined;
+      name = identityName = declaration.name.text;
+    } else if (ts.isExportAssignment(declaration)) {
+      if (!unwrapFunction(declaration.expression, context.checker)) return undefined;
+      name = defaultExportName(sourceFile);
+      identityName = "default";
+    } else return undefined;
+    if (!isComponentName(name)) return undefined;
+    const relativePath = toPosixPath(relative(context.scopePath, sourceFile.fileName));
+    return { id: createComponentId(relativePath, identityName), name, relativePath, declaration };
+  }
+
   function resolveDefinition(
     symbol: ts.Symbol | undefined,
-    checker: ts.TypeChecker,
-    definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>,
-    definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>,
+    context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol> = new Set(),
-  ): ComponentDefinition | undefined {
+    reportUnsupported?: UnsupportedReporter,
+  ): ComponentReference | undefined {
     if (!symbol || visited.has(symbol)) return undefined;
+    const { checker, definitionsBySymbol, definitionsByDeclaration } = context;
     const nextVisited = new Set(visited).add(symbol);
     const canonical = canonicalSymbol(symbol, checker);
     const direct = canonical ? definitionsBySymbol.get(canonical) : undefined;
     if (direct) return direct;
     for (const declaration of canonical?.declarations ?? symbol.declarations ?? []) {
-      const definition = definitionsByDeclaration.get(declaration);
+      const definition =
+        definitionsByDeclaration.get(declaration) ?? uncollectedComponentReference(declaration, context);
       if (definition) return definition;
       if (ts.isExportAssignment(declaration)) {
-        const expression = unwrapExpression(declaration.expression);
-        if (
-          ts.isCallExpression(expression) &&
-          isReactWrapperCall(expression, checker) &&
-          expression.arguments.length > 0
-        ) {
-          const wrapped = unwrapExpression(expression.arguments.at(0) as ts.Expression);
-          if (ts.isIdentifier(wrapped) || ts.isPropertyAccessExpression(wrapped)) {
-            const aliasedDefinition = resolveDefinition(
-              checker.getSymbolAtLocation(wrapped),
-              checker,
-              definitionsBySymbol,
-              definitionsByDeclaration,
-              nextVisited,
-            );
-            if (aliasedDefinition) return aliasedDefinition;
-          }
-        }
-        continue;
+        const resolved = resolveComponentExpression(declaration.expression, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
       if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
         const initializer = unwrapExpression(declaration.initializer);
-        if (ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)) {
-          const aliasedDefinition = resolveDefinition(
-            checker.getSymbolAtLocation(initializer),
-            checker,
-            definitionsBySymbol,
-            definitionsByDeclaration,
-            nextVisited,
+        const factory = ts.isCallExpression(initializer)
+          ? initializer
+          : ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)
+            ? referenceFactoryCall(checker.getSymbolAtLocation(initializer), context)
+            : undefined;
+        const knownFactory = factory && isKnownComponentFactoryCall(factory, context);
+        const mutable =
+          !ts.isVariableDeclarationList(declaration.parent) ||
+          (declaration.parent.flags & ts.NodeFlags.Const) === 0 ||
+          (!!canonical && context.bindingWrites.has(canonical));
+        if (knownFactory && mutable) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-component-binding",
+            "Factory results require a const binding without reassignment.",
           );
-          if (aliasedDefinition) return aliasedDefinition;
+          continue;
         }
+        if (ts.isCallExpression(initializer) && mutable) continue;
+        const resolved = resolveComponentExpression(initializer, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
     }
     return undefined;
@@ -705,7 +1166,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function leftmostIdentifier(expression: ts.Expression | ts.JsxTagNameExpression): ts.Identifier | undefined {
     if (ts.isIdentifier(expression)) return expression;
     if (ts.isPropertyAccessExpression(expression)) return leftmostIdentifier(expression.expression);
-    if (ts.isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
+    if (isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
     return undefined;
   }
 
@@ -810,9 +1271,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const member = checker.getPropertyOfType(type, name);
       const nextType = member
         ? checker.getTypeOfSymbolAtLocation(member, location)
-        : checker
-            .getIndexInfosOfType(type)
-            .find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+        : indexSignatureMemberType(name, type, checker);
       if (!nextType) return undefined;
       members.push({ name, symbol: member, type: nextType });
       type = nextType;
@@ -904,7 +1363,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         context.host,
         undefined,
         undefined,
-        context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier),
+        // Older programs have no per-usage module mode; undefined matches
+        // their own resolution semantics.
+        typeof context.program.getModeForUsageLocation === "function"
+          ? context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier)
+          : undefined,
       ).resolvedModule;
       if (resolved?.isExternalLibraryImport) {
         const packageName = externalPackageName(binding.moduleSpecifier.text);
@@ -974,7 +1437,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function externalReferencePath(
     expression: ts.Expression | ts.JsxTagNameExpression,
   ): Readonly<{ root: ts.Identifier; members: readonly string[] }> | undefined {
-    if (ts.isJsxNamespacedName(expression)) return undefined;
+    if (isJsxNamespacedName(expression)) return undefined;
     let current = unwrapExpression(expression);
     const members: string[] = [];
     while (ts.isPropertyAccessExpression(current)) {
@@ -1044,20 +1507,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const checker = context.checker;
     const external = resolveExternalReference(expression, context, symbolOverride);
     if (!external) {
-      const symbol = symbolOverride ?? checker.getSymbolAtLocation(expression);
-      const definition = resolveDefinition(
-        symbol,
-        checker,
-        context.definitionsBySymbol,
-        context.definitionsByDeclaration,
+      const reference = resolveComponentExpression(
+        expression,
+        context,
+        new Set(),
+        context.reportUnsupported,
+        symbolOverride,
       );
-      return definition ? { id: definition.id, title: definition.name, definition } : undefined;
+      if (!reference) return undefined;
+      const definition = context.definitionsByDeclaration.get(reference.declaration);
+      if (definition) return { id: definition.id, title: definition.name, definition };
+      const existing = context.boundaryTargets.get(reference.id);
+      if (existing) return existing;
+      const target = { id: reference.id, title: reference.name, localBoundaryPath: reference.relativePath };
+      context.boundaryTargets.set(target.id, target);
+      return target;
     }
     const target = externalReferenceIdentity(external, checker);
     if (target.externalPackage === "react" && /(?:^|\.)Fragment$/.test(target.title)) return undefined;
-    const existing = context.externalTargets.get(target.id);
+    const existing = context.boundaryTargets.get(target.id);
     if (existing) return existing;
-    context.externalTargets.set(target.id, target);
+    context.boundaryTargets.set(target.id, target);
     return target;
   }
 
@@ -1302,9 +1772,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       // consumes ownership evidence, not the display identity of a graph node.
       if (resolveExternalReference(unwrapped, context, undefined, visitedSymbols)) return undefined;
     }
-    if (
-      resolveDefinition(referenceSymbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)
-    ) {
+    if (resolveDefinition(referenceSymbol, context)) {
       return undefined;
     }
     return reference;
@@ -1450,6 +1918,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; ruleset: DiagramRouteRequirementRuleset }>
     >;
     let activeRuleset: DiagramRouteRequirementRuleset = [[]];
+    // While analyzing an element-iteration callback, its first parameter stands
+    // for one element of the iterated incoming prop, so prop lookups inside the
+    // callback resolve through this alias map.
+    let activePropAliases: ReadonlyMap<ts.Symbol, string> | undefined;
+
+    function incomingPropOf(expression: ts.Expression): string | undefined {
+      const direct = getIncomingProp(expression, bindings, context.checker);
+      if (direct !== undefined || !activePropAliases) return direct;
+      const unwrapped = unwrapExpression(expression);
+      if (!ts.isIdentifier(unwrapped)) return undefined;
+      const symbol = context.checker.getSymbolAtLocation(unwrapped);
+      return symbol ? activePropAliases.get(symbol) : undefined;
+    }
 
     function terminal(propName: string, kind: TerminalRule["kind"]): void {
       addExactRule(rules, propName, { type: "terminal", kind, ruleset: activeRuleset });
@@ -1536,7 +2017,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         )
           return;
         if (ts.isCallExpression(node)) {
-          const propName = getIncomingProp(node.expression, bindings, context.checker);
+          const propName = incomingPropOf(node.expression);
           if (propName) {
             const entry = { propName, ruleset };
             props.set(JSON.stringify(entry), entry);
@@ -1580,9 +2061,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         )
           return;
         const unwrapped = unwrapExpression(candidate);
-        const directProp = candidateSymbol
-          ? bindings.propSymbols.get(candidateSymbol)
-          : getIncomingProp(unwrapped, bindings, context.checker);
+        const directProp = candidateSymbol ? bindings.propSymbols.get(candidateSymbol) : incomingPropOf(unwrapped);
         if (directProp) {
           const entry = { propName: directProp, ruleset };
           props.set(JSON.stringify(entry), entry);
@@ -1722,16 +2201,41 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
     }
 
+    function analyzeArrayRenderingCallback(call: ts.CallExpression): void {
+      const callback = call.arguments.find(
+        (argument): argument is ts.ArrowFunction | ts.FunctionExpression =>
+          ts.isArrowFunction(argument) || ts.isFunctionExpression(argument),
+      );
+      if (!callback) return;
+      const callee = unwrapExpression(call.expression);
+      const arrayExpression = isReactChildrenMapCall(call, context.checker)
+        ? call.arguments.at(0)
+        : ts.isPropertyAccessExpression(callee)
+          ? callee.expression
+          : undefined;
+      const propName = arrayExpression ? incomingPropOf(arrayExpression) : undefined;
+      const parameter = callback.parameters.at(0);
+      const parameterSymbol =
+        parameter && ts.isIdentifier(parameter.name) ? context.checker.getSymbolAtLocation(parameter.name) : undefined;
+      const previous = activePropAliases;
+      if (propName && parameterSymbol) activePropAliases = new Map([[parameterSymbol, propName]]);
+      try {
+        controlledReturns(callback.body, definition.id, context, analyzeRendered, activeRuleset);
+      } finally {
+        activePropAliases = previous;
+      }
+    }
+
     function analyzeRenderedValue(expression: ts.Expression): void {
       const unwrapped = unwrapExpression(expression);
-      const directProp = getIncomingProp(unwrapped, bindings, context.checker);
+      const directProp = incomingPropOf(unwrapped);
       if (directProp) {
         terminal(directProp, "node-prop");
         return;
       }
 
       if (ts.isCallExpression(unwrapped)) {
-        const invokedProp = getIncomingProp(unwrapped.expression, bindings, context.checker);
+        const invokedProp = incomingPropOf(unwrapped.expression);
         if (invokedProp) {
           terminal(invokedProp, "render-prop");
           return;
@@ -1740,12 +2244,35 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           analyzeCreateElement(unwrapped);
           return;
         }
-        if (isArrayRenderingMethodCall(unwrapped, context.checker)) {
-          for (const argument of unwrapped.arguments) {
-            if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-              controlledReturns(argument.body, definition.id, context, analyzeRendered, activeRuleset);
-            }
-          }
+        if (isCloneElementCall(unwrapped, context.checker)) {
+          // A clone renders the cloned element, with argument props layered on
+          // top; the element itself still renders under this component.
+          const [element] = unwrapped.arguments;
+          if (element) analyzeRendered(element);
+          return;
+        }
+        if (isCreatePortalCall(unwrapped, context.checker)) {
+          // A portal renders its children; the container only receives them.
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
+        if (isUseMemoCall(unwrapped, context.checker)) {
+          // A memo holds its factory's return value; deps only decide recompute.
+          const factory = memoizedFactory(unwrapped);
+          if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, activeRuleset);
+          return;
+        }
+        if (isDeclaredRenderCall(unwrapped, context)) {
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
+        if (
+          isArrayRenderingMethodCall(unwrapped, context.checker) ||
+          isReactChildrenMapCall(unwrapped, context.checker)
+        ) {
+          analyzeArrayRenderingCallback(unwrapped);
         }
         return;
       }
@@ -1770,6 +2297,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const target = targetForReference(opening.tagName, context);
         const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id, context.scopePath) : undefined;
         analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
+        // A context Provider or Consumer renders its children in place, so the
+        // subtree under it renders under this component like an intrinsic tag.
+        if (!target && ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          for (const child of unwrapped.children) analyzeJsxChild(child);
+        }
         return;
       }
 
@@ -1800,6 +2332,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const componentProp = getIncomingProp(tagExpression, bindings, context.checker);
       if (componentProp) {
         terminal(componentProp, "component-prop");
+        // The created element renders within this component, so children given
+        // to the dynamic tag render in this subtree like intrinsic children.
+        for (const child of children) analyzeRendered(child);
         return;
       }
       if (ts.isStringLiteral(tagExpression)) {
@@ -1921,6 +2456,10 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           addUseRuleset(context, use.id, ruleset, rulesetsByUse);
           analyzeJsxComponentUsage(unwrapped, use, context);
           uses.set(use.id, use);
+        } else if (ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          // A context Provider or Consumer renders its children in place, so
+          // the uses under it belong to this owner.
+          for (const child of unwrapped.children) collectChild(child, ruleset);
         }
         return;
       }
@@ -1940,7 +2479,37 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) collect(element, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory)
+          controlledReturns(
+            factory.body,
+            ownerId,
+            context,
+            (returned, next) => collect(returned, next, visitedSymbols),
+            ruleset,
+          );
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (
+        ts.isCallExpression(unwrapped) &&
+        (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))
+      ) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(
@@ -2694,7 +3263,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return;
         }
         const target = targetForReference(tagExpression, context);
-        if (!target) return;
+        if (!target) {
+          // Unresolved or prop-supplied tags still render within this
+          // component, so uses among the children must be traced.
+          for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child, ruleset);
+          return;
+        }
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
         addUseRuleset(context, use.id, ruleset);
@@ -2705,7 +3279,30 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, ruleset);
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) analyzeRendered(element, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (
+        ts.isCallExpression(unwrapped) &&
+        (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))
+      ) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(argument.body, definition.id, context, analyzeRendered, ruleset);
@@ -2811,7 +3408,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
   function createVisibilityByTarget(
     definitions: readonly ComponentDefinition[],
-    externalTargets: ReadonlyMap<string, ComponentTarget>,
+    boundaryTargets: ReadonlyMap<string, ComponentTarget>,
     excludeFilePatterns: readonly string[],
     excludeComponentPatterns: readonly string[],
   ): ReadonlyMap<string, ComponentVisibility> {
@@ -2826,9 +3423,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         implementationAnalyzed: !hidden,
       });
     }
-    for (const target of externalTargets.values()) {
+    for (const target of boundaryTargets.values()) {
       visibility.set(target.id, {
-        boundaryVisible: !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
+        boundaryVisible:
+          !(target.localBoundaryPath && excludeFileRules?.ignores(target.localBoundaryPath)) &&
+          !matchesComponentPattern(target.id, target.title, excludeComponentPatterns),
         implementationAnalyzed: false,
       });
     }
@@ -3035,6 +3634,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const policy = targetVisibility(targetUse.target.id);
       const supplierSource = targetVisibility(owner.target.id).boundaryVisible ? owner : source;
       const targetRulesets = combineRulesets(instantiateRuleset(targetUseRuleset, owner, supplierSource), ruleset);
+      if (targetRulesets.length === 0) return;
       if (!policy.boundaryVisible) {
         processUseSupplies(targetUse, instance, source, owner, nextTrail, { kind, propName }, targetRulesets);
         return;
@@ -3121,6 +3721,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const instance = ensureComponentInstance(source, use, source);
       const policy = targetVisibility(use.target.id);
       const ruleset = instantiateRuleset(context.useRulesets.get(use.id) ?? [[]], source, source);
+      if (ruleset.length === 0) return;
       if (policy.boundaryVisible) {
         makeVisible(instance);
         addFinalRelationship({ source: source.id, target: instance.id, kind: "inline-render", ruleset });
@@ -3186,6 +3787,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
               nodeId: id,
               title: definition.name,
               description: definition.relativePath,
+              synthetic: false,
               links: [{ href: sourceHref(definition.relativePath) }],
               layoutContext: nodeLayoutContext(id, target.id),
             },
@@ -3200,7 +3802,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         type: "default",
         nodeId: id,
         title: target.title,
-        description: `${target.externalPackage} boundary`,
+        synthetic: !target.localBoundaryPath,
+        description: target.localBoundaryPath
+          ? `${target.localBoundaryPath}\nOutside collection scope; internals not analyzed.`
+          : `${target.externalPackage} boundary`,
+        ...(target.localBoundaryPath ? { links: [{ href: sourceHref(target.localBoundaryPath) }] } : {}),
         layoutContext: nodeLayoutContext(id, target.id),
       }));
     const candidateNodeIds = new Set([...localNodes, ...externalNodes].map(({ nodeId }) => nodeId));
@@ -3702,7 +4308,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         };
         rewritten.push(...buildRules(0, []));
       }
-      return rewritten;
+      // Folding distinct controls can make a rule require conflicting values.
+      // Recombine from an empty rule to discard only impossible paths.
+      return combineRulesets([[]], rewritten);
     };
 
     const controls = new Map<string, GeneratedControl>();
@@ -4068,6 +4676,25 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       if (symbol) definitionsBySymbol.set(symbol, definition);
     }
 
+    const reported = new Set<string>();
+    const reportUnsupported: UnsupportedReporter = (call, code, reason) => {
+      const sourceFile = call.getSourceFile();
+      if (!options.onDiagnostic || !selectedRulesets.has(resolve(sourceFile.fileName))) return;
+      const position = call.getStart(sourceFile);
+      const key = `${sourceFile.fileName}:${position}:${code}:${reason}`;
+      if (reported.has(key)) return;
+      reported.add(key);
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(position);
+      options.onDiagnostic({
+        code,
+        relativePath: toPosixPath(relative(scopePath, sourceFile.fileName)),
+        line: line + 1,
+        column: character + 1,
+        reason,
+      });
+    };
+    const memberWrites = new Map<string, Set<ts.Node>>();
+    const bindingWrites = new Set<ts.Symbol>();
     const context: AnalysisContext = {
       scopePath,
       program,
@@ -4075,7 +4702,20 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
-      externalTargets: new Map(),
+      boundarySourcePaths: await filterUnignoredSourcePaths(
+        scopePath,
+        program
+          .getSourceFiles()
+          .map((sourceFile) => resolve(sourceFile.fileName))
+          .filter((path) => !selectedRulesets.has(path)),
+      ),
+      reportUnsupported: options.onDiagnostic ? reportUnsupported : undefined,
+      memberWrites,
+      bindingWrites,
+      hocNames: new Set(options.hocNames ?? []),
+      loaderSpecifiers: new Set(options.loaderSpecifiers ?? []),
+      renderNames: new Set(options.renderNames ?? []),
+      boundaryTargets: new Map(),
       uses: new Map(),
       directUseIdsByOwner: new Map(),
       analyzedUseIds: new Set(),
@@ -4083,6 +4723,76 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       useRulesets: new Map(),
       propBindings: new Map(definitions.map((definition) => [definition.id, createPropBindings(definition, checker)])),
     };
+    // Index explicit writes in collected source once, before resolving member uses.
+    // This is not runtime mutation or escape analysis.
+    const writes: { root: ts.Expression; operation: ts.Node }[] = [];
+    function recordReferenceWrite(expression: ts.Expression, operation: ts.Node): void {
+      let root = unwrapExpression(expression);
+      if (ts.isArrayLiteralExpression(root)) {
+        for (const element of root.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          recordReferenceWrite(ts.isSpreadElement(element) ? element.expression : element, operation);
+        }
+        return;
+      }
+      if (ts.isObjectLiteralExpression(root)) {
+        for (const property of root.properties) {
+          if (ts.isPropertyAssignment(property)) recordReferenceWrite(property.initializer, operation);
+          else if (ts.isShorthandPropertyAssignment(property)) recordReferenceWrite(property.name, operation);
+          else if (ts.isSpreadAssignment(property)) recordReferenceWrite(property.expression, operation);
+        }
+        return;
+      }
+      if (ts.isBinaryExpression(root) && root.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+        recordReferenceWrite(root.left, operation);
+        return;
+      }
+      if (ts.isIdentifier(root)) {
+        const symbol = canonicalSymbol(checker.getSymbolAtLocation(root), checker);
+        if (symbol) bindingWrites.add(symbol);
+        return;
+      }
+      if (!ts.isPropertyAccessExpression(root) && !ts.isElementAccessExpression(root)) return;
+      while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
+        root = unwrapExpression(root.expression);
+      writes.push({ root, operation });
+    }
+    function collectReferenceWrites(node: ts.Node): void {
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+        node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+      ) {
+        recordReferenceWrite(node.left, node);
+      } else if (
+        (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+        (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)
+      ) {
+        recordReferenceWrite(node.operand, node);
+      } else if (ts.isDeleteExpression(node)) {
+        recordReferenceWrite(node.expression, node);
+      } else if (
+        (ts.isForInStatement(node) || ts.isForOfStatement(node)) &&
+        !ts.isVariableDeclarationList(node.initializer)
+      ) {
+        recordReferenceWrite(node.initializer, node);
+      } else if (ts.isCallExpression(node) && isObjectAssignCall(node, context)) {
+        const root = node.arguments.at(0);
+        if (root) writes.push({ root, operation: node });
+      }
+      ts.forEachChild(node, collectReferenceWrites);
+    }
+    for (const sourceFile of sourceFiles) collectReferenceWrites(sourceFile);
+    const resolvedWrites = writes.map(({ root, operation }) => ({
+      definition: resolveComponentExpression(root, context),
+      operation,
+    }));
+    for (const { definition, operation } of resolvedWrites) {
+      if (!definition) continue;
+      const operations = memberWrites.get(definition.id) ?? new Set<ts.Node>();
+      operations.add(operation);
+      memberWrites.set(definition.id, operations);
+    }
     for (const definition of definitions) analyzeDefinitionUsages(definition, context);
 
     const rulesByComponentId = new Map<string, ConsumerRules>();
@@ -4094,7 +4804,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
 
     const visibility = createVisibilityByTarget(
       definitions,
-      context.externalTargets,
+      context.boundaryTargets,
       options.excludeFilePatterns ?? [],
       options.excludeComponentPatterns ?? [],
     );

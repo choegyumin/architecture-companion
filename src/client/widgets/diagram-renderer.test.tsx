@@ -25,7 +25,7 @@ const diagram = {
     "## Purpose\nReview the selected diagram layout.\n\n## Regeneration\nRebuild the example elements for the selected layout.",
   diagram: {
     layout: { layoutId: "general" },
-    graph: { groups: [], nodes: [{ nodeId: "node", type: "default", title: "Node" }], edges: [] },
+    graph: { groups: [], nodes: [{ synthetic: false, nodeId: "node", type: "default", title: "Node" }], edges: [] },
   },
 } as const;
 
@@ -57,7 +57,14 @@ describe("diagram renderer selection", () => {
         graph: {
           groups: [],
           nodes: [
-            { nodeId: "participant", type: "lifeline", kind: "participant", title: "Participant", activations: [] },
+            {
+              synthetic: false,
+              nodeId: "participant",
+              type: "lifeline",
+              kind: "participant",
+              title: "Participant",
+              activations: [],
+            },
           ],
           edges: [],
         },

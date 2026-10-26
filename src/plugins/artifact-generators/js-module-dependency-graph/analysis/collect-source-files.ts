@@ -47,7 +47,7 @@ async function readIgnoreFileContents(ignoreFilePath: string): Promise<string | 
 
 function addRules(rules: Ignore, contents: string | undefined): Ignore {
   // Later rules win, so a child .gitignore is appended after everything it
-  // inherits and inline --exclude-path patterns are appended after all of them.
+  // inherits and inline --ignore-path patterns are appended after all of them.
   return contents === undefined ? rules : ignore().add(rules).add(contents);
 }
 
@@ -70,6 +70,43 @@ async function collectInheritedRules(scopePath: string, directoryPath: string): 
 
 function isPathIgnored(testRules: Ignore, relativePath: string, isDirectory: boolean): boolean {
   return testRules.ignores(relativePath) || (isDirectory && testRules.ignores(`${relativePath}/`));
+}
+
+export function createLocalModuleBoundaryFilter(
+  scopePath: string,
+  excludePatterns: readonly string[],
+): (absolutePath: string) => Promise<boolean> {
+  const inlineRules = excludePatterns.length > 0 ? ignore().add([...excludePatterns]) : undefined;
+  const rulesByDirectory = new Map<string, Promise<Ignore | undefined>>();
+
+  function getDirectoryRules(directoryPath: string): Promise<Ignore | undefined> {
+    const cachedRules = rulesByDirectory.get(directoryPath);
+    if (cachedRules) return cachedRules;
+
+    const rules = (async () => {
+      if (directoryPath === scopePath) {
+        return addRules(ignore(), await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+      }
+      const parentRules = await getDirectoryRules(dirname(directoryPath));
+      if (!parentRules) return undefined;
+      const relativePath = toPosixPath(relative(scopePath, directoryPath));
+      const testRules = inlineRules ? ignore().add(parentRules).add(inlineRules) : parentRules;
+      if (isPathIgnored(testRules, relativePath, true)) return undefined;
+      return addRules(parentRules, await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+    })();
+    rulesByDirectory.set(directoryPath, rules);
+    return rules;
+  }
+
+  return async (absolutePath) => {
+    if (absolutePath === scopePath || !isPathInside(scopePath, absolutePath)) return false;
+    const relativePath = toPosixPath(relative(scopePath, absolutePath));
+    if (relativePath.split("/").some((segment) => alwaysIgnoredDirectoryNames.has(segment))) return false;
+    const directoryRules = await getDirectoryRules(dirname(absolutePath));
+    if (!directoryRules) return false;
+    const testRules = inlineRules ? ignore().add(directoryRules).add(inlineRules) : directoryRules;
+    return !isPathIgnored(testRules, relativePath, false) && (await lstat(absolutePath)).isFile();
+  };
 }
 
 export async function collectSourceFiles(

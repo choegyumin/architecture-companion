@@ -5,45 +5,94 @@
   "generator": "built-in:js-module-dependency-graph",
   "instructions": "## Purpose\n\nReview which parts of the commander library reach the outside world and how deep its internal layering runs. Each box is a module; an arrow from A to B means A imports B at the top of the file. Boxes sit in folder groups mirroring the repository directories; external npm packages and Node built-ins collect in the external packages group.\n\n## Regeneration\n\nManually transcribed from dependency-cruiser's published commander sample graph: https://github.com/sverweij/dependency-cruiser/blob/main/doc/real-world-samples/commander.svg. There is no source-repository regeneration procedure; to recreate the artifact, transcribe the published graph again, mirroring its modules, imports, and folder groups.",
   "diagram": {
-    "layout": { "layoutId": "dependency-graph" },
+    "layout": {
+      "layoutId": "dependency-graph"
+    },
     "graph": {
       "groups": [
-        { "groupId": "group:directory:lib", "title": "lib" },
-        { "groupId": "group:external-packages", "title": "external packages" }
+        {
+          "groupId": "group:directory:lib",
+          "title": "lib"
+        },
+        {
+          "groupId": "group:external-packages",
+          "title": "external packages",
+          "synthetic": true
+        }
       ],
       "nodes": [
         {
           "nodeId": "external:child_process",
           "title": "child_process",
           "groupId": "group:external-packages",
-          "kind": "External package"
+          "kind": "External package",
+          "synthetic": true
         },
-        { "nodeId": "file:esm.mjs", "title": "esm.mjs" },
-        { "nodeId": "file:index.js", "title": "index.js" },
-        { "nodeId": "file:lib/argument.js", "title": "argument.js", "groupId": "group:directory:lib" },
-        { "nodeId": "file:lib/command.js", "title": "command.js", "groupId": "group:directory:lib" },
-        { "nodeId": "file:lib/error.js", "title": "error.js", "groupId": "group:directory:lib" },
-        { "nodeId": "file:lib/help.js", "title": "help.js", "groupId": "group:directory:lib" },
-        { "nodeId": "file:lib/option.js", "title": "option.js", "groupId": "group:directory:lib" },
+        {
+          "nodeId": "file:esm.mjs",
+          "title": "esm.mjs"
+        },
+        {
+          "nodeId": "file:index.js",
+          "title": "index.js"
+        },
+        {
+          "nodeId": "file:lib/argument.js",
+          "title": "argument.js",
+          "groupId": "group:directory:lib"
+        },
+        {
+          "nodeId": "file:lib/command.js",
+          "title": "command.js",
+          "groupId": "group:directory:lib"
+        },
+        {
+          "nodeId": "file:lib/error.js",
+          "title": "error.js",
+          "groupId": "group:directory:lib"
+        },
+        {
+          "nodeId": "file:lib/help.js",
+          "title": "help.js",
+          "groupId": "group:directory:lib"
+        },
+        {
+          "nodeId": "file:lib/option.js",
+          "title": "option.js",
+          "groupId": "group:directory:lib"
+        },
         {
           "nodeId": "external:events",
           "title": "events",
           "groupId": "group:external-packages",
-          "kind": "External package"
+          "kind": "External package",
+          "synthetic": true
         },
-        { "nodeId": "external:fs", "title": "fs", "groupId": "group:external-packages", "kind": "External package" },
-        { "nodeId": "file:lib/suggestSimilar.js", "title": "suggestSimilar.js", "groupId": "group:directory:lib" },
+        {
+          "nodeId": "external:fs",
+          "title": "fs",
+          "groupId": "group:external-packages",
+          "kind": "External package",
+          "synthetic": true
+        },
+        {
+          "nodeId": "file:lib/suggestSimilar.js",
+          "title": "suggestSimilar.js",
+          "groupId": "group:directory:lib"
+        },
         {
           "nodeId": "external:path",
           "title": "path",
           "groupId": "group:external-packages",
-          "kind": "External package"
+          "kind": "External package",
+          "synthetic": true
         },
         {
           "nodeId": "external:process",
           "title": "process",
           "groupId": "group:external-packages",
-          "kind": "External package"
+          "kind": "External package",
+          "synthetic": true
         }
       ],
       "edges": [

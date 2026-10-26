@@ -45,6 +45,44 @@ function isPathIgnored(rules: Ignore, relativePath: string, isDirectory: boolean
   return rules.ignores(relativePath) || (isDirectory && rules.ignores(`${relativePath}/`));
 }
 
+export async function filterUnignoredSourcePaths(
+  scopePath: string,
+  sourcePaths: readonly string[],
+): Promise<ReadonlySet<string>> {
+  const rulesByDirectory = new Map<string, Promise<Ignore | undefined>>();
+  async function directoryRules(directoryPath: string): Promise<Ignore | undefined> {
+    const cached = rulesByDirectory.get(directoryPath);
+    if (cached) return cached;
+    const rules = (async () => {
+      if (directoryPath === scopePath)
+        return addIgnoreRules(ignore(), await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+      const parentRules = await directoryRules(dirname(directoryPath));
+      const relativePath = toPosixPath(relative(scopePath, directoryPath));
+      if (!parentRules || isPathIgnored(parentRules, relativePath, true)) return undefined;
+      return addIgnoreRules(parentRules, await readIgnoreFileContents(join(directoryPath, ".gitignore")));
+    })();
+    rulesByDirectory.set(directoryPath, rules);
+    return rules;
+  }
+  const accepted = new Set<string>();
+  for (const sourcePath of sourcePaths) {
+    if (!isPathInside(scopePath, sourcePath) || !sourceExtensions.has(extname(sourcePath))) continue;
+    if (
+      toPosixPath(relative(scopePath, sourcePath))
+        .split("/")
+        .some((segment) => alwaysIgnoredDirectoryNames.has(segment))
+    )
+      continue;
+    const canonicalPath = await realpath(sourcePath);
+    if (!isPathInside(scopePath, canonicalPath)) continue;
+    const relativePath = toPosixPath(relative(scopePath, canonicalPath));
+    if (relativePath.split("/").some((segment) => alwaysIgnoredDirectoryNames.has(segment))) continue;
+    const rules = await directoryRules(dirname(canonicalPath));
+    if (rules && !isPathIgnored(rules, relativePath, false)) accepted.add(sourcePath);
+  }
+  return accepted;
+}
+
 export async function collectSourceFiles(
   scopePath: string,
   sourcePaths: readonly string[],
