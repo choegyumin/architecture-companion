@@ -57,6 +57,37 @@ export function AnnotationInteractionBoundary({
     const layer = overlay.current;
 
     const gestures = new Map<number, Gesture>();
+    let replayedEvent: Event | undefined;
+
+    // Outside-press subscribers must see the overlay, not the blocked control.
+    function replay(source: PointerEvent, type: "pointerdown" | "mousedown" | "click"): void {
+      const init: PointerEventInit = {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        pointerId: source.pointerId,
+        pointerType: source.pointerType,
+        isPrimary: source.isPrimary,
+        clientX: source.clientX,
+        clientY: source.clientY,
+        screenX: source.screenX,
+        screenY: source.screenY,
+        button: source.button,
+        buttons: source.buttons,
+        altKey: source.altKey,
+        ctrlKey: source.ctrlKey,
+        metaKey: source.metaKey,
+        shiftKey: source.shiftKey,
+        detail: type === "click" ? 1 : source.detail,
+      };
+      const event = type === "mousedown" ? new MouseEvent(type, init) : new PointerEvent(type, init);
+      replayedEvent = event;
+      try {
+        layer.dispatchEvent(event);
+      } finally {
+        replayedEvent = undefined;
+      }
+    }
 
     function ownerOf(element: Element): Element | undefined {
       if (root.contains(element)) return element;
@@ -83,6 +114,7 @@ export function AnnotationInteractionBoundary({
     }
 
     function capture(event: Event): void {
+      if (event === replayedEvent) return;
       // Finish a captured gesture even if Alt is released before pointerup.
       // Releasing early would send the remaining gesture back to the control.
       if (!isEnabled() && gestures.size === 0) return;
@@ -125,6 +157,7 @@ export function AnnotationInteractionBoundary({
         });
         layer.style.pointerEvents = "auto";
         layer.setPointerCapture(event.pointerId);
+        if (event.pointerType !== "touch") replay(event, "pointerdown");
       } else if (event.type === "pointermove" && event instanceof PointerEvent) {
         const gesture = gestures.get(event.pointerId);
         if (gesture && Math.hypot(event.clientX - gesture.start.x, event.clientY - gesture.start.y) >= 4) {
@@ -146,6 +179,11 @@ export function AnnotationInteractionBoundary({
             event.clientY <= bounds.bottom
           ) {
             begin({ x: event.clientX, y: event.clientY }, gesture.target);
+          }
+          if (event.pointerType === "touch") {
+            // Sloppy outside-press handling also needs the compatibility mousedown.
+            replay(event, "mousedown");
+            replay(event, "click");
           }
         }
       } else if (
@@ -193,6 +231,8 @@ export function AnnotationInteractionBoundary({
       "dragstart",
     ];
     const options = { capture: true, passive: false };
+    // Block originals before document subscribers can attach listeners to their
+    // unreachable targets. Only the overlay replay should reach those subscribers.
     for (const type of events) window.addEventListener(type, capture, options);
     window.addEventListener("pointermove", move, options);
     window.addEventListener("blur", cancel);
