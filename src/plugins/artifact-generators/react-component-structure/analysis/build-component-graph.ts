@@ -111,6 +111,20 @@ type BuilderEdge = Readonly<{
   }>;
 }>;
 
+export type ComponentGraphDiagnostic = Readonly<{
+  code:
+    | "unsupported-react-wrapper"
+    | "unsupported-object-assign-member"
+    | "unsupported-loadable"
+    | "unsupported-component-binding";
+  relativePath: string;
+  line: number;
+  column: number;
+  reason: string;
+}>;
+
+type UnsupportedReporter = (call: ts.CallExpression, code: ComponentGraphDiagnostic["code"], reason: string) => void;
+
 export type ComponentGraphOptions = Readonly<{
   scopePath: string;
   sourcePaths: readonly string[];
@@ -118,6 +132,7 @@ export type ComponentGraphOptions = Readonly<{
   excludeFilePatterns?: readonly string[];
   excludeComponentPatterns?: readonly string[];
   rootPatterns?: readonly string[];
+  onDiagnostic?: (diagnostic: ComponentGraphDiagnostic) => void;
 }>;
 
 type FunctionLike = ts.ArrowFunction | ts.FunctionDeclaration | ts.FunctionExpression;
@@ -246,6 +261,9 @@ type AnalysisContext = Readonly<{
   controls: Map<string, GeneratedControl>;
   useRulesets: Map<string, DiagramRouteRequirementRuleset>;
   propBindings: ReadonlyMap<string, PropBindings>;
+  reportUnsupported?: UnsupportedReporter;
+  memberWrites: ReadonlyMap<string, ReadonlySet<ts.Node>>;
+  bindingWrites: ReadonlySet<ts.Symbol>;
 }>;
 
 // AST predicates, enum values, the checker, and declarations must use the same compiler.
@@ -649,14 +667,316 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     return checker.getAliasedSymbol(symbol);
   }
 
+  function isObjectAssignCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (
+      !ts.isPropertyAccessExpression(callee) ||
+      callee.name.text !== "assign" ||
+      !ts.isIdentifier(callee.expression) ||
+      callee.expression.text !== "Object"
+    )
+      return false;
+    const receiver = context.checker.getSymbolAtLocation(callee.expression);
+    const signature = context.checker.getResolvedSignature(call)?.getDeclaration();
+    return (
+      !!signature &&
+      context.program.isSourceFileDefaultLibrary(signature.getSourceFile()) &&
+      !!receiver?.declarations?.some((declaration) =>
+        context.program.isSourceFileDefaultLibrary(declaration.getSourceFile()),
+      )
+    );
+  }
+
+  function isLoadableCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (!ts.isIdentifier(callee)) return false;
+    const symbol = checker.getSymbolAtLocation(callee);
+    return getImportModuleSpecifier(symbol) === "@loadable/component" && getImportedName(symbol) === "default";
+  }
+
+  function isKnownComponentFactoryCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    return (
+      isReactWrapperCall(call, context.checker) ||
+      isObjectAssignCall(call, context) ||
+      isLoadableCall(call, context.checker)
+    );
+  }
+
+  function resolveLoadableComponent(
+    call: ts.CallExpression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol>,
+    reportUnsupported?: UnsupportedReporter,
+  ): ComponentDefinition | undefined {
+    const factory = call.arguments.at(0);
+    const imported =
+      factory && ts.isArrowFunction(factory) && factory.parameters.length === 0 && !ts.isBlock(factory.body)
+        ? unwrapExpression(factory.body)
+        : undefined;
+    const specifier =
+      imported &&
+      ts.isCallExpression(imported) &&
+      imported.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      imported.arguments.length === 1
+        ? imported.arguments.at(0)
+        : undefined;
+    if (call.arguments.length !== 1 || !specifier || !ts.isStringLiteral(specifier)) {
+      reportUnsupported?.(
+        call,
+        "unsupported-loadable",
+        'Expected loadable(() => import("static string")) without options.',
+      );
+      return undefined;
+    }
+    const moduleSymbol = context.checker.getSymbolAtLocation(specifier);
+    const sourceFile = moduleSymbol?.declarations?.find(ts.isSourceFile);
+    if (!sourceFile) return undefined;
+    const exported = defaultExportSymbol(sourceFile, context.checker);
+    const mutable = (canonicalSymbol(exported, context.checker)?.declarations ?? []).some((declaration) => {
+      if (ts.isExportAssignment(declaration)) return isMutableComponentReference(declaration.expression, context);
+      return (
+        (ts.isVariableDeclaration(declaration) ||
+          ts.isFunctionDeclaration(declaration) ||
+          ts.isClassDeclaration(declaration)) &&
+        !!declaration.name &&
+        ts.isIdentifier(declaration.name) &&
+        isMutableComponentReference(declaration.name, context)
+      );
+    });
+    if (mutable) {
+      reportUnsupported?.(call, "unsupported-component-binding", "Expected an immutable default component export.");
+      return undefined;
+    }
+    return resolveDefinition(exported, context, visited, reportUnsupported);
+  }
+
+  function referenceFactoryCall(
+    symbol: ts.Symbol | undefined,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+  ): ts.CallExpression | undefined {
+    if (!symbol) return undefined;
+    const reference = localImmutableReference(symbol, context, visited);
+    if (!reference || reference.initializers.length !== 1) return undefined;
+    const expression = unwrapExpression(reference.initializers.at(0)!);
+    if (ts.isCallExpression(expression)) return expression;
+    if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) {
+      return referenceFactoryCall(context.checker.getSymbolAtLocation(expression), context, reference.visitedSymbols);
+    }
+    return undefined;
+  }
+
+  function isMutableComponentReference(
+    expression: ts.Expression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+    symbolOverride?: ts.Symbol,
+  ): boolean {
+    const reference = unwrapExpression(expression);
+    if (ts.isPropertyAccessExpression(reference) && isMutableComponentReference(reference.expression, context, visited))
+      return true;
+    if (!ts.isIdentifier(reference) && !ts.isPropertyAccessExpression(reference)) return false;
+    const symbol = canonicalSymbol(symbolOverride ?? context.checker.getSymbolAtLocation(reference), context.checker);
+    if (!symbol) return false;
+    if (visited.has(symbol) || context.bindingWrites.has(symbol)) return true;
+    const next = new Set(visited).add(symbol);
+    return (symbol.declarations ?? []).some((declaration) => {
+      if (ts.isVariableDeclaration(declaration)) {
+        if (!ts.isVariableDeclarationList(declaration.parent) || (declaration.parent.flags & ts.NodeFlags.Const) === 0)
+          return true;
+        return !!declaration.initializer && isMutableComponentReference(declaration.initializer, context, next);
+      }
+      return ts.isExportAssignment(declaration) && isMutableComponentReference(declaration.expression, context, next);
+    });
+  }
+
+  /** Member keys an explicit write operation changes, or undefined when unprovable. */
+  function writtenMemberKeys(operation: ts.Node, context: AnalysisContext): ReadonlySet<string> | undefined {
+    let targets: readonly ts.Expression[];
+    if (ts.isBinaryExpression(operation)) targets = [operation.left];
+    else if (ts.isPrefixUnaryExpression(operation) || ts.isPostfixUnaryExpression(operation))
+      targets = [operation.operand];
+    else if (ts.isDeleteExpression(operation)) targets = [operation.expression];
+    else if (
+      (ts.isForInStatement(operation) || ts.isForOfStatement(operation)) &&
+      !ts.isVariableDeclarationList(operation.initializer)
+    )
+      targets = [operation.initializer];
+    else if (ts.isCallExpression(operation) && isObjectAssignCall(operation, context)) {
+      const source = operation.arguments.at(1);
+      if (operation.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return undefined;
+      const keys = new Set<string>();
+      for (const property of source.properties) {
+        if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) return undefined;
+        const key = propertyNameText(property.name);
+        if (!key) return undefined;
+        keys.add(key);
+      }
+      return keys;
+    } else return undefined;
+
+    const keys = new Set<string>();
+    function collect(target: ts.Expression): boolean {
+      const unwrapped = unwrapExpression(target);
+      if (ts.isBinaryExpression(unwrapped) && unwrapped.operatorToken.kind === ts.SyntaxKind.EqualsToken)
+        return collect(unwrapped.left);
+      if (ts.isPropertyAccessExpression(unwrapped)) {
+        keys.add(unwrapped.name.text);
+        return true;
+      }
+      if (ts.isElementAccessExpression(unwrapped)) {
+        if (!ts.isStringLiteralLike(unwrapped.argumentExpression)) return false;
+        keys.add(unwrapped.argumentExpression.text);
+        return true;
+      }
+      if (ts.isArrayLiteralExpression(unwrapped)) {
+        for (const element of unwrapped.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          if (!collect(ts.isSpreadElement(element) ? element.expression : element)) return false;
+        }
+        return true;
+      }
+      if (ts.isObjectLiteralExpression(unwrapped)) {
+        for (const property of unwrapped.properties) {
+          // A shorthand property binds a variable, not a member of the written
+          // base, so it never conflicts with an assigned member.
+          if (ts.isShorthandPropertyAssignment(property)) continue;
+          if (ts.isPropertyAssignment(property)) {
+            if (!collect(property.initializer)) return false;
+          } else if (ts.isSpreadAssignment(property)) {
+            if (!collect(property.expression)) return false;
+          } else return false;
+        }
+        return true;
+      }
+      return false;
+    }
+    return targets.every(collect) ? keys : undefined;
+  }
+
+  function assignedComponentMember(
+    call: ts.CallExpression,
+    name: string,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol>,
+    reportUnsupported?: UnsupportedReporter,
+  ): ComponentDefinition | undefined {
+    const unsupported = (): undefined => {
+      reportUnsupported?.(
+        call,
+        "unsupported-object-assign-member",
+        `Cannot statically resolve Object.assign member "${name}".`,
+      );
+      return undefined;
+    };
+    const base = call.arguments.at(0);
+    const definition = base ? resolveComponentExpression(base, context, visited) : undefined;
+    if (!definition) return undefined;
+    const source = call.arguments.at(1);
+    if (call.arguments.length !== 2 || !source || !ts.isObjectLiteralExpression(source)) return unsupported();
+    const members = new Map<string, ts.PropertyAssignment | ts.ShorthandPropertyAssignment>();
+    for (const property of source.properties) {
+      if (
+        (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) ||
+        ts.isComputedPropertyName(property.name)
+      )
+        return unsupported();
+      const key = propertyNameText(property.name);
+      if (!key || ["__proto__", "prototype", "constructor"].includes(key) || members.has(key)) return unsupported();
+      members.set(key, property);
+    }
+    // Writes outside this call only matter where they can change an assigned
+    // member; unrelated metadata such as displayName does not.
+    const conflictingWrite = [...(context.memberWrites.get(definition.id) ?? [])].some((operation) => {
+      if (operation === call) return false;
+      const keys = writtenMemberKeys(operation, context);
+      return keys === undefined || [...keys].some((key) => members.has(key));
+    });
+    if (conflictingWrite) return unsupported();
+    const property = members.get(name);
+    if (!property) return unsupported();
+    const value = ts.isShorthandPropertyAssignment(property) ? property.name : unwrapExpression(property.initializer);
+    if (!ts.isIdentifier(value) && !ts.isPropertyAccessExpression(value)) return unsupported();
+    const valueSymbol = ts.isShorthandPropertyAssignment(property)
+      ? context.checker.getShorthandAssignmentValueSymbol(property)
+      : undefined;
+    if (isMutableComponentReference(value, context, new Set(), valueSymbol)) return unsupported();
+    return resolveComponentExpression(value, context, visited, reportUnsupported, valueSymbol);
+  }
+
+  function resolveComponentExpression(
+    expression: ts.Expression | ts.JsxTagNameExpression,
+    context: AnalysisContext,
+    visited: ReadonlySet<ts.Symbol> = new Set(),
+    reportUnsupported?: UnsupportedReporter,
+    symbolOverride?: ts.Symbol,
+  ): ComponentDefinition | undefined {
+    if (ts.isJsxNamespacedName(expression)) return undefined;
+    const unwrapped = unwrapExpression(expression);
+    if (ts.isCallExpression(unwrapped)) {
+      if (isLoadableCall(unwrapped, context.checker))
+        return resolveLoadableComponent(unwrapped, context, visited, reportUnsupported);
+      const reactWrapper = isReactWrapperCall(unwrapped, context.checker);
+      if (!reactWrapper && !isObjectAssignCall(unwrapped, context)) return undefined;
+      const base = unwrapped.arguments.at(0);
+      if (base && isMutableComponentReference(base, context)) {
+        reportUnsupported?.(unwrapped, "unsupported-component-binding", "Expected an immutable component reference.");
+        return undefined;
+      }
+      const wrapped = base ? unwrapExpression(base) : undefined;
+      if (
+        reactWrapper &&
+        (!wrapped ||
+          !(
+            ts.isIdentifier(wrapped) ||
+            ts.isPropertyAccessExpression(wrapped) ||
+            (ts.isCallExpression(wrapped) && isKnownComponentFactoryCall(wrapped, context))
+          ))
+      ) {
+        reportUnsupported?.(unwrapped, "unsupported-react-wrapper", "Expected a static component reference.");
+        return undefined;
+      }
+      return base ? resolveComponentExpression(base, context, visited, reportUnsupported) : undefined;
+    }
+    if (ts.isPropertyAccessExpression(unwrapped) && !symbolOverride) {
+      const receiver = context.checker.getSymbolAtLocation(unwrapped.expression);
+      const factory = referenceFactoryCall(receiver, context);
+      if (factory && isObjectAssignCall(factory, context)) {
+        const canonical = canonicalSymbol(receiver, context.checker);
+        if (canonical && visited.has(canonical)) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-object-assign-member",
+            `Cannot statically resolve Object.assign member "${unwrapped.name.text}".`,
+          );
+          return undefined;
+        }
+        return assignedComponentMember(
+          factory,
+          unwrapped.name.text,
+          context,
+          canonical ? new Set(visited).add(canonical) : visited,
+          reportUnsupported,
+        );
+      }
+    }
+    if (!ts.isIdentifier(unwrapped) && !ts.isPropertyAccessExpression(unwrapped)) return undefined;
+    return resolveDefinition(
+      symbolOverride ?? context.checker.getSymbolAtLocation(unwrapped),
+      context,
+      visited,
+      reportUnsupported,
+    );
+  }
+
   function resolveDefinition(
     symbol: ts.Symbol | undefined,
-    checker: ts.TypeChecker,
-    definitionsBySymbol: ReadonlyMap<ts.Symbol, ComponentDefinition>,
-    definitionsByDeclaration: ReadonlyMap<ts.Node, ComponentDefinition>,
+    context: AnalysisContext,
     visited: ReadonlySet<ts.Symbol> = new Set(),
+    reportUnsupported?: UnsupportedReporter,
   ): ComponentDefinition | undefined {
     if (!symbol || visited.has(symbol)) return undefined;
+    const { checker, definitionsBySymbol, definitionsByDeclaration } = context;
     const nextVisited = new Set(visited).add(symbol);
     const canonical = canonicalSymbol(symbol, checker);
     const direct = canonical ? definitionsBySymbol.get(canonical) : undefined;
@@ -665,38 +985,32 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const definition = definitionsByDeclaration.get(declaration);
       if (definition) return definition;
       if (ts.isExportAssignment(declaration)) {
-        const expression = unwrapExpression(declaration.expression);
-        if (
-          ts.isCallExpression(expression) &&
-          isReactWrapperCall(expression, checker) &&
-          expression.arguments.length > 0
-        ) {
-          const wrapped = unwrapExpression(expression.arguments.at(0) as ts.Expression);
-          if (ts.isIdentifier(wrapped) || ts.isPropertyAccessExpression(wrapped)) {
-            const aliasedDefinition = resolveDefinition(
-              checker.getSymbolAtLocation(wrapped),
-              checker,
-              definitionsBySymbol,
-              definitionsByDeclaration,
-              nextVisited,
-            );
-            if (aliasedDefinition) return aliasedDefinition;
-          }
-        }
-        continue;
+        const resolved = resolveComponentExpression(declaration.expression, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
       if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
         const initializer = unwrapExpression(declaration.initializer);
-        if (ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)) {
-          const aliasedDefinition = resolveDefinition(
-            checker.getSymbolAtLocation(initializer),
-            checker,
-            definitionsBySymbol,
-            definitionsByDeclaration,
-            nextVisited,
+        const factory = ts.isCallExpression(initializer)
+          ? initializer
+          : ts.isIdentifier(initializer) || ts.isPropertyAccessExpression(initializer)
+            ? referenceFactoryCall(checker.getSymbolAtLocation(initializer), context)
+            : undefined;
+        const knownFactory = factory && isKnownComponentFactoryCall(factory, context);
+        const mutable =
+          !ts.isVariableDeclarationList(declaration.parent) ||
+          (declaration.parent.flags & ts.NodeFlags.Const) === 0 ||
+          (!!canonical && context.bindingWrites.has(canonical));
+        if (knownFactory && mutable) {
+          reportUnsupported?.(
+            factory,
+            "unsupported-component-binding",
+            "Factory results require a const binding without reassignment.",
           );
-          if (aliasedDefinition) return aliasedDefinition;
+          continue;
         }
+        if (ts.isCallExpression(initializer) && mutable) continue;
+        const resolved = resolveComponentExpression(initializer, context, nextVisited, reportUnsupported);
+        if (resolved) return resolved;
       }
     }
     return undefined;
@@ -1044,12 +1358,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     const checker = context.checker;
     const external = resolveExternalReference(expression, context, symbolOverride);
     if (!external) {
-      const symbol = symbolOverride ?? checker.getSymbolAtLocation(expression);
-      const definition = resolveDefinition(
-        symbol,
-        checker,
-        context.definitionsBySymbol,
-        context.definitionsByDeclaration,
+      const definition = resolveComponentExpression(
+        expression,
+        context,
+        new Set(),
+        context.reportUnsupported,
+        symbolOverride,
       );
       return definition ? { id: definition.id, title: definition.name, definition } : undefined;
     }
@@ -1302,9 +1616,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       // consumes ownership evidence, not the display identity of a graph node.
       if (resolveExternalReference(unwrapped, context, undefined, visitedSymbols)) return undefined;
     }
-    if (
-      resolveDefinition(referenceSymbol, context.checker, context.definitionsBySymbol, context.definitionsByDeclaration)
-    ) {
+    if (resolveDefinition(referenceSymbol, context)) {
       return undefined;
     }
     return reference;
@@ -4072,6 +4384,25 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       if (symbol) definitionsBySymbol.set(symbol, definition);
     }
 
+    const reported = new Set<string>();
+    const reportUnsupported: UnsupportedReporter = (call, code, reason) => {
+      const sourceFile = call.getSourceFile();
+      if (!options.onDiagnostic || !selectedRulesets.has(resolve(sourceFile.fileName))) return;
+      const position = call.getStart(sourceFile);
+      const key = `${sourceFile.fileName}:${position}:${code}:${reason}`;
+      if (reported.has(key)) return;
+      reported.add(key);
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(position);
+      options.onDiagnostic({
+        code,
+        relativePath: toPosixPath(relative(scopePath, sourceFile.fileName)),
+        line: line + 1,
+        column: character + 1,
+        reason,
+      });
+    };
+    const memberWrites = new Map<string, Set<ts.Node>>();
+    const bindingWrites = new Set<ts.Symbol>();
     const context: AnalysisContext = {
       scopePath,
       program,
@@ -4079,6 +4410,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       checker,
       definitionsBySymbol,
       definitionsByDeclaration,
+      reportUnsupported: options.onDiagnostic ? reportUnsupported : undefined,
+      memberWrites,
+      bindingWrites,
       externalTargets: new Map(),
       uses: new Map(),
       directUseIdsByOwner: new Map(),
@@ -4087,6 +4421,76 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       useRulesets: new Map(),
       propBindings: new Map(definitions.map((definition) => [definition.id, createPropBindings(definition, checker)])),
     };
+    // Index explicit writes in collected source once, before resolving member uses.
+    // This is not runtime mutation or escape analysis.
+    const writes: { root: ts.Expression; operation: ts.Node }[] = [];
+    function recordReferenceWrite(expression: ts.Expression, operation: ts.Node): void {
+      let root = unwrapExpression(expression);
+      if (ts.isArrayLiteralExpression(root)) {
+        for (const element of root.elements) {
+          if (ts.isOmittedExpression(element)) continue;
+          recordReferenceWrite(ts.isSpreadElement(element) ? element.expression : element, operation);
+        }
+        return;
+      }
+      if (ts.isObjectLiteralExpression(root)) {
+        for (const property of root.properties) {
+          if (ts.isPropertyAssignment(property)) recordReferenceWrite(property.initializer, operation);
+          else if (ts.isShorthandPropertyAssignment(property)) recordReferenceWrite(property.name, operation);
+          else if (ts.isSpreadAssignment(property)) recordReferenceWrite(property.expression, operation);
+        }
+        return;
+      }
+      if (ts.isBinaryExpression(root) && root.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+        recordReferenceWrite(root.left, operation);
+        return;
+      }
+      if (ts.isIdentifier(root)) {
+        const symbol = canonicalSymbol(checker.getSymbolAtLocation(root), checker);
+        if (symbol) bindingWrites.add(symbol);
+        return;
+      }
+      if (!ts.isPropertyAccessExpression(root) && !ts.isElementAccessExpression(root)) return;
+      while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root))
+        root = unwrapExpression(root.expression);
+      writes.push({ root, operation });
+    }
+    function collectReferenceWrites(node: ts.Node): void {
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+        node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+      ) {
+        recordReferenceWrite(node.left, node);
+      } else if (
+        (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+        (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)
+      ) {
+        recordReferenceWrite(node.operand, node);
+      } else if (ts.isDeleteExpression(node)) {
+        recordReferenceWrite(node.expression, node);
+      } else if (
+        (ts.isForInStatement(node) || ts.isForOfStatement(node)) &&
+        !ts.isVariableDeclarationList(node.initializer)
+      ) {
+        recordReferenceWrite(node.initializer, node);
+      } else if (ts.isCallExpression(node) && isObjectAssignCall(node, context)) {
+        const root = node.arguments.at(0);
+        if (root) writes.push({ root, operation: node });
+      }
+      ts.forEachChild(node, collectReferenceWrites);
+    }
+    for (const sourceFile of sourceFiles) collectReferenceWrites(sourceFile);
+    const resolvedWrites = writes.map(({ root, operation }) => ({
+      definition: resolveComponentExpression(root, context),
+      operation,
+    }));
+    for (const { definition, operation } of resolvedWrites) {
+      if (!definition) continue;
+      const operations = memberWrites.get(definition.id) ?? new Set<ts.Node>();
+      operations.add(operation);
+      memberWrites.set(definition.id, operations);
+    }
     for (const definition of definitions) analyzeDefinitionUsages(definition, context);
 
     const rulesByComponentId = new Map<string, ConsumerRules>();

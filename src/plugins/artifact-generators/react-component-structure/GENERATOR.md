@@ -57,7 +57,7 @@ Both display filters use the same reduction rules. Matching components and compo
 
 Hidden elements are not recorded in the output JSON. Generation fails if no source files are collected or no local components remain after display filtering. When `--root` is specified, generation fails if none of the patterns selects a visible component.
 
-The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are silently omitted. Identical composition contexts are shared, so individual use locations and usage counts are not preserved. Provider annotations, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
+The analyzer emits only statically verified relationships and does not infer runtime behavior from types alone. Unresolved references are omitted; recognized unsupported wrapper and loader references emit warnings as described below. Identical composition contexts are shared, so individual use locations and usage counts are not preserved. Provider annotations, other UI frameworks, runtime reconstruction, and change-impact analysis are not supported.
 
 ## Output
 
@@ -93,6 +93,20 @@ External component boundaries remain visible and connected, but package implemen
 External member references require a declared property or an applicable index signature, including members of CommonJS `export =` objects. Whitespace and comments in property access do not change member identity or make missing members valid. Existing import naming is preserved: for `export = UI`, a default import of `UI.Button` retains `UI.Button`, while a namespace import uses `Button`. Package and relative imports retain their own provenance even when the same source is selected for local analysis, including references supplied through component registries. Package-owned JSX values are not expanded as caller-supplied content.
 
 Local values statically verified as supplied through node props, render props, component props, or component registries remain connected. Results from event-style `onX` callbacks are omitted at external boundaries because their return values are not verified as being rendered.
+
+### Static wrappers and loaders
+
+React `memo` and `forwardRef` references, including const-bound results and default exports, resolve to the original collected component definition. Existing inline wrapper definitions remain supported. A memo comparator does not change the component structure and is not analyzed. New factory-reference tracing requires immutable bindings; mutable aliases and explicit binding reassignments are not followed.
+
+The native global `Object.assign(Component, { Sub, Other: OtherComponent })` preserves the callable component's identity. Actual uses of `<Wrapped.Sub />` resolve to the attached component; attaching a member alone creates no relationship. Members require a single static object literal and immutable component references. Duplicate keys, getters/setters, spreads, computed keys, special `__proto__`/`prototype`/`constructor` properties, unknown or additional sources, and cyclic references are unsupported. Explicit member writes found in collected source, including assignments, updates, deletes, destructuring, loop targets, and other native `Object.assign` calls on the same component, prevent member inference when they target a member key the literal also assigns or their written keys cannot be proven; unrelated metadata writes such as `displayName` do not. An unsupported member does not discard a verified callable base, and warns only when the member is referenced. This is a conservative source check, not runtime mutation or escape analysis.
+
+The default import from `@loadable/component` supports the one-argument form `loadable(() => import("./panel"))`: a parameterless arrow directly returning a string-literal import. Relative paths and tsconfig aliases use the current compiler Program's module resolution. The module's default export must resolve to an already collected local component definition; loaders do not collect additional files or create synthetic component nodes. Options, `resolveComponent`, `.then` selectors, props-dependent callbacks, block-bodied factories, and computed imports are unsupported. Names alone do not identify these APIs; shadowed user functions are not treated as wrappers or loaders.
+
+### Unsupported-reference warnings
+
+The CLI writes nonfatal warnings to stderr after successfully writing the candidate graph. Each warning has the form `[code] scope-relative-file:line:column: reason`, with one-based positions at the factory call. Repeated references are deduplicated by factory location and reason. Codes identify unsupported React wrappers, assigned members, loaders, and mutable factory bindings. Success still returns exit code 0 and exactly one stdout JSON line. Fatal errors still fail without a success line or buffered warnings. Warnings do not appear in the graph JSON.
+
+Warnings apply to recognized factories in collected source reached while analyzing rendering or supplied component references, not unused factories or component-detection probes. They describe analysis before display filtering, so `--exclude-path`, `--exclude-component`, and `--root` do not suppress them. A factory outside collection does not produce a new warning; existing alias/barrel tracing to collected definitions still works. An otherwise supported static reference whose target is uncollected or unresolved retains the existing omission policy. Arbitrary helper results remain unresolved without being classified as a known wrapper or loader.
 
 ### Rendering controls
 

@@ -4,13 +4,18 @@ import { dirname, join } from "node:path";
 
 import { toDiagramGraphInput } from "@/features/diagram/diagram-graph";
 
-import { buildComponentGraph, type ComponentGraphOptions } from "../analysis/build-component-graph";
+import {
+  buildComponentGraph,
+  type ComponentGraphDiagnostic,
+  type ComponentGraphOptions,
+} from "../analysis/build-component-graph";
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
   [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
+  writeStderr?: (output: string) => void;
 }>;
 
 type ParsedArguments = ComponentGraphOptions;
@@ -71,13 +76,17 @@ export async function executeReactComponentStructureCommand(
   environment: CommandEnvironment,
 ): Promise<string> {
   const options = parseArguments(args);
-  const graph = await buildComponentGraph(options);
+  const diagnostics: ComponentGraphDiagnostic[] = [];
+  const graph = await buildComponentGraph({ ...options, onDiagnostic: (diagnostic) => diagnostics.push(diagnostic) });
   const resolvedOutputPath = join(
     await mkdtemp(join(tmpdir(), "architecture-companion-react-components-")),
     "graph.json",
   );
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(toDiagramGraphInput(graph), undefined, 2)}\n`);
+  for (const { code, relativePath, line, column, reason } of diagnostics) {
+    environment.writeStderr?.(`[${code}] ${relativePath}:${line}:${column}: ${reason}\n`);
+  }
   environment.writeStdout(`${JSON.stringify({ graphPath: resolvedOutputPath })}\n`);
   return resolvedOutputPath;
 }

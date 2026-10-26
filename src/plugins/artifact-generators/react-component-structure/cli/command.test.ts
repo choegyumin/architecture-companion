@@ -132,6 +132,717 @@ describe("React component structure command", () => {
     });
   });
 
+  it("connects a const-bound memo export to its original component and rendering body", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T, compare?: unknown): T;`,
+        "src/panel.tsx": `
+          import * as React from "react";
+          function Leaf() { return <span />; }
+          function Panel() { return <Leaf />; }
+          const Wrapped = React.memo(Panel);
+          export default Wrapped;
+        `,
+        "src/app.tsx": `
+          import Panel from "@/panel";
+          export function App() { return <Panel />; }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+            "component:src/app.tsx#App",
+            "component:src/panel.tsx#Leaf",
+            "component:src/panel.tsx#Panel",
+          ]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+            ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Leaf"],
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("connects an Object.assign export and only its rendered component members", async () => {
+    await withFixture(
+      {
+        "src/panel.tsx": `
+          function Leaf() { return <span />; }
+          function Panel() { return <Leaf />; }
+          function Sub() { return <aside />; }
+          function Unused() { return <footer />; }
+          export default Object.assign(Panel, { Sub, Other: Sub, Unused });
+        `,
+        "src/app.tsx": `
+          import Panel from "@/panel";
+          export function App() { return <><Panel /><Panel.Sub /><Panel.Other /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+            "component:src/app.tsx#App",
+            "component:src/panel.tsx#Leaf",
+            "component:src/panel.tsx#Panel",
+            "component:src/panel.tsx#Sub",
+          ]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Sub"],
+            ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Leaf"],
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each(["./panel", "@/panel"])(
+    "connects a static loadable import through %s to the collected default component",
+    async (specifier) => {
+      await withFixture(
+        {
+          "node_modules/@loadable/component/index.d.ts": `
+          export default function loadable<T>(load: () => Promise<{ default: T }>): T;
+        `,
+          "src/panel.tsx": `
+          function Leaf() { return <span />; }
+          export default function Panel() { return <Leaf />; }
+        `,
+          "src/app.tsx": `
+          import loadable from "@loadable/component";
+          const Loaded = loadable(() => import("${specifier}"));
+          export function App() { return <Loaded />; }
+        `,
+        },
+        async (scopePath) => {
+          const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+            writeStdout: () => undefined,
+          });
+          try {
+            const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+            expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+              "component:src/app.tsx#App",
+              "component:src/panel.tsx#Leaf",
+              "component:src/panel.tsx#Panel",
+            ]);
+            expect(
+              graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted(),
+            ).toEqual([
+              ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+              ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Leaf"],
+            ]);
+          } finally {
+            await rm(dirname(graphPath), { recursive: true });
+          }
+        },
+      );
+    },
+  );
+
+  it("connects a supplied loadable component through a package receiver", async () => {
+    await withFixture(
+      {
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable<T>(load: () => Promise<{ default: T }>): T;`,
+        "node_modules/shell-out/index.d.ts": `export function Shell(props: { component: unknown }): null;`,
+        "src/panel.tsx": `
+          function Leaf() { return <span />; }
+          export default function Panel() { return <Leaf />; }
+        `,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          import { Shell } from "shell-out";
+          const Loaded = loadable(() => import("./panel"));
+          export function App() { return <Shell component={Loaded} />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel", "Shell"]);
+          const titles = new Map(graph.nodes.map((node) => [node.nodeId, node.title]));
+          expect(
+            graph.edges
+              .map(({ sourceNodeId, targetNodeId }) => `${titles.get(sourceNodeId)} -> ${titles.get(targetNodeId)}`)
+              .toSorted(),
+          ).toEqual(["App -> Shell", "Panel -> Leaf", "Shell -> Panel"]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("connects a supplied memoized component through a package receiver", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T): T;`,
+        "node_modules/shell-out/index.d.ts": `export function Shell(props: { component: unknown }): null;`,
+        "src/panel.tsx": `
+          function Leaf() { return <span />; }
+          export default function Panel() { return <Leaf />; }
+        `,
+        "src/app.tsx": `
+          import { memo } from "react";
+          import Panel from "./panel";
+          import { Shell } from "shell-out";
+          const Memoized = memo(Panel);
+          export function App() { return <Shell component={Memoized} />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel", "Shell"]);
+          const titles = new Map(graph.nodes.map((node) => [node.nodeId, node.title]));
+          expect(
+            graph.edges
+              .map(({ sourceNodeId, targetNodeId }) => `${titles.get(sourceNodeId)} -> ${titles.get(targetNodeId)}`)
+              .toSorted(),
+          ).toEqual(["App -> Shell", "Panel -> Leaf", "Shell -> Panel"]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("warns once for a used unsupported loader without warning about unused factories or changing stdout", async () => {
+    await withFixture(
+      {
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable(load: unknown, options?: unknown): any;`,
+        "src/loader.tsx": [
+          `import loadable from "@loadable/component";`,
+          `export const Loaded = loadable(() => import("./panel"), { ssr: false });`,
+          `const Unused = loadable((props) => import(props.path));`,
+        ].join("\n"),
+        "src/panel.tsx": `export default function Panel() { return <span />; }`,
+        "src/app.tsx": `
+          import { Loaded } from "./loader";
+          export function App() { return <><Loaded /><Loaded /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const outputs: string[] = [];
+        const warnings: string[] = [];
+        const environment = {
+          writeStdout: (output: string) => outputs.push(output),
+          writeStderr: (output: string) => warnings.push(output),
+        };
+        const graphPath = await executeReactComponentStructureCommand(
+          ["--base", scopePath, "src", "--root", "App"],
+          environment,
+        );
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+          expect(outputs).toEqual([`${JSON.stringify({ graphPath })}\n`]);
+          expect(warnings).toEqual([
+            `[unsupported-loadable] src/loader.tsx:2:23: Expected loadable(() => import("static string")) without options.\n`,
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each([
+    "Alias.Sub = Other;",
+    'Alias["Sub"] = Other;',
+    'Alias[true ? "Sub" : "renamed"] = Other;',
+    "delete Alias.Sub;",
+    "Object.assign(Alias, { Sub: Other });",
+    "({ replacement: Alias.Sub } = { replacement: Other });",
+    "for (Alias.Sub of [Other]) {}",
+  ])("keeps the callable base but rejects an explicitly changed assigned member: %s", async (mutation) => {
+    await withFixture(
+      {
+        "src/panel.tsx": `
+            function Leaf() { return <span />; }
+            function Panel() { return <Leaf />; }
+            function Sub() { return <aside />; }
+            function Other() { return <footer />; }
+            export const Wrapped = Object.assign(Panel, { Sub });
+            const Alias = Wrapped;
+            ${mutation}
+          `,
+        "src/app.tsx": `
+            import { Wrapped } from "./panel";
+            export function App() { return <><Wrapped /><Wrapped.Sub /></>; }
+          `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel"]);
+          expect(warnings).toEqual([
+            expect.stringMatching(
+              /^\[unsupported-object-assign-member\] src\/panel\.tsx:\d+:\d+: Cannot statically resolve Object.assign member "Sub"\.\n$/,
+            ),
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("connects assigned members despite unrelated base metadata writes", async () => {
+    await withFixture(
+      {
+        "src/panel.tsx": `
+            function Leaf() { return <span />; }
+            function Panel() { return <Leaf />; }
+            function Sub() { return <aside />; }
+            export const Wrapped = Object.assign(Panel, { Sub });
+            Wrapped.displayName = "Panel";
+            Panel.displayName = "Panel";
+          `,
+        "src/app.tsx": `
+            import { Wrapped } from "./panel";
+            export function App() { return <><Wrapped /><Wrapped.Sub /></>; }
+          `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ nodeId }) => nodeId).toSorted()).toEqual([
+            "component:src/app.tsx#App",
+            "component:src/panel.tsx#Leaf",
+            "component:src/panel.tsx#Panel",
+            "component:src/panel.tsx#Sub",
+          ]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Sub"],
+            ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Leaf"],
+          ]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each([
+    "let Wrapped = memo(Panel);",
+    "let Base = Panel; const Wrapped = memo(Base);",
+    "const Core = memo(Panel); let Wrapped = Core;",
+    "const Wrapped = memo(Panel); Wrapped = Other;",
+  ])("does not infer a component through a mutable wrapper reference: %s", async (binding) => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T): T;`,
+        "src/app.tsx": `
+          import { memo } from "react";
+          function Panel() { return <span />; }
+          function Other() { return <aside />; }
+          ${binding}
+          export function App() { return <Wrapped />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+          expect(warnings).toEqual([
+            expect.stringMatching(/^\[unsupported-component-binding\] src\/app\.tsx:\d+:\d+: /),
+          ]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each([
+    "{ get Sub() { return Sub; } }",
+    "{ ...{ Sub } }",
+    '{ ["Sub"]: Sub }',
+    "{ Sub, Sub: Other }",
+    "{ Sub }, { Sub: Other }",
+    "unknownMembers",
+    "{ __proto__: { Sub }, Sub }",
+    "{ Sub: choose(Sub) }",
+    "{ Sub: Wrapped.Sub }",
+  ])("does not guess unsupported assigned members from %s", async (source) => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Panel() { return <main />; }
+          function Sub() { return <aside />; }
+          function Other() { return <footer />; }
+          declare const unknownMembers: { Sub: typeof Sub };
+          declare function choose(value: typeof Sub): typeof Sub;
+          const Wrapped = Object.assign(Panel, ${source});
+          export function App() { return <><Wrapped /><Wrapped.Sub /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Panel"]);
+          expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-object-assign-member\] /)]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it.each([
+    "const React = { memo: (value) => value }; const Wrapped = React.memo(Panel);",
+    "const Object = { assign: (value, source) => value }; const Wrapped = Object.assign(Panel, {});",
+    'const loadable = (load) => Panel; const Wrapped = loadable(() => import("./panel"));',
+  ])("does not recognize a shadowed wrapper or loader API: %s", async (binding) => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Panel() { return <main />; }
+          ${binding}
+          export function App() { return <Wrapped />; }
+        `,
+        "src/panel.tsx": `export default function Other() { return <aside />; }`,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(graph.edges).toEqual([]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("does not expand collection or warn about uncollected factories while preserving aliases to collected components", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T): T;`,
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable(load: unknown, options?: unknown): any;`,
+        ".gitignore": "src/ignored.tsx\nsrc/uncollected.tsx\n",
+        "src/ignored.tsx": `
+          import { memo } from "react";
+          import loadable from "@loadable/component";
+          import Panel from "./panel";
+          export const Direct = memo(Panel);
+          export const Deferred = loadable(() => import("./panel"));
+          export const Unsupported = loadable(() => import("./panel"), { ssr: false });
+        `,
+        "src/panel.tsx": `
+          function Leaf() { return <span />; }
+          export default function Panel() { return <Leaf />; }
+        `,
+        "src/uncollected.tsx": `export default function Uncollected() { return <footer />; }`,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          import { Direct, Deferred, Unsupported } from "./ignored";
+          const Outside = loadable(() => import("./uncollected"));
+          export function App() { return <><Direct /><Deferred /><Unsupported /><Outside /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel"]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+            ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Leaf"],
+          ]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("keeps analysis warnings independent of display filters and suppresses them on fatal failure", async () => {
+    await withFixture(
+      {
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable(load: unknown, options?: unknown): any;`,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          const Loaded = loadable((props) => import(props.path));
+          export function App() { return <Loaded />; }
+          export function Healthy() { return <main />; }
+        `,
+      },
+      async (scopePath) => {
+        for (const filter of [
+          ["--root", "Healthy"],
+          ["--exclude-component", "App"],
+        ]) {
+          const warnings: string[] = [];
+          const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", ...filter], {
+            writeStdout: () => undefined,
+            writeStderr: (output) => warnings.push(output),
+          });
+          try {
+            const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+            expect(graph.nodes.map(({ title }) => title)).toEqual(["Healthy"]);
+            expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-loadable\] /)]);
+          } finally {
+            await rm(dirname(graphPath), { recursive: true });
+          }
+        }
+        const outputs: string[] = [];
+        const warnings: string[] = [];
+        await expect(
+          executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "Missing"], {
+            writeStdout: (output) => outputs.push(output),
+            writeStderr: (output) => warnings.push(output),
+          }),
+        ).rejects.toThrow();
+        expect(outputs).toEqual([]);
+        expect(warnings).toEqual([]);
+      },
+    );
+  });
+
+  it.each([
+    { binding: "let Sub = Other;", source: "{ Sub }" },
+    { binding: "let Member = Other;", source: "{ Sub: Member }" },
+  ])("does not infer an assigned component member through $binding", async ({ binding, source }) => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Panel() { return <main />; }
+          function Other() { return <aside />; }
+          ${binding}
+          const Wrapped = Object.assign(Panel, ${source});
+          export function App() { return <><Wrapped /><Wrapped.Sub /></>; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Panel"]);
+          expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-object-assign-member\] /)]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("preserves class slots and branch controls through a memo, assignment, and loader chain", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export class Component<P> { props: P; }
+          export function memo<T>(component: T): T;
+        `,
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable(load: unknown): any;`,
+        "src/panel.tsx": `
+          import * as React from "react";
+          class Panel extends React.Component<{ children: unknown }> {
+            render() { return <>{this.props.children}</>; }
+          }
+          function Sub() { return <aside />; }
+          const Cached = React.memo(Panel);
+          export default Object.assign(Cached, { Sub });
+        `,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          import Compound from "./panel";
+          function Leaf() { return <span />; }
+          const Loaded = loadable(() => import("./panel"));
+          export function App({ ready }) { return <Loaded>{ready ? <Compound.Sub /> : <Leaf />}</Loaded>; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Leaf", "Panel", "Sub"]);
+          expect(graph.edges.map(({ sourceNodeId, targetNodeId }) => [sourceNodeId, targetNodeId]).toSorted()).toEqual([
+            ["component:src/app.tsx#App", "component:src/panel.tsx#Panel"],
+            ["component:src/panel.tsx#Panel", "component:src/app.tsx#Leaf"],
+            ["component:src/panel.tsx#Panel", "component:src/panel.tsx#Sub"],
+          ]);
+          const ready = graph.layoutContext.controls.find(({ label }) => label === "ready")!;
+          for (const [targetNodeId, value] of [
+            ["component:src/panel.tsx#Sub", "true"],
+            ["component:src/app.tsx#Leaf", "false"],
+          ]) {
+            expect(graph.edges.find((edge) => edge.targetNodeId === targetNodeId)).toMatchObject({
+              type: "control",
+              activeWhen: [[{ controlId: ready.controlId, value }]],
+              layoutContext: {
+                composition: {
+                  type: "node",
+                  slot: "children",
+                  origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+                },
+              },
+            });
+          }
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("warns when a recognized React wrapper receives an arbitrary helper result", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `export function memo<T>(component: T): T;`,
+        "src/app.tsx": `
+          import { memo } from "react";
+          function Panel() { return <main />; }
+          function choose(value) { return value; }
+          const Wrapped = memo(choose(Panel));
+          export function App() { return <Wrapped />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-react-wrapper\] /)]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("does not follow a mutable default export through a static loader", async () => {
+    await withFixture(
+      {
+        "node_modules/@loadable/component/index.d.ts": `export default function loadable(load: unknown): any;`,
+        "src/panel.tsx": `
+          function Panel() { return <main />; }
+          let Alias = Panel;
+          export default Alias;
+        `,
+        "src/app.tsx": `
+          import loadable from "@loadable/component";
+          const Loaded = loadable(() => import("./panel"));
+          export function App() { return <Loaded />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title)).toEqual(["App"]);
+          expect(warnings).toEqual([expect.stringMatching(/^\[unsupported-component-binding\] /)]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("does not warn about assigned members when only the callable base is rendered", async () => {
+    await withFixture(
+      {
+        "src/app.tsx": `
+          function Panel() { return <main />; }
+          function Sub() { return <aside />; }
+          const Wrapped = Object.assign(Panel, { get Sub() { return Sub; } });
+          export function App() { return <Wrapped />; }
+        `,
+      },
+      async (scopePath) => {
+        const warnings: string[] = [];
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+          writeStderr: (output) => warnings.push(output),
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Panel"]);
+          expect(warnings).toEqual([]);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
   it("omits stored defaults while preserving branch and prerequisite semantics", async () => {
     await withFixture(
       {
