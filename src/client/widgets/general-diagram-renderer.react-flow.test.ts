@@ -16,6 +16,7 @@ const sequenceDiagram = {
       groups: [],
       nodes: [
         {
+          synthetic: false,
           nodeId: "participant",
           type: "lifeline",
           kind: "participant",
@@ -37,9 +38,10 @@ describe("general diagram React Flow adapter", () => {
         layout: { layoutId: "general" },
         graph: {
           ...sequenceDiagram.diagram.graph,
-          groups: [{ type: "default", groupId: "group", title: "Group", description: "Boundary" }],
+          groups: [{ synthetic: false, type: "default", groupId: "group", title: "Group", description: "Boundary" }],
           nodes: [
             {
+              synthetic: false,
               nodeId: "step",
               type: "default",
               kind: "action",
@@ -136,8 +138,15 @@ describe("general diagram React Flow adapter", () => {
         graph: {
           groups: [],
           nodes: [
-            { nodeId: "parent", type: "default", kind: "React component", title: "Parent", links: [] },
-            { nodeId: "child", type: "default", kind: "React component", title: "Child", links: [] },
+            {
+              synthetic: false,
+              nodeId: "parent",
+              type: "default",
+              kind: "React component",
+              title: "Parent",
+              links: [],
+            },
+            { synthetic: false, nodeId: "child", type: "default", kind: "React component", title: "Child", links: [] },
           ],
           edges: [
             {
@@ -183,8 +192,8 @@ describe("general diagram React Flow adapter", () => {
         graph: {
           groups: [],
           nodes: [
-            { nodeId: "renderer", type: "default", kind: "React component", title: "Renderer" },
-            { nodeId: "content", type: "default", kind: "React component", title: "Content" },
+            { synthetic: false, nodeId: "renderer", type: "default", kind: "React component", title: "Renderer" },
+            { synthetic: false, nodeId: "content", type: "default", kind: "React component", title: "Content" },
           ],
           edges: [
             {

@@ -27,7 +27,7 @@ function behavior(title: string): CompanionCatalog["artifacts"][number] {
       },
       graph: {
         groups: [],
-        nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title }],
+        nodes: [{ synthetic: false, nodeId: "submit", type: "default", kind: "trigger", title }],
         edges: [],
       },
     },

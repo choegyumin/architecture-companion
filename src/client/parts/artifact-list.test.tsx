@@ -15,7 +15,7 @@ function createDiagram(id: string, title: string): Artifact {
       layout: { layoutId: "general" },
       graph: {
         groups: [],
-        nodes: [{ type: "default", nodeId: `${id}-node`, kind: "step", title: `${title} step` }],
+        nodes: [{ synthetic: false, type: "default", nodeId: `${id}-node`, kind: "step", title: `${title} step` }],
         edges: [],
       },
     },

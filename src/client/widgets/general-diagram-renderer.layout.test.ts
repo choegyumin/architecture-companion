@@ -26,9 +26,10 @@ const diagramBase = {
 
 const groupedDiagram = {
   ...diagramBase,
-  groups: [{ type: "default", groupId: "checkout", title: "Checkout" }],
+  groups: [{ synthetic: false, type: "default", groupId: "checkout", title: "Checkout" }],
   nodes: [
     {
+      synthetic: false,
       nodeId: "checkout-page",
       type: "default",
       kind: "component",
@@ -36,6 +37,7 @@ const groupedDiagram = {
       groupId: "checkout",
     },
     {
+      synthetic: false,
       nodeId: "payment-client",
       type: "default",
       kind: "component",
@@ -62,8 +64,8 @@ const directionDiagram = {
   ...diagramBase,
   groups: [],
   nodes: [
-    { nodeId: "source", type: "default", kind: "source", title: "Source" },
-    { nodeId: "target", type: "default", kind: "target", title: "Target" },
+    { synthetic: false, nodeId: "source", type: "default", kind: "source", title: "Source" },
+    { synthetic: false, nodeId: "target", type: "default", kind: "target", title: "Target" },
   ],
   edges: [{ edgeId: "source-target", type: "default", sourceNodeId: "source", targetNodeId: "target" }],
 } satisfies GeneralDiagramGraph;
@@ -78,12 +80,12 @@ describe("general diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { nodeId: "root", type: "default", kind: "source", title: "Root" },
-        { nodeId: "spine-mid", type: "default", kind: "source", title: "Spine mid" },
-        { nodeId: "spine-deep", type: "default", kind: "source", title: "Spine deep" },
-        { nodeId: "fan-a", type: "default", kind: "source", title: "Fan A" },
-        { nodeId: "fan-b", type: "default", kind: "source", title: "Fan B" },
-        { nodeId: "fan-c", type: "default", kind: "source", title: "Fan C" },
+        { synthetic: false, nodeId: "root", type: "default", kind: "source", title: "Root" },
+        { synthetic: false, nodeId: "spine-mid", type: "default", kind: "source", title: "Spine mid" },
+        { synthetic: false, nodeId: "spine-deep", type: "default", kind: "source", title: "Spine deep" },
+        { synthetic: false, nodeId: "fan-a", type: "default", kind: "source", title: "Fan A" },
+        { synthetic: false, nodeId: "fan-b", type: "default", kind: "source", title: "Fan B" },
+        { synthetic: false, nodeId: "fan-c", type: "default", kind: "source", title: "Fan C" },
       ],
       edges: [
         { edgeId: "root-spine-mid", type: "default", sourceNodeId: "root", targetNodeId: "spine-mid" },
@@ -159,9 +161,9 @@ describe("general diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { nodeId: "source", type: "default", kind: "source", title: "Source" },
-        { nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
-        { nodeId: "target", type: "default", kind: "target", title: "Target" },
+        { synthetic: false, nodeId: "source", type: "default", kind: "source", title: "Source" },
+        { synthetic: false, nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
+        { synthetic: false, nodeId: "target", type: "default", kind: "target", title: "Target" },
       ],
       edges: [
         { edgeId: "source-obstacle", type: "default", sourceNodeId: "source", targetNodeId: "obstacle" },
@@ -256,10 +258,10 @@ describe("general diagram layout", () => {
     const diagram = {
       ...diagramBase,
       groups: [
-        { type: "default", groupId: "empty", title: "Empty" },
-        { type: "default", groupId: "sibling", title: "Sibling" },
+        { synthetic: false, type: "default", groupId: "empty", title: "Empty" },
+        { synthetic: false, type: "default", groupId: "sibling", title: "Sibling" },
       ],
-      nodes: [{ nodeId: "solo", type: "default", kind: "source", title: "Solo", groupId: "sibling" }],
+      nodes: [{ synthetic: false, nodeId: "solo", type: "default", kind: "source", title: "Solo", groupId: "sibling" }],
       edges: [],
     } satisfies GeneralDiagramGraph;
 
@@ -309,9 +311,9 @@ describe("general diagram layout", () => {
     const diagram = {
       ...diagramBase,
       nodes: [
-        { nodeId: "source", type: "default", kind: "source", title: "Source" },
-        { nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
-        { nodeId: "target", type: "default", kind: "target", title: "Target" },
+        { synthetic: false, nodeId: "source", type: "default", kind: "source", title: "Source" },
+        { synthetic: false, nodeId: "obstacle", type: "default", kind: "component", title: "Obstacle" },
+        { synthetic: false, nodeId: "target", type: "default", kind: "target", title: "Target" },
       ],
       edges: [
         { edgeId: "source-obstacle", type: "default", sourceNodeId: "source", targetNodeId: "obstacle" },

@@ -27,7 +27,9 @@ const catalog: CompanionCatalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+          nodes: [
+            { synthetic: false, nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" },
+          ],
           edges: [],
         },
       },
@@ -44,7 +46,9 @@ const catalog: CompanionCatalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [
+            { synthetic: false, nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" },
+          ],
           edges: [],
         },
       },

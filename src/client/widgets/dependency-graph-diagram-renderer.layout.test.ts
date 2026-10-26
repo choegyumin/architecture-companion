@@ -33,8 +33,8 @@ const node = (nodeId: string, groupId?: string, synthetic?: boolean) => ({
   nodeId,
   type: "default" as const,
   title: nodeId,
+  synthetic: synthetic ?? false,
   ...(groupId ? { groupId } : {}),
-  ...(synthetic ? { synthetic } : {}),
 });
 const edge = (edgeId: string, sourceNodeId: string, targetNodeId: string) => ({
   edgeId,
@@ -310,18 +310,18 @@ describe("dependency graph layout", () => {
   it("preserves the full layout for unordered groups, unequal depths and virtual ID collisions", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "leaf", title: "Leaf", parentGroupId: "middle", type: "default" },
-        { groupId: "direct-nodes:", title: "Child", parentGroupId: "direct-nodes", type: "default" },
-        { groupId: "direct-nodes", title: "Parent", type: "default" },
-        { groupId: "middle", title: "Middle", parentGroupId: "direct-nodes", type: "default" },
-        { groupId: "empty", title: "Empty", type: "default" },
+        { synthetic: false, groupId: "leaf", title: "Leaf", parentGroupId: "middle", type: "default" },
+        { synthetic: false, groupId: "direct-nodes:", title: "Child", parentGroupId: "direct-nodes", type: "default" },
+        { synthetic: false, groupId: "direct-nodes", title: "Parent", type: "default" },
+        { synthetic: false, groupId: "middle", title: "Middle", parentGroupId: "direct-nodes", type: "default" },
+        { synthetic: false, groupId: "empty", title: "Empty", type: "default" },
       ],
       nodes: [
-        { nodeId: "a", title: "a", groupId: "leaf", type: "default" },
-        { nodeId: "r", title: "r", type: "default" },
-        { nodeId: "b", title: "b", groupId: "direct-nodes", type: "default" },
-        { nodeId: "s", title: "s", type: "default" },
-        { nodeId: "c", title: "c", groupId: "direct-nodes:", type: "default" },
+        { synthetic: false, nodeId: "a", title: "a", groupId: "leaf", type: "default" },
+        { synthetic: false, nodeId: "r", title: "r", type: "default" },
+        { synthetic: false, nodeId: "b", title: "b", groupId: "direct-nodes", type: "default" },
+        { synthetic: false, nodeId: "s", title: "s", type: "default" },
+        { synthetic: false, nodeId: "c", title: "c", groupId: "direct-nodes:", type: "default" },
       ],
       edges: [
         { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },
@@ -411,16 +411,16 @@ describe("dependency graph layout", () => {
   it("preserves the full multigraph layout with cycles, parallel edges and self loops", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "left", title: "left", type: "default" },
-        { groupId: "right", title: "right", type: "default" },
-        { groupId: "tail", title: "tail", type: "default" },
+        { synthetic: false, groupId: "left", title: "left", type: "default" },
+        { synthetic: false, groupId: "right", title: "right", type: "default" },
+        { synthetic: false, groupId: "tail", title: "tail", type: "default" },
       ],
       nodes: [
-        { nodeId: "a", title: "a", groupId: "left", type: "default" },
-        { nodeId: "b", title: "b", groupId: "left", type: "default" },
-        { nodeId: "c", title: "c", groupId: "right", type: "default" },
-        { nodeId: "d", title: "d", groupId: "tail", type: "default" },
-        { nodeId: "e", title: "e", type: "default" },
+        { synthetic: false, nodeId: "a", title: "a", groupId: "left", type: "default" },
+        { synthetic: false, nodeId: "b", title: "b", groupId: "left", type: "default" },
+        { synthetic: false, nodeId: "c", title: "c", groupId: "right", type: "default" },
+        { synthetic: false, nodeId: "d", title: "d", groupId: "tail", type: "default" },
+        { synthetic: false, nodeId: "e", title: "e", type: "default" },
       ],
       edges: [
         { edgeId: "a-b", type: "default", sourceNodeId: "a", targetNodeId: "b" },

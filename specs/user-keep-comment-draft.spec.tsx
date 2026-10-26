@@ -31,7 +31,9 @@ const catalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [
+            { synthetic: false, nodeId: "submit", type: "default", kind: "trigger", title: "Checkout submitted" },
+          ],
           edges: [],
         },
       },

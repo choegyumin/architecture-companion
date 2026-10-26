@@ -4,6 +4,7 @@ it("resolves supplier names from the registry, stored nodes, and the outside-gra
   const graph = {
     nodes: [
       {
+        synthetic: false,
         nodeId: "supplied",
         type: "default",
         title: "Supplied",
@@ -18,13 +19,15 @@ it("resolves supplier names from the registry, stored nodes, and the outside-gra
         },
       },
       {
+        synthetic: false,
         nodeId: "inner",
         type: "default",
         title: "Inner",
         layoutContext: { definitionId: "definition:Inner", origins: [] },
       },
-      { nodeId: "authored", type: "default", title: "Authored" },
+      { synthetic: false, nodeId: "authored", type: "default", title: "Authored" },
       {
+        synthetic: false,
         nodeId: "empty",
         type: "default",
         title: "Empty",
@@ -52,6 +55,7 @@ it("prefers an explicit registry entry over a matching node", () => {
   const graph = {
     nodes: [
       {
+        synthetic: false,
         nodeId: "supplied",
         type: "default",
         title: "Supplied",
@@ -61,6 +65,7 @@ it("prefers an explicit registry entry over a matching node", () => {
         },
       },
       {
+        synthetic: false,
         nodeId: "inner@1",
         type: "default",
         title: "Inner from node",

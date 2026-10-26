@@ -10,6 +10,7 @@ describe("sequence diagram layout", () => {
     const diagram = createSequenceDiagram({
       nodes: [
         {
+          synthetic: false,
           nodeId: "client",
           type: "lifeline",
           kind: "participant",
@@ -23,6 +24,7 @@ describe("sequence diagram layout", () => {
           ],
         },
         {
+          synthetic: false,
           nodeId: "server",
           type: "lifeline",
           kind: "participant",
@@ -58,6 +60,7 @@ describe("sequence diagram layout", () => {
     const diagram = createSequenceDiagram({
       nodes: [
         {
+          synthetic: false,
           nodeId: "client",
           type: "lifeline",
           kind: "participant",
@@ -71,6 +74,7 @@ describe("sequence diagram layout", () => {
           ],
         },
         {
+          synthetic: false,
           nodeId: "server",
           type: "lifeline",
           kind: "participant",
@@ -78,6 +82,7 @@ describe("sequence diagram layout", () => {
           activations: [],
         },
         {
+          synthetic: false,
           nodeId: "validity",
           type: "fragment",
           kind: "condition",
@@ -117,11 +122,12 @@ describe("sequence diagram layout", () => {
   it("sizes each fragment to the message routes of its branches", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { nodeId: "first", type: "lifeline", kind: "participant", title: "First", activations: [] },
-        { nodeId: "second", type: "lifeline", kind: "participant", title: "Second", activations: [] },
-        { nodeId: "third", type: "lifeline", kind: "participant", title: "Third", activations: [] },
-        { nodeId: "fourth", type: "lifeline", kind: "participant", title: "Fourth", activations: [] },
+        { synthetic: false, nodeId: "first", type: "lifeline", kind: "participant", title: "First", activations: [] },
+        { synthetic: false, nodeId: "second", type: "lifeline", kind: "participant", title: "Second", activations: [] },
+        { synthetic: false, nodeId: "third", type: "lifeline", kind: "participant", title: "Third", activations: [] },
+        { synthetic: false, nodeId: "fourth", type: "lifeline", kind: "participant", title: "Fourth", activations: [] },
         {
+          synthetic: false,
           nodeId: "retry",
           type: "fragment",
           kind: "retry",
@@ -172,9 +178,10 @@ describe("sequence diagram layout", () => {
   it("reserves vertical space before the first message of each fragment branch", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { synthetic: false, nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+        { synthetic: false, nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
         {
+          synthetic: false,
           nodeId: "result",
           type: "fragment",
           kind: "result",
@@ -228,9 +235,10 @@ describe("sequence diagram layout", () => {
   it("keeps consecutive fragments from sharing a boundary", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
-        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { synthetic: false, nodeId: "client", type: "lifeline", kind: "participant", title: "Client", activations: [] },
+        { synthetic: false, nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
         {
+          synthetic: false,
           nodeId: "first-fragment",
           type: "fragment",
           kind: "condition",
@@ -239,6 +247,7 @@ describe("sequence diagram layout", () => {
           branches: [{ branchId: "first-branch", guard: "first", startMessageId: "first", endMessageId: "first" }],
         },
         {
+          synthetic: false,
           nodeId: "second-fragment",
           type: "fragment",
           kind: "condition",
@@ -269,8 +278,8 @@ describe("sequence diagram layout", () => {
   it("extends a self-message to the lifeline gap and keeps the whole row below the loop", async () => {
     const diagram = createSequenceDiagram({
       nodes: [
-        { nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
-        { nodeId: "worker", type: "lifeline", kind: "participant", title: "Worker", activations: [] },
+        { synthetic: false, nodeId: "server", type: "lifeline", kind: "participant", title: "Server", activations: [] },
+        { synthetic: false, nodeId: "worker", type: "lifeline", kind: "participant", title: "Worker", activations: [] },
       ],
       edges: [
         { edgeId: "self", type: "message", sourceNodeId: "server", targetNodeId: "server", messageType: "sync" },

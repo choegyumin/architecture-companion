@@ -744,9 +744,10 @@ export type ComponentStructureDiagramGraph = z.infer<typeof componentStructureDi
 /* === Serialization === */
 
 /** Stored graphs record the synthetic marker only where a generator set it, dropping the parse default. */
-const omitDefaultSynthetic = <T extends { synthetic: boolean }>(element: T) => {
+type WithoutSyntheticMarker<T> = T extends { synthetic: boolean } ? Omit<T, "synthetic"> : T;
+const omitDefaultSynthetic = <T extends { synthetic: boolean }>(element: T): T | WithoutSyntheticMarker<T> => {
   const { synthetic: _synthetic, ...withoutMarker } = element;
-  return element.synthetic ? element : withoutMarker;
+  return (element.synthetic ? element : withoutMarker) as T | WithoutSyntheticMarker<T>;
 };
 
 export function toDiagramGraphInput(

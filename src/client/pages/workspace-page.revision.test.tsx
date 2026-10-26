@@ -38,6 +38,7 @@ function catalog(label: string): CompanionCatalog {
             groups: [],
             nodes: [
               {
+                synthetic: false,
                 type: "default",
                 nodeId: "checkout-page",
                 kind: "component",
@@ -62,7 +63,9 @@ function catalog(label: string): CompanionCatalog {
           },
           graph: {
             groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` }],
+            nodes: [
+              { synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title: `${label} workflow` },
+            ],
             edges: [],
           },
         },

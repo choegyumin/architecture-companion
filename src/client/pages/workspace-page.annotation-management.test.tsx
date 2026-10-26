@@ -33,7 +33,9 @@ const catalog: CompanionCatalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", nodeId: "catalog-page", kind: "component", title: "Catalog page" }],
+          nodes: [
+            { synthetic: false, type: "default", nodeId: "catalog-page", kind: "component", title: "Catalog page" },
+          ],
           edges: [],
         },
       },
@@ -50,7 +52,9 @@ const catalog: CompanionCatalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" }],
+          nodes: [
+            { synthetic: false, type: "default", nodeId: "checkout-page", kind: "component", title: "Checkout page" },
+          ],
           edges: [],
         },
       },
@@ -67,7 +71,9 @@ const catalog: CompanionCatalog = {
         layout: { layoutId: "general" },
         graph: {
           groups: [],
-          nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" }],
+          nodes: [
+            { synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title: "Checkout submitted" },
+          ],
           edges: [],
         },
       },

@@ -28,7 +28,7 @@ function catalog(title: string): CompanionCatalog {
           },
           graph: {
             groups: [],
-            nodes: [{ type: "default", nodeId: "submit", kind: "trigger", title }],
+            nodes: [{ synthetic: false, type: "default", nodeId: "submit", kind: "trigger", title }],
             edges: [],
           },
         },
