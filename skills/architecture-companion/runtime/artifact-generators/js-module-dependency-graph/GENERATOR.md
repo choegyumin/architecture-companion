@@ -31,7 +31,7 @@ node "<generator-directory>/run.js" \
 
 - Specify at least one source path. Files and directories are both allowed, but they must be within the scope.
 - `--tsconfig` accepts an absolute or scope-relative path to an existing file within the scope. If omitted, `<scope>/tsconfig.json` is used when present; parent directories are not searched.
-- `--ignore-path` can be repeated to ignore paths during source collection. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
+- `--ignore-path` can be repeated. Write patterns in gitignore syntax against slash-separated, scope-relative paths. Brace expansion is not supported, and patterns without slashes apply at every depth.
 
 ## Analysis scope
 
@@ -55,7 +55,7 @@ This file contains only a candidate graph with `groups`, `nodes`, and `edges` fo
 
 ## Interpretation and integration
 
-Local source modules and uncollected local file boundaries are nodes identified by their source files. Uncollected boundaries use the same default node presentation as other local modules, with a description identifying their unanalyzed internals. Both follow the same directory groups and nested package boundaries in the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. The external packages group and its nodes carry `synthetic: true` because they are presentation boundaries rather than facts grounded in collected source; local modules, directory groups, and package groups omit the marker. Package internals are not expanded.
+Local source modules and uncollected local file boundaries are nodes identified by their source files and follow the same directory groups and nested package boundaries in the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. The external packages group and its nodes carry `synthetic: true` because they are presentation boundaries rather than facts grounded in collected source; local modules, directory groups, and package groups omit the marker. Package internals are not expanded.
 
 When groups exist, the overview hides relationships within top-level groups and aggregates relationships between groups or nodes outside groups, displaying them as `×N`. Focus a group, node, or aggregated path to inspect the relevant underlying edges. Without groups, the overview shows the underlying edges directly.
 
