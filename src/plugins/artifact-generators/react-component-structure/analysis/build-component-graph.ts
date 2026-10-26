@@ -286,6 +286,27 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     [ts.SyntaxKind.ExclamationEqualsToken]: { family: "loosely-equal", inverted: true },
   };
 
+  // The loaded compiler may predate some syntax and checker APIs this analyzer
+  // asks about: `satisfies` arrived in 4.9 and JSX namespace names became a
+  // distinct node later, so an older parser never produces those nodes and
+  // false is exact. Older checkers lack index-signature key types, so that
+  // member lookup stays unresolved rather than approximated.
+  function isSatisfiesExpression(node: ts.Node): node is ts.SatisfiesExpression {
+    return typeof ts.isSatisfiesExpression === "function" && ts.isSatisfiesExpression(node);
+  }
+
+  function isJsxNamespacedName(node: ts.Node): node is ts.JsxNamespacedName {
+    return typeof ts.isJsxNamespacedName === "function" && ts.isJsxNamespacedName(node);
+  }
+
+  function indexSignatureMemberType(name: string, type: ts.Type, checker: ts.TypeChecker): ts.Type | undefined {
+    if (typeof checker.getIndexInfosOfType !== "function" || typeof checker.getStringLiteralType !== "function")
+      return undefined;
+    return checker
+      .getIndexInfosOfType(type)
+      .find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+  }
+
   function formatDiagnostic(diagnostic: ts.Diagnostic): string {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
   }
@@ -343,7 +364,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       ts.isAsExpression(current) ||
       ts.isParenthesizedExpression(current) ||
       ts.isNonNullExpression(current) ||
-      ts.isSatisfiesExpression(current) ||
+      isSatisfiesExpression(current) ||
       ts.isTypeAssertionExpression(current)
     ) {
       current = current.expression;
@@ -915,7 +936,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     reportUnsupported?: UnsupportedReporter,
     symbolOverride?: ts.Symbol,
   ): ComponentReference | undefined {
-    if (ts.isJsxNamespacedName(expression)) return undefined;
+    if (isJsxNamespacedName(expression)) return undefined;
     const unwrapped = unwrapExpression(expression);
     if (ts.isCallExpression(unwrapped)) {
       if (isLoadableCall(unwrapped, context.checker))
@@ -1051,7 +1072,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function leftmostIdentifier(expression: ts.Expression | ts.JsxTagNameExpression): ts.Identifier | undefined {
     if (ts.isIdentifier(expression)) return expression;
     if (ts.isPropertyAccessExpression(expression)) return leftmostIdentifier(expression.expression);
-    if (ts.isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
+    if (isJsxNamespacedName(expression)) return leftmostIdentifier(expression.namespace);
     return undefined;
   }
 
@@ -1156,9 +1177,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const member = checker.getPropertyOfType(type, name);
       const nextType = member
         ? checker.getTypeOfSymbolAtLocation(member, location)
-        : checker
-            .getIndexInfosOfType(type)
-            .find(({ keyType }) => checker.isTypeAssignableTo(checker.getStringLiteralType(name), keyType))?.type;
+        : indexSignatureMemberType(name, type, checker);
       if (!nextType) return undefined;
       members.push({ name, symbol: member, type: nextType });
       type = nextType;
@@ -1250,7 +1269,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         context.host,
         undefined,
         undefined,
-        context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier),
+        // Older programs have no per-usage module mode; undefined matches
+        // their own resolution semantics.
+        typeof context.program.getModeForUsageLocation === "function"
+          ? context.program.getModeForUsageLocation(sourceFile, binding.moduleSpecifier)
+          : undefined,
       ).resolvedModule;
       if (resolved?.isExternalLibraryImport) {
         const packageName = externalPackageName(binding.moduleSpecifier.text);
@@ -1320,7 +1343,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function externalReferencePath(
     expression: ts.Expression | ts.JsxTagNameExpression,
   ): Readonly<{ root: ts.Identifier; members: readonly string[] }> | undefined {
-    if (ts.isJsxNamespacedName(expression)) return undefined;
+    if (isJsxNamespacedName(expression)) return undefined;
     let current = unwrapExpression(expression);
     const members: string[] = [];
     while (ts.isPropertyAccessExpression(current)) {
