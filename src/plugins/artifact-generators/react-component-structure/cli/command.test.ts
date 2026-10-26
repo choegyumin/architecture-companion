@@ -1435,6 +1435,112 @@ describe("React component structure command", () => {
     );
   });
 
+  it("routes children rendered through useMemo values", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
+        `,
+        "src/app.tsx": `
+          import * as React from "react";
+
+          function Target() { return <span />; }
+
+          function Panel({ children, fallback }) {
+            const content = React.useMemo(() => <div>{children}</div>, [children]);
+            const body = React.useMemo(() => fallback ?? <section>{children}</section>, [fallback, children]);
+            return <main>{content}{body}</main>;
+          }
+
+          export function App() {
+            return <Panel><Target /></Panel>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Panel", "Target"]);
+          const target = graph.nodes.find(({ title }) => title === "Target")!;
+          expect(
+            graph.edges.some(
+              ({ sourceNodeId, targetNodeId, layoutContext }) =>
+                sourceNodeId === "component:src/app.tsx#Panel" &&
+                targetNodeId === target.nodeId &&
+                layoutContext?.composition?.origins?.some(
+                  (origin) => origin.supplierDefinitionId === "component:src/app.tsx#App" && origin.slot === "children",
+                ),
+            ),
+          ).toBe(true);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("routes children through a declared render helper", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
+        `,
+        "src/app.tsx": `
+          import * as React from "react";
+
+          function wrapWithSpan(node, key) { return <span key={key}>{node}</span>; }
+
+          function Target() { return <span />; }
+
+          function Button({ children }) {
+            const wrapped = React.useMemo(() => wrapWithSpan(children), [children]);
+            return <button>{wrapped}</button>;
+          }
+
+          export function App() {
+            return <Button><Target /></Button>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const readGraph = async (extraArgs: readonly string[]) => {
+          const graphPath = await executeReactComponentStructureCommand(
+            ["--base", scopePath, "src", "--root", "App", ...extraArgs],
+            { writeStdout: () => undefined },
+          );
+          try {
+            return componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          } finally {
+            await rm(dirname(graphPath), { recursive: true });
+          }
+        };
+        const plain = await readGraph([]);
+        expect(plain.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button"]);
+
+        const declared = await readGraph(["--render", "wrapWithSpan"]);
+        expect(declared.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Button", "Target"]);
+        const target = declared.nodes.find(({ title }) => title === "Target")!;
+        expect(
+          declared.edges.find(
+            ({ sourceNodeId, targetNodeId }) =>
+              sourceNodeId === "component:src/app.tsx#Button" && targetNodeId === target.nodeId,
+          ),
+        ).toMatchObject({
+          layoutContext: {
+            composition: {
+              type: "node",
+              slot: "children",
+              origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+            },
+          },
+        });
+      },
+    );
+  });
+
   it("warns when a recognized React wrapper receives an arbitrary helper result", async () => {
     await withFixture(
       {

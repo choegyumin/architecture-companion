@@ -135,6 +135,7 @@ export type ComponentGraphOptions = Readonly<{
   rootPatterns?: readonly string[];
   hocNames?: readonly string[];
   loaderSpecifiers?: readonly string[];
+  renderNames?: readonly string[];
   onDiagnostic?: (diagnostic: ComponentGraphDiagnostic) => void;
 }>;
 
@@ -273,6 +274,7 @@ type AnalysisContext = Readonly<{
   bindingWrites: ReadonlySet<ts.Symbol>;
   hocNames: ReadonlySet<string>;
   loaderSpecifiers: ReadonlySet<string>;
+  renderNames: ReadonlySet<string>;
 }>;
 
 // AST predicates, enum values, the checker, and declarations must use the same compiler.
@@ -452,6 +454,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
     if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "createPortal") return false;
     const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
     return getImportModuleSpecifier(checker.getSymbolAtLocation(receiver)) === "react-dom";
+  }
+
+  function isUseMemoCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "useMemo");
+  }
+
+  function memoizedFactory(node: ts.CallExpression): ts.ArrowFunction | ts.FunctionExpression | undefined {
+    const [factory] = node.arguments;
+    return factory !== undefined && (ts.isArrowFunction(factory) || ts.isFunctionExpression(factory))
+      ? factory
+      : undefined;
   }
 
   function isReactChildrenMapCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -784,6 +797,14 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   function isDeclaredHocCall(call: ts.CallExpression, context: AnalysisContext): boolean {
     const callee = unwrapExpression(call.expression);
     return ts.isIdentifier(callee) && context.hocNames.has(callee.text);
+  }
+
+  // A declared render helper matches the same way as a declared HOC: the
+  // callee identifier's local name is the caller's assertion that the call
+  // renders its first argument.
+  function isDeclaredRenderCall(call: ts.CallExpression, context: AnalysisContext): boolean {
+    const callee = unwrapExpression(call.expression);
+    return ts.isIdentifier(callee) && context.renderNames.has(callee.text);
   }
 
   function isKnownComponentFactoryCall(call: ts.CallExpression, context: AnalysisContext): boolean {
@@ -2236,6 +2257,17 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           if (rendered) analyzeRendered(rendered);
           return;
         }
+        if (isUseMemoCall(unwrapped, context.checker)) {
+          // A memo holds its factory's return value; deps only decide recompute.
+          const factory = memoizedFactory(unwrapped);
+          if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, activeRuleset);
+          return;
+        }
+        if (isDeclaredRenderCall(unwrapped, context)) {
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
         if (
           isArrayRenderingMethodCall(unwrapped, context.checker) ||
           isReactChildrenMapCall(unwrapped, context.checker)
@@ -2453,6 +2485,23 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         return;
       }
       if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory)
+          controlledReturns(
+            factory.body,
+            ownerId,
+            context,
+            (returned, next) => collect(returned, next, visitedSymbols),
+            ruleset,
+          );
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
         const [rendered] = unwrapped.arguments;
         if (rendered) collect(rendered, ruleset, visitedSymbols);
         return;
@@ -3236,6 +3285,16 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         return;
       }
       if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isUseMemoCall(unwrapped, context.checker)) {
+        const factory = memoizedFactory(unwrapped);
+        if (factory) controlledReturns(factory.body, definition.id, context, analyzeRendered, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isDeclaredRenderCall(unwrapped, context)) {
         const [rendered] = unwrapped.arguments;
         if (rendered) analyzeRendered(rendered, ruleset);
         return;
@@ -4653,6 +4712,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       bindingWrites,
       hocNames: new Set(options.hocNames ?? []),
       loaderSpecifiers: new Set(options.loaderSpecifiers ?? []),
+      renderNames: new Set(options.renderNames ?? []),
       boundaryTargets: new Map(),
       uses: new Map(),
       directUseIdsByOwner: new Map(),

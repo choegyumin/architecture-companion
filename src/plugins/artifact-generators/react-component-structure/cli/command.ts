@@ -12,7 +12,7 @@ import {
 
 const usage = `Usage: react-component-structure --base <directory> [--tsconfig <path>]
   [--exclude-path <glob> ...] [--exclude-component <glob> ...] [--root <glob> ...]
-  [--hoc <name> ...] [--loader <package> ...] <source-path>...`;
+  [--hoc <name> ...] [--loader <package> ...] [--render <name> ...] <source-path>...`;
 
 type CommandEnvironment = Readonly<{
   writeStdout: (output: string) => void;
@@ -36,6 +36,7 @@ function parseArguments(args: readonly string[]): ParsedArguments {
   const rootPatterns: string[] = [];
   const hocNames: string[] = [];
   const loaderSpecifiers: string[] = [];
+  const renderNames: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index];
@@ -62,6 +63,9 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     } else if (option === "--loader") {
       loaderSpecifiers.push(readValue(args, index, option));
       index += 1;
+    } else if (option === "--render") {
+      renderNames.push(readValue(args, index, option));
+      index += 1;
     } else if (option.startsWith("--")) {
       throw new Error(`Unknown argument: ${option}\n${usage}`);
     } else {
@@ -79,6 +83,7 @@ function parseArguments(args: readonly string[]): ParsedArguments {
     ...(rootPatterns.length > 0 ? { rootPatterns } : {}),
     ...(hocNames.length > 0 ? { hocNames } : {}),
     ...(loaderSpecifiers.length > 0 ? { loaderSpecifiers } : {}),
+    ...(renderNames.length > 0 ? { renderNames } : {}),
   };
 }
 
