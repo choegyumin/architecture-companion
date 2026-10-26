@@ -82,6 +82,47 @@ describe("dependency graph React Flow adapter", () => {
     expect(commentModel.nodes.find((node) => node.id === "a")?.data).not.toHaveProperty("activatable");
   });
 
+  it("renders aggregates against the peeled top level without the wrapping root shell", async () => {
+    const shelled = {
+      ...diagram,
+      diagram: {
+        ...diagram.diagram,
+        graph: dependencyDiagramGraphSchema.parse({
+          groups: [
+            { groupId: "group:directory:src", title: "src" },
+            { groupId: "group:directory:src/app", title: "App", parentGroupId: "group:directory:src" },
+            { groupId: "group:directory:src/app/nested", title: "Nested", parentGroupId: "group:directory:src/app" },
+            { groupId: "group:directory:src/library", title: "Library", parentGroupId: "group:directory:src" },
+          ],
+          nodes: [
+            { nodeId: "a", type: "default", title: "A", groupId: "group:directory:src/app" },
+            { nodeId: "b", type: "default", title: "B", groupId: "group:directory:src/app/nested" },
+            { nodeId: "c", type: "default", title: "C", groupId: "group:directory:src/library" },
+          ],
+          edges: [
+            { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c", label: "Uses C" },
+            { edgeId: "b-c", type: "default", sourceNodeId: "b", targetNodeId: "c" },
+            { edgeId: "b-a", type: "default", sourceNodeId: "b", targetNodeId: "a" },
+          ],
+        }),
+      },
+    } satisfies Artifact;
+    const layout = await layoutDependencyGraph(shelled.diagram.graph, sizes);
+    const model = buildDependencyGraphDiagramReactFlowRenderModel(shelled, layout, vi.fn());
+
+    expect(model.nodes.find((node) => node.id === "group:directory:src")).toBeUndefined();
+    expect(model.nodes.find((node) => node.id === "group:directory:src/app")?.type).toBe("labeled-group");
+    const aggregate = model.edges.find(
+      (edge) => edge.source === "group:directory:src/app" && edge.target === "group:directory:src/library",
+    );
+    if (aggregate?.type !== "connection") throw new Error("Missing peeled aggregate route");
+    expect(model.edgeTargets?.get(aggregate.id)).toMatchObject({
+      sourceId: "group:directory:src/app",
+      targetId: "group:directory:src/library",
+      edgeIds: ["a-c", "b-c"],
+    });
+  });
+
   it("renders an inert dashed bounding group for a mixed group's loose nodes between group and cards", async () => {
     const layout = await layoutDependencyGraph(diagram.diagram.graph, sizes);
     const onAggregateActivate = vi.fn();

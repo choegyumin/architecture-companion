@@ -16,6 +16,7 @@ import {
   getDependencyElementBounds,
   getDependencyNodeBundleIds,
   layoutDependencyGraph,
+  peelDependencyRootShell,
   routeAggregateDependencyEdges,
   routeNodeDependencyEdge,
   routeOriginalDependencyEdge,
@@ -176,7 +177,9 @@ export function buildDependencyGraphDiagramReactFlowRenderModel(
   onOpenSource: (href: string) => void,
   options: DependencyRenderOptions = {},
 ): DiagramReactFlowRenderModel {
-  const graph = (artifact.diagram as DependencyGraphDiagram).graph;
+  // The layout runs on the peeled view, so aggregation must see the same top
+  // level; the stored artifact itself keeps the factual hierarchy.
+  const graph = peelDependencyRootShell((artifact.diagram as DependencyGraphDiagram).graph);
   const nodes = buildDiagramReactFlowNodes(artifact, layout, onOpenSource, options.nodesActivatable);
   const bounds = getDependencyElementBounds(layout);
   const cards = layout.nodes.map(({ id }) => ({

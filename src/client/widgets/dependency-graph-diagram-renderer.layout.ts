@@ -207,19 +207,63 @@ function layoutDirectNodes(
   };
 }
 
+/**
+ * The module dependency generator namespaces directory groups as
+ * `group:directory:<path>`; every other group identity — the synthetic
+ * `group:external-packages` boundary or a hand-authored grouping — is a
+ * deliberate boundary, not a path prefix.
+ */
+const DIRECTORY_GROUP_ID_PREFIX = "group:directory:";
+
+/**
+ * A directory shell that holds no files directly and sits alone at the top
+ * level carries no structure of its own, so the renderer drops it and promotes
+ * its children to the top level, repeating while such a shell remains. A
+ * directory with direct files, two directories side by side, a loose top-level
+ * node, or any non-directory grouping ends the peel; grouping facts below the
+ * peeled shells stay untouched. The stored artifact keeps the factual hierarchy
+ * — this view only decides what the layout treats as the top level.
+ */
+export function peelDependencyRootShell(graph: DependencyDiagramGraph): DependencyDiagramGraph {
+  let groups = graph.groups;
+  let nodes = graph.nodes;
+  while (nodes.every(({ groupId }) => groupId)) {
+    const directoryRoots = groups.filter(
+      ({ parentGroupId, groupId }) => !parentGroupId && groupId.startsWith(DIRECTORY_GROUP_ID_PREFIX),
+    );
+    if (directoryRoots.length !== 1) break;
+    const { groupId: shellId } = getOrThrow(directoryRoots.at(0), "Missing dependency root shell");
+    // A directory that directly holds files is a real folder, not a path prefix.
+    if (nodes.some(({ groupId }) => groupId === shellId)) break;
+    groups = groups.flatMap((group) => {
+      if (group.groupId === shellId) return [];
+      if (group.parentGroupId !== shellId) return [group];
+      const { parentGroupId: _peeled, ...promoted } = group;
+      return [promoted];
+    });
+    nodes = nodes.flatMap((node) => {
+      if (node.groupId !== shellId) return [node];
+      const { groupId: _peeled, ...promoted } = node;
+      return [promoted];
+    });
+  }
+  return { ...graph, groups, nodes };
+}
+
 export function layoutDependencyGraph(
   graph: DependencyDiagramGraph,
   nodeSizes: DiagramNodeSizes,
 ): Promise<DiagramLayout> {
+  const peeled = peelDependencyRootShell(graph);
   const scopes = new Map<string | undefined, ScopeInputs>(
-    [undefined, ...graph.groups.map((group) => group.groupId)].map((id) => [
+    [undefined, ...peeled.groups.map((group) => group.groupId)].map((id) => [
       id,
       { depth: 0, index: 0, children: [], nodes: [], connections: [], directConnections: [] },
     ]),
   );
   let directId = "direct-nodes";
   while (scopes.has(directId)) directId += ":";
-  graph.groups.forEach((group) => {
+  peeled.groups.forEach((group) => {
     const scope = getOrThrow(scopes.get(group.groupId), "Missing dependency scope");
     const parent = getOrThrow(scopes.get(group.parentGroupId), "Missing dependency parent scope");
     scope.parent = parent;
@@ -236,7 +280,7 @@ export function layoutDependencyGraph(
     });
   }
   const nodesById = new Map<string, { scope: ScopeInputs; index: number }>();
-  graph.nodes.forEach((node) => {
+  peeled.nodes.forEach((node) => {
     const scope = getOrThrow(scopes.get(node.groupId), "Missing dependency node scope");
     nodesById.set(node.nodeId, { scope, index: scope.nodes.length });
     scope.nodes.push(node);
