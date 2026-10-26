@@ -22,12 +22,13 @@ function componentGraph(layoutContext?: Record<string, unknown>) {
 
 describe("diagram input defaults", () => {
   test("omitted discriminators select default nodes, edges, and groups", () => {
-    expect(diagramNodeSchema.parse(node)).toEqual({ ...node, type: "default" });
+    expect(diagramNodeSchema.parse(node)).toEqual({ ...node, type: "default", synthetic: false });
     expect(diagramEdgeSchema.parse(edge)).toEqual({ ...edge, type: "default" });
     expect(diagramGroupSchema.parse({ groupId: "group", title: "Group" })).toEqual({
       groupId: "group",
       title: "Group",
       type: "default",
+      synthetic: false,
     });
   });
 
@@ -92,8 +93,8 @@ describe("authored diamond nodes and bounding groups", () => {
       ],
       edges: [{ ...edge, targetNodeId: "diamond" }],
     });
-    expect(graph.nodes.at(1)).toEqual(diamond);
-    expect(graph.groups.at(1)).toEqual({ ...bounding, parentGroupId: "outer", hideTitle: false });
+    expect(graph.nodes.at(1)).toEqual({ ...diamond, synthetic: false });
+    expect(graph.groups.at(1)).toEqual({ ...bounding, parentGroupId: "outer", hideTitle: false, synthetic: false });
   });
 
   test("diamond fields are limited to identity, title, group, and discriminator", () => {
@@ -107,7 +108,11 @@ describe("authored diamond nodes and bounding groups", () => {
   });
 
   test("bounding titles stay required even when hidden", () => {
-    expect(diagramGroupSchema.parse({ ...bounding, hideTitle: true })).toEqual({ ...bounding, hideTitle: true });
+    expect(diagramGroupSchema.parse({ ...bounding, hideTitle: true })).toEqual({
+      ...bounding,
+      hideTitle: true,
+      synthetic: false,
+    });
     expect(diagramGroupSchema.safeParse({ groupId: "bounds", type: "bounding", hideTitle: true }).success).toBe(false);
     expect(diagramGroupSchema.safeParse({ ...bounding, title: "" }).success).toBe(false);
   });

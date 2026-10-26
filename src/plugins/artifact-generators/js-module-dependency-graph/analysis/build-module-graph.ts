@@ -205,10 +205,12 @@ async function buildDiagramGraph(
           kind: "External package",
           title: dependency.target.packageName,
           groupId: "group:external-packages",
+          synthetic: true,
         });
         groups.set("group:external-packages", {
           groupId: "group:external-packages",
           title: "External packages",
+          synthetic: true,
         });
       }
 

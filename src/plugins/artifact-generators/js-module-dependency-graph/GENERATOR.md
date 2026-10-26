@@ -53,7 +53,7 @@ This file contains only a candidate graph with `groups`, `nodes`, and `edges` fo
 
 ## Interpretation and integration
 
-Local source modules are nodes identified by their source files. Directory groups and nested package boundaries form the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. Package internals are not expanded.
+Local source modules are nodes identified by their source files. Directory groups and nested package boundaries form the local hierarchy. If there is only one top-level local group, the generator omits it and promotes its immediate files and subgroups. If there are multiple top-level local roots, it preserves each group. External packages remain in a separate group and do not affect this local-root decision. The external packages group and its nodes carry `synthetic: true` because they are presentation boundaries rather than facts grounded in collected source; local modules, directory groups, and package groups omit the marker. Package internals are not expanded.
 
 When groups exist, the overview hides relationships within top-level groups and aggregates relationships between groups or nodes outside groups, displaying them as `×N`. Focus a group, node, or aggregated path to inspect the relevant underlying edges. Without groups, the overview shows the underlying edges directly.
 

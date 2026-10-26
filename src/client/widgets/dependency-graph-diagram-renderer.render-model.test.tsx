@@ -89,15 +89,15 @@ describe("dependency graph React Flow adapter", () => {
         ...diagram.diagram,
         graph: dependencyDiagramGraphSchema.parse({
           groups: [
-            { groupId: "group:directory:src", title: "src" },
-            { groupId: "group:directory:src/app", title: "App", parentGroupId: "group:directory:src" },
-            { groupId: "group:directory:src/app/nested", title: "Nested", parentGroupId: "group:directory:src/app" },
-            { groupId: "group:directory:src/library", title: "Library", parentGroupId: "group:directory:src" },
+            { groupId: "src", title: "src" },
+            { groupId: "src/app", title: "App", parentGroupId: "src" },
+            { groupId: "src/app/nested", title: "Nested", parentGroupId: "src/app" },
+            { groupId: "src/library", title: "Library", parentGroupId: "src" },
           ],
           nodes: [
-            { nodeId: "a", type: "default", title: "A", groupId: "group:directory:src/app" },
-            { nodeId: "b", type: "default", title: "B", groupId: "group:directory:src/app/nested" },
-            { nodeId: "c", type: "default", title: "C", groupId: "group:directory:src/library" },
+            { nodeId: "a", type: "default", title: "A", groupId: "src/app" },
+            { nodeId: "b", type: "default", title: "B", groupId: "src/app/nested" },
+            { nodeId: "c", type: "default", title: "C", groupId: "src/library" },
           ],
           edges: [
             { edgeId: "a-c", type: "default", sourceNodeId: "a", targetNodeId: "c", label: "Uses C" },
@@ -110,15 +110,13 @@ describe("dependency graph React Flow adapter", () => {
     const layout = await layoutDependencyGraph(shelled.diagram.graph, sizes);
     const model = buildDependencyGraphDiagramReactFlowRenderModel(shelled, layout, vi.fn());
 
-    expect(model.nodes.find((node) => node.id === "group:directory:src")).toBeUndefined();
-    expect(model.nodes.find((node) => node.id === "group:directory:src/app")?.type).toBe("labeled-group");
-    const aggregate = model.edges.find(
-      (edge) => edge.source === "group:directory:src/app" && edge.target === "group:directory:src/library",
-    );
+    expect(model.nodes.find((node) => node.id === "src")).toBeUndefined();
+    expect(model.nodes.find((node) => node.id === "src/app")?.type).toBe("labeled-group");
+    const aggregate = model.edges.find((edge) => edge.source === "src/app" && edge.target === "src/library");
     if (aggregate?.type !== "connection") throw new Error("Missing peeled aggregate route");
     expect(model.edgeTargets?.get(aggregate.id)).toMatchObject({
-      sourceId: "group:directory:src/app",
-      targetId: "group:directory:src/library",
+      sourceId: "src/app",
+      targetId: "src/library",
       edgeIds: ["a-c", "b-c"],
     });
   });

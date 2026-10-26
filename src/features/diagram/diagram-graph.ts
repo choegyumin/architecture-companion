@@ -66,6 +66,8 @@ const diagramNodeBaseShape = {
   nodeId: diagramIdSchema,
   title: z.string().min(1),
   groupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: z.boolean().default(false),
 };
 
 export const defaultDiagramNodeSchema = z
@@ -206,6 +208,8 @@ const diagramGroupBaseShape = {
   groupId: diagramIdSchema,
   title: z.string().min(1),
   parentGroupId: diagramIdSchema.optional(),
+  /** A generator-synthesized presentation element, not grounded in collected source. Parsing defaults it to false and serialization omits false. */
+  synthetic: z.boolean().default(false),
 };
 
 export const defaultDiagramGroupSchema = z
@@ -739,6 +743,12 @@ export type ComponentStructureDiagramGraph = z.infer<typeof componentStructureDi
 
 /* === Serialization === */
 
+/** Stored graphs record the synthetic marker only where a generator set it, dropping the parse default. */
+const omitDefaultSynthetic = <T extends { synthetic: boolean }>(element: T) => {
+  const { synthetic: _synthetic, ...withoutMarker } = element;
+  return element.synthetic ? element : withoutMarker;
+};
+
 export function toDiagramGraphInput(
   graph: ComponentStructureDiagramGraph,
 ): z.input<typeof componentStructureDiagramGraphSchema>;
@@ -755,8 +765,8 @@ export function toDiagramGraphInput(
   if ("layoutContext" in graph) {
     const { auxiliaryDefinitions, controls, ...layoutContext } = graph.layoutContext;
     return {
-      groups: graph.groups.map(({ type: _type, ...group }) => group),
-      nodes: graph.nodes.map(({ type: _type, ...node }) => node),
+      groups: graph.groups.map(({ type: _type, ...group }) => omitDefaultSynthetic(group)),
+      nodes: graph.nodes.map(({ type: _type, ...node }) => omitDefaultSynthetic(node)),
       edges: graph.edges.map(({ layoutContext: edgeContext, ...edge }) => {
         const context = edgeContext.composition === null ? {} : { layoutContext: edgeContext };
         if (edge.type === "default") {
@@ -784,18 +794,18 @@ export function toDiagramGraphInput(
     groups: graph.groups.map((group) => {
       if (group.type === "default") {
         const { type: _type, ...input } = group;
-        return input;
+        return omitDefaultSynthetic(input);
       }
       if (!group.hideTitle) {
         const { hideTitle: _hideTitle, ...input } = group;
-        return input;
+        return omitDefaultSynthetic(input);
       }
-      return group;
+      return omitDefaultSynthetic(group);
     }),
     nodes: graph.nodes.map((node) => {
-      if (node.type !== "default") return node;
+      if (node.type !== "default") return omitDefaultSynthetic(node);
       const { type: _type, ...input } = node;
-      return input;
+      return omitDefaultSynthetic(input);
     }),
     edges: graph.edges.map((edge) => {
       if (edge.type === "default") {

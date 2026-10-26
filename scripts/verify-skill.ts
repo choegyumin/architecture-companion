@@ -716,7 +716,11 @@ async function verifyInstalledCatalogEntry(
     instructions: "Review checkout behavior.",
     diagram: {
       layout: { layoutId: "general" },
-      graph: { groups: [], nodes: [{ nodeId: "checkout", type: "default", title: "Checkout" }], edges: [] },
+      graph: {
+        groups: [],
+        nodes: [{ nodeId: "checkout", type: "default", title: "Checkout", synthetic: false }],
+        edges: [],
+      },
     },
   };
   await writeFixtureFile(scopePath, relativePath, JSON.stringify(artifact));

@@ -31,10 +31,10 @@ const validBehavior = {
     graph: {
       groups: [],
       nodes: [
-        { nodeId: "submit", type: "default", kind: "trigger", title: "Order submitted" },
-        { nodeId: "validate", type: "default", kind: "condition", title: "Payment valid?" },
-        { nodeId: "capture", type: "default", kind: "action", title: "Capture payment" },
-        { nodeId: "confirmed", type: "default", kind: "result", title: "Order confirmed" },
+        { nodeId: "submit", type: "default", kind: "trigger", title: "Order submitted", synthetic: false },
+        { nodeId: "validate", type: "default", kind: "condition", title: "Payment valid?", synthetic: false },
+        { nodeId: "capture", type: "default", kind: "action", title: "Capture payment", synthetic: false },
+        { nodeId: "confirmed", type: "default", kind: "result", title: "Order confirmed", synthetic: false },
       ],
       edges: [
         { edgeId: "submit-validate", type: "default", sourceNodeId: "submit", targetNodeId: "validate" },
@@ -241,9 +241,10 @@ describe("catalog parsing", () => {
               type: "default",
               kind: "component",
               title: "Checkout page",
+              synthetic: false,
               links: [{ href: "source:///src/checkout-page.tsx#L1-L20" }],
             },
-            { nodeId: "payment-client", type: "default", kind: "client", title: "Payment client" },
+            { nodeId: "payment-client", type: "default", kind: "client", title: "Payment client", synthetic: false },
           ],
           edges: [
             {

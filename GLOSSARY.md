@@ -125,6 +125,9 @@ A label stating the condition under which a path applies. On a sequence diagram 
 **Kind**:
 A free-form display category stored as `kind` on common nodes and edges. It is descriptive text for display only and is never used as a tagged union's discriminator or for any other structural role such as selecting a schema shape or validating a field set.
 
+**Synthetic**:
+A marker stored as `synthetic` on nodes and groups, identifying an element a generator synthesized as a presentation boundary rather than one grounded in collected source. Elements grounded in source structure — such as directory groups — and elements authored directly by a person or agent are not synthetic; the external packages boundary of a module dependency graph is. Omitted or false means grounded or authored, and consumers treat an unknown element as not synthetic.
+
 **Layout Context**:
 The layout-specific data of a graph, node, or edge, stored as its `layoutContext`. Which contract the `layoutContext` follows is decided by the artifact's `layout.layoutId`, and it is validated against the schema defined for that layout. It is not a free-form extension object and not runtime state; fields defined for one layout are not arbitrarily valid in another. For example, a component structure diagram stores its root nodes (`rootNodeIds`), controls, and optionally auxiliary definition names (`auxiliaryDefinitions`) in the graph's `layoutContext`.
 

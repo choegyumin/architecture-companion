@@ -208,32 +208,24 @@ function layoutDirectNodes(
 }
 
 /**
- * The module dependency generator namespaces directory groups as
- * `group:directory:<path>`; every other group identity — the synthetic
- * `group:external-packages` boundary or a hand-authored grouping — is a
- * deliberate boundary, not a path prefix.
- */
-const DIRECTORY_GROUP_ID_PREFIX = "group:directory:";
-
-/**
- * A directory shell that holds no files directly and sits alone at the top
+ * A grounded root shell that holds no files directly and sits alone at the top
  * level carries no structure of its own, so the renderer drops it and promotes
- * its children to the top level, repeating while such a shell remains. A
- * directory with direct files, two directories side by side, a loose top-level
- * node, or any non-directory grouping ends the peel; grouping facts below the
- * peeled shells stay untouched. The stored artifact keeps the factual hierarchy
- * — this view only decides what the layout treats as the top level.
+ * its children to the top level, repeating while such a shell remains. A group
+ * with direct files, two grounded roots side by side, or a loose top-level node
+ * ends the peel. Synthetic groups — generator boundaries synthesized for
+ * presentation — never count toward the lone root and never peel; grouping
+ * facts below the peeled shells stay untouched. The stored artifact keeps the
+ * factual hierarchy — this view only decides what the layout treats as the top
+ * level.
  */
 export function peelDependencyRootShell(graph: DependencyDiagramGraph): DependencyDiagramGraph {
   let groups = graph.groups;
   let nodes = graph.nodes;
   while (nodes.every(({ groupId }) => groupId)) {
-    const directoryRoots = groups.filter(
-      ({ parentGroupId, groupId }) => !parentGroupId && groupId.startsWith(DIRECTORY_GROUP_ID_PREFIX),
-    );
-    if (directoryRoots.length !== 1) break;
-    const { groupId: shellId } = getOrThrow(directoryRoots.at(0), "Missing dependency root shell");
-    // A directory that directly holds files is a real folder, not a path prefix.
+    const groundedRoots = groups.filter(({ parentGroupId, synthetic }) => !parentGroupId && !synthetic);
+    if (groundedRoots.length !== 1) break;
+    const { groupId: shellId } = getOrThrow(groundedRoots.at(0), "Missing dependency root shell");
+    // A root that directly holds files is real content, not a wrapping shell.
     if (nodes.some(({ groupId }) => groupId === shellId)) break;
     groups = groups.flatMap((group) => {
       if (group.groupId === shellId) return [];

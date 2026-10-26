@@ -76,6 +76,7 @@ describe("JavaScript module dependency graph generator", () => {
           type: "default",
           groupId: "group:external-packages",
           title: "External packages",
+          synthetic: true,
         },
       ]);
       expect(graph.nodes).toEqual([
@@ -85,23 +86,27 @@ describe("JavaScript module dependency graph generator", () => {
           kind: "External package",
           title: "sample-package",
           groupId: "group:external-packages",
+          synthetic: true,
         },
         {
           type: "default",
           nodeId: "file:src/index.ts",
           title: "index.ts",
+          synthetic: false,
           links: [{ text: "source", href: "source:///src/index.ts" }],
         },
         {
           type: "default",
           nodeId: "file:src/runtime.ts",
           title: "runtime.ts",
+          synthetic: false,
           links: [{ text: "source", href: "source:///src/runtime.ts" }],
         },
         {
           type: "default",
           nodeId: "file:src/types.ts",
           title: "types.ts",
+          synthetic: false,
           links: [{ text: "source", href: "source:///src/types.ts" }],
         },
       ]);
@@ -146,12 +151,14 @@ describe("JavaScript module dependency graph generator", () => {
           type: "default",
           groupId: "group:directory:src",
           title: "src",
+          synthetic: false,
         },
         {
           type: "default",
           groupId: "group:package:packages/nested",
           title: "nested-package",
           description: "Package packages/nested",
+          synthetic: false,
         },
       ]);
       expect(graph.nodes).toEqual([
@@ -160,12 +167,14 @@ describe("JavaScript module dependency graph generator", () => {
           nodeId: "file:packages/nested/index.ts",
           title: "index.ts",
           groupId: "group:package:packages/nested",
+          synthetic: false,
           links: [{ text: "source", href: "source:///packages/nested/index.ts" }],
         },
         {
           type: "default",
           nodeId: "file:root.ts",
           title: "root.ts",
+          synthetic: false,
           links: [{ text: "source", href: "source:///root.ts" }],
         },
         {
@@ -173,6 +182,7 @@ describe("JavaScript module dependency graph generator", () => {
           nodeId: "file:src/index.ts",
           title: "index.ts",
           groupId: "group:directory:src",
+          synthetic: false,
           links: [{ text: "source", href: "source:///src/index.ts" }],
         },
       ]);
@@ -195,11 +205,13 @@ describe("JavaScript module dependency graph generator", () => {
           type: "default",
           groupId: "group:directory:src/client",
           title: "client",
+          synthetic: false,
         },
         {
           type: "default",
           groupId: "group:directory:src/server",
           title: "server",
+          synthetic: false,
         },
       ]);
       expect(graph.nodes).toEqual([
@@ -232,11 +244,13 @@ describe("JavaScript module dependency graph generator", () => {
           type: "default",
           groupId: "group:directory:scripts",
           title: "scripts",
+          synthetic: false,
         },
         {
           type: "default",
           groupId: "group:directory:src",
           title: "src",
+          synthetic: false,
         },
       ]);
       expect(graph.nodes).toEqual([
@@ -268,6 +282,7 @@ describe("JavaScript module dependency graph generator", () => {
           type: "default",
           groupId: "group:directory:packages/nested/lib",
           title: "lib",
+          synthetic: false,
         },
       ]);
       expect(graph.nodes).toEqual([

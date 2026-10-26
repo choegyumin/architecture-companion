@@ -44,14 +44,14 @@ function reversePropertyOrder(input: unknown): unknown {
 }
 
 describe("catalog revision", () => {
-  // Recorded from the existing revision implementation before removing repeated validation.
+  // Recorded from the existing revision implementation; re-recorded when parse output gained the synthetic default.
   it.each([
     ["empty", "bf551427bb93b2762e29fc326bedde7a8e2cac4e25b3126cea8fc66f46d2e55b"],
-    ["general", "b2c30be85034e689206c4e9cab843e4edb4249f500ee29ca6a2be574cb541651"],
-    ["flowchart", "58a2dee07de5dee0b6fa54172482ad0cdd11729b7e2f4d3573274638194b1c28"],
-    ["sequence", "e18ce46d642b6fcb817a6b7f5bc2080d46331539ac595d1e994ba28494939c0f"],
-    ["dependency-graph", "ddeba33cbd7e2990dd883351b0496ed3fd29486760586e06cbbb55b65e472c94"],
-    ["component-structure", "505a7797572cb2db8c19b5957bec1ffbf63574c102793fd07a8290fe18b6f3e5"],
+    ["general", "ed77fbfc7a2ac65d98843a645765618433f5a80d623cb7fb70aa241fb4ed3a2e"],
+    ["flowchart", "e4b4e2b7e79b066263698ba370786e002c4969987a73645c775b23724b0dcd4d"],
+    ["sequence", "75ecb844bbe6489d87450888bddaf13848d8956dd863b3f47a6e00f7341a6193"],
+    ["dependency-graph", "2d5972eea21104fd5d5d71a125682bdbf296d1aaa6d055cf96c2b56b3a6f0510"],
+    ["component-structure", "634f88aaa3b72b3a4b334fb9df0fadfe806345a07ea993f6ce6beca491324196"],
   ])("preserves the existing %s revision regardless of authored property order", async (kind, revisionId) => {
     const scopePath = await mkdtemp(join(tmpdir(), "architecture-companion-revision-"));
     const document = {

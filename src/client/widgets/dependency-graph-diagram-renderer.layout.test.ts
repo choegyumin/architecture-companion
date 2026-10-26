@@ -29,11 +29,12 @@ function doesNotOverlap(layout: DiagramLayout, leftId: string, rightId: string):
   );
 }
 
-const node = (nodeId: string, groupId?: string) => ({
+const node = (nodeId: string, groupId?: string, synthetic?: boolean) => ({
   nodeId,
   type: "default" as const,
   title: nodeId,
   ...(groupId ? { groupId } : {}),
+  ...(synthetic ? { synthetic } : {}),
 });
 const edge = (edgeId: string, sourceNodeId: string, targetNodeId: string) => ({
   edgeId,
@@ -101,107 +102,106 @@ describe("dependency graph layout", () => {
     expect(doesNotOverlap(layout, "app", "library")).toBe(true);
   });
 
-  it("peels single wrapping directory shells until the top level shows real structure", async () => {
+  it("peels single wrapping shells until the top level shows real structure", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "group:directory:src", title: "src" },
-        { groupId: "group:directory:src/app", title: "app", parentGroupId: "group:directory:src" },
-        { groupId: "group:directory:src/app/features", title: "features", parentGroupId: "group:directory:src/app" },
-        { groupId: "group:directory:src/app/shared", title: "shared", parentGroupId: "group:directory:src/app" },
+        { groupId: "src", title: "src" },
+        { groupId: "src/app", title: "app", parentGroupId: "src" },
+        { groupId: "src/app/features", title: "features", parentGroupId: "src/app" },
+        { groupId: "src/app/shared", title: "shared", parentGroupId: "src/app" },
       ],
-      nodes: [
-        node("feature-file", "group:directory:src/app/features"),
-        node("shared-file", "group:directory:src/app/shared"),
-      ],
+      nodes: [node("feature-file", "src/app/features"), node("shared-file", "src/app/shared")],
       edges: [edge("feature-shared", "feature-file", "shared-file")],
     });
     const layout = await layoutDependencyGraph(graph, sizes(graph));
 
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual([
-      "group:directory:src/app/features",
-      "group:directory:src/app/shared",
-    ]);
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src/app/features", "src/app/shared"]);
     expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
-    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("group:directory:src/app/features");
-    expect(layout.nodes.find(({ id }) => id === "shared-file")?.parentId).toBe("group:directory:src/app/shared");
+    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("src/app/features");
+    expect(layout.nodes.find(({ id }) => id === "shared-file")?.parentId).toBe("src/app/shared");
   });
 
-  it("peels a wrapping directory shell beside a synthetic top-level group", async () => {
+  it("peels a wrapping grounded shell beside a synthetic top-level group", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "group:directory:src", title: "src" },
-        { groupId: "group:directory:src/pages", title: "pages", parentGroupId: "group:directory:src" },
-        { groupId: "group:external-packages", title: "External packages" },
+        { groupId: "src", title: "src" },
+        { groupId: "src/pages", title: "pages", parentGroupId: "src" },
+        { groupId: "external-packages", title: "External packages", synthetic: true },
       ],
-      nodes: [node("page-file", "group:directory:src/pages"), node("external:react", "group:external-packages")],
+      nodes: [node("page-file", "src/pages"), node("external:react", "external-packages", true)],
       edges: [edge("page-react", "page-file", "external:react")],
     });
     const layout = await layoutDependencyGraph(graph, sizes(graph));
 
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual([
-      "group:directory:src/pages",
-      "group:external-packages",
-    ]);
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["external-packages", "src/pages"]);
     expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
-    expect(layout.nodes.find(({ id }) => id === "page-file")?.parentId).toBe("group:directory:src/pages");
-    expect(layout.nodes.find(({ id }) => id === "external:react")?.parentId).toBe("group:external-packages");
+    expect(layout.nodes.find(({ id }) => id === "page-file")?.parentId).toBe("src/pages");
+    expect(layout.nodes.find(({ id }) => id === "external:react")?.parentId).toBe("external-packages");
   });
 
-  it("keeps a directory root that directly contains files", async () => {
-    const graph = dependencyDiagramGraphSchema.parse({
-      groups: [
-        { groupId: "group:directory:src", title: "src" },
-        { groupId: "group:directory:src/pages", title: "pages", parentGroupId: "group:directory:src" },
-      ],
-      nodes: [node("direct-file", "group:directory:src"), node("page-file", "group:directory:src/pages")],
-      edges: [edge("direct-page", "direct-file", "page-file")],
-    });
-    const layout = await layoutDependencyGraph(graph, sizes(graph));
-
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["group:directory:src", "group:directory:src/pages"]);
-    expect(layout.groups.find(({ id }) => id === "group:directory:src/pages")?.parentId).toBe("group:directory:src");
-    expect(layout.nodes.find(({ id }) => id === "direct-file")?.parentId).toBe("group:directory:src");
-  });
-
-  it("keeps a hand-authored wrapping group without a directory identity", async () => {
+  it("peels a hand-authored wrapping group without direct files", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
         { groupId: "service", title: "Service layer" },
         { groupId: "service/api", title: "API", parentGroupId: "service" },
       ],
-      nodes: [node("api-file", "service/api"), node("service-file", "service")],
+      nodes: [node("api-file", "service/api")],
       edges: [],
     });
     const layout = await layoutDependencyGraph(graph, sizes(graph));
 
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["service", "service/api"]);
-    expect(layout.groups.find(({ id }) => id === "service/api")?.parentId).toBe("service");
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["service/api"]);
+    expect(layout.groups.every(({ parentId }) => parentId === undefined)).toBe(true);
     expect(layout.nodes.find(({ id }) => id === "api-file")?.parentId).toBe("service/api");
   });
 
-  it("keeps a wrapping directory shell beside a loose top-level node", async () => {
+  it("keeps a root that directly contains files", async () => {
     const graph = dependencyDiagramGraphSchema.parse({
       groups: [
-        { groupId: "group:directory:src", title: "src" },
-        { groupId: "group:directory:src/features", title: "features", parentGroupId: "group:directory:src" },
-        { groupId: "group:directory:src/shared", title: "shared", parentGroupId: "group:directory:src" },
+        { groupId: "src", title: "src" },
+        { groupId: "src/pages", title: "pages", parentGroupId: "src" },
       ],
-      nodes: [
-        node("feature-file", "group:directory:src/features"),
-        node("shared-file", "group:directory:src/shared"),
-        node("root-file"),
+      nodes: [node("direct-file", "src"), node("page-file", "src/pages")],
+      edges: [edge("direct-page", "direct-file", "page-file")],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src", "src/pages"]);
+    expect(layout.groups.find(({ id }) => id === "src/pages")?.parentId).toBe("src");
+    expect(layout.nodes.find(({ id }) => id === "direct-file")?.parentId).toBe("src");
+  });
+
+  it("keeps a lone synthetic wrapper when no grounded root exists", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "external-packages", title: "External packages", synthetic: true },
+        { groupId: "external-packages/react", title: "React", parentGroupId: "external-packages" },
       ],
+      nodes: [node("external:react", "external-packages/react", true)],
+      edges: [],
+    });
+    const layout = await layoutDependencyGraph(graph, sizes(graph));
+
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["external-packages", "external-packages/react"]);
+    expect(layout.groups.find(({ id }) => id === "external-packages/react")?.parentId).toBe("external-packages");
+    expect(layout.nodes.find(({ id }) => id === "external:react")?.parentId).toBe("external-packages/react");
+  });
+
+  it("keeps a wrapping shell beside a loose top-level node", async () => {
+    const graph = dependencyDiagramGraphSchema.parse({
+      groups: [
+        { groupId: "src", title: "src" },
+        { groupId: "src/features", title: "features", parentGroupId: "src" },
+        { groupId: "src/shared", title: "shared", parentGroupId: "src" },
+      ],
+      nodes: [node("feature-file", "src/features"), node("shared-file", "src/shared"), node("root-file")],
       edges: [edge("feature-shared", "feature-file", "shared-file")],
     });
     const layout = await layoutDependencyGraph(graph, sizes(graph));
 
-    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual([
-      "group:directory:src",
-      "group:directory:src/features",
-      "group:directory:src/shared",
-    ]);
-    expect(layout.groups.find(({ id }) => id === "group:directory:src/features")?.parentId).toBe("group:directory:src");
-    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("group:directory:src/features");
+    expect(layout.groups.map(({ id }) => id).toSorted()).toEqual(["src", "src/features", "src/shared"]);
+    expect(layout.groups.find(({ id }) => id === "src/features")?.parentId).toBe("src");
+    expect(layout.nodes.find(({ id }) => id === "feature-file")?.parentId).toBe("src/features");
   });
 
   it("keeps fixed group padding and separate root and nested layer gaps", async () => {

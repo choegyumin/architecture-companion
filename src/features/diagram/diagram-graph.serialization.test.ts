@@ -6,12 +6,13 @@ import {
 } from "./diagram-graph";
 
 describe("diagram graph serialization", () => {
-  it("omits default element types and visible bounding titles without changing authored elements", () => {
+  it("omits default element types, visible bounding titles, and unset synthetic markers", () => {
     const input = {
       groups: [
         { groupId: "group", title: "Group" },
         { groupId: "visible", type: "bounding", title: "Visible", parentGroupId: "group" },
         { groupId: "hidden", type: "bounding", title: "Hidden", hideTitle: true },
+        { groupId: "boundary", title: "Boundary", synthetic: true },
       ],
       nodes: [
         {
@@ -23,6 +24,7 @@ describe("diagram graph serialization", () => {
           links: [{ href: "source:///source.ts" }],
         },
         { nodeId: "target", type: "diamond", title: "Target", groupId: "hidden" },
+        { nodeId: "synthesized", title: "Synthesized", groupId: "boundary", synthetic: true },
       ],
       edges: [
         { edgeId: "connection", sourceNodeId: "source", targetNodeId: "target", label: "Calls", kind: "runtime" },

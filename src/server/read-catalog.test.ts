@@ -14,7 +14,9 @@ const checkoutBehavior = {
     layout: { layoutId: "general" },
     graph: {
       groups: [],
-      nodes: [{ nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page" }],
+      nodes: [
+        { nodeId: "checkout-page", type: "default", kind: "component", title: "Checkout page", synthetic: false },
+      ],
       edges: [],
     },
   },
