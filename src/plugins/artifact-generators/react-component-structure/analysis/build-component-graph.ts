@@ -420,16 +420,68 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
   }
 
   function isCreateElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "createElement");
+  }
+
+  function isReactExportedCall(call: ts.CallExpression, checker: ts.TypeChecker, name: string): boolean {
+    const callee = unwrapExpression(call.expression);
+    if (ts.isIdentifier(callee)) {
+      const symbol = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === name;
+    }
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== name) return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+  }
+
+  function isCreateContextCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "createContext");
+  }
+
+  function isCloneElementCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    return ts.isCallExpression(node) && isReactExportedCall(node, checker, "cloneElement");
+  }
+
+  function isCreatePortalCall(node: ts.Node, checker: ts.TypeChecker): boolean {
     if (!ts.isCallExpression(node)) return false;
     const callee = unwrapExpression(node.expression);
-    if (ts.isPropertyAccessExpression(callee)) {
-      if (callee.name.text !== "createElement") return false;
-      const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
-      return isReactSymbol(checker.getSymbolAtLocation(receiver), checker);
+    if (ts.isIdentifier(callee)) {
+      const symbol = checker.getSymbolAtLocation(callee);
+      return getImportModuleSpecifier(symbol) === "react-dom" && getImportedName(symbol) === "createPortal";
     }
-    if (!ts.isIdentifier(callee)) return false;
-    const symbol = checker.getSymbolAtLocation(callee);
-    return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === "createElement";
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "createPortal") return false;
+    const receiver = leftmostIdentifier(callee.expression) ?? callee.expression;
+    return getImportModuleSpecifier(checker.getSymbolAtLocation(receiver)) === "react-dom";
+  }
+
+  function isReactChildrenMapCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+    if (!ts.isCallExpression(node)) return false;
+    const callee = unwrapExpression(node.expression);
+    if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "map") return false;
+    const receiver = unwrapExpression(callee.expression);
+    if (ts.isIdentifier(receiver)) {
+      const symbol = checker.getSymbolAtLocation(receiver);
+      return getImportModuleSpecifier(symbol) === "react" && getImportedName(symbol) === "Children";
+    }
+    if (!ts.isPropertyAccessExpression(receiver) || receiver.name.text !== "Children") return false;
+    const base = leftmostIdentifier(receiver.expression) ?? receiver.expression;
+    return isReactSymbol(checker.getSymbolAtLocation(base), checker);
+  }
+
+  function isReactContextAccessorTag(
+    tagName: ts.JsxTagNameExpression | ts.Expression,
+    checker: ts.TypeChecker,
+  ): boolean {
+    if (!ts.isPropertyAccessExpression(tagName)) return false;
+    if (tagName.name.text !== "Provider" && tagName.name.text !== "Consumer") return false;
+    const receiver = unwrapExpression(tagName.expression);
+    const symbol = checker.getSymbolAtLocation(receiver);
+    return (canonicalSymbol(symbol, checker)?.declarations ?? symbol?.declarations ?? []).some(
+      (declaration) =>
+        ts.isVariableDeclaration(declaration) &&
+        declaration.initializer !== undefined &&
+        isCreateContextCall(declaration.initializer, checker),
+    );
   }
 
   function isArrayRenderingMethodCall(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
@@ -1845,6 +1897,19 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       Readonly<{ excludedProps: ReadonlySet<string>; targetUseId: string; ruleset: DiagramRouteRequirementRuleset }>
     >;
     let activeRuleset: DiagramRouteRequirementRuleset = [[]];
+    // While analyzing an element-iteration callback, its first parameter stands
+    // for one element of the iterated incoming prop, so prop lookups inside the
+    // callback resolve through this alias map.
+    let activePropAliases: ReadonlyMap<ts.Symbol, string> | undefined;
+
+    function incomingPropOf(expression: ts.Expression): string | undefined {
+      const direct = getIncomingProp(expression, bindings, context.checker);
+      if (direct !== undefined || !activePropAliases) return direct;
+      const unwrapped = unwrapExpression(expression);
+      if (!ts.isIdentifier(unwrapped)) return undefined;
+      const symbol = context.checker.getSymbolAtLocation(unwrapped);
+      return symbol ? activePropAliases.get(symbol) : undefined;
+    }
 
     function terminal(propName: string, kind: TerminalRule["kind"]): void {
       addExactRule(rules, propName, { type: "terminal", kind, ruleset: activeRuleset });
@@ -1931,7 +1996,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         )
           return;
         if (ts.isCallExpression(node)) {
-          const propName = getIncomingProp(node.expression, bindings, context.checker);
+          const propName = incomingPropOf(node.expression);
           if (propName) {
             const entry = { propName, ruleset };
             props.set(JSON.stringify(entry), entry);
@@ -1975,9 +2040,7 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         )
           return;
         const unwrapped = unwrapExpression(candidate);
-        const directProp = candidateSymbol
-          ? bindings.propSymbols.get(candidateSymbol)
-          : getIncomingProp(unwrapped, bindings, context.checker);
+        const directProp = candidateSymbol ? bindings.propSymbols.get(candidateSymbol) : incomingPropOf(unwrapped);
         if (directProp) {
           const entry = { propName: directProp, ruleset };
           props.set(JSON.stringify(entry), entry);
@@ -2117,16 +2180,41 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       }
     }
 
+    function analyzeArrayRenderingCallback(call: ts.CallExpression): void {
+      const callback = call.arguments.find(
+        (argument): argument is ts.ArrowFunction | ts.FunctionExpression =>
+          ts.isArrowFunction(argument) || ts.isFunctionExpression(argument),
+      );
+      if (!callback) return;
+      const callee = unwrapExpression(call.expression);
+      const arrayExpression = isReactChildrenMapCall(call, context.checker)
+        ? call.arguments.at(0)
+        : ts.isPropertyAccessExpression(callee)
+          ? callee.expression
+          : undefined;
+      const propName = arrayExpression ? incomingPropOf(arrayExpression) : undefined;
+      const parameter = callback.parameters.at(0);
+      const parameterSymbol =
+        parameter && ts.isIdentifier(parameter.name) ? context.checker.getSymbolAtLocation(parameter.name) : undefined;
+      const previous = activePropAliases;
+      if (propName && parameterSymbol) activePropAliases = new Map([[parameterSymbol, propName]]);
+      try {
+        controlledReturns(callback.body, definition.id, context, analyzeRendered, activeRuleset);
+      } finally {
+        activePropAliases = previous;
+      }
+    }
+
     function analyzeRenderedValue(expression: ts.Expression): void {
       const unwrapped = unwrapExpression(expression);
-      const directProp = getIncomingProp(unwrapped, bindings, context.checker);
+      const directProp = incomingPropOf(unwrapped);
       if (directProp) {
         terminal(directProp, "node-prop");
         return;
       }
 
       if (ts.isCallExpression(unwrapped)) {
-        const invokedProp = getIncomingProp(unwrapped.expression, bindings, context.checker);
+        const invokedProp = incomingPropOf(unwrapped.expression);
         if (invokedProp) {
           terminal(invokedProp, "render-prop");
           return;
@@ -2135,12 +2223,24 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           analyzeCreateElement(unwrapped);
           return;
         }
-        if (isArrayRenderingMethodCall(unwrapped, context.checker)) {
-          for (const argument of unwrapped.arguments) {
-            if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
-              controlledReturns(argument.body, definition.id, context, analyzeRendered, activeRuleset);
-            }
-          }
+        if (isCloneElementCall(unwrapped, context.checker)) {
+          // A clone renders the cloned element, with argument props layered on
+          // top; the element itself still renders under this component.
+          const [element] = unwrapped.arguments;
+          if (element) analyzeRendered(element);
+          return;
+        }
+        if (isCreatePortalCall(unwrapped, context.checker)) {
+          // A portal renders its children; the container only receives them.
+          const [rendered] = unwrapped.arguments;
+          if (rendered) analyzeRendered(rendered);
+          return;
+        }
+        if (
+          isArrayRenderingMethodCall(unwrapped, context.checker) ||
+          isReactChildrenMapCall(unwrapped, context.checker)
+        ) {
+          analyzeArrayRenderingCallback(unwrapped);
         }
         return;
       }
@@ -2165,6 +2265,11 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         const target = targetForReference(opening.tagName, context);
         const targetUseId = target ? componentUseId(definition.id, unwrapped, target.id, context.scopePath) : undefined;
         analyzeJsxAttributes(opening.attributes, targetUseId, ts.isJsxElement(unwrapped) ? unwrapped.children : []);
+        // A context Provider or Consumer renders its children in place, so the
+        // subtree under it renders under this component like an intrinsic tag.
+        if (!target && ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          for (const child of unwrapped.children) analyzeJsxChild(child);
+        }
         return;
       }
 
@@ -2195,6 +2300,9 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
       const componentProp = getIncomingProp(tagExpression, bindings, context.checker);
       if (componentProp) {
         terminal(componentProp, "component-prop");
+        // The created element renders within this component, so children given
+        // to the dynamic tag render in this subtree like intrinsic children.
+        for (const child of children) analyzeRendered(child);
         return;
       }
       if (ts.isStringLiteral(tagExpression)) {
@@ -2316,6 +2424,10 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           addUseRuleset(context, use.id, ruleset, rulesetsByUse);
           analyzeJsxComponentUsage(unwrapped, use, context);
           uses.set(use.id, use);
+        } else if (ts.isJsxElement(unwrapped) && isReactContextAccessorTag(opening.tagName, context.checker)) {
+          // A context Provider or Consumer renders its children in place, so
+          // the uses under it belong to this owner.
+          for (const child of unwrapped.children) collectChild(child, ruleset);
         }
         return;
       }
@@ -2335,7 +2447,20 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         }
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) collect(element, ruleset, visitedSymbols);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) collect(rendered, ruleset, visitedSymbols);
+        return;
+      }
+      if (
+        ts.isCallExpression(unwrapped) &&
+        (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))
+      ) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(
@@ -3089,7 +3214,12 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
           return;
         }
         const target = targetForReference(tagExpression, context);
-        if (!target) return;
+        if (!target) {
+          // Unresolved or prop-supplied tags still render within this
+          // component, so uses among the children must be traced.
+          for (const child of unwrapped.arguments.slice(2)) analyzeRendered(child, ruleset);
+          return;
+        }
         const use = ensureComponentUse(definition.id, unwrapped, target, context);
         addDirectUse(context, use);
         addUseRuleset(context, use.id, ruleset);
@@ -3100,7 +3230,20 @@ function createComponentGraphBuilder(ts: typeof import("typescript")) {
         for (const element of unwrapped.elements) if (ts.isExpression(element)) analyzeRendered(element, ruleset);
         return;
       }
-      if (ts.isCallExpression(unwrapped) && isArrayRenderingMethodCall(unwrapped, context.checker)) {
+      if (ts.isCallExpression(unwrapped) && isCloneElementCall(unwrapped, context.checker)) {
+        const [element] = unwrapped.arguments;
+        if (element) analyzeRendered(element, ruleset);
+        return;
+      }
+      if (ts.isCallExpression(unwrapped) && isCreatePortalCall(unwrapped, context.checker)) {
+        const [rendered] = unwrapped.arguments;
+        if (rendered) analyzeRendered(rendered, ruleset);
+        return;
+      }
+      if (
+        ts.isCallExpression(unwrapped) &&
+        (isArrayRenderingMethodCall(unwrapped, context.checker) || isReactChildrenMapCall(unwrapped, context.checker))
+      ) {
         for (const argument of unwrapped.arguments) {
           if (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) {
             controlledReturns(argument.body, definition.id, context, analyzeRendered, ruleset);

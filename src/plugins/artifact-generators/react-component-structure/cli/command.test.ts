@@ -1181,6 +1181,260 @@ describe("React component structure command", () => {
     );
   });
 
+  it("routes children rendered inside a context provider subtree", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function createContext<T>(defaultValue: T): { Provider: unknown; Consumer: unknown };
+        `,
+        "src/app.tsx": `
+          import { createContext } from "react";
+
+          const OverlayContext = createContext(null);
+          const Unrelated = {};
+
+          function Target() { return <span />; }
+          function Missed() { return <aside />; }
+
+          function Layer({ children }) {
+            return (
+              <OverlayContext.Provider value={null}>
+                <section>{children}</section>
+              </OverlayContext.Provider>
+            );
+          }
+
+          function Static({ children }) {
+            return (
+              <Unrelated.Provider value={null}>
+                <div>{children}</div>
+              </Unrelated.Provider>
+            );
+          }
+
+          export function App() {
+            return (
+              <>
+                <Layer><Target /></Layer>
+                <Static><Missed /></Static>
+              </>
+            );
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Layer", "Static", "Target"]);
+          const target = graph.nodes.find(({ title }) => title === "Target")!;
+          expect(
+            graph.edges.find(
+              ({ sourceNodeId, targetNodeId }) =>
+                sourceNodeId === "component:src/app.tsx#Layer" && targetNodeId === target.nodeId,
+            ),
+          ).toMatchObject({
+            layoutContext: {
+              composition: {
+                type: "node",
+                slot: "children",
+                origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+              },
+            },
+          });
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("routes children cloned through element iteration", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function cloneElement<P>(element: any, props?: P, ...children: unknown[]): any;
+          export const Children: {
+            map<T, C>(children: any, fn: (child: any, index: number) => C): C[];
+          };
+        `,
+        "src/app.tsx": `
+          import * as React from "react";
+
+          function Target() { return <span />; }
+
+          function Row({ children }) {
+            return (
+              <ul>
+                {React.Children.map(children, (child) => React.cloneElement(child, { className: "row" }))}
+              </ul>
+            );
+          }
+
+          function List({ children }: { children: any[] }) {
+            return (
+              <ol>
+                {children.map((child) => React.cloneElement(child, { className: "item" }))}
+              </ol>
+            );
+          }
+
+          export function App() {
+            return (
+              <>
+                <Row><Target /></Row>
+                <List><Target /></List>
+              </>
+            );
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "List", "Row", "Target"]);
+          const target = graph.nodes.find(({ title }) => title === "Target")!;
+          for (const source of ["component:src/app.tsx#Row", "component:src/app.tsx#List"]) {
+            expect(
+              graph.edges.find(
+                ({ sourceNodeId, targetNodeId }) => sourceNodeId === source && targetNodeId === target.nodeId,
+              ),
+            ).toMatchObject({
+              layoutContext: {
+                composition: {
+                  type: "node",
+                  slot: "children",
+                  origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+                },
+              },
+            });
+          }
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("routes children rendered through createElement with a dynamic tag", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function createElement(type: any, props?: any, ...children: any[]): any;
+        `,
+        "src/app.tsx": `
+          import * as React from "react";
+
+          function Target() { return <span />; }
+          function Inner() { return <b />; }
+
+          function Host({ tagName = "div", children }) {
+            return React.createElement(
+              tagName,
+              { className: "host" },
+              React.createElement("div", null, children),
+              <Inner />,
+            );
+          }
+
+          export function App() {
+            return <Host><Target /></Host>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Host", "Inner", "Target"]);
+          const host = "component:src/app.tsx#Host";
+          const target = graph.nodes.find(({ title }) => title === "Target")!;
+          expect(
+            graph.edges.find(
+              ({ sourceNodeId, targetNodeId }) => sourceNodeId === host && targetNodeId === target.nodeId,
+            ),
+          ).toMatchObject({
+            layoutContext: {
+              composition: {
+                type: "node",
+                slot: "children",
+                origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+              },
+            },
+          });
+          expect(
+            graph.edges.some(
+              ({ sourceNodeId, targetNodeId }) =>
+                sourceNodeId === host && targetNodeId === "component:src/app.tsx#Inner",
+            ),
+          ).toBe(true);
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
+  it("routes children rendered through a portal", async () => {
+    await withFixture(
+      {
+        "node_modules/react/index.d.ts": `
+          export function cloneElement<P>(element: any, props?: P, ...children: unknown[]): any;
+        `,
+        "node_modules/react-dom/index.d.ts": `
+          export function createPortal(children: any, container: any): any;
+        `,
+        "src/app.tsx": `
+          import * as React from "react";
+          import { createPortal } from "react-dom";
+
+          function Target() { return <span />; }
+
+          function Portal({ children }) {
+            return createPortal(React.cloneElement(children, { "data-portal": "p" }), null);
+          }
+
+          export function App() {
+            return <Portal><Target /></Portal>;
+          }
+        `,
+      },
+      async (scopePath) => {
+        const graphPath = await executeReactComponentStructureCommand(["--base", scopePath, "src", "--root", "App"], {
+          writeStdout: () => undefined,
+        });
+        try {
+          const graph = componentStructureDiagramGraphSchema.parse(JSON.parse(await readFile(graphPath, "utf8")));
+          expect(graph.nodes.map(({ title }) => title).toSorted()).toEqual(["App", "Portal", "Target"]);
+          const target = graph.nodes.find(({ title }) => title === "Target")!;
+          expect(
+            graph.edges.find(
+              ({ sourceNodeId, targetNodeId }) =>
+                sourceNodeId === "component:src/app.tsx#Portal" && targetNodeId === target.nodeId,
+            ),
+          ).toMatchObject({
+            layoutContext: {
+              composition: {
+                type: "node",
+                slot: "children",
+                origins: [{ supplierDefinitionId: "component:src/app.tsx#App", slot: "children" }],
+              },
+            },
+          });
+        } finally {
+          await rm(dirname(graphPath), { recursive: true });
+        }
+      },
+    );
+  });
+
   it("warns when a recognized React wrapper receives an arbitrary helper result", async () => {
     await withFixture(
       {
